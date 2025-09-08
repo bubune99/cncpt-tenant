@@ -1,4 +1,5 @@
 import { sql } from "@/lib/neon"
+import { redis, CACHE_KEYS, CACHE_TTL } from "@/lib/redis"
 
 export async function createDefaultTenantContent(tenantId: number, subdomain: string) {
   await sql`
@@ -39,6 +40,11 @@ export async function createDefaultTenantContent(tenantId: number, subdomain: st
 }
 
 export async function getTenantBySubdomain(subdomain: string) {
+  const cached = await redis.get(CACHE_KEYS.tenant(subdomain))
+  if (cached) {
+    return cached
+  }
+
   const result = await sql`
     SELECT s.*, ts.site_title, ts.site_description, ts.primary_color
     FROM subdomains s
@@ -46,23 +52,45 @@ export async function getTenantBySubdomain(subdomain: string) {
     WHERE s.subdomain = ${subdomain}
   `
 
-  return result[0] || null
+  const tenant = result[0] || null
+
+  if (tenant) {
+    await redis.setex(CACHE_KEYS.tenant(subdomain), CACHE_TTL, tenant)
+  }
+
+  return tenant
 }
 
 export async function getTenantPages(tenantId: number) {
-  return await sql`
+  const cached = await redis.get(CACHE_KEYS.tenantPages(tenantId))
+  if (cached) {
+    return cached
+  }
+
+  const pages = await sql`
     SELECT * FROM tenant_pages 
     WHERE tenant_id = ${tenantId} AND is_published = true
     ORDER BY created_at ASC
   `
+
+  await redis.setex(CACHE_KEYS.tenantPages(tenantId), CACHE_TTL, pages)
+  return pages
 }
 
 export async function getTenantPosts(tenantId: number) {
-  return await sql`
+  const cached = await redis.get(CACHE_KEYS.tenantPosts(tenantId))
+  if (cached) {
+    return cached
+  }
+
+  const posts = await sql`
     SELECT * FROM tenant_posts 
     WHERE tenant_id = ${tenantId} AND is_published = true
     ORDER BY created_at DESC
   `
+
+  await redis.setex(CACHE_KEYS.tenantPosts(tenantId), CACHE_TTL, posts)
+  return posts
 }
 
 export async function getTenantData(subdomain: string) {
@@ -86,11 +114,23 @@ export async function getTenantPage(tenantId: number, slug: string) {
 }
 
 export async function getTenantSettings(tenantId: number) {
+  const cached = await redis.get(CACHE_KEYS.tenantSettings(tenantId))
+  if (cached) {
+    return cached
+  }
+
   const result = await sql`
     SELECT * FROM tenant_settings 
     WHERE tenant_id = ${tenantId}
   `
-  return result[0] || null
+
+  const settings = result[0] || null
+
+  if (settings) {
+    await redis.setex(CACHE_KEYS.tenantSettings(tenantId), CACHE_TTL, settings)
+  }
+
+  return settings
 }
 
 export async function requireTenantOwnership(tenantId: number, userId: string) {
@@ -104,4 +144,14 @@ export async function requireTenantOwnership(tenantId: number, userId: string) {
   }
 
   return result[0]
+}
+
+export async function invalidateTenantCache(tenantId: number, subdomain?: string) {
+  const keys = [CACHE_KEYS.tenantSettings(tenantId), CACHE_KEYS.tenantPages(tenantId), CACHE_KEYS.tenantPosts(tenantId)]
+
+  if (subdomain) {
+    keys.push(CACHE_KEYS.tenant(subdomain))
+  }
+
+  await Promise.all(keys.map((key) => redis.del(key)))
 }
