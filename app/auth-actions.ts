@@ -1,7 +1,8 @@
 "use server"
 
-import { stackServerApp } from "@/lib/stack"
+import { createUser, authenticateUser, createSession, deleteSession } from "@/lib/auth"
 import { redirect } from "next/navigation"
+import { sql } from "@/lib/neon"
 
 export async function registerAction(prevState: any, formData: FormData) {
   const email = formData.get("email") as string
@@ -16,20 +17,20 @@ export async function registerAction(prevState: any, formData: FormData) {
     return { success: false, error: "Password must be at least 8 characters long" }
   }
 
-  try {
-    await stackServerApp.createUser({
-      primaryEmail: email,
-      password: password,
-      displayName: name,
-    })
+  // Check if user already exists
+  const existingUser = await sql`
+    SELECT id FROM users WHERE email = ${email}
+  `
 
-    // Sign in the user after registration
-    await stackServerApp.signInWithPassword({ email, password })
+  if (existingUser.length > 0) {
+    return { success: false, error: "An account with this email already exists" }
+  }
+
+  try {
+    const user = await createUser(email, password, name)
+    await createSession(user.id)
     redirect("/dashboard")
-  } catch (error: any) {
-    if (error.message?.includes("already exists")) {
-      return { success: false, error: "An account with this email already exists" }
-    }
+  } catch (error) {
     return { success: false, error: "Failed to create account. Please try again." }
   }
 }
@@ -42,15 +43,16 @@ export async function loginAction(prevState: any, formData: FormData) {
     return { success: false, error: "Email and password are required" }
   }
 
-  try {
-    await stackServerApp.signInWithPassword({ email, password })
-    redirect("/dashboard")
-  } catch (error) {
+  const user = await authenticateUser(email, password)
+  if (!user) {
     return { success: false, error: "Invalid email or password" }
   }
+
+  await createSession(user.id)
+  redirect("/dashboard")
 }
 
 export async function logoutAction() {
-  await stackServerApp.signOut()
+  await deleteSession()
   redirect("/")
 }

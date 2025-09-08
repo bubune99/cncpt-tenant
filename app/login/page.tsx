@@ -1,54 +1,14 @@
-"use client"
-
-import { useState, useEffect } from "react"
+import { LoginForm } from "./login-form"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useUser } from "@stackframe/stack"
+import { getCurrentUser } from "@/lib/auth"
+import { redirect } from "next/navigation"
 
-export const dynamic = "force-dynamic"
-
-function ClientSideSignIn() {
-  const [isClient, setIsClient] = useState(false)
-  const [SignInComponent, setSignInComponent] = useState<any>(null)
-  const router = useRouter()
-  const user = useUser()
-
-  useEffect(() => {
-    setIsClient(true)
-    import("@stackframe/stack").then((module) => {
-      setSignInComponent(() => module.SignIn)
-    })
-  }, [])
-
-  useEffect(() => {
-    if (isClient && user) {
-      router.push("/dashboard")
-    }
-  }, [isClient, user, router])
-
-  if (!isClient || !SignInComponent) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    )
-  }
-
+export default async function LoginPage() {
+  const user = await getCurrentUser()
   if (user) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <p className="text-gray-600 mb-4">Redirecting to dashboard...</p>
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-        </div>
-      </div>
-    )
+    redirect("/dashboard")
   }
 
-  return <SignInComponent />
-}
-
-export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-white p-4">
       <div className="w-full max-w-md space-y-8">
@@ -58,7 +18,16 @@ export default function LoginPage() {
         </div>
 
         <div className="mt-8 bg-white shadow-md rounded-lg p-6">
-          <ClientSideSignIn />
+          <LoginForm />
+
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              Don't have an account?{" "}
+              <Link href="/register" className="text-blue-600 hover:text-blue-500 font-medium">
+                Sign up
+              </Link>
+            </p>
+          </div>
         </div>
 
         <div className="text-center">

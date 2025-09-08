@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ExternalLink, Trash2, Settings, BarChart3 } from "lucide-react"
 import { deleteSubdomainAction } from "@/app/actions"
-import { useFormState } from "react-dom"
-import { useState } from "react"
+import { useActionState } from "react"
 import { rootDomain, protocol } from "@/lib/utils"
 import Link from "next/link"
 
@@ -22,18 +21,11 @@ interface SubdomainListProps {
 }
 
 function SubdomainCard({ subdomain }: { subdomain: Subdomain }) {
-  const [deleteState, deleteAction] = useFormState(deleteSubdomainAction, {})
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteState, deleteAction, isDeleting] = useActionState(deleteSubdomainAction, {})
 
   const subdomainUrl = `${protocol}://${subdomain.subdomain}.${rootDomain}`
   const adminUrl = `${protocol}://${subdomain.subdomain}.${rootDomain}/admin`
   const createdDate = new Date(subdomain.created_at).toLocaleDateString()
-
-  const handleDelete = async (formData: FormData) => {
-    setIsDeleting(true)
-    await deleteAction(formData)
-    setIsDeleting(false)
-  }
 
   return (
     <Card>
@@ -76,7 +68,7 @@ function SubdomainCard({ subdomain }: { subdomain: Subdomain }) {
               </Link>
             </Button>
 
-            <form action={handleDelete}>
+            <form action={deleteAction}>
               <input type="hidden" name="subdomain" value={subdomain.subdomain} />
               <Button
                 variant="outline"

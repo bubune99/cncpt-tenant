@@ -1,33 +1,14 @@
-"use client"
-
-import { useState, useEffect } from "react"
+import { RegisterForm } from "./register-form"
 import Link from "next/link"
+import { getCurrentUser } from "@/lib/auth"
+import { redirect } from "next/navigation"
 
-export const dynamic = "force-dynamic"
-
-function ClientSideSignUp() {
-  const [isClient, setIsClient] = useState(false)
-  const [SignUpComponent, setSignUpComponent] = useState<any>(null)
-
-  useEffect(() => {
-    setIsClient(true)
-    import("@stackframe/stack").then((module) => {
-      setSignUpComponent(() => module.SignUp)
-    })
-  }, [])
-
-  if (!isClient || !SignUpComponent) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    )
+export default async function RegisterPage() {
+  const user = await getCurrentUser()
+  if (user) {
+    redirect("/dashboard")
   }
 
-  return <SignUpComponent />
-}
-
-export default function RegisterPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-white p-4">
       <div className="w-full max-w-md space-y-8">
@@ -37,7 +18,16 @@ export default function RegisterPage() {
         </div>
 
         <div className="mt-8 bg-white shadow-md rounded-lg p-6">
-          <ClientSideSignUp />
+          <RegisterForm />
+
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              Already have an account?{" "}
+              <Link href="/login" className="text-blue-600 hover:text-blue-500 font-medium">
+                Sign in
+              </Link>
+            </p>
+          </div>
         </div>
 
         <div className="text-center">

@@ -27,36 +27,10 @@ export function DashboardContent({
   const renderContent = () => {
     switch (activeSection) {
       case "overview":
-        if (subdomains.length === 0) {
-          return (
-            <div className="space-y-8">
-              <div className="text-center py-12">
-                <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <svg className="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                </div>
-                <h1 className="text-3xl font-bold text-balance mb-4">
-                  Welcome to your dashboard, {user.displayName || user.primaryEmail}!
-                </h1>
-                <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-                  Get started by creating your first subdomain. This will be your unique space on the platform where you
-                  can build and manage your content.
-                </p>
-              </div>
-              <div className="max-w-2xl mx-auto">
-                <CreateSubdomainCard />
-              </div>
-            </div>
-          )
-        }
-
         return (
           <div className="space-y-8">
             <div>
-              <h1 className="text-3xl font-bold text-balance mb-2">
-                Welcome back, {user.displayName || user.primaryEmail}
-              </h1>
+              <h1 className="text-3xl font-bold text-balance mb-2">Welcome back, {user.name}</h1>
               <p className="text-muted-foreground">Manage your subdomains and create new ones</p>
             </div>
             <CreateSubdomainCard />

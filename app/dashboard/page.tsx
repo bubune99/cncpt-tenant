@@ -1,12 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { requireAuth } from "@/lib/auth"
 import { getUserSubdomains } from "@/app/actions"
 import { DashboardSidebar } from "./dashboard-sidebar"
 import { DashboardContent } from "./dashboard-content"
-import { useUser } from "@stackframe/stack"
-
-export const dynamic = "force-dynamic"
 
 interface DashboardPageProps {
   user?: any
@@ -17,39 +15,41 @@ export default function DashboardPage({ user: initialUser, subdomains: initialSu
   const [activeSection, setActiveSection] = useState("overview")
   const [selectedSubdomain, setSelectedSubdomain] = useState<string | null>(null)
   const [isDeveloperMode, setIsDeveloperMode] = useState(false)
-  const [isClient, setIsClient] = useState(false)
-  const user = useUser()
+  const [user, setUser] = useState(initialUser)
   const [subdomains, setSubdomains] = useState(initialSubdomains || [])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(!initialUser)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    setIsClient(true)
-  }, [])
-
-  useEffect(() => {
-    if (isClient && user && !initialSubdomains) {
-      loadSubdomains()
-    } else if (initialSubdomains) {
-      setSelectedSubdomain(initialSubdomains[0]?.subdomain || null)
+    if (!initialUser) {
+      loadDashboardData()
+    } else {
+      setSelectedSubdomain(initialSubdomains?.[0]?.subdomain || null)
     }
-  }, [user, initialSubdomains, isClient])
+  }, [initialUser, initialSubdomains])
 
-  const loadSubdomains = async () => {
+  const loadDashboardData = async () => {
     try {
       setLoading(true)
+      const authUser = await requireAuth()
       const userSubdomains = await getUserSubdomains()
+
+      setUser(authUser)
       setSubdomains(userSubdomains)
       setSelectedSubdomain(userSubdomains[0]?.subdomain || null)
     } catch (err) {
-      console.error("[v0] Dashboard subdomain loading error:", err)
-      setError("Failed to load subdomains")
+      console.error("[v0] Dashboard auth error:", err)
+      setError("Authentication failed")
+      // Redirect to login after a short delay
+      setTimeout(() => {
+        window.location.href = "/login?error=auth_required"
+      }, 2000)
     } finally {
       setLoading(false)
     }
   }
 
-  if (!isClient || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
