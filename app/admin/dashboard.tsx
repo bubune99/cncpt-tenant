@@ -1,23 +1,23 @@
-'use client';
+"use client"
 
-import { useActionState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trash2, Loader2 } from 'lucide-react';
-import Link from 'next/link';
-import { deleteSubdomainAction } from '@/app/actions';
-import { rootDomain, protocol } from '@/lib/utils';
+import { useState, useTransition } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Trash2, Loader2 } from "lucide-react"
+import Link from "next/link"
+import { deleteSubdomainAction } from "@/app/actions"
+import { rootDomain, protocol } from "@/lib/utils"
 
 type Tenant = {
-  subdomain: string;
-  emoji: string;
-  createdAt: number;
-};
+  subdomain: string
+  emoji: string
+  createdAt: number
+}
 
 type DeleteState = {
-  error?: string;
-  success?: string;
-};
+  error?: string
+  success?: string
+}
 
 function DashboardHeader() {
   // TODO: You can add authentication here with your preferred auth provider
@@ -34,17 +34,17 @@ function DashboardHeader() {
         </Link>
       </div>
     </div>
-  );
+  )
 }
 
 function TenantGrid({
   tenants,
   action,
-  isPending
+  isPending,
 }: {
-  tenants: Tenant[];
-  action: (formData: FormData) => void;
-  isPending: boolean;
+  tenants: Tenant[]
+  action: (formData: FormData) => void
+  isPending: boolean
 }) {
   if (tenants.length === 0) {
     return (
@@ -53,7 +53,7 @@ function TenantGrid({
           <p className="text-gray-500">No subdomains have been created yet.</p>
         </CardContent>
       </Card>
-    );
+    )
   }
 
   return (
@@ -64,11 +64,7 @@ function TenantGrid({
             <div className="flex items-center justify-between">
               <CardTitle className="text-xl">{tenant.subdomain}</CardTitle>
               <form action={action}>
-                <input
-                  type="hidden"
-                  name="subdomain"
-                  value={tenant.subdomain}
-                />
+                <input type="hidden" name="subdomain" value={tenant.subdomain} />
                 <Button
                   variant="ghost"
                   size="icon"
@@ -76,11 +72,7 @@ function TenantGrid({
                   disabled={isPending}
                   className="text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                 >
-                  {isPending ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-5 w-5" />
-                  )}
+                  {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 className="h-5 w-5" />}
                 </Button>
               </form>
             </div>
@@ -88,9 +80,7 @@ function TenantGrid({
           <CardContent>
             <div className="flex items-center justify-between">
               <div className="text-4xl">{tenant.emoji}</div>
-              <div className="text-sm text-gray-500">
-                Created: {new Date(tenant.createdAt).toLocaleDateString()}
-              </div>
+              <div className="text-sm text-gray-500">Created: {new Date(tenant.createdAt).toLocaleDateString()}</div>
             </div>
             <div className="mt-4">
               <a
@@ -106,19 +96,28 @@ function TenantGrid({
         </Card>
       ))}
     </div>
-  );
+  )
 }
 
 export function AdminDashboard({ tenants }: { tenants: Tenant[] }) {
-  const [state, action, isPending] = useActionState<DeleteState, FormData>(
-    deleteSubdomainAction,
-    {}
-  );
+  const [state, setState] = useState<DeleteState>({})
+  const [isPending, startTransition] = useTransition()
+
+  const handleDelete = (formData: FormData) => {
+    startTransition(async () => {
+      try {
+        const result = await deleteSubdomainAction({}, formData)
+        setState(result)
+      } catch (error) {
+        setState({ error: "Failed to delete subdomain" })
+      }
+    })
+  }
 
   return (
     <div className="space-y-6 relative p-4 md:p-8">
       <DashboardHeader />
-      <TenantGrid tenants={tenants} action={action} isPending={isPending} />
+      <TenantGrid tenants={tenants} action={handleDelete} isPending={isPending} />
 
       {state.error && (
         <div className="fixed bottom-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded shadow-md">
@@ -132,5 +131,5 @@ export function AdminDashboard({ tenants }: { tenants: Tenant[] }) {
         </div>
       )}
     </div>
-  );
+  )
 }

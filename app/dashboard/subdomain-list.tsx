@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ExternalLink, Trash2, Settings, BarChart3 } from "lucide-react"
 import { deleteSubdomainAction } from "@/app/actions"
-import { useActionState } from "react"
+import { useState, useTransition } from "react"
 import { rootDomain, protocol } from "@/lib/utils"
 import Link from "next/link"
 
@@ -21,7 +21,19 @@ interface SubdomainListProps {
 }
 
 function SubdomainCard({ subdomain }: { subdomain: Subdomain }) {
-  const [deleteState, deleteAction, isDeleting] = useActionState(deleteSubdomainAction, {})
+  const [deleteState, setDeleteState] = useState<any>({})
+  const [isDeleting, startTransition] = useTransition()
+
+  const handleDelete = (formData: FormData) => {
+    startTransition(async () => {
+      try {
+        const result = await deleteSubdomainAction({}, formData)
+        setDeleteState(result)
+      } catch (error) {
+        setDeleteState({ error: "Failed to delete subdomain" })
+      }
+    })
+  }
 
   const subdomainUrl = `${protocol}://${subdomain.subdomain}.${rootDomain}`
   const adminUrl = `${protocol}://${subdomain.subdomain}.${rootDomain}/admin`
@@ -68,7 +80,7 @@ function SubdomainCard({ subdomain }: { subdomain: Subdomain }) {
               </Link>
             </Button>
 
-            <form action={deleteAction}>
+            <form action={handleDelete}>
               <input type="hidden" name="subdomain" value={subdomain.subdomain} />
               <Button
                 variant="outline"
@@ -85,6 +97,7 @@ function SubdomainCard({ subdomain }: { subdomain: Subdomain }) {
         </div>
 
         {deleteState?.success && <div className="mt-4 text-sm text-green-600">{deleteState.success}</div>}
+        {deleteState?.error && <div className="mt-4 text-sm text-red-600">{deleteState.error}</div>}
       </CardContent>
     </Card>
   )

@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState } from "react"
+import { useState, useTransition } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,10 +12,28 @@ type LoginState = {
 }
 
 export function LoginForm() {
-  const [state, action, isPending] = useActionState<LoginState, FormData>(loginAction, {})
+  const [state, setState] = useState<LoginState>({})
+  const [isPending, startTransition] = useTransition()
+
+  const handleSubmit = (formData: FormData) => {
+    startTransition(async () => {
+      try {
+        const result = await loginAction({}, formData)
+        setState(result)
+      } catch (error) {
+        setState({ error: "Login failed" })
+      }
+    })
+  }
 
   return (
-    <form action={action} className="space-y-4">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        handleSubmit(new FormData(e.target))
+      }}
+      className="space-y-4"
+    >
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input id="email" name="email" type="email" placeholder="your@email.com" required />

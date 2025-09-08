@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState } from "react"
+import { useState, useTransition } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,10 +12,28 @@ type RegisterState = {
 }
 
 export function RegisterForm() {
-  const [state, action, isPending] = useActionState<RegisterState, FormData>(registerAction, {})
+  const [state, setState] = useState<RegisterState>({})
+  const [isPending, startTransition] = useTransition()
+
+  const handleSubmit = (formData: FormData) => {
+    startTransition(async () => {
+      try {
+        const result = await registerAction({}, formData)
+        setState(result)
+      } catch (error) {
+        setState({ error: "Registration failed" })
+      }
+    })
+  }
 
   return (
-    <form action={action} className="space-y-4">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        handleSubmit(new FormData(e.target))
+      }}
+      className="space-y-4"
+    >
       <div className="space-y-2">
         <Label htmlFor="name">Full Name</Label>
         <Input id="name" name="name" type="text" placeholder="Your full name" required />
