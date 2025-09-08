@@ -1,29 +1,21 @@
 "use client"
 
+import { useState } from "react"
 import { CreateSubdomainCard } from "./create-subdomain-card"
 import { SubdomainList } from "./subdomain-list"
 import { DomainManagement } from "./domain-management"
 import { SiteSettings } from "./site-settings"
 import { DeveloperTools } from "./developer-tools"
 import { Analytics } from "./analytics"
-import { Billing } from "./billing"
-import { RepositoryManagement } from "./repository-management"
 
 interface DashboardContentProps {
   user: any
   subdomains: any[]
-  activeSection: string
-  selectedSubdomain: string | null
-  isDeveloperMode: boolean
 }
 
-export function DashboardContent({
-  user,
-  subdomains,
-  activeSection,
-  selectedSubdomain,
-  isDeveloperMode,
-}: DashboardContentProps) {
+export function DashboardContent({ user, subdomains }: DashboardContentProps) {
+  const [activeSection, setActiveSection] = useState("overview")
+
   const renderContent = () => {
     switch (activeSection) {
       case "overview":
@@ -38,30 +30,15 @@ export function DashboardContent({
           </div>
         )
       case "domains":
-        return <DomainManagement subdomains={subdomains} selectedSubdomain={selectedSubdomain} />
-      case "repositories":
-        return <RepositoryManagement user={user} subdomains={subdomains} selectedSubdomain={selectedSubdomain} />
+        return <DomainManagement subdomains={subdomains} />
       case "settings":
-        return <SiteSettings selectedSubdomain={selectedSubdomain} />
-      case "appearance":
-        return <SiteSettings selectedSubdomain={selectedSubdomain} activeTab="appearance" />
-      case "security":
-        return <SiteSettings selectedSubdomain={selectedSubdomain} activeTab="security" />
+        return <SiteSettings />
       case "developer":
-        return <DeveloperTools selectedSubdomain={selectedSubdomain} />
+        return <DeveloperTools />
       case "analytics":
-        return <Analytics subdomains={subdomains} selectedSubdomain={selectedSubdomain} />
-      case "billing":
-        return <Billing />
+        return <Analytics subdomains={subdomains} />
       default:
-        return (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <h2 className="text-xl font-semibold mb-2">Coming Soon</h2>
-              <p className="text-muted-foreground">Content for {activeSection} is being developed</p>
-            </div>
-          </div>
-        )
+        return <div>Content for {activeSection}</div>
     }
   }
 

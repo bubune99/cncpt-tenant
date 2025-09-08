@@ -1,43 +1,21 @@
 "use client"
+
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import {
-  Globe,
-  Settings,
-  BarChart3,
-  Code,
-  Link,
-  Shield,
-  Palette,
-  ChevronDown,
-  User,
-  LogOut,
-  CreditCard,
-  Github,
-} from "lucide-react"
+import { Globe, Settings, BarChart3, Code, Link, Shield, Palette, ChevronDown, User, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface DashboardSidebarProps {
   user: any
   subdomains: any[]
-  activeSection: string
-  setActiveSection: (section: string) => void
-  selectedSubdomain: string | null
-  setSelectedSubdomain: (subdomain: string | null) => void
-  isDeveloperMode: boolean
-  setIsDeveloperMode: (mode: boolean) => void
 }
 
-export function DashboardSidebar({
-  user,
-  subdomains,
-  activeSection,
-  setActiveSection,
-  selectedSubdomain,
-  setSelectedSubdomain,
-  isDeveloperMode,
-  setIsDeveloperMode,
-}: DashboardSidebarProps) {
+export function DashboardSidebar({ user, subdomains }: DashboardSidebarProps) {
+  const [activeSection, setActiveSection] = useState("overview")
+  const [selectedSubdomain, setSelectedSubdomain] = useState(subdomains[0]?.subdomain || null)
+  const [isDeveloperMode, setIsDeveloperMode] = useState(false)
+
   const menuSections = [
     {
       title: "Dashboard",
@@ -50,14 +28,9 @@ export function DashboardSidebar({
       title: "Site Management",
       items: [
         { id: "domains", label: "Custom Domains", icon: Link },
-        { id: "repositories", label: "GitHub Integration", icon: Github },
         { id: "settings", label: "Site Settings", icon: Settings },
         { id: "appearance", label: "Appearance", icon: Palette },
       ],
-    },
-    {
-      title: "Billing",
-      items: [{ id: "billing", label: "Subscription & Billing", icon: CreditCard }],
     },
     {
       title: "Advanced",
@@ -67,22 +40,6 @@ export function DashboardSidebar({
       ],
     },
   ]
-
-  const handleSectionClick = (sectionId: string) => {
-    console.log("[v0] Sidebar button clicked:", sectionId)
-    setActiveSection(sectionId)
-  }
-
-  const handleSignOut = async () => {
-    try {
-      localStorage.clear()
-      sessionStorage.clear()
-      window.location.href = "/"
-    } catch (error) {
-      console.error("[v0] Sign out error:", error)
-      window.location.href = "/"
-    }
-  }
 
   return (
     <div className="w-64 bg-gray-950 text-white flex flex-col">
@@ -121,12 +78,11 @@ export function DashboardSidebar({
               {section.items.map((item) => {
                 const Icon = item.icon
                 return (
-                  <Button
+                  <button
                     key={item.id}
-                    variant="ghost"
-                    onClick={() => handleSectionClick(item.id)}
+                    onClick={() => setActiveSection(item.id)}
                     className={cn(
-                      "w-full justify-start space-x-3 px-3 py-2 h-auto text-sm font-medium transition-colors",
+                      "w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                       activeSection === item.id
                         ? "bg-gray-800 text-white"
                         : "text-gray-300 hover:bg-gray-800 hover:text-white",
@@ -139,7 +95,7 @@ export function DashboardSidebar({
                         Beta
                       </Badge>
                     )}
-                  </Button>
+                  </button>
                 )
               })}
             </div>
@@ -158,12 +114,7 @@ export function DashboardSidebar({
             <p className="text-xs text-gray-400 truncate">{user.email}</p>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start text-gray-300 hover:text-white"
-          onClick={handleSignOut}
-        >
+        <Button variant="ghost" size="sm" className="w-full justify-start text-gray-300 hover:text-white">
           <LogOut className="w-4 h-4 mr-2" />
           Sign Out
         </Button>

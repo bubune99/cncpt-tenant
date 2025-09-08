@@ -1,119 +1,16 @@
-"use client"
-
-import { useState, useEffect } from "react"
 import { requireAuth } from "@/lib/auth"
 import { getUserSubdomains } from "@/app/actions"
 import { DashboardSidebar } from "./dashboard-sidebar"
 import { DashboardContent } from "./dashboard-content"
 
-interface DashboardPageProps {
-  user?: any
-  subdomains?: any[]
-}
-
-export default function DashboardPage({ user: initialUser, subdomains: initialSubdomains }: DashboardPageProps = {}) {
-  const [activeSection, setActiveSection] = useState("overview")
-  const [selectedSubdomain, setSelectedSubdomain] = useState<string | null>(null)
-  const [isDeveloperMode, setIsDeveloperMode] = useState(false)
-  const [user, setUser] = useState(initialUser)
-  const [subdomains, setSubdomains] = useState(initialSubdomains || [])
-  const [loading, setLoading] = useState(!initialUser)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!initialUser) {
-      loadDashboardData()
-    } else {
-      setSelectedSubdomain(initialSubdomains?.[0]?.subdomain || null)
-    }
-  }, [initialUser, initialSubdomains])
-
-  const loadDashboardData = async () => {
-    try {
-      setLoading(true)
-      const authUser = await requireAuth()
-      const userSubdomains = await getUserSubdomains()
-
-      setUser(authUser)
-      setSubdomains(userSubdomains)
-      setSelectedSubdomain(userSubdomains[0]?.subdomain || null)
-    } catch (err) {
-      console.error("[v0] Dashboard auth error:", err)
-      setError("Authentication failed")
-      // Redirect to login after a short delay
-      setTimeout(() => {
-        window.location.href = "/login?error=auth_required"
-      }, 2000)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading dashboard...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error || !user) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-6">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-              />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">Access Denied</h1>
-          <p className="text-muted-foreground mb-6">{error || "You need to be signed in to access the dashboard."}</p>
-          <div className="space-y-3">
-            <a
-              href="/login"
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 w-full"
-            >
-              Sign In
-            </a>
-            <a
-              href="/register"
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full"
-            >
-              Create Account
-            </a>
-          </div>
-        </div>
-      </div>
-    )
-  }
+export default async function DashboardPage() {
+  const user = await requireAuth()
+  const subdomains = await getUserSubdomains()
 
   return (
     <div className="min-h-screen bg-background flex">
-      <DashboardSidebar
-        user={user}
-        subdomains={subdomains}
-        activeSection={activeSection}
-        setActiveSection={setActiveSection}
-        selectedSubdomain={selectedSubdomain}
-        setSelectedSubdomain={setSelectedSubdomain}
-        isDeveloperMode={isDeveloperMode}
-        setIsDeveloperMode={setIsDeveloperMode}
-      />
-      <DashboardContent
-        user={user}
-        subdomains={subdomains}
-        activeSection={activeSection}
-        selectedSubdomain={selectedSubdomain}
-        isDeveloperMode={isDeveloperMode}
-      />
+      <DashboardSidebar user={user} subdomains={subdomains} />
+      <DashboardContent user={user} subdomains={subdomains} />
     </div>
   )
 }
