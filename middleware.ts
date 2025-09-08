@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { rootDomain } from "@/lib/utils"
+import { stackServerApp } from "@/lib/auth"
 
 function extractSubdomain(request: NextRequest): string | null {
   const url = request.url
@@ -44,6 +45,10 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const subdomain = extractSubdomain(request)
 
+  if (pathname.startsWith("/handler")) {
+    return NextResponse.next()
+  }
+
   if (subdomain) {
     // Block access to admin page from subdomains
     if (pathname.startsWith("/admin")) {
@@ -60,9 +65,15 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  if (pathname === "/dashboard") {
-    // This will be handled by the dashboard page component
-    return NextResponse.next()
+  if (pathname === "/dashboard" || pathname.startsWith("/teams")) {
+    try {
+      const user = await stackServerApp.getUser({ request })
+      if (!user) {
+        return NextResponse.redirect(new URL(stackServerApp.urls.signIn, request.url))
+      }
+    } catch (error) {
+      return NextResponse.redirect(new URL(stackServerApp.urls.signIn, request.url))
+    }
   }
 
   // On the root domain, allow normal access
