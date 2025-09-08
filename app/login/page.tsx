@@ -1,0 +1,72 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useUser } from "@stackframe/stack"
+
+export const dynamic = "force-dynamic"
+
+function ClientSideSignIn() {
+  const [isClient, setIsClient] = useState(false)
+  const [SignInComponent, setSignInComponent] = useState<any>(null)
+  const router = useRouter()
+  const user = useUser()
+
+  useEffect(() => {
+    setIsClient(true)
+    import("@stackframe/stack").then((module) => {
+      setSignInComponent(() => module.SignIn)
+    })
+  }, [])
+
+  useEffect(() => {
+    if (isClient && user) {
+      router.push("/dashboard")
+    }
+  }, [isClient, user, router])
+
+  if (!isClient || !SignInComponent) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
+
+  if (user) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Redirecting to dashboard...</p>
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+        </div>
+      </div>
+    )
+  }
+
+  return <SignInComponent />
+}
+
+export default function LoginPage() {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-white p-4">
+      <div className="w-full max-w-md space-y-8">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900">Welcome Back</h1>
+          <p className="mt-3 text-lg text-gray-600">Sign in to your account</p>
+        </div>
+
+        <div className="mt-8 bg-white shadow-md rounded-lg p-6">
+          <ClientSideSignIn />
+        </div>
+
+        <div className="text-center">
+          <Link href="/" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">
+            ← Back to home
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}
