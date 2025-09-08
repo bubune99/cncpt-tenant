@@ -1,30 +1,31 @@
-import type { Metadata } from 'next';
-import { Geist } from 'next/font/google';
-import { SpeedInsights } from '@vercel/speed-insights/next';
-import './globals.css';
+import type React from "react"
+import type { Metadata } from "next"
+import { Inter } from "next/font/google"
+import { SpeedInsights } from "@vercel/speed-insights/next"
+import "./globals.css"
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin']
-});
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+})
 
 export const metadata: Metadata = {
-  title: 'Platforms Starter Kit',
-  description: 'Next.js template for building a multi-tenant SaaS.',
+  title: "Platforms Starter Kit",
+  description: "Next.js template for building a multi-tenant SaaS.",
     generator: 'v0.app'
-};
+}
 
 export default function RootLayout({
-  children
+  children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} antialiased`}>
+      <body className={`${inter.variable} antialiased`}>
         {children}
         <SpeedInsights />
       </body>
     </html>
-  );
+  )
 }
