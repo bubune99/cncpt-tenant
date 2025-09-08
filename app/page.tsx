@@ -63,7 +63,7 @@ export default async function HomePage() {
               Create Your Own
               <span className="text-primary"> Professional Subdomain</span>
             </h1>
-            <p className="text-xl text-muted-foreground text-pretty mb-8 max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
               Build your brand presence with custom subdomains. Easy setup, powerful features, and complete control over
               your online identity.
             </p>
