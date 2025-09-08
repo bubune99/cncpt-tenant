@@ -69,11 +69,20 @@ export async function getCurrentUser(): Promise<User | null> {
 }
 
 // Require authentication - redirect to login if not authenticated
-export async function requireAuth(): Promise<User> {
+export async function requireAuth(redirectToTeam = false): Promise<User> {
   const user = await getCurrentUser()
   if (!user) {
     redirect("/login")
   }
+
+  // If redirectToTeam is true, redirect to user's default team
+  if (redirectToTeam) {
+    const defaultTeam = await getDefaultTeamForUser(user.id)
+    if (defaultTeam) {
+      redirect(`/teams/${defaultTeam}`)
+    }
+  }
+
   return user
 }
 
@@ -136,4 +145,15 @@ export async function authenticateUser(email: string, password: string): Promise
     name: user.name,
     created_at: user.created_at,
   }
+}
+
+export async function getDefaultTeamForUser(userId: number): Promise<string | null> {
+  const result = await sql`
+    SELECT subdomain FROM subdomains 
+    WHERE user_id = ${userId} 
+    ORDER BY created_at ASC 
+    LIMIT 1
+  `
+
+  return result[0]?.subdomain || null
 }

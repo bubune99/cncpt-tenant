@@ -1,6 +1,6 @@
 "use server"
 
-import { createUser, authenticateUser, createSession, deleteSession } from "@/lib/auth"
+import { createUser, authenticateUser, createSession, deleteSession, getDefaultTeamForUser } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { sql } from "@/lib/neon"
 
@@ -29,7 +29,13 @@ export async function registerAction(prevState: any, formData: FormData) {
   try {
     const user = await createUser(email, password, name)
     await createSession(user.id)
-    redirect("/dashboard")
+
+    const defaultTeam = await getDefaultTeamForUser(user.id)
+    if (defaultTeam) {
+      redirect(`/teams/${defaultTeam}`)
+    } else {
+      redirect("/dashboard")
+    }
   } catch (error) {
     return { success: false, error: "Failed to create account. Please try again." }
   }
@@ -49,7 +55,13 @@ export async function loginAction(prevState: any, formData: FormData) {
   }
 
   await createSession(user.id)
-  redirect("/dashboard")
+
+  const defaultTeam = await getDefaultTeamForUser(user.id)
+  if (defaultTeam) {
+    redirect(`/teams/${defaultTeam}`)
+  } else {
+    redirect("/dashboard")
+  }
 }
 
 export async function logoutAction() {
