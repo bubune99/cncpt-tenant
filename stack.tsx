@@ -7,8 +7,8 @@ export const stackServerApp = new StackServerApp({
   publishableClientKey: process.env.NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY!,
   secretServerKey: process.env.STACK_SECRET_SERVER_KEY!,
   urls: {
-    afterSignIn: "/dashboard",
-    afterSignUp: "/dashboard",
+    afterSignIn: "/auth-redirect",
+    afterSignUp: "/auth-redirect",
     signIn: "/login",
   },
 })

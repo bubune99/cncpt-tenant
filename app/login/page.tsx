@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 
 export const dynamic = "force-dynamic"
 
 function ClientSideSignIn() {
   const [isClient, setIsClient] = useState(false)
   const [SignInComponent, setSignInComponent] = useState<any>(null)
+  const searchParams = useSearchParams()
+  const redirectPath = searchParams.get("redirect")
 
   useEffect(() => {
     setIsClient(true)
@@ -24,16 +27,34 @@ function ClientSideSignIn() {
     )
   }
 
-  return <SignInComponent />
+  const signInProps = redirectPath
+    ? {
+        afterSignIn: `/auth-redirect?redirect=${encodeURIComponent(redirectPath)}`,
+        afterSignUp: `/auth-redirect?redirect=${encodeURIComponent(redirectPath)}`,
+      }
+    : {
+        afterSignIn: "/auth-redirect",
+        afterSignUp: "/auth-redirect",
+      }
+
+  return <SignInComponent {...signInProps} />
 }
 
 export default function LoginPage() {
+  const searchParams = useSearchParams()
+  const redirectPath = searchParams.get("redirect")
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-white p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <h1 className="text-4xl font-bold tracking-tight text-gray-900">Welcome Back</h1>
-          <p className="mt-3 text-lg text-gray-600">Sign in to your account</p>
+          <p className="mt-3 text-lg text-gray-600">
+            Sign in to your account
+            {redirectPath && (
+              <span className="block text-sm text-gray-500 mt-1">You'll be redirected to {redirectPath}</span>
+            )}
+          </p>
         </div>
 
         <div className="mt-8 bg-white shadow-md rounded-lg p-6">
