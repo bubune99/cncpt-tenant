@@ -22,17 +22,12 @@ export default async function AdminPage() {
     const userWithRole = await getUserWithRole(user.id)
 
     if (!userWithRole || !userWithRole.isAdmin) {
-      // User is not an admin, redirect to regular dashboard
       redirect("/dashboard")
     }
 
     const tenants = await getAllSubdomains()
 
-    return (
-      <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-        <AdminDashboard tenants={tenants} />
-      </div>
-    )
+    return <AdminDashboard tenants={tenants} />
   } catch (error) {
     console.error("[v0] Admin page auth error:", error)
     redirect("/login?redirect=/admin")
