@@ -1,7 +1,8 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
-import { useFormState } from "react-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -108,20 +109,25 @@ function IconPicker({
 export function SubdomainForm() {
   const [icon, setIcon] = useState("")
   const [isPending, setIsPending] = useState(false)
+  const [state, setState] = useState<CreateState>({})
 
-  const [state, formAction] = useFormState(createSubdomainAction, {} as CreateState)
-
-  const handleSubmit = async (formData: FormData) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
     setIsPending(true)
+
     try {
-      await formAction(formData)
+      const formData = new FormData(event.currentTarget)
+      const result = await createSubdomainAction(state, formData)
+      setState(result)
+    } catch (error) {
+      setState({ error: "Failed to create subdomain" })
     } finally {
       setIsPending(false)
     }
   }
 
   return (
-    <form action={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <SubdomainInput defaultValue={state?.subdomain} />
 
       <IconPicker icon={icon} setIcon={setIcon} defaultValue={state?.icon} />

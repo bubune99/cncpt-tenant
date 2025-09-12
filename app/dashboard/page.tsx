@@ -13,31 +13,62 @@ interface DashboardPageProps {
   subdomains?: any[]
 }
 
+const retryWithBackoff = async (fn: () => Promise<any>, maxRetries = 3, baseDelay = 1000) => {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn()
+    } catch (error) {
+      if (i === maxRetries - 1) throw error
+
+      // Check if it's a rate limit or JSON parsing error
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      if (errorMessage.includes("JSON") || errorMessage.includes("Too Many")) {
+        const delay = baseDelay * Math.pow(2, i)
+        console.log(`[v0] Retrying after ${delay}ms due to API error:`, errorMessage)
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      } else {
+        throw error
+      }
+    }
+  }
+}
+
 export default function DashboardPage({ user: initialUser, subdomains: initialSubdomains }: DashboardPageProps = {}) {
+  const stackUser = useUser()
   const [activeSection, setActiveSection] = useState("overview")
   const [selectedSubdomain, setSelectedSubdomain] = useState<string | null>(null)
   const [isDeveloperMode, setIsDeveloperMode] = useState(false)
   const [isClient, setIsClient] = useState(false)
-  const user = useUser()
+
+  const [userError, setUserError] = useState<string | null>(null)
+  const [user, setUser] = useState<any>(null)
+
   const [subdomains, setSubdomains] = useState(initialSubdomains || [])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setUser(stackUser)
+    setUserError(null)
+  }, [stackUser])
 
   useEffect(() => {
     setIsClient(true)
   }, [])
 
   useEffect(() => {
-    if (isClient && user && !initialSubdomains) {
+    if (isClient && user && !initialSubdomains && !userError) {
       loadSubdomains()
     } else if (initialSubdomains) {
       setSelectedSubdomain(initialSubdomains && initialSubdomains.length > 0 ? initialSubdomains[0]?.subdomain : null)
     }
-  }, [user, initialSubdomains, isClient])
+  }, [user, initialSubdomains, isClient, userError])
 
   const loadSubdomains = async () => {
     try {
       setLoading(true)
+      setError(null)
+
       if (!user?.id) {
         console.log("[v0] No user ID available, skipping subdomain load")
         setSubdomains([])
@@ -45,13 +76,23 @@ export default function DashboardPage({ user: initialUser, subdomains: initialSu
         return
       }
 
-      const userSubdomains = await getUserSubdomains()
+      const userSubdomains = await retryWithBackoff(async () => {
+        return await getUserSubdomains()
+      })
+
       console.log("[v0] Loaded subdomains:", userSubdomains)
       setSubdomains(Array.isArray(userSubdomains) ? userSubdomains : [])
       setSelectedSubdomain(userSubdomains && userSubdomains.length > 0 ? userSubdomains[0].subdomain : null)
     } catch (err) {
       console.error("[v0] Dashboard subdomain loading error:", err)
-      setError("Failed to load subdomains")
+      const errorMessage = err instanceof Error ? err.message : String(err)
+
+      if (errorMessage.includes("JSON") || errorMessage.includes("Too Many")) {
+        setError("Service temporarily busy. Please refresh the page in a moment.")
+      } else {
+        setError("Failed to load subdomains")
+      }
+
       setSubdomains([])
       setSelectedSubdomain(null)
     } finally {
@@ -70,7 +111,9 @@ export default function DashboardPage({ user: initialUser, subdomains: initialSu
     )
   }
 
-  if (error || !user) {
+  if (error || userError || !user) {
+    const displayError = userError || error || "You need to be signed in to access the dashboard."
+
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
@@ -84,21 +127,34 @@ export default function DashboardPage({ user: initialUser, subdomains: initialSu
               />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">Access Denied</h1>
-          <p className="text-muted-foreground mb-6">{error || "You need to be signed in to access the dashboard."}</p>
+          <h1 className="text-2xl font-bold text-foreground mb-2">
+            {userError ? "Service Unavailable" : "Access Denied"}
+          </h1>
+          <p className="text-muted-foreground mb-6">{displayError}</p>
           <div className="space-y-3">
-            <a
-              href="/login"
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 w-full"
-            >
-              Sign In
-            </a>
-            <a
-              href="/register"
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full"
-            >
-              Create Account
-            </a>
+            {userError ? (
+              <button
+                onClick={() => window.location.reload()}
+                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 w-full"
+              >
+                Retry
+              </button>
+            ) : (
+              <>
+                <a
+                  href="/login"
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 w-full"
+                >
+                  Sign In
+                </a>
+                <a
+                  href="/register"
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full"
+                >
+                  Create Account
+                </a>
+              </>
+            )}
           </div>
         </div>
       </div>
