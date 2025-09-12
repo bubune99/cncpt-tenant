@@ -6,13 +6,13 @@ A comprehensive multi-tenant platform combining e-commerce, content management, 
 
 ## 📁 Project Structure
 
-```
+\`\`\`
 cncpt-tenant/
 ├── 01_planning-docs/        # Documentation & specifications
 ├── 02_development-branches/ # Feature development
 ├── 03_main-platform/        # Production codebase
 └── 99_code-dumping-ground/  # Templates & references
-```
+\`\`\`
 
 ## 🎯 Key Features
 
@@ -41,7 +41,7 @@ cncpt-tenant/
 
 ### Installation
 
-```bash
+\`\`\`bash
 # Clone the repository
 git clone https://github.com/bubune99/cncpt-tenant.git
 cd cncpt-tenant
@@ -57,7 +57,7 @@ cp .env.example .env.local
 
 # Start development server
 pnpm dev
-```
+\`\`\`
 
 ## 📚 Documentation
 
