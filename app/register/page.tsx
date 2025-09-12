@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { SignUp } from "@stackframe/stack"
 
 export const dynamic = "force-dynamic"
 
@@ -20,8 +21,6 @@ function ClientSideSignUp() {
     )
   }
 
-  // Dynamic import to prevent SSR issues
-  const { SignUp } = require("@stackframe/stack")
   return <SignUp />
 }
 
