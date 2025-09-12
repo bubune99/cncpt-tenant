@@ -38,13 +38,22 @@ export default function DashboardPage({ user: initialUser, subdomains: initialSu
   const loadSubdomains = async () => {
     try {
       setLoading(true)
+      if (!user?.id) {
+        console.log("[v0] No user ID available, skipping subdomain load")
+        setSubdomains([])
+        setSelectedSubdomain(null)
+        return
+      }
+
       const userSubdomains = await getUserSubdomains()
       console.log("[v0] Loaded subdomains:", userSubdomains)
-      setSubdomains(userSubdomains || [])
+      setSubdomains(Array.isArray(userSubdomains) ? userSubdomains : [])
       setSelectedSubdomain(userSubdomains && userSubdomains.length > 0 ? userSubdomains[0].subdomain : null)
     } catch (err) {
       console.error("[v0] Dashboard subdomain loading error:", err)
       setError("Failed to load subdomains")
+      setSubdomains([])
+      setSelectedSubdomain(null)
     } finally {
       setLoading(false)
     }

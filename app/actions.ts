@@ -5,11 +5,13 @@ import { isValidIcon } from "@/lib/subdomains"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { rootDomain, protocol } from "@/lib/utils"
-import { requireAuth } from "@/lib/auth"
-import { createDefaultTenantContent } from "@/lib/tenant"
+import { stackServerApp } from "@/stack"
 
 export async function createSubdomainAction(prevState: any, formData: FormData) {
-  const user = await requireAuth()
+  const user = await stackServerApp.getUser()
+  if (!user) {
+    redirect("/login")
+  }
 
   const subdomain = formData.get("subdomain") as string
   const icon = formData.get("icon") as string
@@ -51,6 +53,12 @@ export async function createSubdomainAction(prevState: any, formData: FormData) 
     }
   }
 
+  await sql`
+    INSERT INTO users (id, email, name) 
+    VALUES (${user.id}, ${user.primaryEmail || user.clientMetadata?.email || "unknown@example.com"}, ${user.displayName || "Unknown User"})
+    ON CONFLICT (id) DO NOTHING
+  `
+
   const result = await sql`
     INSERT INTO subdomains (subdomain, emoji, user_id)
     VALUES (${sanitizedSubdomain}, ${icon}, ${user.id})
@@ -59,13 +67,19 @@ export async function createSubdomainAction(prevState: any, formData: FormData) 
 
   const tenantId = result[0].id
 
-  await createDefaultTenantContent(tenantId, sanitizedSubdomain)
+  await sql`
+    INSERT INTO tenant_content (tenant_id, content_type, content)
+    VALUES (${tenantId}, 'default', 'Welcome to your new subdomain!')
+  `
 
   redirect(`${protocol}://${sanitizedSubdomain}.${rootDomain}`)
 }
 
 export async function deleteSubdomainAction(prevState: any, formData: FormData) {
-  const user = await requireAuth()
+  const user = await stackServerApp.getUser()
+  if (!user) {
+    redirect("/login")
+  }
   const subdomain = formData.get("subdomain")
 
   await sql`
@@ -78,20 +92,38 @@ export async function deleteSubdomainAction(prevState: any, formData: FormData) 
 }
 
 export async function getUserSubdomains() {
-  const user = await requireAuth()
+  const user = await stackServerApp.getUser()
+  if (!user) {
+    return []
+  }
 
-  const subdomains = await sql`
-    SELECT s.subdomain, s.emoji, s.created_at
-    FROM subdomains s
-    WHERE s.user_id = ${user.id}
-    ORDER BY s.created_at DESC
-  `
+  try {
+    await sql`
+      INSERT INTO users (id, email, name) 
+      VALUES (${user.id}, ${user.primaryEmail || user.clientMetadata?.email || "unknown@example.com"}, ${user.displayName || "Unknown User"})
+      ON CONFLICT (id) DO NOTHING
+    `
 
-  return subdomains
+    const subdomains = await sql`
+      SELECT s.subdomain, s.emoji, s.created_at
+      FROM subdomains s
+      WHERE s.user_id = ${user.id}
+      ORDER BY s.created_at DESC
+    `
+
+    return subdomains || []
+  } catch (error) {
+    console.error("[v0] Error fetching subdomains:", error)
+    return []
+  }
 }
 
 export async function updateSubdomainAction(prevState: any, formData: FormData) {
-  const user = await requireAuth()
+  const user = await stackServerApp.getUser()
+  if (!user) {
+    redirect("/login")
+  }
+
   const originalSubdomain = formData.get("originalSubdomain") as string
   const newIcon = formData.get("icon") as string
 

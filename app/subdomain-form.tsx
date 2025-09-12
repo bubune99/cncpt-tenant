@@ -107,14 +107,17 @@ function IconPicker({
 
 export function SubdomainForm() {
   const [icon, setIcon] = useState("")
-
-  const [state, action] = useFormState<CreateState>(createSubdomainAction, {})
   const [isPending, setIsPending] = useState(false)
+
+  const [state, formAction] = useFormState(createSubdomainAction, {} as CreateState)
 
   const handleSubmit = async (formData: FormData) => {
     setIsPending(true)
-    await action(formData)
-    setIsPending(false)
+    try {
+      await formAction(formData)
+    } finally {
+      setIsPending(false)
+    }
   }
 
   return (
