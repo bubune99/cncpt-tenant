@@ -5,29 +5,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowRight, Globe, Shield, Zap, Users, Star } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useUser } from "@stackframe/stack"
 
 export const dynamic = "force-dynamic"
 
 export default function HomePage() {
-  const [isClient, setIsClient] = useState(false)
-  const [user, setUser] = useState(null)
-
-  useEffect(() => {
-    setIsClient(true)
-
-    const loadUser = async () => {
-      try {
-        const { useUser } = await import("@stackframe/stack")
-        // This will only work in a React component context, so we'll handle it differently
-        // For now, we'll skip the user check to avoid the hook error
-      } catch (error) {
-        console.log("[v0] Stack Auth not available during build")
-      }
-    }
-
-    loadUser()
-  }, [])
+  const user = useUser()
 
   return (
     <div className="min-h-screen bg-background">
@@ -52,12 +35,25 @@ export default function HomePage() {
             </nav>
 
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" asChild>
-                <Link href="/login">Sign In</Link>
-              </Button>
-              <Button asChild>
-                <Link href="/register">Get Started</Link>
-              </Button>
+              {user ? (
+                <>
+                  <span className="text-sm text-muted-foreground">
+                    Welcome back, {user.displayName || user.primaryEmail}
+                  </span>
+                  <Button asChild>
+                    <Link href="/dashboard">Go to Dashboard</Link>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" asChild>
+                    <Link href="/login">Sign In</Link>
+                  </Button>
+                  <Button asChild>
+                    <Link href="/register">Get Started</Link>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -78,14 +74,24 @@ export default function HomePage() {
               your online identity.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" asChild>
-                <Link href="/register">
-                  Start Free Trial <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="#features">Learn More</Link>
-              </Button>
+              {user ? (
+                <Button size="lg" asChild>
+                  <Link href="/dashboard">
+                    Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              ) : (
+                <>
+                  <Button size="lg" asChild>
+                    <Link href="/register">
+                      Start Free Trial <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                  <Button size="lg" variant="outline" asChild>
+                    <Link href="#features">Learn More</Link>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -229,19 +235,29 @@ export default function HomePage() {
             Join thousands of businesses who trust SubdomainPro for their online presence. Start your free trial today.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" variant="secondary" asChild>
-              <Link href="/register">
-                Start Free Trial <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary"
-              asChild
-            >
-              <Link href="/login">Sign In</Link>
-            </Button>
+            {user ? (
+              <Button size="lg" variant="secondary" asChild>
+                <Link href="/dashboard">
+                  Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            ) : (
+              <>
+                <Button size="lg" variant="secondary" asChild>
+                  <Link href="/register">
+                    Start Free Trial <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary"
+                  asChild
+                >
+                  <Link href="/login">Sign In</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </section>
