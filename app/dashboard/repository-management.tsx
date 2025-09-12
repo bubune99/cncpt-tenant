@@ -65,7 +65,7 @@ export function RepositoryManagement({ user, subdomains, selectedSubdomain }: Re
     environmentVariables: "",
   })
 
-  const currentSubdomain = subdomains.find((s) => s.subdomain === selectedSubdomain)
+  const currentSubdomain = subdomains?.find((s) => s.subdomain === selectedSubdomain)
 
   useEffect(() => {
     checkGitHubConnection()
