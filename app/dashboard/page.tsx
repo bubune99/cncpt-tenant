@@ -23,7 +23,6 @@ export default function DashboardPage({ user: initialUser, subdomains: initialSu
   const [subdomains, setSubdomains] = useState(initialSubdomains || [])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [showCreateForm, setShowCreateForm] = useState(false)
 
   const stackUser = useUser()
 
@@ -88,10 +87,6 @@ export default function DashboardPage({ user: initialUser, subdomains: initialSu
       setSubdomains([])
       setSelectedSubdomain(null)
     }
-  }
-
-  const handleShowCreateForm = () => {
-    setShowCreateForm(true)
   }
 
   if (!isClient || loading) {
@@ -178,7 +173,6 @@ export default function DashboardPage({ user: initialUser, subdomains: initialSu
         setSelectedSubdomain={setSelectedSubdomain}
         isDeveloperMode={isDeveloperMode}
         setIsDeveloperMode={setIsDeveloperMode}
-        onShowCreateForm={handleShowCreateForm}
       />
       <DashboardContent
         user={user}
@@ -186,7 +180,6 @@ export default function DashboardPage({ user: initialUser, subdomains: initialSu
         activeSection={activeSection}
         selectedSubdomain={selectedSubdomain}
         isDeveloperMode={isDeveloperMode}
-        showCreateForm={showCreateForm}
       />
     </div>
   )

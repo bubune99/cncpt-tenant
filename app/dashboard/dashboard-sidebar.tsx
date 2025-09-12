@@ -24,6 +24,7 @@ import {
   Plus,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useRouter } from "next/navigation"
 
 interface DashboardSidebarProps {
   user: any
@@ -34,7 +35,6 @@ interface DashboardSidebarProps {
   setSelectedSubdomain: (subdomain: string | null) => void
   isDeveloperMode: boolean
   setIsDeveloperMode: (mode: boolean) => void
-  onShowCreateForm?: () => void
 }
 
 export function DashboardSidebar({
@@ -46,8 +46,9 @@ export function DashboardSidebar({
   setSelectedSubdomain,
   isDeveloperMode,
   setIsDeveloperMode,
-  onShowCreateForm,
 }: DashboardSidebarProps) {
+  const router = useRouter()
+
   const menuSections = [
     {
       title: "Dashboard",
@@ -95,8 +96,7 @@ export function DashboardSidebar({
   }
 
   const handleCreateNew = () => {
-    setActiveSection("overview")
-    onShowCreateForm?.()
+    router.push("/dashboard/create-subdomain")
   }
 
   return (

@@ -1,6 +1,5 @@
 "use client"
 
-import { CreateSubdomainCard } from "./create-subdomain-card"
 import { SubdomainList } from "./subdomain-list"
 import { DomainManagement } from "./domain-management"
 import { SiteSettings } from "./site-settings"
@@ -8,6 +7,9 @@ import { DeveloperTools } from "./developer-tools"
 import { Analytics } from "./analytics"
 import { Billing } from "./billing"
 import { RepositoryManagement } from "./repository-management"
+import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 interface DashboardContentProps {
   user: any
@@ -15,7 +17,6 @@ interface DashboardContentProps {
   activeSection: string
   selectedSubdomain: string | null
   isDeveloperMode: boolean
-  showCreateForm?: boolean
 }
 
 export function DashboardContent({
@@ -24,8 +25,9 @@ export function DashboardContent({
   activeSection,
   selectedSubdomain,
   isDeveloperMode,
-  showCreateForm = false,
 }: DashboardContentProps) {
+  const router = useRouter()
+
   const renderContent = () => {
     switch (activeSection) {
       case "overview":
@@ -35,9 +37,9 @@ export function DashboardContent({
               <h1 className="text-3xl font-bold text-balance mb-2">Welcome back, {user.name}</h1>
               <p className="text-muted-foreground">Manage your subdomains and create new ones</p>
             </div>
-            {(showCreateForm || subdomains.length === 0) && <CreateSubdomainCard />}
-            {subdomains.length > 0 && <SubdomainList subdomains={subdomains} />}
-            {subdomains.length === 0 && !showCreateForm && (
+            {subdomains.length > 0 ? (
+              <SubdomainList subdomains={subdomains} />
+            ) : (
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,6 +48,10 @@ export function DashboardContent({
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No subdomains yet</h3>
                 <p className="text-gray-500 mb-4">Get started by creating your first subdomain</p>
+                <Button onClick={() => router.push("/dashboard/create-subdomain")} className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Create Your First Subdomain
+                </Button>
               </div>
             )}
           </div>
