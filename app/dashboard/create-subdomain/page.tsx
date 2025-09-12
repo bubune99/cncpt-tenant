@@ -49,7 +49,12 @@ export default function CreateSubdomainPage() {
 
     setIsCreating(true)
     try {
-      const result = await createSubdomainAction(subdomain, selectedEmoji)
+      // Create FormData object as expected by the server action
+      const formData = new FormData()
+      formData.append("subdomain", subdomain.trim())
+      formData.append("icon", selectedEmoji)
+
+      const result = await createSubdomainAction(null, formData)
       if (result.success) {
         router.push("/dashboard")
       } else {
