@@ -53,26 +53,36 @@ export async function createSubdomainAction(prevState: any, formData: FormData) 
     }
   }
 
-  await sql`
-    INSERT INTO users (id, email, name) 
-    VALUES (${user.id}, ${user.primaryEmail || user.clientMetadata?.email || "unknown@example.com"}, ${user.displayName || "Unknown User"})
-    ON CONFLICT (id) DO NOTHING
-  `
+  try {
+    await sql`
+      INSERT INTO users (id, email, name, password_hash) 
+      VALUES (${user.id}, ${user.primaryEmail || user.clientMetadata?.email || "unknown@example.com"}, ${user.displayName || "Unknown User"}, NULL)
+      ON CONFLICT (id) DO NOTHING
+    `
 
-  const result = await sql`
-    INSERT INTO subdomains (subdomain, emoji, user_id)
-    VALUES (${sanitizedSubdomain}, ${icon}, ${user.id})
-    RETURNING id
-  `
+    const result = await sql`
+      INSERT INTO subdomains (subdomain, emoji, user_id)
+      VALUES (${sanitizedSubdomain}, ${icon}, ${user.id})
+      RETURNING id
+    `
 
-  const tenantId = result[0].id
+    const tenantId = result[0].id
 
-  await sql`
-    INSERT INTO tenant_content (tenant_id, content_type, content)
-    VALUES (${tenantId}, 'default', 'Welcome to your new subdomain!')
-  `
+    await sql`
+      INSERT INTO tenant_content (tenant_id, content_type, content)
+      VALUES (${tenantId}, 'default', 'Welcome to your new subdomain!')
+    `
 
-  redirect(`${protocol}://${sanitizedSubdomain}.${rootDomain}`)
+    redirect(`${protocol}://${sanitizedSubdomain}.${rootDomain}`)
+  } catch (error) {
+    console.error("[v0] Error creating subdomain:", error)
+    return {
+      subdomain,
+      icon,
+      success: false,
+      error: "Failed to create subdomain. Please try again.",
+    }
+  }
 }
 
 export async function deleteSubdomainAction(prevState: any, formData: FormData) {
@@ -99,8 +109,8 @@ export async function getUserSubdomains() {
 
   try {
     await sql`
-      INSERT INTO users (id, email, name) 
-      VALUES (${user.id}, ${user.primaryEmail || user.clientMetadata?.email || "unknown@example.com"}, ${user.displayName || "Unknown User"})
+      INSERT INTO users (id, email, name, password_hash) 
+      VALUES (${user.id}, ${user.primaryEmail || user.clientMetadata?.email || "unknown@example.com"}, ${user.displayName || "Unknown User"}, NULL)
       ON CONFLICT (id) DO NOTHING
     `
 
