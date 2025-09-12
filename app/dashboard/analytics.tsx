@@ -52,6 +52,7 @@ export function Analytics({ subdomains }: AnalyticsProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [selectedSubdomain, setSelectedSubdomain] = useState<number | null>(null)
   const [deploymentLogs, setDeploymentLogs] = useState<any>(null)
+  const [hasAuthError, setHasAuthError] = useState(false)
 
   useEffect(() => {
     loadDeploymentData()
@@ -61,8 +62,21 @@ export function Analytics({ subdomains }: AnalyticsProps) {
     try {
       const data = await getDeploymentOverview()
       setDeploymentData(data)
+      setHasAuthError(false)
     } catch (error) {
       console.error("Failed to load deployment data:", error)
+      if (error instanceof Error && error.message.includes("Not authenticated")) {
+        setHasAuthError(true)
+        setDeploymentData({
+          totalDeployments: 0,
+          activeDeployments: 0,
+          failedDeployments: 0,
+          totalSubdomains: subdomains.length,
+          recentDeployments: [],
+          deploymentsByStatus: { not_configured: subdomains.length },
+          deploymentTrends: [],
+        })
+      }
     } finally {
       setIsLoading(false)
     }
@@ -75,6 +89,14 @@ export function Analytics({ subdomains }: AnalyticsProps) {
       setSelectedSubdomain(subdomainId)
     } catch (error) {
       console.error("Failed to load deployment logs:", error)
+      if (error instanceof Error && error.message.includes("Not authenticated")) {
+        setDeploymentLogs({
+          subdomain: "Unknown",
+          repository: "Not available",
+          deployments: [],
+        })
+        setSelectedSubdomain(subdomainId)
+      }
     }
   }
 
@@ -164,6 +186,11 @@ export function Analytics({ subdomains }: AnalyticsProps) {
         <div>
           <h1 className="text-3xl font-bold mb-2">Analytics & Deployments</h1>
           <p className="text-muted-foreground">Monitor your site performance and deployment status</p>
+          {hasAuthError && (
+            <p className="text-sm text-yellow-600 mt-1">
+              ⚠️ Some deployment data may be limited due to authentication. Try refreshing the page.
+            </p>
+          )}
         </div>
         <Button onClick={loadDeploymentData} variant="outline" size="sm">
           <RefreshCw className="w-4 h-4 mr-2" />
@@ -178,7 +205,6 @@ export function Analytics({ subdomains }: AnalyticsProps) {
         </TabsList>
 
         <TabsContent value="deployments" className="space-y-6">
-          {/* Deployment Stats Overview */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {deploymentStats.map((stat) => {
               const Icon = stat.icon
@@ -204,7 +230,6 @@ export function Analytics({ subdomains }: AnalyticsProps) {
             })}
           </div>
 
-          {/* Recent Deployments */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
@@ -255,7 +280,6 @@ export function Analytics({ subdomains }: AnalyticsProps) {
             </CardContent>
           </Card>
 
-          {/* Deployment Status Distribution */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
@@ -305,7 +329,6 @@ export function Analytics({ subdomains }: AnalyticsProps) {
             </Card>
           </div>
 
-          {/* Detailed Deployment Logs */}
           {deploymentLogs && (
             <Card>
               <CardHeader>
@@ -349,7 +372,6 @@ export function Analytics({ subdomains }: AnalyticsProps) {
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
-          {/* Traditional Analytics Stats */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {traditionalStats.map((stat) => {
               const Icon = stat.icon
@@ -375,7 +397,6 @@ export function Analytics({ subdomains }: AnalyticsProps) {
             })}
           </div>
 
-          {/* Charts Placeholder */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
@@ -394,7 +415,6 @@ export function Analytics({ subdomains }: AnalyticsProps) {
             </CardContent>
           </Card>
 
-          {/* Site Performance */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
