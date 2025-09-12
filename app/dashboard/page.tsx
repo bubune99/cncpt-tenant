@@ -31,7 +31,7 @@ export default function DashboardPage({ user: initialUser, subdomains: initialSu
     if (isClient && user && !initialSubdomains) {
       loadSubdomains()
     } else if (initialSubdomains) {
-      setSelectedSubdomain(initialSubdomains[0]?.subdomain || null)
+      setSelectedSubdomain(initialSubdomains && initialSubdomains.length > 0 ? initialSubdomains[0]?.subdomain : null)
     }
   }, [user, initialSubdomains, isClient])
 
@@ -39,8 +39,9 @@ export default function DashboardPage({ user: initialUser, subdomains: initialSu
     try {
       setLoading(true)
       const userSubdomains = await getUserSubdomains()
-      setSubdomains(userSubdomains)
-      setSelectedSubdomain(userSubdomains[0]?.subdomain || null)
+      console.log("[v0] Loaded subdomains:", userSubdomains)
+      setSubdomains(userSubdomains || [])
+      setSelectedSubdomain(userSubdomains && userSubdomains.length > 0 ? userSubdomains[0].subdomain : null)
     } catch (err) {
       console.error("[v0] Dashboard subdomain loading error:", err)
       setError("Failed to load subdomains")
