@@ -1,11 +1,12 @@
 "use client"
 
+import type React from "react"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ExternalLink, Trash2, Settings, BarChart3 } from "lucide-react"
 import { deleteSubdomainAction } from "@/app/actions"
-import { useFormState } from "react-dom"
 import { useState } from "react"
 import { rootDomain, protocol } from "@/lib/utils"
 import Link from "next/link"
@@ -22,17 +23,30 @@ interface SubdomainListProps {
 }
 
 function SubdomainCard({ subdomain }: { subdomain: Subdomain }) {
-  const [deleteState, deleteAction] = useFormState(deleteSubdomainAction, {})
   const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteMessage, setDeleteMessage] = useState<string | null>(null)
 
   const subdomainUrl = `${protocol}://${subdomain.subdomain}.${rootDomain}`
   const adminUrl = `${protocol}://${subdomain.subdomain}.${rootDomain}/admin`
   const createdDate = new Date(subdomain.created_at).toLocaleDateString()
 
-  const handleDelete = async (formData: FormData) => {
+  const handleDelete = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
     setIsDeleting(true)
-    await deleteAction(formData)
-    setIsDeleting(false)
+    setDeleteMessage(null)
+
+    try {
+      const formData = new FormData(e.currentTarget)
+      const result = await deleteSubdomainAction({}, formData)
+      if (result?.success) {
+        setDeleteMessage(result.success)
+      }
+    } catch (error) {
+      console.error("[v0] Error deleting subdomain:", error)
+      setDeleteMessage("Failed to delete subdomain")
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   return (
@@ -76,7 +90,7 @@ function SubdomainCard({ subdomain }: { subdomain: Subdomain }) {
               </Link>
             </Button>
 
-            <form action={handleDelete}>
+            <form onSubmit={handleDelete}>
               <input type="hidden" name="subdomain" value={subdomain.subdomain} />
               <Button
                 variant="outline"
@@ -92,7 +106,7 @@ function SubdomainCard({ subdomain }: { subdomain: Subdomain }) {
           </div>
         </div>
 
-        {deleteState?.success && <div className="mt-4 text-sm text-green-600">{deleteState.success}</div>}
+        {deleteMessage && <div className="mt-4 text-sm text-green-600">{deleteMessage}</div>}
       </CardContent>
     </Card>
   )

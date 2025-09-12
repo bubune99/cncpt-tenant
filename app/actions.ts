@@ -66,11 +66,11 @@ export async function createSubdomainAction(prevState: any, formData: FormData) 
       RETURNING id
     `
 
-    const tenantId = result[0].id
+    const subdomainId = result[0].id
 
     await sql`
-      INSERT INTO tenant_content (tenant_id, content_type, content)
-      VALUES (${tenantId}, 'default', 'Welcome to your new subdomain!')
+      INSERT INTO tenant_content (subdomain_id, content_type, content_data)
+      VALUES (${subdomainId}, 'default', ${'{"message": "Welcome to your new subdomain!"}'})
     `
 
     redirect(`${protocol}://${sanitizedSubdomain}.${rootDomain}`)
