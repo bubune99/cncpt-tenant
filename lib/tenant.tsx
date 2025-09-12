@@ -157,7 +157,7 @@ export async function getTenantPages(tenantId: number, publishedOnly = true): Pr
 // Get tenant by subdomain with settings
 export async function getTenantBySubdomain(subdomain: string) {
   const result = await sql`
-    SELECT s.*, ts.site_title, ts.site_description, ts.primary_color
+    SELECT s.*, ts.site_title, ts.site_description, ts.theme_color
     FROM subdomains s
     LEFT JOIN tenant_settings ts ON s.id = ts.tenant_id
     WHERE s.subdomain = ${subdomain}

@@ -69,8 +69,21 @@ export async function createSubdomainAction(prevState: any, formData: FormData) 
     const subdomainId = result[0].id
 
     await sql`
-      INSERT INTO tenant_content (subdomain_id, content_type, content_data)
-      VALUES (${subdomainId}, 'default', ${'{"message": "Welcome to your new subdomain!"}'})
+      INSERT INTO tenant_settings (tenant_id, site_title, site_description)
+      VALUES (${subdomainId}, ${`${sanitizedSubdomain} Site`}, ${`Welcome to ${sanitizedSubdomain}`})
+      ON CONFLICT (tenant_id) DO NOTHING
+    `
+
+    await sql`
+      INSERT INTO tenant_pages (tenant_id, title, content, slug, published)
+      VALUES (
+        ${subdomainId}, 
+        'Home', 
+        ${`<h1>Welcome to ${sanitizedSubdomain}</h1><p>This is your custom subdomain site. You can customize this content from your dashboard.</p>`},
+        'home',
+        true
+      )
+      ON CONFLICT (tenant_id, slug) DO NOTHING
     `
 
     return {
