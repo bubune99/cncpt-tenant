@@ -2,6 +2,13 @@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
   Globe,
   Settings,
   BarChart3,
@@ -14,6 +21,7 @@ import {
   LogOut,
   CreditCard,
   Github,
+  Plus,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -26,6 +34,7 @@ interface DashboardSidebarProps {
   setSelectedSubdomain: (subdomain: string | null) => void
   isDeveloperMode: boolean
   setIsDeveloperMode: (mode: boolean) => void
+  onShowCreateForm?: () => void
 }
 
 export function DashboardSidebar({
@@ -37,6 +46,7 @@ export function DashboardSidebar({
   setSelectedSubdomain,
   isDeveloperMode,
   setIsDeveloperMode,
+  onShowCreateForm,
 }: DashboardSidebarProps) {
   const menuSections = [
     {
@@ -84,19 +94,47 @@ export function DashboardSidebar({
     }
   }
 
+  const handleCreateNew = () => {
+    setActiveSection("overview")
+    onShowCreateForm?.()
+  }
+
   return (
     <div className="w-64 bg-gray-950 text-white flex flex-col">
       {/* Subdomain Selector */}
       <div className="p-4 border-b border-gray-800">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-white text-black rounded flex items-center justify-center font-semibold text-sm">
-              {selectedSubdomain?.[0]?.toUpperCase() || "S"}
-            </div>
-            <span className="font-medium">{selectedSubdomain || "Select Site"}</span>
-          </div>
-          <ChevronDown className="w-4 h-4 text-gray-400" />
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="w-full justify-between mb-3 h-auto p-2">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-white text-black rounded flex items-center justify-center font-semibold text-sm">
+                  {selectedSubdomain?.[0]?.toUpperCase() || "S"}
+                </div>
+                <span className="font-medium">{selectedSubdomain || "Select Site"}</span>
+              </div>
+              <ChevronDown className="w-4 h-4 text-gray-400" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56" align="start">
+            {subdomains.map((subdomain) => (
+              <DropdownMenuItem
+                key={subdomain.subdomain}
+                onClick={() => setSelectedSubdomain(subdomain.subdomain)}
+                className={cn("flex items-center space-x-2", selectedSubdomain === subdomain.subdomain && "bg-accent")}
+              >
+                <div className="w-6 h-6 bg-gray-200 text-gray-800 rounded flex items-center justify-center font-semibold text-xs">
+                  {subdomain.subdomain[0]?.toUpperCase()}
+                </div>
+                <span>{subdomain.subdomain}</span>
+              </DropdownMenuItem>
+            ))}
+            {subdomains.length > 0 && <DropdownMenuSeparator />}
+            <DropdownMenuItem onClick={handleCreateNew} className="flex items-center space-x-2">
+              <Plus className="w-4 h-4" />
+              <span>Create New</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Developer Mode Toggle */}
         <div className="flex items-center justify-between">
