@@ -28,7 +28,7 @@ export function SiteSettings({ user, subdomains, selectedSubdomain }: SiteSettin
   const [isLoading, setIsLoading] = useState(false)
   const [deploymentStatus, setDeploymentStatus] = useState<any>(null)
 
-  const currentSubdomain = subdomains.find((s) => s.subdomain === selectedSubdomain)
+  const currentSubdomain = subdomains?.find((s) => s.subdomain === selectedSubdomain)
 
   useEffect(() => {
     if (currentSubdomain) {
