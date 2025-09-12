@@ -25,6 +25,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
+import { logoutAction } from "@/app/auth-actions"
 
 interface DashboardSidebarProps {
   user: any
@@ -82,17 +83,6 @@ export function DashboardSidebar({
   const handleSectionClick = (sectionId: string) => {
     console.log("[v0] Sidebar button clicked:", sectionId)
     setActiveSection(sectionId)
-  }
-
-  const handleSignOut = async () => {
-    try {
-      localStorage.clear()
-      sessionStorage.clear()
-      window.location.href = "/"
-    } catch (error) {
-      console.error("[v0] Sign out error:", error)
-      window.location.href = "/"
-    }
   }
 
   const handleCreateNew = () => {
@@ -196,15 +186,17 @@ export function DashboardSidebar({
             <p className="text-xs text-gray-400 truncate">{user.email}</p>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start text-gray-300 hover:text-white"
-          onClick={handleSignOut}
-        >
-          <LogOut className="w-4 h-4 mr-2" />
-          Sign Out
-        </Button>
+        <form action={logoutAction}>
+          <Button
+            variant="ghost"
+            size="sm"
+            type="submit"
+            className="w-full justify-start text-gray-300 hover:text-white"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Sign Out
+          </Button>
+        </form>
       </div>
     </div>
   )
