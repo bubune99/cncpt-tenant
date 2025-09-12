@@ -45,9 +45,14 @@ export async function checkUserRole(userId: string): Promise<{ isAdmin: boolean 
 export async function getUserWithRole(userId: string): Promise<UserWithRole | null> {
   try {
     const user = await stackServerApp.getUser({ userId })
-    if (!user) return null
+    if (!user) {
+      console.log(`[v0] No user found for ID: ${userId}`)
+      return null
+    }
 
     const { isAdmin } = await checkUserRole(userId)
+
+    console.log(`[v0] User ${user.primaryEmail} role check: admin=${isAdmin}`)
 
     return {
       id: user.id,
