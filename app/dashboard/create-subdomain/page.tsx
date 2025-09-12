@@ -55,13 +55,19 @@ export default function CreateSubdomainPage() {
       formData.append("icon", selectedEmoji)
 
       const result = await createSubdomainAction(null, formData)
-      if (result.success) {
+      if (result.success && result.redirectUrl) {
+        // Redirect to the newly created subdomain
+        window.location.href = result.redirectUrl
+      } else if (result.success) {
+        // Fallback to dashboard if no redirectUrl provided
         router.push("/dashboard")
       } else {
         console.error("Failed to create subdomain:", result.error)
+        // TODO: Show error message to user
       }
     } catch (error) {
       console.error("Error creating subdomain:", error)
+      // TODO: Show error message to user
     } finally {
       setIsCreating(false)
     }

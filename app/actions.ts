@@ -73,7 +73,11 @@ export async function createSubdomainAction(prevState: any, formData: FormData) 
       VALUES (${subdomainId}, 'default', ${'{"message": "Welcome to your new subdomain!"}'})
     `
 
-    redirect(`${protocol}://${sanitizedSubdomain}.${rootDomain}`)
+    return {
+      success: true,
+      redirectUrl: `${protocol}://${sanitizedSubdomain}.${rootDomain}`,
+      subdomain: sanitizedSubdomain,
+    }
   } catch (error) {
     console.error("[v0] Error creating subdomain:", error)
     return {
