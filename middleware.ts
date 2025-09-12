@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { rootDomain } from "@/lib/utils"
-import { stackServerApp } from "@/stack"
 
 function extractSubdomain(request: NextRequest): string | null {
   const url = request.url
@@ -45,22 +44,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const subdomain = extractSubdomain(request)
 
-  if (pathname.startsWith("/admin")) {
-    try {
-      const user = await stackServerApp.getUser()
-      if (!user) {
-        // Redirect to login with return path
-        const loginUrl = new URL("/login", request.url)
-        loginUrl.searchParams.set("redirect", pathname)
-        return NextResponse.redirect(loginUrl)
-      }
-    } catch (error) {
-      console.error("[v0] Middleware auth check failed:", error)
-      const loginUrl = new URL("/login", request.url)
-      loginUrl.searchParams.set("redirect", pathname)
-      return NextResponse.redirect(loginUrl)
-    }
-  }
+  // Stack Auth will handle authentication redirects through its own system
 
   if (subdomain) {
     // Block access to admin page from subdomains
