@@ -91,10 +91,19 @@ export function RepositoryManagement({ user, subdomains, selectedSubdomain }: Re
     if (!currentSubdomain) return
 
     try {
+      console.log("[v0] Checking deployment status for subdomain:", currentSubdomain.subdomain)
       const status = await getDeploymentStatus(currentSubdomain.id)
+      console.log("[v0] Deployment status received:", status)
       setDeploymentStatus(status)
     } catch (error) {
-      console.error("Failed to check deployment status:", error)
+      console.log("[v0] Failed to check deployment status:", error)
+      if (error.message === "Not authenticated") {
+        // Set a default status when authentication fails
+        setDeploymentStatus({ status: "not_configured" })
+      } else {
+        // For other errors, still set a fallback status
+        setDeploymentStatus({ status: "error", error: error.message })
+      }
     }
   }
 
