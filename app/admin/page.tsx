@@ -16,7 +16,7 @@ export default async function AdminPage() {
     const user = await stackServerApp.getUser()
 
     if (!user) {
-      redirect("/login?redirect=/admin")
+      redirect("/login")
     }
 
     const userWithRole = await getUserWithRole(user.id)
@@ -30,6 +30,6 @@ export default async function AdminPage() {
     return <AdminDashboard tenants={tenants} />
   } catch (error) {
     console.error("[v0] Admin page auth error:", error)
-    redirect("/login?redirect=/admin")
+    redirect("/dashboard")
   }
 }
