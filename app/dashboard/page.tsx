@@ -18,7 +18,6 @@ export default function DashboardPage({ user: initialUser, subdomains: initialSu
   const [selectedSubdomain, setSelectedSubdomain] = useState<string | null>(null)
   const [isDeveloperMode, setIsDeveloperMode] = useState(false)
   const [isClient, setIsClient] = useState(false)
-  const { user } = useStackApp()
   const user = useUser()
   const [subdomains, setSubdomains] = useState(initialSubdomains || [])
   const [loading, setLoading] = useState(false)
