@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState } from "react"
+import { useFormState } from "react-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,7 +12,7 @@ type RegisterState = {
 }
 
 export function RegisterForm() {
-  const [state, action, isPending] = useActionState<RegisterState, FormData>(registerAction, {})
+  const [state, action] = useFormState<RegisterState>(registerAction, {})
 
   return (
     <form action={action} className="space-y-4">
@@ -40,8 +40,8 @@ export function RegisterForm() {
 
       {state?.error && <div className="text-sm text-red-500">{state.error}</div>}
 
-      <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? "Creating account..." : "Create Account"}
+      <Button type="submit" className="w-full">
+        Create Account
       </Button>
     </form>
   )

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useActionState } from "react"
+import { useFormState } from "react-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -108,7 +108,7 @@ function IconPicker({
 export function SubdomainForm() {
   const [icon, setIcon] = useState("")
 
-  const [state, action] = useActionState<CreateState, FormData>(createSubdomainAction, {})
+  const [state, action] = useFormState<CreateState>(createSubdomainAction, {})
   const [isPending, setIsPending] = useState(false)
 
   const handleSubmit = async (formData: FormData) => {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState } from "react"
+import { useFormState } from "react-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,7 +12,7 @@ type LoginState = {
 }
 
 export function LoginForm() {
-  const [state, action, isPending] = useActionState<LoginState, FormData>(loginAction, {})
+  const [state, action] = useFormState<LoginState>(loginAction, {})
 
   return (
     <form action={action} className="space-y-4">
@@ -28,8 +28,8 @@ export function LoginForm() {
 
       {state?.error && <div className="text-sm text-red-500">{state.error}</div>}
 
-      <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? "Signing in..." : "Sign In"}
+      <Button type="submit" className="w-full">
+        Sign In
       </Button>
     </form>
   )
