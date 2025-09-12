@@ -1,6 +1,6 @@
 "use server"
 
-import { sql } from "@/lib/neon"
+import { redis } from "@/lib/redis"
 import { isValidIcon } from "@/lib/subdomains"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
@@ -40,11 +40,9 @@ export async function createSubdomainAction(prevState: any, formData: FormData) 
     }
   }
 
-  const existingSubdomain = await sql`
-    SELECT subdomain FROM subdomains WHERE subdomain = ${sanitizedSubdomain}
-  `
+  const existingSubdomain = await redis.get(`subdomain:${sanitizedSubdomain}`)
 
-  if (existingSubdomain.length > 0) {
+  if (existingSubdomain) {
     return {
       subdomain,
       icon,
@@ -54,37 +52,11 @@ export async function createSubdomainAction(prevState: any, formData: FormData) 
   }
 
   try {
-    await sql`
-      INSERT INTO users (id, email, name, password_hash) 
-      VALUES (${user.id}, ${user.primaryEmail || user.clientMetadata?.email || "unknown@example.com"}, ${user.displayName || "Unknown User"}, NULL)
-      ON CONFLICT (id) DO NOTHING
-    `
-
-    const result = await sql`
-      INSERT INTO subdomains (subdomain, emoji, user_id)
-      VALUES (${sanitizedSubdomain}, ${icon}, ${user.id})
-      RETURNING id
-    `
-
-    const subdomainId = result[0].id
-
-    await sql`
-      INSERT INTO tenant_settings (tenant_id, site_title, site_description)
-      VALUES (${subdomainId}, ${`${sanitizedSubdomain} Site`}, ${`Welcome to ${sanitizedSubdomain}`})
-      ON CONFLICT (tenant_id) DO NOTHING
-    `
-
-    await sql`
-      INSERT INTO tenant_pages (tenant_id, title, content, slug, published)
-      VALUES (
-        ${subdomainId}, 
-        'Home', 
-        ${`<h1>Welcome to ${sanitizedSubdomain}</h1><p>This is your custom subdomain site. You can customize this content from your dashboard.</p>`},
-        'home',
-        true
-      )
-      ON CONFLICT (tenant_id, slug) DO NOTHING
-    `
+    await redis.set(`subdomain:${sanitizedSubdomain}`, {
+      emoji: icon,
+      createdAt: Date.now(),
+      userId: user.id,
+    })
 
     return {
       success: true,
@@ -109,10 +81,7 @@ export async function deleteSubdomainAction(prevState: any, formData: FormData) 
   }
   const subdomain = formData.get("subdomain")
 
-  await sql`
-    DELETE FROM subdomains 
-    WHERE subdomain = ${subdomain} AND user_id = ${user.id}
-  `
+  await redis.del(`subdomain:${subdomain}`)
 
   revalidatePath("/dashboard")
   return { success: "Domain deleted successfully" }
@@ -125,20 +94,28 @@ export async function getUserSubdomains() {
   }
 
   try {
-    await sql`
-      INSERT INTO users (id, email, name, password_hash) 
-      VALUES (${user.id}, ${user.primaryEmail || user.clientMetadata?.email || "unknown@example.com"}, ${user.displayName || "Unknown User"}, NULL)
-      ON CONFLICT (id) DO NOTHING
-    `
+    const keys = await redis.keys("subdomain:*")
+    if (!keys.length) {
+      return []
+    }
 
-    const subdomains = await sql`
-      SELECT s.subdomain, s.emoji, s.created_at
-      FROM subdomains s
-      WHERE s.user_id = ${user.id}
-      ORDER BY s.created_at DESC
-    `
+    const values = await redis.mget(...keys)
+    const userSubdomains = keys
+      .map((key, index) => {
+        const subdomain = key.replace("subdomain:", "")
+        const data = values[index] as any
+        if (data?.userId === user.id) {
+          return {
+            subdomain,
+            emoji: data.emoji || "❓",
+            created_at: new Date(data.createdAt || Date.now()),
+          }
+        }
+        return null
+      })
+      .filter(Boolean)
 
-    return subdomains || []
+    return userSubdomains
   } catch (error) {
     console.error("[v0] Error fetching subdomains:", error)
     return []
@@ -165,11 +142,13 @@ export async function updateSubdomainAction(prevState: any, formData: FormData) 
     }
   }
 
-  await sql`
-    UPDATE subdomains 
-    SET emoji = ${newIcon}
-    WHERE subdomain = ${originalSubdomain} AND user_id = ${user.id}
-  `
+  const existingData = (await redis.get(`subdomain:${originalSubdomain}`)) as any
+  if (existingData && existingData.userId === user.id) {
+    await redis.set(`subdomain:${originalSubdomain}`, {
+      ...existingData,
+      emoji: newIcon,
+    })
+  }
 
   revalidatePath("/dashboard")
   return { success: true, message: "Subdomain updated successfully" }

@@ -1,4 +1,4 @@
-import { sql } from "@/lib/neon"
+import { redis } from "@/lib/redis"
 
 export function isValidIcon(str: string) {
   if (str.length > 10) {
@@ -30,33 +30,24 @@ type SubdomainData = {
 
 export async function getSubdomainData(subdomain: string) {
   const sanitizedSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, "")
-
-  const result = await sql`
-    SELECT emoji, EXTRACT(EPOCH FROM created_at) * 1000 as createdAt
-    FROM subdomains 
-    WHERE subdomain = ${sanitizedSubdomain}
-  `
-
-  if (result.length === 0) {
-    return null
-  }
-
-  return {
-    emoji: result[0].emoji,
-    createdAt: Number(result[0].createdat),
-  }
+  const data = await redis.get<SubdomainData>(`subdomain:${sanitizedSubdomain}`)
+  return data
 }
 
 export async function getAllSubdomains() {
-  const result = await sql`
-    SELECT subdomain, emoji, EXTRACT(EPOCH FROM created_at) * 1000 as createdAt
-    FROM subdomains 
-    ORDER BY created_at DESC
-  `
+  const keys = await redis.keys("subdomain:*")
+  if (!keys.length) {
+    return []
+  }
 
-  return result.map((row) => ({
-    subdomain: row.subdomain,
-    emoji: row.emoji || "❓",
-    createdAt: Number(row.createdat) || Date.now(),
-  }))
+  const values = await redis.mget<SubdomainData>(...keys)
+  return keys.map((key, index) => {
+    const subdomain = key.replace("subdomain:", "")
+    const data = values[index]
+    return {
+      subdomain,
+      emoji: data?.emoji || "❓",
+      createdAt: data?.createdAt || Date.now(),
+    }
+  })
 }
