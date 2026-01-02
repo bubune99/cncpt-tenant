@@ -65,17 +65,15 @@ export function RepositoryManagement({ user, subdomains, selectedSubdomain }: Re
     environmentVariables: "",
   })
 
-  const currentSubdomain = subdomains?.find((s) => s.subdomain === selectedSubdomain)
-
   useEffect(() => {
     checkGitHubConnection()
   }, [])
 
   useEffect(() => {
-    if (currentSubdomain) {
+    if (selectedSubdomain) {
       checkDeploymentStatus()
     }
-  }, [currentSubdomain])
+  }, [selectedSubdomain])
 
   const checkGitHubConnection = async () => {
     try {
@@ -88,21 +86,21 @@ export function RepositoryManagement({ user, subdomains, selectedSubdomain }: Re
   }
 
   const checkDeploymentStatus = async () => {
-    if (!currentSubdomain) return
+    if (!selectedSubdomain) return
 
     try {
-      console.log("[v0] Checking deployment status for subdomain:", currentSubdomain.subdomain)
-      const status = await getDeploymentStatus(currentSubdomain.id)
+      console.log("[v0] Checking deployment status for subdomain:", selectedSubdomain)
+      const status = await getDeploymentStatus(selectedSubdomain)
       console.log("[v0] Deployment status received:", status)
       setDeploymentStatus(status)
     } catch (error) {
       console.log("[v0] Failed to check deployment status:", error)
-      if (error.message === "Not authenticated") {
+      if ((error as Error).message === "Not authenticated") {
         // Set a default status when authentication fails
         setDeploymentStatus({ status: "not_configured" })
       } else {
         // For other errors, still set a fallback status
-        setDeploymentStatus({ status: "error", error: error.message })
+        setDeploymentStatus({ status: "error", error: (error as Error).message })
       }
     }
   }
@@ -127,12 +125,12 @@ export function RepositoryManagement({ user, subdomains, selectedSubdomain }: Re
   }
 
   const handleDeploymentSetup = async () => {
-    if (!selectedRepo || !currentSubdomain) return
+    if (!selectedRepo || !selectedSubdomain) return
 
     setIsLoading(true)
     try {
       await createVercelProject({
-        subdomainId: currentSubdomain.id,
+        subdomain: selectedSubdomain,
         repositoryName: selectedRepo.name,
         repositoryFullName: selectedRepo.full_name,
         repositoryUrl: selectedRepo.html_url,
@@ -142,45 +140,45 @@ export function RepositoryManagement({ user, subdomains, selectedSubdomain }: Re
         environmentVariables: deploymentConfig.environmentVariables,
       })
 
-      await deployRepository(currentSubdomain.id)
+      await deployRepository(selectedSubdomain)
       await checkDeploymentStatus()
 
       alert("Deployment setup successful! Your repository is now being deployed.")
     } catch (error) {
       console.error("Failed to setup deployment:", error)
-      alert(`Failed to setup deployment: ${error.message}`)
+      alert(`Failed to setup deployment: ${(error as Error).message}`)
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleRedeploy = async () => {
-    if (!currentSubdomain) return
+    if (!selectedSubdomain) return
 
     setIsLoading(true)
     try {
-      await deployRepository(currentSubdomain.id)
+      await deployRepository(selectedSubdomain)
       await checkDeploymentStatus()
       alert("Redeployment triggered successfully!")
     } catch (error) {
       console.error("Failed to redeploy:", error)
-      alert(`Failed to redeploy: ${error.message}`)
+      alert(`Failed to redeploy: ${(error as Error).message}`)
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleConfigureDomain = async () => {
-    if (!currentSubdomain || !customDomain) return
+    if (!selectedSubdomain || !customDomain) return
 
     setIsLoading(true)
     try {
-      await configureCustomDomain(currentSubdomain.id, customDomain)
+      await configureCustomDomain(selectedSubdomain, customDomain)
       alert(`Custom domain ${customDomain} configured successfully!`)
       setCustomDomain("")
     } catch (error) {
       console.error("Failed to configure domain:", error)
-      alert(`Failed to configure domain: ${error.message}`)
+      alert(`Failed to configure domain: ${(error as Error).message}`)
     } finally {
       setIsLoading(false)
     }

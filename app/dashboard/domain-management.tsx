@@ -48,20 +48,18 @@ export function DomainManagement({ subdomains, selectedSubdomain }: DomainManage
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [verifyingDomain, setVerifyingDomain] = useState<string | null>(null)
 
-  const currentSubdomain = subdomains?.find((s) => s.subdomain === selectedSubdomain)
-
   useEffect(() => {
-    if (currentSubdomain?.id) {
+    if (selectedSubdomain) {
       loadDomains()
     }
-  }, [currentSubdomain?.id])
+  }, [selectedSubdomain])
 
   const loadDomains = async () => {
-    if (!currentSubdomain?.id) return
+    if (!selectedSubdomain) return
 
     setIsLoading(true)
     try {
-      const result = await getDomainsForSubdomain(currentSubdomain.id)
+      const result = await getDomainsForSubdomain(selectedSubdomain)
       setDomains(result)
     } catch (e) {
       console.error("Failed to load domains:", e)
@@ -71,13 +69,13 @@ export function DomainManagement({ subdomains, selectedSubdomain }: DomainManage
   }
 
   const handleAddDomain = async () => {
-    if (!currentSubdomain?.id || !newDomain) return
+    if (!selectedSubdomain || !newDomain) return
 
     setIsAdding(true)
     setError(null)
 
     try {
-      const result = await addCustomDomain(currentSubdomain.id, newDomain)
+      const result = await addCustomDomain(selectedSubdomain, newDomain)
       if (result.success && result.domain) {
         setDomains([...domains, result.domain])
         setNewDomain("")
@@ -94,11 +92,11 @@ export function DomainManagement({ subdomains, selectedSubdomain }: DomainManage
   }
 
   const handleRemoveDomain = async (domain: string) => {
-    if (!currentSubdomain?.id) return
+    if (!selectedSubdomain) return
     if (!confirm(`Are you sure you want to remove ${domain}?`)) return
 
     try {
-      const result = await removeCustomDomain(currentSubdomain.id, domain)
+      const result = await removeCustomDomain(selectedSubdomain, domain)
       if (result.success) {
         setDomains(domains.filter((d) => d.domain !== domain))
         setSuccessMessage(`Domain ${domain} removed`)
@@ -112,11 +110,11 @@ export function DomainManagement({ subdomains, selectedSubdomain }: DomainManage
   }
 
   const handleVerifyDomain = async (domain: string) => {
-    if (!currentSubdomain?.id) return
+    if (!selectedSubdomain) return
 
     setVerifyingDomain(domain)
     try {
-      const result = await verifyDomainDns(currentSubdomain.id, domain)
+      const result = await verifyDomainDns(selectedSubdomain, domain)
       if (result.success) {
         // Reload domains to get updated status
         await loadDomains()
@@ -140,10 +138,10 @@ export function DomainManagement({ subdomains, selectedSubdomain }: DomainManage
   }
 
   const handleSetPrimary = async (domain: string) => {
-    if (!currentSubdomain?.id) return
+    if (!selectedSubdomain) return
 
     try {
-      const result = await setPrimaryDomain(currentSubdomain.id, domain)
+      const result = await setPrimaryDomain(selectedSubdomain, domain)
       if (result.success) {
         setDomains(
           domains.map((d) => ({

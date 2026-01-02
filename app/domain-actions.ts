@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache"
 export interface DomainInfo {
   id: string
   domain: string
-  subdomain_id: number
+  subdomain: string
   is_primary: boolean
   status: "pending" | "verifying" | "active" | "error"
   ssl_status: "pending" | "provisioning" | "active" | "error"
@@ -19,25 +19,43 @@ export interface DomainInfo {
   vercel_status?: DomainStatus
 }
 
+// Helper to ensure custom_domains table exists (uses subdomain name as key)
+async function ensureDomainsTableExists() {
+  await sql`
+    CREATE TABLE IF NOT EXISTS custom_domains (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      subdomain VARCHAR(255) NOT NULL,
+      domain VARCHAR(255) NOT NULL UNIQUE,
+      is_primary BOOLEAN DEFAULT false,
+      status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'verifying', 'active', 'error')),
+      ssl_status VARCHAR(50) DEFAULT 'pending' CHECK (ssl_status IN ('pending', 'provisioning', 'active', 'error')),
+      verification_type VARCHAR(50),
+      verification_value TEXT,
+      vercel_project_id VARCHAR(255),
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      verified_at TIMESTAMP WITH TIME ZONE
+    )
+  `
+
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_custom_domains_subdomain ON custom_domains(subdomain)
+  `
+}
+
 // Get all domains for a subdomain
-export async function getDomainsForSubdomain(subdomainId: number): Promise<DomainInfo[]> {
+export async function getDomainsForSubdomain(subdomain: string): Promise<DomainInfo[]> {
   const user = await getCurrentUser()
   if (!user) {
     throw new Error("Not authenticated")
   }
 
   try {
-    // Check if custom_domains table exists, if not create it
     await ensureDomainsTableExists()
 
     const domains = await sql`
-      SELECT
-        cd.*,
-        rc.vercel_project_id
-      FROM custom_domains cd
-      LEFT JOIN repository_connections rc ON cd.subdomain_id = rc.subdomain_id
-      WHERE cd.subdomain_id = ${subdomainId}
-      ORDER BY cd.is_primary DESC, cd.created_at DESC
+      SELECT * FROM custom_domains
+      WHERE subdomain = ${subdomain}
+      ORDER BY is_primary DESC, created_at DESC
     `
 
     // Enrich with Vercel status if project exists
@@ -58,7 +76,7 @@ export async function getDomainsForSubdomain(subdomainId: number): Promise<Domai
       enrichedDomains.push({
         id: domain.id,
         domain: domain.domain,
-        subdomain_id: domain.subdomain_id,
+        subdomain: domain.subdomain,
         is_primary: domain.is_primary,
         status: domain.status,
         ssl_status: domain.ssl_status,
@@ -79,8 +97,9 @@ export async function getDomainsForSubdomain(subdomainId: number): Promise<Domai
 
 // Add a new custom domain
 export async function addCustomDomain(
-  subdomainId: number,
-  domain: string
+  subdomain: string,
+  domain: string,
+  vercelProjectId?: string
 ): Promise<{ success: boolean; domain?: DomainInfo; error?: string }> {
   const user = await getCurrentUser()
   if (!user) {
@@ -104,43 +123,48 @@ export async function addCustomDomain(
       return { success: false, error: "Domain already registered" }
     }
 
-    // Get Vercel project ID
-    const repoConnection = await sql`
-      SELECT vercel_project_id FROM repository_connections WHERE subdomain_id = ${subdomainId}
-    `
+    let projectId = vercelProjectId
+    let verificationType = null
+    let verificationValue = null
 
-    if (!repoConnection[0]?.vercel_project_id) {
-      return { success: false, error: "Deploy your site first before adding custom domains" }
+    // If no projectId provided, try to get from repository_connections
+    if (!projectId) {
+      const repoConnection = await sql`
+        SELECT vercel_project_id FROM repository_connections WHERE subdomain = ${subdomain}
+      `
+      projectId = repoConnection[0]?.vercel_project_id
     }
 
-    const vercel = getVercelAPI()
-    const projectId = repoConnection[0].vercel_project_id
+    // If we have a Vercel project, add the domain there
+    if (projectId) {
+      try {
+        const vercel = getVercelAPI()
+        const vercelDomain = await vercel.addDomain(projectId, domain.toLowerCase())
 
-    // Add domain to Vercel
-    const vercelDomain = await vercel.addDomain(projectId, domain.toLowerCase())
+        if (vercelDomain.verification && vercelDomain.verification.length > 0) {
+          verificationType = vercelDomain.verification[0].type
+          verificationValue = vercelDomain.verification[0].value
+        }
+      } catch (e) {
+        console.error("Failed to add domain to Vercel:", e)
+        // Continue anyway - domain will need to be added to Vercel later
+      }
+    }
 
     // Determine if this is the first domain (make it primary)
     const existingDomains = await sql`
-      SELECT COUNT(*) as count FROM custom_domains WHERE subdomain_id = ${subdomainId}
+      SELECT COUNT(*) as count FROM custom_domains WHERE subdomain = ${subdomain}
     `
     const isPrimary = existingDomains[0].count === 0
-
-    // Get verification info
-    let verificationType = null
-    let verificationValue = null
-    if (vercelDomain.verification && vercelDomain.verification.length > 0) {
-      verificationType = vercelDomain.verification[0].type
-      verificationValue = vercelDomain.verification[0].value
-    }
 
     // Store in database
     const result = await sql`
       INSERT INTO custom_domains (
-        subdomain_id, domain, is_primary, status, ssl_status,
-        verification_type, verification_value
+        subdomain, domain, is_primary, status, ssl_status,
+        verification_type, verification_value, vercel_project_id
       ) VALUES (
-        ${subdomainId}, ${domain.toLowerCase()}, ${isPrimary}, 'pending', 'pending',
-        ${verificationType}, ${verificationValue}
+        ${subdomain}, ${domain.toLowerCase()}, ${isPrimary}, 'pending', 'pending',
+        ${verificationType}, ${verificationValue}, ${projectId || null}
       )
       RETURNING *
     `
@@ -152,7 +176,7 @@ export async function addCustomDomain(
       domain: {
         id: result[0].id,
         domain: result[0].domain,
-        subdomain_id: result[0].subdomain_id,
+        subdomain: result[0].subdomain,
         is_primary: result[0].is_primary,
         status: result[0].status,
         ssl_status: result[0].ssl_status,
@@ -170,7 +194,7 @@ export async function addCustomDomain(
 
 // Remove a custom domain
 export async function removeCustomDomain(
-  subdomainId: number,
+  subdomain: string,
   domain: string
 ): Promise<{ success: boolean; error?: string }> {
   const user = await getCurrentUser()
@@ -179,15 +203,15 @@ export async function removeCustomDomain(
   }
 
   try {
-    // Get Vercel project ID
-    const repoConnection = await sql`
-      SELECT vercel_project_id FROM repository_connections WHERE subdomain_id = ${subdomainId}
+    // Get the domain record to find vercel_project_id
+    const domainRecord = await sql`
+      SELECT vercel_project_id FROM custom_domains WHERE subdomain = ${subdomain} AND domain = ${domain}
     `
 
-    if (repoConnection[0]?.vercel_project_id) {
+    if (domainRecord[0]?.vercel_project_id) {
       const vercel = getVercelAPI()
       try {
-        await vercel.removeDomain(repoConnection[0].vercel_project_id, domain)
+        await vercel.removeDomain(domainRecord[0].vercel_project_id, domain)
       } catch (e) {
         console.error("Failed to remove domain from Vercel:", e)
         // Continue anyway to clean up database
@@ -196,7 +220,7 @@ export async function removeCustomDomain(
 
     // Remove from database
     await sql`
-      DELETE FROM custom_domains WHERE subdomain_id = ${subdomainId} AND domain = ${domain}
+      DELETE FROM custom_domains WHERE subdomain = ${subdomain} AND domain = ${domain}
     `
 
     revalidatePath("/dashboard")
@@ -209,7 +233,7 @@ export async function removeCustomDomain(
 
 // Verify domain DNS configuration
 export async function verifyDomainDns(
-  subdomainId: number,
+  subdomain: string,
   domain: string
 ): Promise<{ success: boolean; status?: DomainStatus; error?: string }> {
   const user = await getCurrentUser()
@@ -218,17 +242,17 @@ export async function verifyDomainDns(
   }
 
   try {
-    // Get Vercel project ID
-    const repoConnection = await sql`
-      SELECT vercel_project_id FROM repository_connections WHERE subdomain_id = ${subdomainId}
+    // Get the domain record
+    const domainRecord = await sql`
+      SELECT vercel_project_id FROM custom_domains WHERE subdomain = ${subdomain} AND domain = ${domain}
     `
 
-    if (!repoConnection[0]?.vercel_project_id) {
-      return { success: false, error: "Vercel project not configured" }
+    if (!domainRecord[0]?.vercel_project_id) {
+      return { success: false, error: "Vercel project not configured for this domain" }
     }
 
     const vercel = getVercelAPI()
-    const projectId = repoConnection[0].vercel_project_id
+    const projectId = domainRecord[0].vercel_project_id
 
     // Trigger verification
     try {
@@ -251,7 +275,7 @@ export async function verifyDomainDns(
         status = ${newStatus},
         ssl_status = ${sslStatus},
         verified_at = ${status.verified ? new Date().toISOString() : null}
-      WHERE subdomain_id = ${subdomainId} AND domain = ${domain}
+      WHERE subdomain = ${subdomain} AND domain = ${domain}
     `
 
     revalidatePath("/dashboard")
@@ -264,7 +288,7 @@ export async function verifyDomainDns(
 
 // Set primary domain
 export async function setPrimaryDomain(
-  subdomainId: number,
+  subdomain: string,
   domain: string
 ): Promise<{ success: boolean; error?: string }> {
   const user = await getCurrentUser()
@@ -275,12 +299,12 @@ export async function setPrimaryDomain(
   try {
     // Remove primary from all other domains for this subdomain
     await sql`
-      UPDATE custom_domains SET is_primary = false WHERE subdomain_id = ${subdomainId}
+      UPDATE custom_domains SET is_primary = false WHERE subdomain = ${subdomain}
     `
 
     // Set this domain as primary
     await sql`
-      UPDATE custom_domains SET is_primary = true WHERE subdomain_id = ${subdomainId} AND domain = ${domain}
+      UPDATE custom_domains SET is_primary = true WHERE subdomain = ${subdomain} AND domain = ${domain}
     `
 
     revalidatePath("/dashboard")
@@ -292,29 +316,6 @@ export async function setPrimaryDomain(
 }
 
 // Refresh all domain statuses
-export async function refreshDomainStatuses(subdomainId: number): Promise<DomainInfo[]> {
-  return getDomainsForSubdomain(subdomainId)
-}
-
-// Helper to ensure custom_domains table exists
-async function ensureDomainsTableExists() {
-  await sql`
-    CREATE TABLE IF NOT EXISTS custom_domains (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      subdomain_id INTEGER NOT NULL,
-      domain VARCHAR(255) NOT NULL UNIQUE,
-      is_primary BOOLEAN DEFAULT false,
-      status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'verifying', 'active', 'error')),
-      ssl_status VARCHAR(50) DEFAULT 'pending' CHECK (ssl_status IN ('pending', 'provisioning', 'active', 'error')),
-      verification_type VARCHAR(50),
-      verification_value TEXT,
-      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-      verified_at TIMESTAMP WITH TIME ZONE,
-      CONSTRAINT fk_subdomain FOREIGN KEY (subdomain_id) REFERENCES subdomains(id) ON DELETE CASCADE
-    )
-  `
-
-  await sql`
-    CREATE INDEX IF NOT EXISTS idx_custom_domains_subdomain ON custom_domains(subdomain_id)
-  `
+export async function refreshDomainStatuses(subdomain: string): Promise<DomainInfo[]> {
+  return getDomainsForSubdomain(subdomain)
 }

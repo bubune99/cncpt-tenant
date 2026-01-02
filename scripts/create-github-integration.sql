@@ -1,6 +1,7 @@
+-- GitHub Connections table (unchanged - still uses user IDs from PostgreSQL users table)
 CREATE TABLE IF NOT EXISTS github_connections (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL,
     github_user_id INTEGER NOT NULL,
     github_username VARCHAR(255) NOT NULL,
     access_token TEXT NOT NULL,
@@ -12,9 +13,10 @@ CREATE TABLE IF NOT EXISTS github_connections (
     UNIQUE(user_id, github_user_id)
 );
 
+-- Repository Connections table (uses subdomain names since subdomains are stored in Redis)
 CREATE TABLE IF NOT EXISTS repository_connections (
     id SERIAL PRIMARY KEY,
-    subdomain_id INTEGER NOT NULL REFERENCES subdomains(id) ON DELETE CASCADE,
+    subdomain VARCHAR(255) NOT NULL UNIQUE,
     github_connection_id INTEGER NOT NULL REFERENCES github_connections(id) ON DELETE CASCADE,
     repository_name VARCHAR(255) NOT NULL,
     repository_full_name VARCHAR(255) NOT NULL,
@@ -28,10 +30,9 @@ CREATE TABLE IF NOT EXISTS repository_connections (
     vercel_project_id VARCHAR(255),
     vercel_deployment_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(subdomain_id)
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_github_connections_user_id ON github_connections(user_id);
-CREATE INDEX IF NOT EXISTS idx_repository_connections_subdomain_id ON repository_connections(subdomain_id);
+CREATE INDEX IF NOT EXISTS idx_repository_connections_subdomain ON repository_connections(subdomain);
 CREATE INDEX IF NOT EXISTS idx_repository_connections_github_connection_id ON repository_connections(github_connection_id);

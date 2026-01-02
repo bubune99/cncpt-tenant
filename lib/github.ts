@@ -22,7 +22,7 @@ export interface GitHubRepository {
 
 export interface RepositoryConnection {
   id: number
-  subdomain_id: number
+  subdomain: string
   github_connection_id: number
   repository_name: string
   repository_full_name: string
@@ -31,6 +31,7 @@ export interface RepositoryConnection {
   build_command?: string
   output_directory: string
   deployment_status: string
+  vercel_project_id?: string
   vercel_deployment_url?: string
 }
 
@@ -105,13 +106,13 @@ export async function fetchGitHubRepositories(accessToken: string): Promise<GitH
   }
 }
 
-export async function getRepositoryConnection(subdomainId: number): Promise<RepositoryConnection | null> {
+export async function getRepositoryConnection(subdomain: string): Promise<RepositoryConnection | null> {
   try {
     const result = await sql`
-      SELECT rc.*, gc.github_username 
+      SELECT rc.*, gc.github_username
       FROM repository_connections rc
       JOIN github_connections gc ON rc.github_connection_id = gc.id
-      WHERE rc.subdomain_id = ${subdomainId}
+      WHERE rc.subdomain = ${subdomain}
     `
     return result[0] || null
   } catch (error) {
@@ -121,7 +122,7 @@ export async function getRepositoryConnection(subdomainId: number): Promise<Repo
 }
 
 export async function createRepositoryConnection(data: {
-  subdomain_id: number
+  subdomain: string
   github_connection_id: number
   repository_name: string
   repository_full_name: string
@@ -132,15 +133,15 @@ export async function createRepositoryConnection(data: {
 }): Promise<RepositoryConnection> {
   const result = await sql`
     INSERT INTO repository_connections (
-      subdomain_id, github_connection_id, repository_name, 
-      repository_full_name, repository_url, branch, 
+      subdomain, github_connection_id, repository_name,
+      repository_full_name, repository_url, branch,
       build_command, output_directory
     ) VALUES (
-      ${data.subdomain_id}, ${data.github_connection_id}, ${data.repository_name},
+      ${data.subdomain}, ${data.github_connection_id}, ${data.repository_name},
       ${data.repository_full_name}, ${data.repository_url}, ${data.branch || "main"},
       ${data.build_command}, ${data.output_directory || "dist"}
     )
-    ON CONFLICT (subdomain_id)
+    ON CONFLICT (subdomain)
     DO UPDATE SET
       github_connection_id = EXCLUDED.github_connection_id,
       repository_name = EXCLUDED.repository_name,
