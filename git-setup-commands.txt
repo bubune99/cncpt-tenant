@@ -1,0 +1,32 @@
+# Git Setup Commands for CNCPT-TENANT
+
+## Step 1: Configure Git Identity (Run these first)
+git config --global user.email "your-email@example.com"
+git config --global user.name "Your Name"
+
+## Step 2: Commit to at-a-glance branch
+git commit -m "Initial commit: CNCPT-TENANT platform structure with v0 integration setup"
+
+## Step 3: Push the at-a-glance branch
+git push -u origin at-a-glance
+
+## If you need to set at-a-glance as the default branch on GitHub:
+# After pushing, go to GitHub repository settings:
+# Settings → Branches → Change default branch to 'at-a-glance'
+
+## Current Branch Status:
+# You are currently on: at-a-glance
+# This branch contains the project structure and documentation
+# The main branch will be populated later with production code
+
+## Useful Commands:
+git status                    # Check current status
+git branch                    # List all branches
+git checkout main            # Switch to main branch (when needed)
+git checkout at-a-glance     # Switch back to at-a-glance branch
+
+## Notes:
+- Repository: https://github.com/bubune99/cncpt-tenant.git
+- Current branch: at-a-glance (for documentation and structure)
+- Main branch: Reserved for production-ready code later
+- All files are staged and ready to commit

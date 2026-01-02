@@ -1,6 +1,6 @@
 "use server"
 
-import { stackServerApp } from "@/lib/stack"
+import { stackServerApp } from "@/stack"
 import { redirect } from "next/navigation"
 
 export async function registerAction(prevState: any, formData: FormData) {

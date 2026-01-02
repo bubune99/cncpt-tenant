@@ -3,9 +3,7 @@
 import { getCurrentUser } from "@/lib/auth"
 import { getVercelAPI } from "@/lib/vercel"
 import { getGitHubConnection, createRepositoryConnection, getRepositoryConnection } from "@/lib/github"
-import { neon } from "@neondatabase/serverless"
-
-const sql = neon(process.env.DATABASE_URL!)
+import { sql } from "@/lib/neon"
 
 export async function createVercelProject(data: {
   subdomainId: number
@@ -202,7 +200,7 @@ export async function getDeploymentStatus(subdomainId: number) {
     return { status: "no_deployments" }
   } catch (error) {
     console.error("Failed to get deployment status:", error)
-    return { status: "error", error: error.message }
+    return { status: "error", error: error instanceof Error ? error.message : "Unknown error" }
   }
 }
 

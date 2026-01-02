@@ -1,7 +1,5 @@
-import { neon } from "@neondatabase/serverless"
+import { sql } from "@/lib/neon"
 import { notFound } from "next/navigation"
-
-const sql = neon(process.env.DATABASE_URL!)
 
 export interface TenantData {
   id: number

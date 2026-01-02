@@ -2,9 +2,7 @@
 
 import { getCurrentUser } from "@/lib/auth"
 import { getVercelAPI } from "@/lib/vercel"
-import { neon } from "@neondatabase/serverless"
-
-const sql = neon(process.env.DATABASE_URL!)
+import { sql } from "@/lib/neon"
 
 export interface DeploymentOverview {
   totalDeployments: number

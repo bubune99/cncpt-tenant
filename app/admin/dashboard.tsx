@@ -1,9 +1,10 @@
 "use client"
 
 import { useFormState } from "react-dom"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import {
   Trash2,
   Loader2,
@@ -20,10 +21,15 @@ import {
   UserCheck,
   TrendingUp,
   Server,
+  CreditCard,
+  AlertCircle,
 } from "lucide-react"
 import { deleteSubdomainAction } from "@/app/actions"
 import { rootDomain, protocol } from "@/lib/utils"
 import { useUser } from "@stackframe/stack"
+import { TiersPageContent } from "./tiers/page"
+import { ClientsPageContent } from "./clients/page"
+import type { SubscriptionTier, ClientStats } from "@/types/admin"
 
 type Tenant = {
   subdomain: string
@@ -36,19 +42,22 @@ type DeleteState = {
   success?: string
 }
 
-type AdminSection = "overview" | "subdomains" | "users" | "analytics" | "settings"
+type AdminSection = "overview" | "clients" | "tiers" | "subdomains" | "users" | "analytics" | "settings"
 
 function AdminSidebar({
   activeSection,
   onSectionChange,
+  pendingClientsCount = 0,
 }: {
   activeSection: AdminSection
   onSectionChange: (section: AdminSection) => void
+  pendingClientsCount?: number
 }) {
   const sidebarItems = [
     { id: "overview" as AdminSection, label: "Overview", icon: Home },
+    { id: "clients" as AdminSection, label: "Clients", icon: Users, badge: pendingClientsCount },
+    { id: "tiers" as AdminSection, label: "Subscription Tiers", icon: CreditCard },
     { id: "subdomains" as AdminSection, label: "Subdomains", icon: Globe },
-    { id: "users" as AdminSection, label: "Users", icon: Users },
     { id: "analytics" as AdminSection, label: "Analytics", icon: BarChart3 },
     { id: "settings" as AdminSection, label: "Settings", icon: Settings },
   ]
@@ -67,14 +76,21 @@ function AdminSidebar({
               <li key={item.id}>
                 <button
                   onClick={() => onSectionChange(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors ${
                     activeSection === item.id
                       ? "bg-blue-50 text-blue-700 border border-blue-200"
                       : "text-gray-700 hover:bg-gray-50"
                   }`}
                 >
-                  <Icon className="h-5 w-5" />
-                  {item.label}
+                  <div className="flex items-center gap-3">
+                    <Icon className="h-5 w-5" />
+                    {item.label}
+                  </div>
+                  {item.badge && item.badge > 0 && (
+                    <Badge variant="destructive" className="text-xs">
+                      {item.badge}
+                    </Badge>
+                  )}
                 </button>
               </li>
             )
@@ -298,6 +314,18 @@ function SubdomainsSection({
   )
 }
 
+function ClientsSection({ adminUserId }: { adminUserId: string }) {
+  return <ClientsPageContent adminUserId={adminUserId} />
+}
+
+function TiersSection({
+  tiers,
+}: {
+  tiers: (SubscriptionTier & { clientCount: number })[]
+}) {
+  return <TiersPageContent initialTiers={tiers} />
+}
+
 function UsersSection() {
   return (
     <div className="space-y-6">
@@ -371,6 +399,39 @@ export function AdminDashboard({ tenants }: { tenants: Tenant[] }) {
   const [state, action] = useFormState<DeleteState, FormData>(deleteSubdomainAction, {})
   const [isPending, setIsPending] = useState(false)
   const [activeSection, setActiveSection] = useState<AdminSection>("overview")
+  const [tiers, setTiers] = useState<(SubscriptionTier & { clientCount: number })[]>([])
+  const [clientStats, setClientStats] = useState<ClientStats | undefined>()
+  const [tiersLoaded, setTiersLoaded] = useState(false)
+
+  const user = useUser()
+  const adminUserId = user?.id || "admin"
+
+  // Load tiers when switching to tiers section
+  useEffect(() => {
+    if (activeSection === "tiers" && !tiersLoaded) {
+      fetch("/api/admin/tiers")
+        .then((res) => res.ok ? res.json() : null)
+        .then((data) => {
+          if (data?.tiers) {
+            setTiers(data.tiers)
+            setTiersLoaded(true)
+          }
+        })
+        .catch(console.error)
+    }
+  }, [activeSection, tiersLoaded])
+
+  // Load client stats for sidebar badge
+  useEffect(() => {
+    fetch("/api/admin/clients/stats")
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (data?.stats) {
+          setClientStats(data.stats)
+        }
+      })
+      .catch(console.error)
+  }, [])
 
   const handleAction = async (formData: FormData) => {
     setIsPending(true)
@@ -382,10 +443,12 @@ export function AdminDashboard({ tenants }: { tenants: Tenant[] }) {
     switch (activeSection) {
       case "overview":
         return <OverviewSection tenants={tenants} />
+      case "clients":
+        return <ClientsSection adminUserId={adminUserId} />
+      case "tiers":
+        return <TiersSection tiers={tiers} />
       case "subdomains":
         return <SubdomainsSection tenants={tenants} action={handleAction} isPending={isPending} />
-      case "users":
-        return <UsersSection />
       case "analytics":
         return <AnalyticsSection />
       case "settings":
@@ -397,7 +460,11 @@ export function AdminDashboard({ tenants }: { tenants: Tenant[] }) {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+      <AdminSidebar
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
+        pendingClientsCount={clientStats?.pendingApproval}
+      />
 
       <div className="flex-1">
         <AdminHeader />
