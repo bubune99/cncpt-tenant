@@ -22,6 +22,7 @@ import {
   CreditCard,
   Github,
   Plus,
+  Server,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
@@ -65,6 +66,7 @@ export function DashboardSidebar({
         { id: "repositories", label: "GitHub Integration", icon: Github },
         { id: "settings", label: "Site Settings", icon: Settings },
         { id: "appearance", label: "Appearance", icon: Palette },
+        { id: "frontend", label: "Frontend (VPS)", icon: Server },
       ],
     },
     {

@@ -66,6 +66,8 @@ export function DashboardContent({
         return <SiteSettings selectedSubdomain={selectedSubdomain} activeTab="appearance" />
       case "security":
         return <SiteSettings selectedSubdomain={selectedSubdomain} activeTab="security" />
+      case "frontend":
+        return <SiteSettings selectedSubdomain={selectedSubdomain} activeTab="frontend" />
       case "developer":
         return <DeveloperTools selectedSubdomain={selectedSubdomain} />
       case "analytics":
