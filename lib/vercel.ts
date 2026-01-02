@@ -13,6 +13,52 @@ interface VercelProject {
   }
 }
 
+interface VercelDomain {
+  name: string
+  apexName: string
+  projectId: string
+  redirect?: string | null
+  redirectStatusCode?: number | null
+  gitBranch?: string | null
+  updatedAt?: number
+  createdAt?: number
+  verified: boolean
+  verification?: {
+    type: string
+    domain: string
+    value: string
+    reason: string
+  }[]
+}
+
+interface VercelDomainConfig {
+  configuredBy?: "CNAME" | "A" | "http" | null
+  acceptedChallenges?: ("dns-01" | "http-01")[]
+  misconfigured: boolean
+}
+
+interface DomainVerificationRecord {
+  type: "TXT" | "CNAME" | "A" | "AAAA"
+  name: string
+  value: string
+  ttl?: number
+}
+
+export interface DomainStatus {
+  domain: string
+  verified: boolean
+  configured: boolean
+  configuredBy: "CNAME" | "A" | "http" | null
+  misconfigured: boolean
+  sslReady: boolean
+  verificationRecords: DomainVerificationRecord[]
+  dnsRecords: {
+    type: "CNAME" | "A"
+    name: string
+    value: string
+  }[]
+}
+
 interface VercelDeployment {
   uid: string
   name: string
@@ -171,6 +217,86 @@ class VercelAPI {
     await this.request(`/v9/projects/${projectId}/domains/${domain}`, {
       method: "DELETE",
     })
+  }
+
+  async getProjectDomains(projectId: string): Promise<{ domains: VercelDomain[] }> {
+    return this.request(`/v9/projects/${projectId}/domains`)
+  }
+
+  async getDomainConfig(domain: string): Promise<VercelDomainConfig> {
+    return this.request(`/v6/domains/${domain}/config`)
+  }
+
+  async verifyDomain(projectId: string, domain: string): Promise<VercelDomain> {
+    return this.request(`/v9/projects/${projectId}/domains/${domain}/verify`, {
+      method: "POST",
+    })
+  }
+
+  async getDomainStatus(projectId: string, domain: string): Promise<DomainStatus> {
+    try {
+      // Get domain info from project
+      const domainsResponse = await this.getProjectDomains(projectId)
+      const domainInfo = domainsResponse.domains.find(d => d.name === domain)
+
+      if (!domainInfo) {
+        throw new Error(`Domain ${domain} not found in project`)
+      }
+
+      // Get domain configuration
+      let config: VercelDomainConfig = { misconfigured: true }
+      try {
+        config = await this.getDomainConfig(domain)
+      } catch (e) {
+        // Domain config might not be available yet
+      }
+
+      // Build verification records needed
+      const verificationRecords: DomainVerificationRecord[] = []
+      if (domainInfo.verification) {
+        for (const v of domainInfo.verification) {
+          verificationRecords.push({
+            type: v.type as "TXT" | "CNAME",
+            name: v.domain,
+            value: v.value,
+          })
+        }
+      }
+
+      // Determine DNS records to show user
+      const isApex = domain === domainInfo.apexName
+      const dnsRecords: { type: "CNAME" | "A"; name: string; value: string }[] = []
+
+      if (isApex) {
+        // Apex domain needs A record
+        dnsRecords.push({
+          type: "A",
+          name: "@",
+          value: "76.76.21.21", // Vercel's IP
+        })
+      } else {
+        // Subdomain needs CNAME
+        dnsRecords.push({
+          type: "CNAME",
+          name: domain.replace(`.${domainInfo.apexName}`, ""),
+          value: "cname.vercel-dns.com",
+        })
+      }
+
+      return {
+        domain,
+        verified: domainInfo.verified,
+        configured: !!config.configuredBy,
+        configuredBy: config.configuredBy || null,
+        misconfigured: config.misconfigured,
+        sslReady: domainInfo.verified && !config.misconfigured,
+        verificationRecords,
+        dnsRecords,
+      }
+    } catch (error) {
+      console.error(`Failed to get domain status for ${domain}:`, error)
+      throw error
+    }
   }
 
   async setEnvironmentVariables(
