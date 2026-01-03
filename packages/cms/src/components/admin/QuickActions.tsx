@@ -13,30 +13,32 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useCMSConfig } from '../../contexts/CMSConfigContext';
 
 export default function QuickActions() {
   const router = useRouter();
+  const { buildPath } = useCMSConfig();
 
   const actions = [
     {
       title: 'Add Product',
       description: 'Create a new product',
       icon: Plus,
-      action: () => router.push('/admin/products/new'),
+      action: () => router.push(buildPath('/admin/products/new')),
       variant: 'default' as const
     },
     {
       title: 'View Analytics',
       description: 'Performance metrics',
       icon: TrendingUp,
-      action: () => router.push('/admin/analytics'),
+      action: () => router.push(buildPath('/admin/analytics')),
       variant: 'outline' as const
     },
     {
       title: 'New Blog Post',
       description: 'Write a new article',
       icon: FileText,
-      action: () => router.push('/admin/blog/new'),
+      action: () => router.push(buildPath('/admin/blog/new')),
       variant: 'outline' as const
     },
     {
@@ -50,14 +52,14 @@ export default function QuickActions() {
       title: 'Email Marketing',
       description: 'Send email campaigns',
       icon: Mail,
-      action: () => router.push('/admin/email-marketing'),
+      action: () => router.push(buildPath('/admin/email-marketing')),
       variant: 'outline' as const
     },
     {
       title: 'System Settings',
       description: 'Configure settings',
       icon: Settings,
-      action: () => router.push('/admin/settings'),
+      action: () => router.push(buildPath('/admin/settings')),
       variant: 'outline' as const
     }
   ];

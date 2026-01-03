@@ -3,5 +3,9 @@
  */
 
 export { useAuth } from '../hooks/use-auth'
-export { useDebounce } from '../hooks/use-debounce'
-export { useMobile } from '../hooks/use-mobile'
+export { useIsMobile } from '../hooks/use-mobile'
+export { useMediaUpload } from '../hooks/use-media-upload'
+export { useMedia } from '../hooks/use-media'
+export { useScrollToBottom } from '../hooks/use-scroll-to-bottom'
+export { usePermissions } from '../hooks/usePermissions'
+export { useCMSConfig } from '../contexts/CMSConfigContext'

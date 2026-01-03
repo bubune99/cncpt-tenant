@@ -530,13 +530,13 @@ export async function checkDokployConnection(): Promise<{
 /**
  * Get DNS configuration instructions for a domain
  */
-export function getDnsInstructions(
+export async function getDnsInstructions(
   domain: string,
   serverIp: string
-): {
+): Promise<{
   aRecord: { type: string; host: string; value: string; ttl: string }
   cnameRecord: { type: string; host: string; value: string; ttl: string }
-} {
+}> {
   const isSubdomain = domain.split(".").length > 2
   const host = isSubdomain ? domain.split(".")[0] : "@"
 

@@ -1,7 +1,8 @@
 "use client"
 
 import { useParams } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@cncpt/cms/ui"
+import { useAuth, useCMSConfig } from "@cncpt/cms/hooks"
 import {
   Package,
   ShoppingCart,
@@ -16,8 +17,10 @@ import {
 export default function CMSDashboardPage() {
   const params = useParams()
   const subdomain = params.subdomain as string
+  const { user } = useAuth()
+  const { config } = useCMSConfig()
 
-  // Mock data - will be replaced with real API calls
+  // Mock data - will be replaced with real API calls scoped to subdomain
   const stats = [
     {
       title: "Total Revenue",
@@ -71,9 +74,12 @@ export default function CMSDashboardPage() {
     <div className="p-6 lg:p-8 space-y-8">
       {/* Welcome Header */}
       <div>
-        <h1 className="text-2xl font-bold">Welcome back!</h1>
+        <h1 className="text-2xl font-bold">
+          Welcome back{user?.displayName ? `, ${user.displayName}` : ""}!
+        </h1>
         <p className="text-muted-foreground">
-          Here&apos;s what&apos;s happening with your store today.
+          Here&apos;s what&apos;s happening with{" "}
+          <strong>{config.siteName || subdomain}</strong> today.
         </p>
       </div>
 

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { stackServerApp } from "@/stack"
-import { AdminShell } from "./components/admin-shell"
+import { CMSAdminShell } from "./cms-admin-shell"
 
 export default async function CMSAdminLayout({
   children,
@@ -9,11 +9,10 @@ export default async function CMSAdminLayout({
   children: React.ReactNode
   params: { subdomain: string }
 }) {
-  // Verify user has access to this subdomain's CMS
+  // Server-side auth check
   const user = await stackServerApp.getUser()
 
   if (!user) {
-    // Redirect to login - they'll come back after auth
     redirect(`/login?redirect=/cms/${params.subdomain}/admin`)
   }
 
@@ -21,5 +20,9 @@ export default async function CMSAdminLayout({
   // - Site owner: full access
   // - Store manager: invited access only
 
-  return <AdminShell>{children}</AdminShell>
+  return (
+    <CMSAdminShell subdomain={params.subdomain}>
+      {children}
+    </CMSAdminShell>
+  )
 }

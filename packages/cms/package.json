@@ -4,41 +4,42 @@
   "private": true,
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "types": "./types/index.d.ts",
   "exports": {
     ".": {
+      "types": "./types/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js"
     },
     "./admin": {
+      "types": "./types/admin/index.d.ts",
       "import": "./dist/admin/index.mjs",
-      "require": "./dist/admin/index.js",
-      "types": "./dist/admin/index.d.ts"
+      "require": "./dist/admin/index.js"
     },
     "./ui": {
+      "types": "./types/ui/index.d.ts",
       "import": "./dist/ui/index.mjs",
-      "require": "./dist/ui/index.js",
-      "types": "./dist/ui/index.d.ts"
+      "require": "./dist/ui/index.js"
     },
     "./hooks": {
+      "types": "./types/hooks/index.d.ts",
       "import": "./dist/hooks/index.mjs",
-      "require": "./dist/hooks/index.js",
-      "types": "./dist/hooks/index.d.ts"
+      "require": "./dist/hooks/index.js"
     },
     "./lib": {
+      "types": "./types/lib/index.d.ts",
       "import": "./dist/lib/index.mjs",
-      "require": "./dist/lib/index.js",
-      "types": "./dist/lib/index.d.ts"
+      "require": "./dist/lib/index.js"
     },
     "./puck": {
+      "types": "./types/puck/index.d.ts",
       "import": "./dist/puck/index.mjs",
-      "require": "./dist/puck/index.js",
-      "types": "./dist/puck/index.d.ts"
+      "require": "./dist/puck/index.js"
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "types"
   ],
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
