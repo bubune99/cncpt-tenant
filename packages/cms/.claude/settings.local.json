@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__internal-code__pre_deploy_audit",
+      "mcp__internal-code__analyze_project_checks",
+      "mcp__internal-code__suspense_boundary_check",
+      "mcp__truth-seeker__validate_env_variables",
+      "mcp__agent-com__list_channels",
+      "mcp__agent-com__whoami",
+      "mcp__vercel-ai-sdk__detect_ai_sdk_version",
+      "Bash(npx prisma generate:*)",
+      "mcp__internal-code__validate_import_tree",
+      "mcp__internal-code__validate_typescript",
+      "mcp__vercel__list_teams",
+      "Bash(vercel env add:*)"
+    ]
+  }
+}
