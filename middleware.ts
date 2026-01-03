@@ -47,14 +47,22 @@ export async function middleware(request: NextRequest) {
   // Stack Auth will handle authentication redirects through its own system
 
   if (subdomain) {
-    // Block access to admin page from subdomains
+    // CMS admin routes on subdomains - rewrite to /cms/[subdomain]/...
     if (pathname.startsWith("/admin")) {
-      return NextResponse.redirect(new URL("/", request.url))
+      const cmsPath = pathname.replace("/admin", "")
+      return NextResponse.rewrite(
+        new URL(`/cms/${subdomain}/admin${cmsPath}`, request.url)
+      )
     }
 
-    // For the root path on a subdomain, rewrite to the subdomain page
+    // For the root path on a subdomain, rewrite to the subdomain storefront
     if (pathname === "/") {
       return NextResponse.rewrite(new URL(`/s/${subdomain}`, request.url))
+    }
+
+    // Other subdomain paths - rewrite to subdomain namespace
+    if (!pathname.startsWith("/api") && !pathname.startsWith("/_next")) {
+      return NextResponse.rewrite(new URL(`/s/${subdomain}${pathname}`, request.url))
     }
   }
 
