@@ -62,8 +62,8 @@ export const ORDER_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }>
       required: ['email', 'items'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
-      const { generateOrderNumber } = await import('@/lib/orders');
+      const { prisma } = await import('../../db');
+      const { generateOrderNumber } = await import('../../orders');
 
       // Validate items and get product info
       const orderItems = [];
@@ -195,7 +195,7 @@ export const ORDER_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }>
       },
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       if (!args.orderId && !args.orderNumber) {
         throw new Error('Either orderId or orderNumber is required');
@@ -295,7 +295,7 @@ export const ORDER_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }>
       },
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       const page = Math.max(1, args.page || 1);
       const limit = Math.min(100, Math.max(1, args.limit || 20));
@@ -377,7 +377,7 @@ export const ORDER_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }>
       required: ['orderId', 'status'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       const order = await prisma.order.findUnique({
         where: { id: args.orderId },
@@ -450,7 +450,7 @@ export const ORDER_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }>
       required: ['orderId', 'reason'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       const order = await prisma.order.findUnique({
         where: { id: args.orderId },
@@ -560,7 +560,7 @@ export const ORDER_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }>
       required: ['orderId', 'reason'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       const order = await prisma.order.findUnique({
         where: { id: args.orderId },
@@ -581,7 +581,7 @@ export const ORDER_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }>
       let stripeRefundId = null;
       if (args.processStripeRefund !== false && order.stripePaymentIntentId) {
         try {
-          const stripe = (await import('@/lib/stripe')).stripe;
+          const stripe = (await import('../../stripe')).stripe;
           const refund = await stripe.refunds.create({
             payment_intent: order.stripePaymentIntentId,
             amount: refundAmount,
@@ -641,7 +641,7 @@ export const ORDER_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }>
       },
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       if (!args.orderId && !args.orderNumber) {
         throw new Error('Either orderId or orderNumber is required');
@@ -758,8 +758,8 @@ export const ORDER_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }>
       required: ['orderId'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
-      const { generateOrderNumber } = await import('@/lib/orders');
+      const { prisma } = await import('../../db');
+      const { generateOrderNumber } = await import('../../orders');
 
       const originalOrder = await prisma.order.findUnique({
         where: { id: args.orderId },

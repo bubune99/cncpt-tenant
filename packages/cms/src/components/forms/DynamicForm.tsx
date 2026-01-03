@@ -7,21 +7,21 @@
  */
 
 import { useState, useCallback } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Button } from '../ui/button'
+import { Input } from '../ui/input'
+import { Textarea } from '../ui/textarea'
+import { Label } from '../ui/label'
+import { Checkbox } from '../ui/checkbox'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { cn } from '@/lib/utils'
-import type { FormField, FormDefinition, FieldCondition } from '@/lib/forms/types'
+} from '../ui/select'
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group'
+import { cn } from '../../lib/utils'
+import type { FormField, FormDefinition, FieldCondition } from '../../lib/forms/types'
 
 interface DynamicFormProps {
   form: FormDefinition

@@ -4,7 +4,7 @@
  * Handles fetching and resolving route configurations.
  */
 
-import { prisma } from '@/lib/db'
+import { prisma } from '../db'
 import { cache } from 'react'
 
 export type { RouteType } from '@prisma/client'

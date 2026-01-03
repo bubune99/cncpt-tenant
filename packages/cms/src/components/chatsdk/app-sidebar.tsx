@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { User } from "@/lib/chatsdk/db/schema";
+import type { User } from '../../lib/chatsdk/db/schema';
 import { useState } from "react";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
 import { unstable_serialize } from "swr/infinite";
-import { PlusIcon, TrashIcon } from "@/components/chatsdk/icons";
-import { SidebarHistory, getChatHistoryPaginationKey } from "@/components/chatsdk/sidebar-history";
-import { SidebarUserNav } from "@/components/chatsdk/sidebar-user-nav";
-import { Button } from "@/components/ui/button";
+import { PlusIcon, TrashIcon } from './icons';
+import { SidebarHistory, getChatHistoryPaginationKey } from './sidebar-history';
+import { SidebarUserNav } from './sidebar-user-nav';
+import { Button } from '../ui/button';
 import {
   Sidebar,
   SidebarContent,
@@ -18,7 +18,7 @@ import {
   SidebarHeader,
   SidebarMenu,
   useSidebar,
-} from "@/components/chatsdk/ui/sidebar";
+} from './ui/sidebar';
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import {
   AlertDialog,

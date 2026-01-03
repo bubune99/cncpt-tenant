@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { withAuth, type AuthContext } from '@/lib/permissions/middleware'
+import { withAuth, type AuthContext } from '../../../../lib/permissions/middleware'
 
 // GET - Get current user's permissions
 export const GET = withAuth(

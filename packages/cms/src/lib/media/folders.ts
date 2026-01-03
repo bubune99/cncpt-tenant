@@ -2,7 +2,7 @@
  * Media Folders - Folder Management Operations
  */
 
-import { prisma } from '@/lib/db'
+import { prisma } from '../db'
 import type {
   FolderWithRelations,
   FolderTree,

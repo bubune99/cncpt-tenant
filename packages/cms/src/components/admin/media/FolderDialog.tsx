@@ -7,19 +7,19 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+} from '../../ui/dialog'
+import { Button } from '../../ui/button'
+import { Input } from '../../ui/input'
+import { Label } from '../../ui/label'
+import { Textarea } from '../../ui/textarea'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import type { FolderTree, FolderWithRelations } from '@/lib/media/types'
+} from '../../ui/select'
+import type { FolderTree, FolderWithRelations } from '../../../lib/media/types'
 import { Folder } from 'lucide-react'
 
 interface FolderDialogProps {

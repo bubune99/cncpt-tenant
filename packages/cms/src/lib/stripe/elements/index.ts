@@ -6,7 +6,7 @@
  *
  * @example Server-side payment intent creation (API route):
  * ```ts
- * import { stripe } from '@/lib/stripe';
+ * import { stripe } from '..';
  *
  * const paymentIntent = await stripe.paymentIntents.create({
  *   amount: 1000,
@@ -17,7 +17,7 @@
  *
  * @example Client-side payment form:
  * ```tsx
- * import { PaymentProvider, PaymentForm } from '@/lib/stripe/elements';
+ * import { PaymentProvider, PaymentForm } from './';
  *
  * function CheckoutPage({ clientSecret }: { clientSecret: string }) {
  *   return (
@@ -34,7 +34,7 @@
  *
  * @example Checkout redirect:
  * ```tsx
- * import { CheckoutButton } from '@/lib/stripe/elements';
+ * import { CheckoutButton } from './';
  *
  * <CheckoutButton
  *   items={[{ name: 'Product', price: 1000, quantity: 1 }]}

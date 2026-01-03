@@ -2,16 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from '../ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+} from '../ui/card';
+import { Label } from '../ui/label';
+import { Input } from '../ui/input';
 import { toast } from "sonner";
 import { MediaPicker } from "./MediaPicker";
 

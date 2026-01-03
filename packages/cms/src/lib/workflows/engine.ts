@@ -5,7 +5,7 @@
  * and running primitives/actions.
  */
 
-import { prisma } from '@/lib/db';
+import { prisma } from '../db';
 import type { Workflow, WorkflowExecution } from '@prisma/client';
 import {
   createWorkflowContext,

@@ -1,6 +1,6 @@
-import { Suspense } from "react"
 import { redirect } from "next/navigation"
 import { stackServerApp } from "@/stack"
+import { AdminShell } from "./components/admin-shell"
 
 export default async function CMSAdminLayout({
   children,
@@ -21,15 +21,5 @@ export default async function CMSAdminLayout({
   // - Site owner: full access
   // - Store manager: invited access only
 
-  return (
-    <div className="min-h-screen bg-background">
-      <Suspense fallback={
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      }>
-        {children}
-      </Suspense>
-    </div>
-  )
+  return <AdminShell>{children}</AdminShell>
 }

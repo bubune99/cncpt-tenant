@@ -7,13 +7,13 @@
 
 import { streamText, smoothStream, generateText, stepCountIs, type ModelMessage } from 'ai';
 import { z } from 'zod';
-import { stackServerApp } from '@/lib/stack';
-import { prisma } from '@/lib/db';
-import { createModelFromSettings, isAiAvailable } from '@/lib/ai';
-import { ChatSDKError } from '@/lib/ai/errors';
-import { adminTools } from '@/lib/ai/tools';
-import { getMcpTools } from '@/lib/mcp';
-import type { ChatContext } from '@/lib/ai/chat-store';
+import { stackServerApp } from '../../../lib/stack';
+import { prisma } from '../../../lib/db';
+import { createModelFromSettings, isAiAvailable } from '../../../lib/ai';
+import { ChatSDKError } from '../../../lib/ai/errors';
+import { adminTools } from '../../../lib/ai/tools';
+import { getMcpTools } from '../../../lib/mcp';
+import type { ChatContext } from '../../../lib/ai/chat-store';
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';

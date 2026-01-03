@@ -4,7 +4,7 @@
  * Track where media files are used across the CMS
  */
 
-import { prisma } from '@/lib/db'
+import { prisma } from '../db'
 import type { EntityType, UsageInfo } from './types'
 
 // Type augmentation for Prisma client with MediaUsage model

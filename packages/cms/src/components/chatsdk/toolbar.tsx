@@ -23,8 +23,8 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import type { ChatMessage } from "@/lib/chatsdk/types";
+} from '../ui/tooltip';
+import type { ChatMessage } from '../../lib/chatsdk/types';
 import { type ArtifactKind, artifactDefinitions, type ToolbarItem } from "./artifact";
 import { ArrowUpIcon, StopIcon, SummarizeIcon } from "./icons";
 

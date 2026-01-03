@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { Render } from '@measured/puck';
 import '@measured/puck/puck.css';
 import { ArrowLeft, Edit } from 'lucide-react';
-import { pluginUIPuckConfig, type PluginUIComponents } from '@/puck/plugin';
+import { pluginUIPuckConfig, type PluginUIComponents } from '../../../../../../puck/plugin';
 import type { Data } from '@measured/puck';
 
 interface PageProps {

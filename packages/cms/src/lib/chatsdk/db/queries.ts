@@ -5,7 +5,7 @@
  * Replaces Drizzle ORM queries with Prisma equivalents.
  */
 
-import { prisma } from '@/lib/db';
+import { prisma } from '../../db';
 import type { AiDocument, AiSuggestion, AiConversation, AiMessage, ChatVisibility } from '@prisma/client';
 
 // Re-export types for convenience

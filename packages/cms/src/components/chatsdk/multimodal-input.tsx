@@ -18,12 +18,12 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { useLocalStorage, useWindowSize } from "usehooks-ts";
-import { saveChatModelAsCookie } from "@/app/(chat)/actions";
-import { SelectItem } from "@/components/ui/select";
-import { chatModels } from "@/lib/ai/models";
-import type { Attachment, ChatMessage } from "@/lib/chatsdk/types";
-import type { AppUsage } from "@/lib/chatsdk/usage";
-import { cn } from "@/lib/utils";
+import { saveChatModelAsCookie } from '../../app/(chat)/actions';
+import { SelectItem } from '../ui/select';
+import { chatModels } from '../../lib/ai/models';
+import type { Attachment, ChatMessage } from '../../lib/chatsdk/types';
+import type { AppUsage } from '../../lib/chatsdk/usage';
+import { cn } from '../../lib/utils';
 import { Context } from "./elements/context";
 import {
   PromptInput,

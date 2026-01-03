@@ -14,8 +14,8 @@
  */
 
 import { Shippo } from 'shippo'
-import { prisma } from '@/lib/db'
-import { safeDecrypt } from '@/lib/encryption'
+import { prisma } from '../db'
+import { safeDecrypt } from '../encryption'
 import type {
   ShippingAddress,
   ValidatedAddress,

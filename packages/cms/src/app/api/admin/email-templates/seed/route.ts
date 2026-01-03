@@ -5,8 +5,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { stackServerApp } from '@/lib/stack';
-import { seedEmailTemplates, needsSeeding } from '@/lib/email/templates/seed';
+import { stackServerApp } from '../../../../../lib/stack';
+import { seedEmailTemplates, needsSeeding } from '../../../../../lib/email/templates/seed';
 
 export async function POST(request: NextRequest) {
   try {

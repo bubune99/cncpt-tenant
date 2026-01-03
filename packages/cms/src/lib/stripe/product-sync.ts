@@ -5,7 +5,7 @@
  */
 
 import Stripe from 'stripe'
-import { prisma } from '@/lib/db'
+import { prisma } from '../db'
 import type {
   Product,
   ProductVariant,

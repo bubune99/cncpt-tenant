@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { unstable_serialize } from "swr/infinite";
-import { ChatHeader } from "@/components/chatsdk/chat-header";
+import { ChatHeader } from './chat-header';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,15 +16,15 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/chatsdk/ui/alert-dialog";
-// import { useArtifactSelector } from "@/hooks/use-artifact"; // Disabled
-import { useAutoResume } from "@/hooks/use-auto-resume";
-import { useChatVisibility } from "@/hooks/use-chat-visibility";
-import type { Vote } from "@/lib/chatsdk/db/schema";
-import { ChatError } from "@/lib/chatsdk/errors";
-import type { Attachment, ChatMessage } from "@/lib/chatsdk/types";
-import type { AppUsage } from "@/lib/chatsdk/usage";
-import { fetcher, fetchWithErrorHandlers, generateUUID } from "@/lib/utils";
+} from './ui/alert-dialog';
+// import { useArtifactSelector } from '../../hooks/use-artifact'; // Disabled
+import { useAutoResume } from '../../hooks/use-auto-resume';
+import { useChatVisibility } from '../../hooks/use-chat-visibility';
+import type { Vote } from '../../lib/chatsdk/db/schema';
+import { ChatError } from '../../lib/chatsdk/errors';
+import type { Attachment, ChatMessage } from '../../lib/chatsdk/types';
+import type { AppUsage } from '../../lib/chatsdk/usage';
+import { fetcher, fetchWithErrorHandlers, generateUUID } from '../../lib/utils';
 // import { Artifact } from "./artifact"; // Disabled - not needed for our use case
 import { useDataStream } from "./data-stream-provider";
 import { Messages } from "./messages";

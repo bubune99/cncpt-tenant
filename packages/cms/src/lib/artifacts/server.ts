@@ -1,11 +1,11 @@
 import type { UIMessageStreamWriter } from "ai";
-import { codeDocumentHandler } from "@/app/artifacts/code/server";
-import { sheetDocumentHandler } from "@/app/artifacts/sheet/server";
-import { textDocumentHandler } from "@/app/artifacts/text/server";
-import type { ArtifactKind } from "@/components/chatsdk/artifact";
-import { saveDocument } from "@/lib/chatsdk/db/queries";
-import type { Document } from "@/lib/chatsdk/db/schema";
-import type { ChatMessage } from "@/lib/chatsdk/types";
+import { codeDocumentHandler } from '../../app/artifacts/code/server';
+import { sheetDocumentHandler } from '../../app/artifacts/sheet/server';
+import { textDocumentHandler } from '../../app/artifacts/text/server';
+import type { ArtifactKind } from '../../components/chatsdk/artifact';
+import { saveDocument } from '../chatsdk/db/queries';
+import type { Document } from '../chatsdk/db/schema';
+import type { ChatMessage } from '../chatsdk/types';
 
 // Session type for compatibility
 type Session = {

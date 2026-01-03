@@ -5,10 +5,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
-import { sendEmail } from '@/lib/email'
-import { processEmailForTracking, getUnsubscribeHeaders } from '@/lib/email/tracking'
-import { parseMergeTags } from '@/lib/email/merge-tags'
+import { prisma } from '../../../../../../lib/db'
+import { sendEmail } from '../../../../../../lib/email'
+import { processEmailForTracking, getUnsubscribeHeaders } from '../../../../../../lib/email/tracking'
+import { parseMergeTags } from '../../../../../../lib/email/merge-tags'
 
 export async function POST(
   request: NextRequest,

@@ -12,12 +12,12 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
+} from '../../ui/dialog'
+import { Button } from '../../ui/button'
+import { Input } from '../../ui/input'
+import { Badge } from '../../ui/badge'
 import { Loader2, Search, Plus, Check } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn } from '../../../lib/utils'
 
 interface CustomField {
   id: string

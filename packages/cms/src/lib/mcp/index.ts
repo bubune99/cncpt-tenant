@@ -14,8 +14,8 @@ import { tool, type Tool } from 'ai';
 import { z, ZodTypeAny } from 'zod';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
-import { prisma } from '@/lib/db';
-import { decrypt } from '@/lib/encryption';
+import { prisma } from '../db';
+import { decrypt } from '../encryption';
 
 interface McpServerConfig {
   command: string;

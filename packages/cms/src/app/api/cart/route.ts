@@ -7,8 +7,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { getOrCreateCart, getCartStats } from '@/lib/cart';
-import { getCurrentUserId } from '@/lib/cart/auth';
+import { getOrCreateCart, getCartStats } from '../../../lib/cart';
+import { getCurrentUserId } from '../../../lib/cart/auth';
 
 const CART_SESSION_COOKIE = 'cart_session_id';
 
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
 
     // Update email if provided
     if (email && cart.id) {
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../../lib/db');
       await prisma.cart.update({
         where: { id: cart.id },
         data: { email },

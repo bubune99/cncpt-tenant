@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Logo } from "@/components/branding/Logo";
+import { Logo } from '../../components/branding/Logo';
 
 export default function StorefrontLayout({
   children,

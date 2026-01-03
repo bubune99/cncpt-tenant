@@ -4,7 +4,7 @@
  * Validates discount codes against all business rules
  */
 
-import { prisma } from '@/lib/db';
+import { prisma } from '../db';
 import type { DiscountCode, DiscountUsage } from '@prisma/client';
 
 export interface ValidationContext {

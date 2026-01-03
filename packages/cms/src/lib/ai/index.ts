@@ -9,8 +9,8 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import type { LanguageModel } from 'ai';
-import { getAiSettings } from '@/lib/settings';
-import type { AiSettings } from '@/lib/settings/types';
+import { getAiSettings } from '../settings';
+import type { AiSettings } from '../settings/types';
 
 export type AiProvider = 'openai' | 'anthropic' | 'google';
 

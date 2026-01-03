@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from "react";
 import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from '../../../../../components/ui/button';
 import { toast } from "sonner";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -31,7 +31,7 @@ import "@puckeditor/plugin-ai/styles.css";
 const aiPlugin = createAiPlugin();
 
 // Import the pages Puck configuration
-import { pagesPuckConfig } from "@/puck/pages/config";
+import { pagesPuckConfig } from '../../../../../puck/pages/config';
 import type { Data } from "@measured/puck";
 
 interface Page {

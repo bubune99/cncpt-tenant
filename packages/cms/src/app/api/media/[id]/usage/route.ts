@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getMediaUsage, getUsageCount, isMediaInUse } from '@/lib/media/usage'
+import { getMediaUsage, getUsageCount, isMediaInUse } from '../../../../../lib/media/usage'
 
 export async function GET(
   request: NextRequest,

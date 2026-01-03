@@ -9,8 +9,8 @@
 
 import { useEffect, useRef } from 'react';
 import { usePathname, useParams } from 'next/navigation';
-import { useChatContext } from '@/lib/ai/chat-store';
-import type { ChatContext } from '@/lib/ai/chat-store';
+import { useChatContext } from '../lib/ai/chat-store';
+import type { ChatContext } from '../lib/ai/chat-store';
 
 interface ContextData {
   title?: string;

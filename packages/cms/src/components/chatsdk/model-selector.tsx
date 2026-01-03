@@ -2,7 +2,7 @@
 
 import { startTransition, useMemo, useOptimistic, useState } from "react";
 
-import type { UserType } from "@/lib/ai/entitlements";
+import type { UserType } from '../../lib/ai/entitlements';
 
 // Type for Vercel AI SDK chatbot demo - not actively used in LMS
 type Session = {
@@ -10,17 +10,17 @@ type Session = {
     type: UserType;
   };
 };
-import { saveChatModelAsCookie } from "@/app/(chat)/actions";
-import { Button } from "@/components/ui/button";
+import { saveChatModelAsCookie } from '../../app/(chat)/actions';
+import { Button } from '../ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { entitlementsByUserType } from "@/lib/ai/entitlements";
-import { chatModels } from "@/lib/ai/models";
-import { cn } from "@/lib/utils";
+} from '../ui/dropdown-menu';
+import { entitlementsByUserType } from '../../lib/ai/entitlements';
+import { chatModels } from '../../lib/ai/models';
+import { cn } from '../../lib/utils';
 import { CheckCircleFillIcon, ChevronDownIcon } from "./icons";
 
 export function ModelSelector({

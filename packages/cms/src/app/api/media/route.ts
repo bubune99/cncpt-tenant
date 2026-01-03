@@ -6,9 +6,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { listMedia, createMedia, getMediaStats } from '@/lib/media'
-import { processUpload, generatePresignedUrl, validateFile } from '@/lib/media/upload'
-import type { MediaFilters, MediaType } from '@/lib/media/types'
+import { listMedia, createMedia, getMediaStats } from '../../../lib/media'
+import { processUpload, generatePresignedUrl, validateFile } from '../../../lib/media/upload'
+import type { MediaFilters, MediaType } from '../../../lib/media/types'
 
 export async function GET(request: NextRequest) {
   try {

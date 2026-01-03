@@ -9,7 +9,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { getShippingSettings } from '@/lib/shippo';
+import { getShippingSettings } from '../../../../../lib/shippo';
 
 export async function POST() {
   try {

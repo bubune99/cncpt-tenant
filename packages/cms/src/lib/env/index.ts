@@ -5,8 +5,8 @@
  * Falls back to process.env for variables not in database
  */
 
-import { prisma } from '@/lib/db'
-import { encrypt, decrypt, isEncrypted, safeDecrypt } from '@/lib/encryption'
+import { prisma } from '../db'
+import { encrypt, decrypt, isEncrypted, safeDecrypt } from '../encryption'
 import type {
   EnvCategory,
   EnvVarDefinition,

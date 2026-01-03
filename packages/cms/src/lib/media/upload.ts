@@ -4,8 +4,8 @@
  * Supports S3, R2, and local storage providers
  */
 
-import { getStorageSettings } from '@/lib/settings'
-import type { StorageSettings } from '@/lib/settings/types'
+import { getStorageSettings } from '../settings'
+import type { StorageSettings } from '../settings/types'
 import type { StorageProvider, PresignedUrlResponse, UploadOptions } from './types'
 import { createMedia } from './index'
 import { v4 as uuidv4 } from 'uuid'

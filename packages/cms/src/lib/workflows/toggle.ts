@@ -5,7 +5,7 @@
  * event subscription management, and execution tracking.
  */
 
-import { prisma } from '@/lib/db'
+import { prisma } from '../db'
 import type { Workflow, WorkflowTrigger } from '@prisma/client'
 import { eventBus, subscribe, unsubscribe } from './event-bus'
 

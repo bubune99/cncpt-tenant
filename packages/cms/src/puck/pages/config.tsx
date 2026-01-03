@@ -8,10 +8,10 @@
  */
 
 import type { Config } from '@measured/puck';
-import { mediaPickerFieldConfig } from '@/puck/fields/MediaPickerField';
-import { formPickerFieldConfig } from '@/puck/fields/FormPickerField';
-import { productPickerFieldConfig } from '@/puck/fields/ProductPickerField';
-import { blogPostPickerFieldConfig } from '@/puck/fields/BlogPostPickerField';
+import { mediaPickerFieldConfig } from '../fields/MediaPickerField';
+import { formPickerFieldConfig } from '../fields/FormPickerField';
+import { productPickerFieldConfig } from '../fields/ProductPickerField';
+import { blogPostPickerFieldConfig } from '../fields/BlogPostPickerField';
 import {
   HeroSection,
   TextBlock,

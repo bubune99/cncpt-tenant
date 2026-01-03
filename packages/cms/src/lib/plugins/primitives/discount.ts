@@ -51,7 +51,7 @@ export const DISCOUNT_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true
       required: ['code'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       const discount = await prisma.discountCode.findUnique({
         where: { code: args.code.toUpperCase() },
@@ -199,7 +199,7 @@ export const DISCOUNT_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true
       required: ['code'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       if (!args.orderId && !args.cartId) {
         throw new Error('Either orderId or cartId is required');
@@ -314,7 +314,7 @@ export const DISCOUNT_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true
       },
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       if (!args.orderId && !args.cartId) {
         throw new Error('Either orderId or cartId is required');
@@ -410,7 +410,7 @@ export const DISCOUNT_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true
       },
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       const page = Math.max(1, args.page || 1);
       const limit = Math.min(100, Math.max(1, args.limit || 20));
@@ -501,7 +501,7 @@ export const DISCOUNT_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true
       },
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       if (!args.id && !args.code) {
         throw new Error('Either id or code is required');
@@ -630,7 +630,7 @@ export const DISCOUNT_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true
       required: ['code', 'type', 'value'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       // Check for existing code
       const existing = await prisma.discountCode.findUnique({

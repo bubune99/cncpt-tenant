@@ -16,8 +16,8 @@ import {
   validateEnvVar,
   getEnvHealth,
   clearEnvCache,
-} from '@/lib/env'
-import type { EnvCategory } from '@/lib/env/types'
+} from '../../../lib/env'
+import type { EnvCategory } from '../../../lib/env/types'
 
 export async function GET(request: NextRequest) {
   try {

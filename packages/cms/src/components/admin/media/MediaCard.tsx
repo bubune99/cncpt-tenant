@@ -2,11 +2,11 @@
 
 import { forwardRef } from 'react'
 import Image from 'next/image'
-import { cn } from '@/lib/utils'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Badge } from '@/components/ui/badge'
-import { getMediaType, formatFileSize, getMediaTypeIcon } from '@/lib/media/types'
-import type { MediaWithRelations } from '@/lib/media/types'
+import { cn } from '../../../lib/utils'
+import { Checkbox } from '../../ui/checkbox'
+import { Badge } from '../../ui/badge'
+import { getMediaType, formatFileSize, getMediaTypeIcon } from '../../../lib/media/types'
+import type { MediaWithRelations } from '../../../lib/media/types'
 import {
   FileText,
   Film,

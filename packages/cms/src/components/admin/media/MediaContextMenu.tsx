@@ -10,8 +10,8 @@ import {
   ContextMenuSubContent,
   ContextMenuSubTrigger,
   ContextMenuTrigger,
-} from '@/components/ui/context-menu'
-import type { MediaWithRelations, FolderTree, TagWithCount } from '@/lib/media/types'
+} from '../../ui/context-menu'
+import type { MediaWithRelations, FolderTree, TagWithCount } from '../../../lib/media/types'
 import {
   Eye,
   ExternalLink,

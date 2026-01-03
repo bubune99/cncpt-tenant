@@ -1,14 +1,54 @@
 {
-  "name": "nextjs-cms",
+  "name": "@cncpt/cms",
   "version": "0.1.0",
   "private": true,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./admin": {
+      "import": "./dist/admin/index.mjs",
+      "require": "./dist/admin/index.js",
+      "types": "./dist/admin/index.d.ts"
+    },
+    "./ui": {
+      "import": "./dist/ui/index.mjs",
+      "require": "./dist/ui/index.js",
+      "types": "./dist/ui/index.d.ts"
+    },
+    "./hooks": {
+      "import": "./dist/hooks/index.mjs",
+      "require": "./dist/hooks/index.js",
+      "types": "./dist/hooks/index.d.ts"
+    },
+    "./lib": {
+      "import": "./dist/lib/index.mjs",
+      "require": "./dist/lib/index.js",
+      "types": "./dist/lib/index.d.ts"
+    },
+    "./puck": {
+      "import": "./dist/puck/index.mjs",
+      "require": "./dist/puck/index.js",
+      "types": "./dist/puck/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
   },
   "scripts": {
     "postinstall": "prisma generate",
     "dev": "next dev",
-    "build": "prisma db push && next build",
+    "build:next": "prisma db push && next build",
+    "build:lib": "tsup",
+    "build": "npm run build:lib",
     "start": "next start",
     "lint": "eslint"
   },
@@ -120,6 +160,7 @@
   },
   "devDependencies": {
     "@prisma/client": "^7.2.0",
+    "tsup": "^8.0.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/papaparse": "^5.5.2",

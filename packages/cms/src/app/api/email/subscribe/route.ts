@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { subscribeEmail } from '@/lib/email/subscriptions'
+import { subscribeEmail } from '../../../../lib/email/subscriptions'
 
 export async function POST(request: NextRequest) {
   try {

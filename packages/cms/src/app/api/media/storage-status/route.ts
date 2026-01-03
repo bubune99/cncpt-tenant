@@ -5,7 +5,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { checkStorageConfig } from '@/lib/media/upload'
+import { checkStorageConfig } from '../../../../lib/media/upload'
 
 export async function GET() {
   try {

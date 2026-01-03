@@ -4,23 +4,23 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { ArrowLeft, Save, Send, Eye, Settings, Clock, Users, TestTube } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from '../../../../components/ui/button';
+import { Input } from '../../../../components/ui/input';
+import { Textarea } from '../../../../components/ui/textarea';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '../../../../components/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '../../../../components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -28,11 +28,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+} from '../../../../components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../components/ui/tabs';
+import { Badge } from '../../../../components/ui/badge';
+import { Label } from '../../../../components/ui/label';
+import { Switch } from '../../../../components/ui/switch';
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -48,7 +48,7 @@ const Render = dynamic(
 );
 
 // Import email Puck config
-import { emailPuckConfig } from "@/puck/email/config";
+import { emailPuckConfig } from '../../../../puck/email/config';
 import type { Data } from "@measured/puck";
 
 interface EmailCampaign {

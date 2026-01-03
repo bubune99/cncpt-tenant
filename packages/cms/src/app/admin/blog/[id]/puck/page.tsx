@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from '../../../../../components/ui/button';
 import { toast } from "sonner";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -33,7 +33,7 @@ import "@puckeditor/plugin-ai/styles.css";
 const aiPlugin = createAiPlugin();
 
 // Import the blog Puck configuration
-import { blogPuckConfig } from "@/puck/blog/config";
+import { blogPuckConfig } from '../../../../../puck/blog/config';
 import type { Data } from "@measured/puck";
 
 interface BlogPost {

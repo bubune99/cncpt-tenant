@@ -53,7 +53,7 @@ export const PAYMENT_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true 
       required: ['amount'],
     },
     handler: `
-      const { createPaymentIntent } = await import('@/lib/stripe');
+      const { createPaymentIntent } = await import('../../stripe');
 
       const result = await createPaymentIntent({
         amount: args.amount,
@@ -155,7 +155,7 @@ export const PAYMENT_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true 
       required: ['items', 'successUrl', 'cancelUrl'],
     },
     handler: `
-      const { createCheckoutSession } = await import('@/lib/stripe');
+      const { createCheckoutSession } = await import('../../stripe');
 
       const result = await createCheckoutSession({
         items: args.items,
@@ -201,7 +201,7 @@ export const PAYMENT_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true 
       required: ['paymentIntentId'],
     },
     handler: `
-      const { capturePaymentIntent } = await import('@/lib/stripe');
+      const { capturePaymentIntent } = await import('../../stripe');
 
       const result = await capturePaymentIntent(args.paymentIntentId, args.amount);
 
@@ -244,7 +244,7 @@ export const PAYMENT_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true 
       required: ['paymentIntentId'],
     },
     handler: `
-      const { createRefund } = await import('@/lib/stripe');
+      const { createRefund } = await import('../../stripe');
 
       const result = await createRefund({
         paymentIntentId: args.paymentIntentId,
@@ -287,7 +287,7 @@ export const PAYMENT_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true 
       required: ['customerId'],
     },
     handler: `
-      const { listPaymentMethods } = await import('@/lib/stripe');
+      const { listPaymentMethods } = await import('../../stripe');
 
       const methods = await listPaymentMethods(args.customerId, args.type || 'card');
 
@@ -359,7 +359,7 @@ export const PAYMENT_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true 
       required: ['email'],
     },
     handler: `
-      const { createCustomer, getOrCreateCustomer } = await import('@/lib/stripe');
+      const { createCustomer, getOrCreateCustomer } = await import('../../stripe');
 
       let customerId;
 
@@ -405,7 +405,7 @@ export const PAYMENT_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true 
       required: ['customerId'],
     },
     handler: `
-      const { listInvoices } = await import('@/lib/stripe');
+      const { listInvoices } = await import('../../stripe');
 
       const invoices = await listInvoices(args.customerId, args.limit || 10);
 
@@ -450,7 +450,7 @@ export const PAYMENT_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true 
       required: ['customerId', 'returnUrl'],
     },
     handler: `
-      const { createBillingPortalSession } = await import('@/lib/stripe');
+      const { createBillingPortalSession } = await import('../../stripe');
 
       const url = await createBillingPortalSession(args.customerId, args.returnUrl);
 

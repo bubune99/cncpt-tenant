@@ -1,79 +1,126 @@
 "use client"
 
-import { useParams, useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, ExternalLink, Construction } from "lucide-react"
-import Link from "next/link"
-import { rootDomain, protocol } from "@/lib/utils"
+import { useParams } from "next/navigation"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Construction } from "lucide-react"
+
+// Section-specific placeholder content
+const sectionContent: Record<string, { title: string; description: string }> = {
+  products: {
+    title: "Products",
+    description: "Manage your product catalog, variants, pricing, and inventory.",
+  },
+  orders: {
+    title: "Orders",
+    description: "View and manage customer orders, process refunds, and track fulfillment.",
+  },
+  "order-workflows": {
+    title: "Order Workflows",
+    description: "Configure automated workflows for order processing and fulfillment.",
+  },
+  shipping: {
+    title: "Shipping",
+    description: "Set up shipping zones, rates, and carrier integrations.",
+  },
+  customers: {
+    title: "Customers",
+    description: "View customer profiles, order history, and manage customer segments.",
+  },
+  pages: {
+    title: "Pages",
+    description: "Create and edit website pages using the visual page builder.",
+  },
+  blog: {
+    title: "Blog",
+    description: "Write and publish blog posts, manage categories and tags.",
+  },
+  forms: {
+    title: "Forms",
+    description: "Create contact forms, surveys, and manage form submissions.",
+  },
+  media: {
+    title: "Media Library",
+    description: "Upload and manage images, videos, and other media files.",
+  },
+  "email-marketing": {
+    title: "Email Marketing",
+    description: "Create email campaigns, manage subscribers, and view analytics.",
+  },
+  analytics: {
+    title: "Analytics",
+    description: "View detailed analytics about traffic, sales, and customer behavior.",
+  },
+  users: {
+    title: "Users",
+    description: "Manage admin users and their access to this site.",
+  },
+  roles: {
+    title: "Roles & Permissions",
+    description: "Configure user roles and their permissions.",
+  },
+  plugins: {
+    title: "Plugins",
+    description: "Extend your site with plugins for additional functionality.",
+  },
+  workflows: {
+    title: "Workflows",
+    description: "Create automated workflows using visual flow builder.",
+  },
+  settings: {
+    title: "Settings",
+    description: "Configure site settings, integrations, and preferences.",
+  },
+}
 
 export default function CMSAdminSubPage() {
   const params = useParams()
-  const router = useRouter()
   const subdomain = params.subdomain as string
   const path = (params.path as string[]) || []
   const section = path[0] || "unknown"
 
-  const siteUrl = `${protocol}://${subdomain}.${rootDomain}`
-
-  // Format section name for display
-  const sectionTitle = section
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ")
+  // Get section content or use default
+  const content = sectionContent[section] || {
+    title: section
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" "),
+    description: "This section is being developed.",
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push(`/cms/${subdomain}/admin`)}
-                className="text-muted-foreground"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to CMS
-              </Button>
-              <div className="h-6 w-px bg-border" />
-              <div>
-                <h1 className="text-xl font-semibold">{sectionTitle}</h1>
-                <p className="text-sm text-muted-foreground">{subdomain}</p>
-              </div>
-            </div>
-            <Button variant="outline" size="sm" asChild>
-              <Link href={siteUrl} target="_blank">
-                <ExternalLink className="h-4 w-4 mr-2" />
-                View Site
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="p-6 lg:p-8">
+      {/* Page Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold">{content.title}</h1>
+        <p className="text-muted-foreground">{content.description}</p>
+      </div>
 
-      {/* Main Content - Placeholder for CMS sections */}
-      <main className="container mx-auto px-6 py-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Construction className="h-5 w-5 text-yellow-500" />
-              {sectionTitle} - Coming Soon
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">
-              This section is being integrated from the CMS package. The full{" "}
-              {sectionTitle.toLowerCase()} management interface will be available here.
-            </p>
+      {/* Placeholder Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Construction className="h-5 w-5 text-yellow-500" />
+            Coming Soon
+          </CardTitle>
+          <CardDescription>
+            This feature is being integrated from the CMS package.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground mb-4">
+            The full {content.title.toLowerCase()} management interface will be available here.
+            This includes all the features from the standalone CMS, adapted to work with your site&apos;s data.
+          </p>
+          <div className="bg-muted rounded-lg p-4">
             <p className="text-sm text-muted-foreground">
-              Current path: <code className="bg-muted px-2 py-1 rounded">/admin/{path.join("/")}</code>
+              <strong>Path:</strong>{" "}
+              <code className="bg-background px-2 py-1 rounded">
+                /admin/{path.join("/")}
+              </code>
             </p>
-          </CardContent>
-        </Card>
-      </main>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

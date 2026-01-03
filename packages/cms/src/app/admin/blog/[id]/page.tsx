@@ -16,23 +16,23 @@ import {
   Trash2,
   LayoutGrid,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from '../../../../components/ui/button';
+import { Input } from '../../../../components/ui/input';
+import { Label } from '../../../../components/ui/label';
+import { Textarea } from '../../../../components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../../components/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
+} from '../../../../components/ui/select';
+import { Switch } from '../../../../components/ui/switch';
+import { Badge } from '../../../../components/ui/badge';
+import { Separator } from '../../../../components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../components/ui/tabs';
+import { Checkbox } from '../../../../components/ui/checkbox';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,12 +43,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from '../../../../components/ui/alert-dialog';
 import { toast } from "sonner";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 
-const TipTapEditor = dynamic(() => import("@/components/editor/TipTapEditor"), {
+const TipTapEditor = dynamic(() => import('../../../../components/editor/TipTapEditor'), {
   ssr: false,
   loading: () => (
     <div className="border rounded-lg p-4 animate-pulse">

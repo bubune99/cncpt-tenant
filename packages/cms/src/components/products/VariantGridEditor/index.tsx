@@ -6,7 +6,7 @@
 'use client'
 
 import React, { useRef, useEffect, useCallback, useState } from 'react'
-import { cn } from '@/lib/utils'
+import { cn } from '../../../lib/utils'
 import { Loader2 } from 'lucide-react'
 import { VariantGridCell } from './VariantGridCell'
 import { VariantGridToolbar } from './VariantGridToolbar'

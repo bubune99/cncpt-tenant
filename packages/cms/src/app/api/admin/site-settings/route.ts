@@ -6,8 +6,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getOrCreateSiteSettings, updateSiteSettings } from '@/lib/site-settings';
-import { stackServerApp } from '@/lib/stack';
+import { getOrCreateSiteSettings, updateSiteSettings } from '../../../../lib/site-settings';
+import { stackServerApp } from '../../../../lib/stack';
 
 /**
  * GET - Fetch site settings

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Loader2, AlertCircle, Save } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '../../../../../components/ui/button';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -24,7 +24,7 @@ const Puck = dynamic(
 import '@measured/puck/puck.css';
 
 // Import layout Puck configuration
-import { layoutPuckConfig } from '@/puck/layout/config';
+import { layoutPuckConfig } from '../../../../../puck/layout/config';
 import type { Data } from '@measured/puck';
 
 // Default header data structure for Puck

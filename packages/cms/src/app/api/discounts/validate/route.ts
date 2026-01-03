@@ -10,7 +10,7 @@ import {
   isFirstOrderForUser,
   calculateDiscount,
   getDiscountSummary,
-} from '@/lib/discounts';
+} from '../../../../lib/discounts';
 
 interface ValidateRequest {
   code: string;

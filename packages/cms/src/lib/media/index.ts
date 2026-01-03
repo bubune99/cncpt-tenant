@@ -2,7 +2,7 @@
  * Media Library - Core CRUD Operations
  */
 
-import { prisma } from '@/lib/db'
+import { prisma } from '../db'
 import type {
   MediaFilters,
   MediaWithRelations,

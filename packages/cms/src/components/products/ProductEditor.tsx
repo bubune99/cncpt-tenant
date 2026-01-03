@@ -25,11 +25,11 @@ import {
   ExternalLink,
   Expand,
 } from "lucide-react";
-import { VariantGridEditor } from "@/components/products/VariantGridEditor";
-import { VariantGridModal } from "@/components/products/VariantGridEditor/VariantGridModal";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { VariantGridEditor } from './VariantGridEditor';
+import { VariantGridModal } from './VariantGridEditor/VariantGridModal';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
 import {
   Card,
   CardContent,
@@ -37,25 +37,25 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '../ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '../ui/select';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@/components/ui/tabs";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
+} from '../ui/tabs';
+import { Label } from '../ui/label';
+import { Switch } from '../ui/switch';
+import { Separator } from '../ui/separator';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { Badge } from '../ui/badge';
 import { toast } from "sonner";
 
 // Product types with descriptions

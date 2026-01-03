@@ -21,7 +21,7 @@ import type {
 } from './types'
 import { SmtpProvider, SendGridProvider, ResendProvider, MailgunProvider, SesProvider } from './providers'
 import { parseMergeTags, type MergeTagData } from './merge-tags'
-import { getEmailSettings, type EmailSettings } from '@/lib/settings'
+import { getEmailSettings, type EmailSettings } from '../settings'
 
 export * from './types'
 export * from './merge-tags'

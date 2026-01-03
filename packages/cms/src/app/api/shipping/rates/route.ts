@@ -5,13 +5,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { prisma } from '../../../../lib/db'
 import {
   createShipment,
   getDefaultFromAddress,
   getShippingSettings,
-} from '@/lib/shippo'
-import type { Parcel, ShippingAddress } from '@/lib/shippo/types'
+} from '../../../../lib/shippo'
+import type { Parcel, ShippingAddress } from '../../../../lib/shippo/types'
 
 interface RatesRequestBody {
   // Either provide an order ID to get rates for

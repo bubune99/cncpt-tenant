@@ -5,7 +5,7 @@
  * Provides one-click installation of common e-commerce automation patterns.
  */
 
-import { prisma } from '@/lib/db'
+import { prisma } from '../../db'
 import type {
   WorkflowTemplate as PrismaWorkflowTemplate,
   WorkflowTemplateCategory,

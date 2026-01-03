@@ -6,16 +6,16 @@
 'use client'
 
 import React, { useRef, useEffect, useState } from 'react'
-import { Input } from '@/components/ui/input'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '../../ui/input'
+import { Checkbox } from '../../ui/checkbox'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { cn } from '@/lib/utils'
+} from '../../ui/select'
+import { cn } from '../../../lib/utils'
 import type { GridColumn, GridRow } from './types'
 
 interface VariantGridCellProps {

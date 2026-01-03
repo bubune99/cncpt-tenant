@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { listTags, createTag } from '@/lib/blog'
+import { listTags, createTag } from '../../../../lib/blog'
 
 export async function GET(request: NextRequest) {
   try {

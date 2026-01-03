@@ -1,7 +1,7 @@
 'use client'
 
 import type { Config } from '@measured/puck'
-import { mediaPickerFieldConfig } from '@/puck/fields/MediaPickerField'
+import { mediaPickerFieldConfig } from '../fields/MediaPickerField'
 import {
   EmailContainer,
   EmailHeader,

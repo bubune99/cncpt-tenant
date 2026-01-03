@@ -4,7 +4,7 @@
  * Handle stage transitions, reversions, and progress history
  */
 
-import { prisma } from '@/lib/db'
+import { prisma } from '../db'
 import type {
   ProgressTransitionInput,
   ProgressRevertInput,

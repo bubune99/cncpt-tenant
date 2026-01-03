@@ -4,7 +4,7 @@
  * Core functions for blog post, category, and tag management
  */
 
-import { prisma } from '@/lib/db'
+import { prisma } from '../db'
 import type { Prisma, PostVisibility } from '@prisma/client'
 
 // ============ SLUG UTILITIES ============

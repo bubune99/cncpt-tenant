@@ -8,8 +8,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { markCartRecovered } from '@/lib/cart';
-import { prisma } from '@/lib/db';
+import { markCartRecovered } from '../../../../../lib/cart';
+import { prisma } from '../../../../../lib/db';
 import { CartStatus } from '@prisma/client';
 
 const CART_SESSION_COOKIE = 'cart_session_id';

@@ -7,9 +7,9 @@
  * Supports Puck-editable templates - falls back to hardcoded templates if not found.
  */
 
-import { prisma } from '@/lib/db';
-import { sendEmail } from '@/lib/email';
-import { getEmailSettings } from '@/lib/settings';
+import { prisma } from '../db';
+import { sendEmail } from '../email';
+import { getEmailSettings } from '../settings';
 import {
   renderOrderConfirmationEmail,
   renderShippingNotificationEmail,
@@ -19,8 +19,8 @@ import {
   type ShipmentData,
   type DeliveryData,
   type RefundData,
-} from '@/lib/email/templates';
-import { renderEmailTemplateBySlug } from '@/lib/email/templates/render';
+} from '../email/templates';
+import { renderEmailTemplateBySlug } from '../email/templates/render';
 
 export interface NotificationResult {
   success: boolean;

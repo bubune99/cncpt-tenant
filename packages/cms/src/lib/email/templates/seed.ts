@@ -5,7 +5,7 @@
  * Can be run via API endpoint or CLI script.
  */
 
-import { prisma } from '@/lib/db';
+import { prisma } from '../../db';
 import { Prisma } from '@prisma/client';
 import { defaultEmailTemplates } from './defaults';
 

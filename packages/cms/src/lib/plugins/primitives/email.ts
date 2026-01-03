@@ -65,7 +65,7 @@ export const EMAIL_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }>
       required: ['to', 'subject'],
     },
     handler: `
-      const { sendEmail } = await import('@/lib/email');
+      const { sendEmail } = await import('../../email');
 
       const toArray = Array.isArray(args.to) ? args.to : [args.to];
 
@@ -133,8 +133,8 @@ export const EMAIL_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }>
       required: ['templateId', 'to'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
-      const { sendEmailWithMergeTags } = await import('@/lib/email');
+      const { prisma } = await import('../../db');
+      const { sendEmailWithMergeTags } = await import('../../email');
 
       // Get template
       const template = await prisma.emailTemplate.findUnique({
@@ -212,8 +212,8 @@ export const EMAIL_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }>
       required: ['email'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
-      const { createSubscription, sendConfirmationEmail } = await import('@/lib/email/subscriptions');
+      const { prisma } = await import('../../db');
+      const { createSubscription, sendConfirmationEmail } = await import('../../email/subscriptions');
 
       const lists = args.lists || ['newsletter'];
       const requireDoubleOptIn = args.requireDoubleOptIn !== false;
@@ -294,7 +294,7 @@ export const EMAIL_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }>
       required: ['email'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       const subscriber = await prisma.emailSubscriber.findUnique({
         where: { email: args.email.toLowerCase() },
@@ -380,7 +380,7 @@ export const EMAIL_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }>
       required: ['email'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       const subscriber = await prisma.emailSubscriber.findUnique({
         where: { email: args.email.toLowerCase() },
@@ -435,7 +435,7 @@ export const EMAIL_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }>
       required: ['email'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       const subscriber = await prisma.emailSubscriber.findUnique({
         where: { email: args.email.toLowerCase() },

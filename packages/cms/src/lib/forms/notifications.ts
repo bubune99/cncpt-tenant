@@ -4,9 +4,9 @@
  * Sends email notifications for form submissions using the email service
  */
 
-import { sendEmail } from '@/lib/email';
-import { prisma } from '@/lib/db';
-import { renderEmailTemplate } from '@/lib/email/templates/render';
+import { sendEmail } from '../email';
+import { prisma } from '../db';
+import { renderEmailTemplate } from '../email/templates/render';
 
 interface FormField {
   id: string;

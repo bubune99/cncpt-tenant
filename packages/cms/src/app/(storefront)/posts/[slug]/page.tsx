@@ -1,10 +1,10 @@
-import { prisma } from "@/lib/db";
+import { prisma } from '../../../../lib/db';
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
 import { Calendar, Clock, User, ArrowLeft, Tag as TagIcon, Eye } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { Badge } from '../../../../components/ui/badge';
+import { Separator } from '../../../../components/ui/separator';
 import type { Metadata } from "next";
 import BlogPostPuckRenderer from "./puck-renderer";
 

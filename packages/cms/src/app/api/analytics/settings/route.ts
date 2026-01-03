@@ -6,9 +6,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
-import { getAnalyticsSettings, clearAnalyticsSettingsCache } from '@/lib/analytics'
-import type { AnalyticsSettings } from '@/lib/analytics/types'
+import { prisma } from '../../../../lib/db'
+import { getAnalyticsSettings, clearAnalyticsSettingsCache } from '../../../../lib/analytics'
+import type { AnalyticsSettings } from '../../../../lib/analytics/types'
 
 export async function GET() {
   try {

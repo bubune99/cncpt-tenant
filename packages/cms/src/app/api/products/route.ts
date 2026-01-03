@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { prisma } from '../../../lib/db'
 import type { ProductStatus, ProductType, Prisma } from '@prisma/client'
 
 // GET - List products

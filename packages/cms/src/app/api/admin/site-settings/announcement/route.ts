@@ -9,8 +9,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   getOrCreateSiteSettings,
   updateAnnouncementBarConfig,
-} from '@/lib/site-settings';
-import { stackServerApp } from '@/lib/stack';
+} from '../../../../../lib/site-settings';
+import { stackServerApp } from '../../../../../lib/stack';
 
 /**
  * GET - Fetch announcement bar configuration

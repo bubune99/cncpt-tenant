@@ -8,7 +8,7 @@
  */
 
 import { Render } from '@measured/puck';
-import { pagesPuckConfig } from '@/puck/pages/config';
+import { pagesPuckConfig } from '../../puck/pages/config';
 import type { Data } from '@measured/puck';
 
 export interface PageRendererProps {

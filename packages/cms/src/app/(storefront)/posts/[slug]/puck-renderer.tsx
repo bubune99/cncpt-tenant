@@ -1,12 +1,12 @@
 "use client";
 
 import { Render } from "@measured/puck";
-import { blogPuckConfig } from "@/puck/blog/config";
+import { blogPuckConfig } from '../../../../puck/blog/config';
 import Link from "next/link";
 import { format } from "date-fns";
 import { Calendar, Clock, User, ArrowLeft, Eye } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { Badge } from '../../../../components/ui/badge';
+import { Separator } from '../../../../components/ui/separator';
 import type { Data } from "@measured/puck";
 
 interface BlogPost {

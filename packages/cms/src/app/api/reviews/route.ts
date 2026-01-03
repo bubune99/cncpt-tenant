@@ -11,7 +11,7 @@ import {
   submitReview,
   type ReviewFilters,
   type ReviewSort,
-} from '@/lib/reviews';
+} from '../../../lib/reviews';
 import type { ReviewStatus } from '@prisma/client';
 
 // GET - List reviews (admin)

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getBrandingSettings } from "@/lib/settings";
+import { getBrandingSettings } from './settings';
 
 /**
  * Generate dynamic metadata from branding settings

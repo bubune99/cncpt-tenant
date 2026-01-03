@@ -5,7 +5,7 @@
  * Adapted from ChatSDK for Prisma.
  */
 
-import { prisma } from '@/lib/db';
+import { prisma } from '../../db';
 import { generateText, streamText } from 'ai';
 import { createModelFromSettings } from '../index';
 import { codePrompt, sheetPrompt, updateDocumentPrompt } from '../prompts';

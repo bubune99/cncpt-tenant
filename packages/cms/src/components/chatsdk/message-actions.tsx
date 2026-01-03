@@ -3,8 +3,8 @@ import { memo } from "react";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
 import { useCopyToClipboard } from "usehooks-ts";
-import type { Vote } from "@/lib/chatsdk/db/schema";
-import type { ChatMessage } from "@/lib/chatsdk/types";
+import type { Vote } from '../../lib/chatsdk/db/schema';
+import type { ChatMessage } from '../../lib/chatsdk/types';
 import { Action, Actions } from "./elements/actions";
 import { CopyIcon, PencilEditIcon, ThumbDownIcon, ThumbUpIcon } from "./icons";
 

@@ -5,7 +5,7 @@
  * These provide essential functionality and serve as examples.
  */
 
-import { prisma } from '@/lib/db';
+import { prisma } from '../db';
 import type { CreatePrimitiveRequest, JSONSchema } from './types';
 import { getPluginRegistry } from './registry';
 import { DOMAIN_PRIMITIVES } from './primitives';

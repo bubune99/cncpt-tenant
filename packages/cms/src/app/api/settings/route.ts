@@ -11,8 +11,8 @@ import {
   updateSettings,
   clearSettingsCache,
   getEnvVarStatus,
-} from '@/lib/settings'
-import type { SettingGroup } from '@/lib/settings/types'
+} from '../../../lib/settings'
+import type { SettingGroup } from '../../../lib/settings/types'
 
 export async function GET(request: NextRequest) {
   try {

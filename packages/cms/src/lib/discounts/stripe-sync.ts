@@ -5,8 +5,8 @@
  */
 
 import Stripe from 'stripe';
-import { prisma } from '@/lib/db';
-import { getStripeSettings } from '@/lib/stripe';
+import { prisma } from '../db';
+import { getStripeSettings } from '../stripe';
 import type { DiscountCode, DiscountType } from '@prisma/client';
 
 // Stripe client cache

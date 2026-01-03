@@ -4,7 +4,7 @@
  * Manage order workflow templates and stages
  */
 
-import { prisma } from '@/lib/db'
+import { prisma } from '../db'
 import type {
   WorkflowCreateInput,
   WorkflowUpdateInput,

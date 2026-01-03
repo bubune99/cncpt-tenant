@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import { useMedia } from '@/hooks/use-media'
-import { useMediaUpload } from '@/hooks/use-media-upload'
+import { useMedia } from '../../../hooks/use-media'
+import { useMediaUpload } from '../../../hooks/use-media-upload'
 import { MediaGrid } from './MediaGrid'
 import { MediaList } from './MediaList'
 import { MediaToolbar } from './MediaToolbar'
@@ -16,7 +16,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
+} from '../../ui/dialog'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,18 +26,18 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+} from '../../ui/alert-dialog'
 import {
   Alert,
   AlertDescription,
   AlertTitle,
-} from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+} from '../../ui/alert'
+import { Button } from '../../ui/button'
+import { Input } from '../../ui/input'
+import { Label } from '../../ui/label'
 import { AlertTriangle, Settings } from 'lucide-react'
 import Link from 'next/link'
-import type { MediaWithRelations, FolderWithRelations } from '@/lib/media/types'
+import type { MediaWithRelations, FolderWithRelations } from '../../../lib/media/types'
 
 interface StorageConfigStatus {
   configured: boolean

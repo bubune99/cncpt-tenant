@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { prisma } from '@/lib/db'
-import { getCustomerProgressView } from '@/lib/order-workflows/progress'
+import { prisma } from '../../../../lib/db'
+import { getCustomerProgressView } from '../../../../lib/order-workflows/progress'
 import { OrderTracker } from './OrderTracker'
 
 interface PageProps {

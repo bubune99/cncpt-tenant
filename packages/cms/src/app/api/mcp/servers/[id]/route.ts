@@ -7,10 +7,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { stackServerApp } from '@/lib/stack';
-import { prisma } from '@/lib/db';
-import { encrypt } from '@/lib/encryption';
-import { invalidateMcpServerCache } from '@/lib/mcp';
+import { stackServerApp } from '../../../../../lib/stack';
+import { prisma } from '../../../../../lib/db';
+import { encrypt } from '../../../../../lib/encryption';
+import { invalidateMcpServerCache } from '../../../../../lib/mcp';
 
 export const dynamic = 'force-dynamic';
 

@@ -6,13 +6,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { prisma } from '../../../../lib/db'
 import {
   withPermission,
   type AuthContext,
-} from '@/lib/permissions/middleware'
-import { PERMISSIONS, logAuditEvent } from '@/lib/permissions'
-import { getAvailableCustomComponents } from '@/lib/routes/custom-components'
+} from '../../../../lib/permissions/middleware'
+import { PERMISSIONS, logAuditEvent } from '../../../../lib/permissions'
+import { getAvailableCustomComponents } from '../../../../lib/routes/custom-components'
 
 // GET - List all route configurations
 export const GET = withPermission(

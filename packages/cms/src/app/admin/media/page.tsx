@@ -1,4 +1,4 @@
-import { MediaManager } from '@/components/admin/media'
+import { MediaManager } from '../../../components/admin/media'
 
 export const metadata = {
   title: 'Media Manager | Admin',

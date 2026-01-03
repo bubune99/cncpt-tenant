@@ -1,7 +1,7 @@
 import { toast } from "sonner";
-import { Artifact } from "@/components/chatsdk/create-artifact";
-import { DiffView } from "@/components/chatsdk/diffview";
-import { DocumentSkeleton } from "@/components/chatsdk/document-skeleton";
+import { Artifact } from '../../../components/chatsdk/create-artifact';
+import { DiffView } from '../../../components/chatsdk/diffview';
+import { DocumentSkeleton } from '../../../components/chatsdk/document-skeleton';
 import {
   ClockRewind,
   CopyIcon,
@@ -9,9 +9,9 @@ import {
   PenIcon,
   RedoIcon,
   UndoIcon,
-} from "@/components/chatsdk/icons";
-import { Editor } from "@/components/chatsdk/text-editor";
-import type { Suggestion } from "@/lib/chatsdk/db/schema";
+} from '../../../components/chatsdk/icons';
+import { Editor } from '../../../components/chatsdk/text-editor';
+import type { Suggestion } from '../../../lib/chatsdk/db/schema';
 import { getSuggestions } from "../actions";
 
 type TextArtifactMetadata = {

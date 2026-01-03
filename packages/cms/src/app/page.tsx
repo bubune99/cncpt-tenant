@@ -11,11 +11,11 @@
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import type { Data } from '@measured/puck'
-import { getRouteConfig } from '@/lib/routes'
-import { getCustomComponent } from '@/lib/routes/custom-components'
-import { PageWrapper, getPageLayoutSettings } from '@/components/page-wrapper'
-import { PageRenderer } from '@/components/page-wrapper/page-renderer'
-import { prisma } from '@/lib/db'
+import { getRouteConfig } from '../lib/routes'
+import { getCustomComponent } from '../lib/routes/custom-components'
+import { PageWrapper, getPageLayoutSettings } from '../components/page-wrapper'
+import { PageRenderer } from '../components/page-wrapper/page-renderer'
+import { prisma } from '../lib/db'
 
 /**
  * Generate metadata for the root page

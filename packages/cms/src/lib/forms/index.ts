@@ -4,7 +4,7 @@
  * Provides form creation, validation, and submission handling
  */
 
-import { prisma } from '@/lib/db'
+import { prisma } from '../db'
 import type {
   FormField,
   FormDefinition,

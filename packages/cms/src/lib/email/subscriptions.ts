@@ -4,7 +4,7 @@
  * Handles subscribe, unsubscribe, and preference management
  */
 
-import { prisma } from '@/lib/db'
+import { prisma } from '../db'
 import crypto from 'crypto'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'

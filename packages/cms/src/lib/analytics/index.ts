@@ -4,7 +4,7 @@
  * Provides unified analytics tracking for Google Analytics 4 and Matomo
  */
 
-import { prisma } from '@/lib/db'
+import { prisma } from '../db'
 import type {
   AnalyticsSettings,
   AnalyticsEvent,

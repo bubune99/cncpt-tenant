@@ -12,8 +12,8 @@ import {
   searchTags,
   getPopularTags,
   getOrCreateTag,
-} from '@/lib/media/tags'
-import type { TagCreateInput } from '@/lib/media/types'
+} from '../../../../lib/media/tags'
+import type { TagCreateInput } from '../../../../lib/media/types'
 
 export async function GET(request: NextRequest) {
   try {

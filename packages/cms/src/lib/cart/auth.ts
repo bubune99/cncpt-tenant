@@ -4,8 +4,8 @@
  * Gets the current user's internal ID from Stack Auth session
  */
 
-import { stackServerApp } from '@/lib/stack';
-import { prisma } from '@/lib/db';
+import { stackServerApp } from '../stack';
+import { prisma } from '../db';
 
 /**
  * Get the current user's internal database ID from Stack Auth session
