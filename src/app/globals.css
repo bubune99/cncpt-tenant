@@ -1,0 +1,436 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+/*
+ ---break---
+ */
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Theme based on next-shadcn-admin-dashboard
+ * Using OKLch color space for modern CSS
+ */
+
+:root {
+  --radius: 0.625rem;
+
+  /* Base Colors */
+
+  /* Card */
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+
+  /* Popover */
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+
+  /* Primary */
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+
+  /* Secondary */
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+
+  /* Muted */
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+
+  /* Accent */
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+
+  /* Destructive */
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+
+  /* Success */
+  --success: oklch(0.6 0.2 145);
+  --success-foreground: oklch(0.985 0 0);
+
+  /* Warning */
+  --warning: oklch(0.75 0.15 85);
+  --warning-foreground: oklch(0.205 0 0);
+
+  /* Border & Input */
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+
+  /* Chart Colors */
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+
+  /* Sidebar */
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+}
+
+.dark {
+  /* Base Colors */
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+
+  /* Card */
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+
+  /* Popover */
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+
+  /* Primary */
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+
+  /* Secondary */
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+
+  /* Muted */
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+
+  /* Accent */
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+
+  /* Destructive */
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.985 0 0);
+
+  /* Success */
+  --success: oklch(0.55 0.2 145);
+  --success-foreground: oklch(0.985 0 0);
+
+  /* Warning */
+  --warning: oklch(0.7 0.15 85);
+  --warning-foreground: oklch(0.205 0 0);
+
+  /* Border & Input */
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+
+  /* Chart Colors - adjusted for dark mode */
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+
+  /* Sidebar */
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+/* Tangerine Theme Preset */
+[data-theme="tangerine"] {
+  --primary: oklch(0.64 0.17 36.44);
+  --primary-foreground: oklch(1 0 0);
+  --accent: oklch(0.91 0.02 243.82);
+  --background: oklch(0.94 0 236.5);
+  --sidebar: oklch(0.9 0 258.33);
+  --ring: oklch(0.64 0.17 36.44);
+}
+
+[data-theme="tangerine"].dark {
+  --primary: oklch(0.64 0.17 36.44);
+  --primary-foreground: oklch(1 0 0);
+  --background: oklch(0.18 0.01 264.54);
+  --sidebar: oklch(0.22 0.01 264.54);
+}
+
+/* Tailwind theme integration */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+}
+
+/* Base layer */
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Utility layer */
+@layer utilities {
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Streaming cursor blink animation */
+  @keyframes cursor-blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+
+  /* Smooth message slide-in */
+  @keyframes message-slide-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Pulse glow effect for AI thinking */
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(var(--primary), 0.2);
+    }
+    50% {
+      box-shadow: 0 0 20px 4px rgba(var(--primary), 0.3);
+    }
+  }
+
+  /* Shimmer effect for loading states */
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .animate-shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Custom scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--muted) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: var(--muted);
+    border-radius: 4px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: var(--muted-foreground);
+  }
+}
+
+/* Puck Editor Overrides - Light Mode */
+[class*="Puck"],
+[class*="puck"],
+[class*="_Puck"],
+.Puck {
+  --puck-color-azure-04: var(--primary);
+  --puck-color-azure-05: var(--primary);
+  --puck-color-azure-06: var(--primary);
+  --puck-color-azure-07: var(--primary);
+  --puck-color-grey-01: var(--background);
+  --puck-color-grey-02: var(--muted);
+  --puck-color-grey-03: var(--border);
+  --puck-color-grey-04: var(--muted-foreground);
+  --puck-color-grey-05: var(--foreground);
+  --puck-color-white: var(--background);
+  --puck-color-black: var(--foreground);
+}
+
+/* Puck Editor Overrides - Dark Mode */
+.dark [class*="Puck"],
+.dark [class*="puck"],
+.dark [class*="_Puck"],
+.dark .Puck,
+:root.dark [class*="Puck"],
+:root.dark [class*="_Puck"],
+html.dark [class*="Puck"],
+html.dark [class*="_Puck"] {
+  --puck-color-azure-04: var(--primary);
+  --puck-color-azure-05: var(--primary);
+  --puck-color-azure-06: var(--primary);
+  --puck-color-azure-07: var(--primary);
+  --puck-color-grey-01: oklch(0.145 0 0);
+  --puck-color-grey-02: oklch(0.205 0 0);
+  --puck-color-grey-03: oklch(0.269 0 0);
+  --puck-color-grey-04: oklch(0.556 0 0);
+  --puck-color-grey-05: oklch(0.985 0 0);
+  --puck-color-white: oklch(0.145 0 0);
+  --puck-color-black: oklch(0.985 0 0);
+  background-color: oklch(0.145 0 0) !important;
+  color: oklch(0.985 0 0) !important;
+}
+
+/* Force Puck frame/canvas backgrounds in dark mode */
+.dark [class*="Puck-frame"],
+.dark [class*="Puck-root"],
+.dark [class*="Puck-leftSideBar"],
+.dark [class*="Puck-rightSideBar"],
+.dark [class*="Puck-header"],
+.dark [class*="_Puck"] > div,
+html.dark [class*="Puck-frame"],
+html.dark [class*="Puck-root"],
+html.dark [class*="_Puck"] > div {
+  background-color: oklch(0.175 0 0) !important;
+  color: oklch(0.985 0 0) !important;
+}
+
+/* Puck component list and fields in dark mode */
+.dark [class*="ComponentList"],
+.dark [class*="Puck-fields"],
+.dark [class*="FieldLabel"],
+.dark [class*="Input"],
+.dark [class*="Drawer"],
+.dark [class*="Heading"],
+.dark [class*="SidebarSection"],
+.dark [class*="LayerTree"],
+html.dark [class*="ComponentList"],
+html.dark [class*="SidebarSection"] {
+  background-color: oklch(0.205 0 0) !important;
+  color: oklch(0.985 0 0) !important;
+  border-color: oklch(0.3 0 0) !important;
+}
+
+/* Puck input fields in dark mode */
+.dark [class*="Puck"] input,
+.dark [class*="Puck"] textarea,
+.dark [class*="Puck"] select,
+.dark [class*="_Puck"] input,
+.dark [class*="_Puck"] textarea,
+.dark [class*="_Puck"] select {
+  background-color: oklch(0.175 0 0) !important;
+  color: oklch(0.985 0 0) !important;
+  border-color: oklch(0.3 0 0) !important;
+}
+
+/* Puck buttons and interactive elements in dark mode */
+.dark [class*="Puck"] button,
+.dark [class*="_Puck"] button,
+.dark [class*="Puck"] label,
+.dark [class*="_Puck"] label {
+  color: oklch(0.985 0 0) !important;
+}
+
+/* Puck icons and SVGs in dark mode */
+.dark [class*="Puck"] svg,
+.dark [class*="_Puck"] svg {
+  color: oklch(0.985 0 0);
+  fill: currentColor;
+}
+
+/* Puck preview/canvas area - keep light for content preview */
+.dark [class*="Puck-preview"],
+.dark [class*="Preview"],
+html.dark [class*="Puck-preview"] {
+  background-color: oklch(0.95 0 0) !important;
+}
+
+/* Puck action bar and toolbars */
+.dark [class*="ActionBar"],
+.dark [class*="Toolbar"],
+html.dark [class*="ActionBar"] {
+  background-color: oklch(0.205 0 0) !important;
+  border-color: oklch(0.3 0 0) !important;
+}
+/*
+ ---break---
+ */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

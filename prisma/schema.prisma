@@ -1,0 +1,3380 @@
+// Prisma Schema for Custom CMS
+// Based on patterns from Payload Templates, LMS, and CNCPT Designer Platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// =============================================================================
+// USER & AUTH
+// =============================================================================
+
+model User {
+  id            String    @id @default(cuid())
+  stackAuthId   String?   @unique // Stack Auth UUID - synced from auth provider
+  email         String    @unique
+  name          String?
+  avatar        String?
+  phone         String?
+  role          UserRole  @default(VIEWER)
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  addresses     Address[]
+  conversations AiConversation[]
+  aiDocuments   AiDocument[]
+  media         Media[]
+  blogPosts     BlogPost[]
+  blogComments  BlogComment[]
+
+  // RBAC relations
+  roleAssignments RoleAssignment[]
+  permissions     UserPermission[]
+
+  // Order progress tracking
+  progressUpdates OrderProgress[] @relation("ProgressUpdater")
+
+  // Customer link (if this user is also a customer)
+  customer Customer?
+
+  // User-specific features
+  notifications Notification[]
+
+  @@index([stackAuthId])
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  EDITOR
+  VIEWER
+  CUSTOMER // Legacy - for registered customers who create accounts
+}
+
+// =============================================================================
+// CUSTOMER (E-commerce customers - separate from CMS users)
+// =============================================================================
+
+model Customer {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  firstName String?
+  lastName  String?
+  phone     String?
+  company   String?
+  taxId     String?  // For B2B invoicing
+  notes     String?  @db.Text
+  tags      String[] // For segmentation
+
+  // Optional link to CMS User (if customer creates account)
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id])
+
+  // Stripe sync
+  stripeCustomerId String?   @unique
+  stripeSyncedAt   DateTime?
+  stripeSyncError  String?
+
+  // Marketing preferences
+  acceptsMarketing   Boolean  @default(false)
+  marketingOptInAt   DateTime?
+  marketingOptOutAt  DateTime?
+
+  // Stats (denormalized for performance)
+  totalOrders  Int     @default(0)
+  totalSpent   Int     @default(0) // in cents
+  averageOrder Int     @default(0) // in cents
+  lastOrderAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  orders    Order[]
+  addresses CustomerAddress[]
+  wishlists Wishlist[]
+  reviews   ProductReview[]
+
+  @@index([stripeCustomerId])
+  @@index([email])
+  @@map("customers")
+}
+
+model CustomerAddress {
+  id         String  @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  label      String?  // "Home", "Work", "Shipping", etc.
+  firstName  String?
+  lastName   String?
+  company    String?
+  street1    String
+  street2    String?
+  city       String
+  state      String?
+  postalCode String
+  country    String  @default("US")
+  phone      String?
+
+  isDefaultShipping Boolean @default(false)
+  isDefaultBilling  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([customerId])
+  @@map("customer_addresses")
+}
+
+// =============================================================================
+// RBAC (Role-Based Access Control)
+// =============================================================================
+
+// Role - Preset permission bundles
+model Role {
+  id          String  @id @default(cuid())
+  name        String  @unique // "store_manager", "content_editor"
+  displayName String // "Store Manager"
+  description String?
+
+  // Permissions as JSON array: ["products.view", "products.edit", "orders.*"]
+  permissions Json @default("[]")
+
+  // Built-in roles can't be deleted
+  isSystem Boolean @default(false)
+
+  // Hierarchy for UI ordering
+  position Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  assignments RoleAssignment[]
+
+  @@index([isSystem])
+  @@map("roles")
+}
+
+// RoleAssignment - Junction table for User <-> Role (many-to-many)
+model RoleAssignment {
+  id     String @id @default(cuid())
+  userId String
+  roleId String
+
+  // Who assigned this role
+  assignedBy String?
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+  @@map("role_assignments")
+}
+
+// UserPermission - Individual permission overrides (GRANT or DENY)
+model UserPermission {
+  id     String @id @default(cuid())
+  userId String
+
+  // The permission string: "products.delete", "settings.shipping"
+  permission String
+
+  // GRANT adds permission, DENY removes it (even if role has it)
+  type PermissionType
+
+  // Optional expiration for temporary permissions
+  expiresAt DateTime?
+
+  // Audit info
+  grantedBy String?
+  reason    String? // Why this override was granted
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permission])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("user_permissions")
+}
+
+enum PermissionType {
+  GRANT
+  DENY
+}
+
+// AuditLog - Track permission and role changes
+model AuditLog {
+  id String @id @default(cuid())
+
+  // Who performed the action
+  userId    String?
+  userEmail String? // Denormalized for historical record
+
+  // What action was performed
+  action String // "role.assign", "role.remove", "permission.grant", "permission.deny"
+
+  // What was affected
+  targetType String? // "user", "role", "permission"
+  targetId   String?
+
+  // Details of the change
+  details Json @default("{}")
+
+  // Request metadata
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model Address {
+  id        String      @id @default(cuid())
+  userId    String
+  type      AddressType @default(SHIPPING)
+  firstName String
+  lastName  String
+  company   String?
+  street1   String
+  street2   String?
+  city      String
+  state     String
+  zip       String
+  country   String      @default("US")
+  phone     String?
+  isDefault Boolean     @default(false)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  // Relations
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shippingOrders Order[] @relation("ShippingAddress")
+  billingOrders  Order[] @relation("BillingAddress")
+  carts          Cart[]  @relation("CartShippingAddress")
+
+  @@map("addresses")
+}
+
+enum AddressType {
+  SHIPPING
+  BILLING
+}
+
+// =============================================================================
+// SETTINGS (Runtime Configuration)
+// =============================================================================
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.Text // JSON string, encrypted for sensitive values
+  group     String // branding, ecommerce, shipping, storage, ai, email
+  encrypted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([group])
+  @@map("settings")
+}
+
+// MCP Server Configuration
+// Stores MCP server configs that supplement .mcp.json
+model McpServer {
+  id          String   @id @default(cuid())
+  name        String   @unique // Unique identifier, e.g., "my-custom-server"
+  displayName String? // Human-readable name
+  description String? // What this server provides
+  command     String // Command to run, e.g., "npx" or "node"
+  args        Json     @default("[]") // Command arguments as JSON array
+  env         Json? // Environment variables (encrypted values stored separately)
+  envEncrypted String?  @db.Text // Encrypted env vars JSON
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([enabled])
+  @@map("mcp_servers")
+}
+
+// =============================================================================
+// PRODUCTS & VARIANTS
+// =============================================================================
+
+model Product {
+  id              String        @id @default(cuid())
+  title           String
+  slug            String        @unique
+  description     String?       @db.Text
+  descriptionHtml String?       @db.Text
+  basePrice       Int           @default(0) // in cents
+  compareAtPrice  Int? // for sale display
+  status          ProductStatus @default(DRAFT)
+  featured        Boolean       @default(false)
+
+  // Product type
+  type    ProductType @default(SIMPLE)
+  sku     String? // SKU for simple products
+  barcode String? // UPC, EAN, ISBN, etc.
+
+  // Cost & margins
+  costPrice Int? // Cost per item in cents
+
+  // Tax & shipping
+  taxable          Boolean @default(true)
+  taxCode          String? // Tax category code
+  requiresShipping Boolean @default(true)
+  weight           Int? // Weight in ounces
+  length           Float? // Dimensions for shipping
+  width            Float?
+  height           Float?
+
+  // Inventory (for SIMPLE products without variants)
+  trackInventory    Boolean @default(true)
+  stock             Int     @default(0)
+  lowStockThreshold Int     @default(5)
+  allowBackorder    Boolean @default(false)
+
+  // Stripe sync
+  stripeProductId String?
+  stripePriceId   String?
+  stripeSyncedAt  DateTime? // Last Stripe sync
+  stripeSyncError String? // Last sync error
+
+  // Subscription settings (for SUBSCRIPTION type)
+  subscriptionInterval      String? // month, year
+  subscriptionIntervalCount Int? // e.g., 3 for quarterly
+  trialDays                 Int? // Free trial period
+
+  // Bundle settings (for BUNDLE type)
+  bundleItems     Json? // Array of {productId, quantity, priceAdjustment}
+  bundlePriceMode String? // "fixed" or "calculated"
+
+  // Digital product settings (for DIGITAL type)
+  digitalAssetId String? // Link to digital asset
+
+  // Service settings (for SERVICE type)
+  serviceDuration Int? // Duration in minutes
+  serviceCapacity Int? // Max bookings per slot
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+
+  // Order workflow (overrides category/default workflow)
+  orderWorkflowId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  images        ProductImage[]
+  options       ProductOption[]
+  variants      ProductVariant[]
+  orderItems    OrderItem[]
+  categories    ProductCategory[]
+  digitalAsset  DigitalAsset?        @relation(fields: [digitalAssetId], references: [id])
+  customFields  ProductCustomField[]
+  orderWorkflow OrderWorkflow?       @relation("ProductWorkflow", fields: [orderWorkflowId], references: [id])
+
+  // Customer features
+  cartItems     CartItem[]
+  wishlistItems WishlistItem[]
+  reviews       ProductReview[]
+
+  // Inventory alerts
+  backInStockSubscriptions BackInStockSubscription[]
+  stockReservations        StockReservation[]
+
+  @@index([status])
+  @@index([slug])
+  @@index([type])
+  @@index([sku])
+  @@index([orderWorkflowId])
+  @@map("products")
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum ProductType {
+  SIMPLE // Single SKU, no variants
+  VARIABLE // Has variants with options
+  DIGITAL // Downloadable/license key
+  SERVICE // Appointment/consultation
+  SUBSCRIPTION // Recurring billing
+  BUNDLE // Multiple products together
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  mediaId   String
+  position  Int      @default(0)
+  alt       String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  media   Media   @relation(fields: [mediaId], references: [id])
+
+  @@index([productId])
+  @@map("product_images")
+}
+
+model ProductOption {
+  id        String   @id @default(cuid())
+  productId String
+  name      String // e.g., "Color", "Size"
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  product Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  values  ProductOptionValue[]
+
+  @@index([productId])
+  @@map("product_options")
+}
+
+model ProductOptionValue {
+  id        String   @id @default(cuid())
+  optionId  String
+  value     String // e.g., "Red", "Large"
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  // Relations
+  option   ProductOption               @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  variants ProductVariantOptionValue[]
+
+  @@index([optionId])
+  @@map("product_option_values")
+}
+
+model ProductVariant {
+  id             String  @id @default(cuid())
+  productId      String
+  sku            String?
+  barcode        String?
+  price          Int // in cents
+  compareAtPrice Int?
+
+  // Status
+  enabled Boolean @default(true)
+
+  // Cost
+  costPrice Int? // Cost per item in cents
+
+  // Inventory
+  stock             Int     @default(0)
+  lowStockThreshold Int     @default(5)
+  allowBackorder    Boolean @default(false)
+
+  // Shipping
+  weight Int? // in ounces
+  length Float?
+  width  Float?
+  height Float?
+
+  // Stripe sync
+  stripePriceId   String?
+  stripeSyncedAt  DateTime? // Last Stripe sync
+  stripeSyncError String? // Last sync error
+
+  // Image override
+  imageId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  product           Product                     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  image             Media?                      @relation(fields: [imageId], references: [id])
+  optionValues      ProductVariantOptionValue[]
+  orderItems        OrderItem[]
+  customFieldValues VariantCustomFieldValue[]
+
+  // Customer features
+  cartItems     CartItem[]
+  wishlistItems WishlistItem[]
+
+  // Inventory alerts
+  backInStockSubscriptions BackInStockSubscription[]
+  stockReservations        StockReservation[]
+
+  @@index([productId])
+  @@index([sku])
+  @@index([enabled])
+  @@map("product_variants")
+}
+
+// Junction table for variant <-> option values (many-to-many)
+model ProductVariantOptionValue {
+  variantId     String
+  optionValueId String
+
+  variant     ProductVariant     @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  optionValue ProductOptionValue @relation(fields: [optionValueId], references: [id], onDelete: Cascade)
+
+  @@id([variantId, optionValueId])
+  @@map("product_variant_option_values")
+}
+
+// =============================================================================
+// CUSTOM FIELDS (ACF-like system for product variants)
+// =============================================================================
+
+enum CustomFieldType {
+  TEXT // Single line text
+  NUMBER // Numeric value
+  BOOLEAN // True/false toggle
+  SELECT // Single dropdown selection
+  MULTISELECT // Multiple selections
+  COLOR // Color picker/swatch
+  IMAGE // Media picker
+  DATE // Date picker
+  URL // URL field
+  TEXTAREA // Multi-line text
+}
+
+// Global custom field library
+model CustomField {
+  id          String  @id @default(cuid())
+  name        String // Display name: "Material", "Country of Origin"
+  slug        String  @unique // Programmatic key: "material", "country_of_origin"
+  description String?
+
+  // Field type configuration
+  type         CustomFieldType @default(TEXT)
+  options      Json? // For SELECT/MULTISELECT: [{value, label, color?}]
+  defaultValue Json? // Default value based on type
+
+  // Validation
+  required   Boolean @default(false)
+  validation Json? // {min, max, pattern, etc.}
+
+  // Display
+  position Int     @default(0)
+  icon     String? // Lucide icon name
+
+  // Status
+  enabled Boolean @default(true)
+  builtIn Boolean @default(false) // System fields
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  productFields ProductCustomField[]
+  variantValues VariantCustomFieldValue[]
+
+  @@index([slug])
+  @@index([type])
+  @@index([enabled])
+  @@map("custom_fields")
+}
+
+// Junction: Which custom fields a product uses
+model ProductCustomField {
+  productId     String
+  customFieldId String
+  position      Int      @default(0) // Column order in grid
+  enabled       Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  customField CustomField @relation(fields: [customFieldId], references: [id], onDelete: Cascade)
+
+  @@id([productId, customFieldId])
+  @@map("product_custom_fields")
+}
+
+// Values stored per variant
+model VariantCustomFieldValue {
+  id            String @id @default(cuid())
+  variantId     String
+  customFieldId String
+  value         Json // Stores any type: string, number, boolean, array, object
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  variant     ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  customField CustomField    @relation(fields: [customFieldId], references: [id], onDelete: Cascade)
+
+  @@unique([variantId, customFieldId])
+  @@index([variantId])
+  @@index([customFieldId])
+  @@map("variant_custom_field_values")
+}
+
+model Category {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String?
+  parentId    String?
+  position    Int     @default(0)
+  imageId     String?
+
+  // Order workflow (default for products in this category)
+  orderWorkflowId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  parent        Category?         @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children      Category[]        @relation("CategoryHierarchy")
+  image         Media?            @relation(fields: [imageId], references: [id])
+  products      ProductCategory[]
+  orderWorkflow OrderWorkflow?    @relation("CategoryWorkflow", fields: [orderWorkflowId], references: [id])
+
+  @@index([slug])
+  @@index([orderWorkflowId])
+  @@map("categories")
+}
+
+model ProductCategory {
+  productId  String
+  categoryId String
+
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([productId, categoryId])
+  @@map("product_categories")
+}
+
+// =============================================================================
+// DIGITAL ASSETS (for digital products)
+// =============================================================================
+
+model DigitalAsset {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+
+  // File storage
+  fileUrl  String? // External URL
+  fileKey  String? // S3/R2 storage key
+  fileName String?
+  fileSize Int? // in bytes
+  mimeType String?
+
+  // License management
+  maxDownloads  Int? // Max downloads per purchase (null = unlimited)
+  expiresInDays Int? // Download link expiry (null = never)
+
+  // License key settings
+  useLicenseKeys    Boolean @default(false)
+  licenseKeyPattern String? // Pattern for generating keys
+  maxActivations    Int? // Max activations per key (null = unlimited)
+
+  // Versioning
+  version String @default("1.0.0")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  products    Product[]
+  licenseKeys LicenseKey[]
+  downloads   DigitalDownload[]
+
+  @@map("digital_assets")
+}
+
+model LicenseKey {
+  id             String  @id @default(cuid())
+  digitalAssetId String
+  orderId        String?
+  orderItemId    String?
+
+  // Key
+  key    String           @unique
+  status LicenseKeyStatus @default(AVAILABLE)
+
+  // Usage tracking
+  activationCount Int       @default(0)
+  lastActivatedAt DateTime?
+
+  // Assignment
+  assignedEmail String?
+  assignedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  digitalAsset DigitalAsset @relation(fields: [digitalAssetId], references: [id], onDelete: Cascade)
+
+  @@index([digitalAssetId])
+  @@index([key])
+  @@index([status])
+  @@map("license_keys")
+}
+
+enum LicenseKeyStatus {
+  AVAILABLE // Not yet assigned
+  ASSIGNED // Assigned to a customer
+  ACTIVATED // Customer has activated
+  EXPIRED // Past expiration
+  REVOKED // Manually revoked
+}
+
+model DigitalDownload {
+  id             String  @id @default(cuid())
+  digitalAssetId String
+  orderId        String?
+  orderItemId    String?
+
+  // Customer
+  customerEmail String
+  customerId    String?
+
+  // Download tracking
+  downloadCount Int       @default(0)
+  maxDownloads  Int? // Override from asset
+  expiresAt     DateTime?
+
+  // Unique download token
+  downloadToken String @unique @default(cuid())
+
+  createdAt      DateTime  @default(now())
+  lastDownloadAt DateTime?
+
+  // Relations
+  digitalAsset DigitalAsset @relation(fields: [digitalAssetId], references: [id], onDelete: Cascade)
+
+  @@index([digitalAssetId])
+  @@index([downloadToken])
+  @@index([customerEmail])
+  @@map("digital_downloads")
+}
+
+// =============================================================================
+// ORDERS
+// =============================================================================
+
+model Order {
+  id          String      @id @default(cuid())
+  orderNumber String      @unique
+  customerId  String?
+  email       String
+  status      OrderStatus @default(PENDING)
+
+  // Totals (in cents)
+  subtotal      Int
+  shippingTotal Int @default(0)
+  taxTotal      Int @default(0)
+  discountTotal Int @default(0)
+  total         Int
+
+  // Discount
+  discountCodeId String?
+
+  // Addresses
+  shippingAddressId String?
+  billingAddressId  String?
+
+  // Payment
+  stripePaymentIntentId String?
+  stripeSessionId       String?
+  paymentStatus         PaymentStatus @default(UNPAID)
+  paidAt                DateTime?
+
+  // Notes
+  customerNotes String?
+  internalNotes String?
+
+  // Workflow tracking
+  workflowId       String? // Assigned workflow (inherited from product/category or default)
+  currentStageId   String? // Current stage in the workflow
+  trackingAutoSync Boolean @default(true) // Auto-update stages from Shippo tracking
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  customer        Customer?     @relation(fields: [customerId], references: [id])
+  shippingAddress Address?      @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
+  billingAddress  Address?      @relation("BillingAddress", fields: [billingAddressId], references: [id])
+  discountCode    DiscountCode? @relation("OrderDiscount", fields: [discountCodeId], references: [id])
+  items           OrderItem[]
+  shipments       Shipment[]
+  payments        Payment[]
+
+  // Workflow relations
+  workflow     OrderWorkflow?      @relation("OrderWorkflow", fields: [workflowId], references: [id])
+  currentStage OrderWorkflowStage? @relation("CurrentStage", fields: [currentStageId], references: [id])
+  progress     OrderProgress[]
+
+  // Inventory
+  stockReservations StockReservation[]
+
+  @@index([orderNumber])
+  @@index([customerId])
+  @@index([status])
+  @@index([workflowId])
+  @@index([currentStageId])
+  @@index([discountCodeId])
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  PARTIALLY_REFUNDED
+  REFUNDED
+  FAILED
+}
+
+model OrderItem {
+  id           String  @id @default(cuid())
+  orderId      String
+  productId    String
+  variantId    String?
+  title        String // Snapshot of product title
+  variantTitle String? // Snapshot of variant options
+  sku          String?
+  quantity     Int
+  price        Int // Price per unit at time of order (cents)
+  total        Int // quantity * price
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  order   Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product         @relation(fields: [productId], references: [id])
+  variant ProductVariant? @relation(fields: [variantId], references: [id])
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model Shipment {
+  id             String         @id @default(cuid())
+  orderId        String
+  carrier        String?
+  service        String?
+  trackingNumber String?
+  trackingUrl    String?
+  labelUrl       String?
+  status         ShipmentStatus @default(PENDING)
+
+  // Shippo integration
+  shippoShipmentId    String?
+  shippoTransactionId String?
+  shippoRateId        String?
+
+  // Cost
+  shippingCost Int? // in cents
+
+  shippedAt   DateTime?
+  deliveredAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([trackingNumber])
+  @@map("shipments")
+}
+
+enum ShipmentStatus {
+  PENDING
+  LABEL_CREATED
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  RETURNED
+  FAILED
+}
+
+// =============================================================================
+// ORDER WORKFLOWS
+// =============================================================================
+
+// Workflow template for order progress tracking
+model OrderWorkflow {
+  id          String  @id @default(cuid())
+  name        String // "Standard Shipping", "Digital Download", "Custom Order"
+  slug        String  @unique
+  description String?
+
+  // Default workflow is used when no specific workflow is assigned
+  isDefault Boolean @default(false)
+  isActive  Boolean @default(true)
+
+  // Shippo auto-sync: automatically update stages based on tracking events
+  enableShippoSync Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  stages     OrderWorkflowStage[]
+  orders     Order[]              @relation("OrderWorkflow")
+  products   Product[]            @relation("ProductWorkflow")
+  categories Category[]           @relation("CategoryWorkflow")
+
+  @@index([isDefault])
+  @@index([isActive])
+  @@map("order_workflows")
+}
+
+// Individual stages within a workflow
+model OrderWorkflowStage {
+  id         String @id @default(cuid())
+  workflowId String
+
+  // Internal identification
+  name String // Internal name: "processing", "shipped", "delivered"
+  slug String // URL-safe identifier
+
+  // Customer-facing content
+  displayName     String // "Processing Your Order"
+  customerMessage String? @db.Text // "We're preparing your order for shipment!"
+  icon            String? // Icon name (e.g., "package", "truck", "check")
+  color           String? // Hex color for UI
+
+  // Stage ordering and behavior
+  position   Int     @default(0) // Order of stages (0, 1, 2...)
+  isTerminal Boolean @default(false) // Is this an end state? (delivered, cancelled)
+
+  // Automation
+  notifyCustomer    Boolean @default(true) // Send notification when entering this stage
+  estimatedDuration Int? // Estimated hours to next stage (for ETA display)
+
+  // Shippo tracking event mapping (for auto-sync)
+  // Values: PRE_TRANSIT, TRANSIT, DELIVERED, RETURNED, FAILURE, null (manual only)
+  shippoEventTrigger String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  workflow OrderWorkflow   @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  progress OrderProgress[]
+  orders   Order[]         @relation("CurrentStage")
+
+  @@unique([workflowId, slug])
+  @@unique([workflowId, position])
+  @@index([workflowId])
+  @@index([shippoEventTrigger])
+  @@map("order_workflow_stages")
+}
+
+// Track order progress through stages (history)
+model OrderProgress {
+  id      String @id @default(cuid())
+  orderId String
+  stageId String
+
+  // Timestamps
+  enteredAt DateTime  @default(now()) // When order entered this stage
+  exitedAt  DateTime? // When order left this stage (null if current)
+
+  // Source of the change
+  source String @default("manual") // "manual", "shippo", "system", "webhook"
+
+  // Override/reversion info
+  isOverride Boolean @default(false) // Was this a manual override?
+  reason     String? // Reason for manual change (especially reversions)
+
+  // Who made the change
+  updatedById String?
+  notes       String? @db.Text // Admin notes
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  order     Order              @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  stage     OrderWorkflowStage @relation(fields: [stageId], references: [id])
+  updatedBy User?              @relation("ProgressUpdater", fields: [updatedById], references: [id])
+
+  @@index([orderId])
+  @@index([stageId])
+  @@index([enteredAt])
+  @@map("order_progress")
+}
+
+// =============================================================================
+// PAGES & CONTENT
+// =============================================================================
+
+model Page {
+  id     String     @id @default(cuid())
+  title  String
+  slug   String     @unique
+  status PageStatus @default(DRAFT)
+
+  // Puck editor content (JSON)
+  content Json?
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  featuredImageId String?
+
+  // Hierarchy
+  parentId String?
+
+  // Header/Footer configuration
+  headerMode   PageLayoutMode @default(GLOBAL) // GLOBAL, CUSTOM, NONE
+  footerMode   PageLayoutMode @default(GLOBAL) // GLOBAL, CUSTOM, NONE
+  customHeader Json? // Custom header Puck data (when headerMode=CUSTOM)
+  customFooter Json? // Custom footer Puck data (when footerMode=CUSTOM)
+
+  // Announcement bar
+  showAnnouncement Boolean @default(true)
+  customAnnouncement Json? // Custom announcement (null = use global)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
+
+  // Relations
+  parent        Page?        @relation("PageHierarchy", fields: [parentId], references: [id])
+  children      Page[]       @relation("PageHierarchy")
+  featuredImage Media?       @relation(fields: [featuredImageId], references: [id])
+  routeConfig   RouteConfig? // If this page is mapped to a root-level route
+
+  @@index([slug])
+  @@index([status])
+  @@map("pages")
+}
+
+enum PageLayoutMode {
+  GLOBAL  // Use global site settings
+  CUSTOM  // Use page-specific custom header/footer
+  NONE    // No header/footer
+}
+
+enum PageStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+// =============================================================================
+// ROUTE CONFIGURATION
+// =============================================================================
+
+// Configures root-level routes (bypassing /p/ prefix)
+// Allows choosing between Puck pages, custom-coded components, or redirects
+model RouteConfig {
+  id   String    @id @default(cuid())
+  slug String    @unique // The root-level path, e.g., "/", "/about", "/demo"
+  type RouteType
+
+  // For PUCK type - which page to render at this route
+  pageId String? @unique
+  page   Page?   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  // For CUSTOM type - identifier for a registered custom component
+  componentKey String? // e.g., "home-default", "landing-v2", "demo-page"
+
+  // For REDIRECT type
+  redirectUrl  String?
+  redirectCode Int?    @default(307) // 301, 302, 307, 308
+
+  // Metadata
+  isActive    Boolean @default(true)
+  description String? // Admin notes about this route
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+  @@index([type])
+  @@map("route_configs")
+}
+
+enum RouteType {
+  PUCK     // Render a Puck page from the database
+  CUSTOM   // Render a custom-coded React component
+  REDIRECT // Redirect to another URL
+}
+
+// =============================================================================
+// MEDIA
+// =============================================================================
+
+model Media {
+  id           String @id @default(cuid())
+  filename     String
+  originalName String
+  mimeType     String
+  size         Int // in bytes
+  url          String
+
+  // Image dimensions
+  width  Int?
+  height Int?
+
+  // Metadata
+  title       String? // Display title
+  alt         String?
+  caption     String?
+  description String? @db.Text // Long description
+
+  // Folder organization (database-backed)
+  folderId String?
+
+  // Storage provider info
+  provider StorageProvider @default(S3)
+  bucket   String?
+  key      String?
+
+  // Soft delete
+  deletedAt DateTime?
+
+  uploadedById String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  uploadedBy         User?             @relation(fields: [uploadedById], references: [id])
+  folder             MediaFolder?      @relation(fields: [folderId], references: [id])
+  tags               MediaTagOnMedia[]
+  usages             MediaUsage[]
+  productImages      ProductImage[]
+  productVariants    ProductVariant[]
+  categories         Category[]
+  pages              Page[]
+  blogFeaturedImages BlogPost[]        @relation("BlogFeaturedImage")
+  blogOgImages       BlogPost[]        @relation("BlogOgImage")
+  blogCategories     BlogCategory[]
+
+  @@index([folderId])
+  @@index([mimeType])
+  @@index([deletedAt])
+  @@index([createdAt])
+  @@map("media")
+}
+
+enum StorageProvider {
+  S3
+  R2
+  LOCAL
+}
+
+// =============================================================================
+// MEDIA FOLDERS (Database-backed hierarchy for workflow automation)
+// =============================================================================
+
+model MediaFolder {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String
+  description String?
+  color       String? // Optional color for visual distinction
+  icon        String? // Lucide icon name
+
+  // Hierarchy
+  parentId String?
+  path     String // Materialized path: "/root/parent/child"
+  depth    Int     @default(0)
+  position Int     @default(0)
+
+  // Permissions (for future workflow automation)
+  isPublic Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  parent   MediaFolder?  @relation("MediaFolderHierarchy", fields: [parentId], references: [id])
+  children MediaFolder[] @relation("MediaFolderHierarchy")
+  media    Media[]
+
+  @@unique([parentId, slug])
+  @@index([path])
+  @@index([parentId])
+  @@map("media_folders")
+}
+
+// =============================================================================
+// MEDIA TAGS
+// =============================================================================
+
+model MediaTag {
+  id    String  @id @default(cuid())
+  name  String  @unique
+  slug  String  @unique
+  color String? // For visual distinction
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  media MediaTagOnMedia[]
+
+  @@index([slug])
+  @@map("media_tags")
+}
+
+model MediaTagOnMedia {
+  mediaId String
+  tagId   String
+
+  media Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  tag   MediaTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([mediaId, tagId])
+  @@map("media_tags_on_media")
+}
+
+// =============================================================================
+// MEDIA USAGE TRACKING
+// =============================================================================
+
+model MediaUsage {
+  id      String @id @default(cuid())
+  mediaId String
+
+  // What entity is using this media
+  entityType String // "product", "blog_post", "page", "category", "email_campaign"
+  entityId   String
+  fieldName  String? // "featuredImage", "ogImage", "gallery", etc.
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  media Media @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@unique([mediaId, entityType, entityId, fieldName])
+  @@index([mediaId])
+  @@index([entityType, entityId])
+  @@map("media_usage")
+}
+
+// =============================================================================
+// AI CHAT (ChatSDK-compatible)
+// =============================================================================
+
+model AiConversation {
+  id     String             @id @default(cuid())
+  userId String
+  title  String
+  status ConversationStatus @default(ACTIVE)
+
+  // ChatSDK visibility
+  visibility ChatVisibility @default(PRIVATE)
+
+  // Context (optional - for contextual chat)
+  contextType String? // "product", "order", "page", "general"
+  contextId   String?
+
+  // Last usage context for cost tracking (ChatSDK)
+  lastContext Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages AiMessage[]
+  votes    AiVote[]
+  streams  AiStream[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([visibility])
+  @@map("ai_conversations")
+}
+
+enum ConversationStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum ChatVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+model AiMessage {
+  id             String @id @default(cuid())
+  conversationId String
+  role           String // "user", "assistant", "system"
+
+  // Content - legacy single text field
+  content String? @db.Text
+
+  // ChatSDK message parts (structured content)
+  parts Json? // Array of { type: "text" | "image" | "tool-call" | "tool-result", ... }
+
+  // ChatSDK attachments (files, images)
+  attachments Json? // Array of { name, type, url, ... }
+
+  // Tool calls (for AI SDK)
+  toolCalls   Json?
+  toolResults Json?
+
+  // Metadata
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  votes        AiVote[]
+
+  @@index([conversationId])
+  @@map("ai_messages")
+}
+
+// AiVote - Message voting (thumbs up/down feedback)
+model AiVote {
+  conversationId String
+  messageId      String
+  isUpvoted      Boolean
+
+  // Relations
+  conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  message      AiMessage      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@id([conversationId, messageId])
+  @@map("ai_votes")
+}
+
+// AiStream - Active streaming state for resumable streams
+model AiStream {
+  id             String   @id @default(cuid())
+  conversationId String
+  createdAt      DateTime @default(now())
+
+  // Relations
+  conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("ai_streams")
+}
+
+// AiDocument - AI-generated artifacts (documents, code, spreadsheets)
+model AiDocument {
+  id      String @id @default(cuid())
+  userId  String
+  title   String
+  kind    String @default("text") // "text", "code", "image", "sheet"
+  content String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  suggestions AiSuggestion[]
+
+  @@index([userId])
+  @@index([kind])
+  @@map("ai_documents")
+}
+
+// AiSuggestion - AI-generated suggestions for documents
+model AiSuggestion {
+  id            String  @id @default(cuid())
+  documentId    String
+  userId        String
+  originalText  String  @db.Text
+  suggestedText String  @db.Text
+  description   String? @db.Text
+  isResolved    Boolean @default(false)
+
+  createdAt         DateTime @default(now())
+  documentCreatedAt DateTime
+
+  // Relations
+  document AiDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([userId])
+  @@map("ai_suggestions")
+}
+
+// =============================================================================
+// PLUGIN SYSTEM (vmcp-inspired)
+// Self-extending agent architecture for dynamic tool creation
+// =============================================================================
+
+// Primitive - Atomic unit of tool definition (equivalent to vmcp BlockPrimitive)
+model Primitive {
+  id      String @id @default(cuid())
+  name    String @unique // MCP-compatible tool name
+  version String @default("1.0.0")
+
+  // Schema (MCP-compatible)
+  description String @db.Text
+  inputSchema Json // JSON Schema for input validation
+
+  // Implementation
+  handler      String   @db.Text // JavaScript/TypeScript code
+  dependencies String[] @default([]) // npm packages required
+
+  // Metadata
+  author   String?
+  tags     String[]      @default([])
+  tier     PrimitiveTier @default(FREE)
+  category String? // email, webhook, data, ai, etc.
+  icon     String? // Lucide icon name
+
+  // Runtime hints
+  timeout Int     @default(30000) // ms
+  memory  Int     @default(128) // MB
+  sandbox Boolean @default(true)
+
+  // Status
+  enabled Boolean @default(true)
+  builtIn Boolean @default(false) // System primitives
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  plugin        Plugin?              @relation(fields: [pluginId], references: [id], onDelete: SetNull)
+  pluginId      String?
+  workflowNodes WorkflowNode[]
+  executions    PrimitiveExecution[]
+
+  @@index([category])
+  @@index([enabled])
+  @@map("primitives")
+}
+
+enum PrimitiveTier {
+  FREE
+  PROPRIETARY
+}
+
+// Plugin - Collection of primitives that form a feature unit
+model Plugin {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  slug        String  @unique
+  description String? @db.Text
+  version     String  @default("1.0.0")
+
+  // Display
+  icon  String? // Lucide icon name
+  color String? // Accent color
+
+  // Configuration
+  config       Json? // Plugin-specific configuration
+  configSchema Json? // JSON Schema for config validation
+
+  // Status
+  enabled   Boolean @default(false)
+  installed Boolean @default(true)
+  builtIn   Boolean @default(false) // System plugins
+
+  // Author info
+  author     String?
+  authorUrl  String?
+  repository String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  installedAt DateTime @default(now())
+
+  // Relations
+  primitives Primitive[]
+  workflows  Workflow[]
+
+  @@index([enabled])
+  @@map("plugins")
+}
+
+// Workflow - Visual composition of primitives (for React Flow builder)
+model Workflow {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String? @db.Text
+
+  // React Flow data
+  nodes    Json // WorkflowNode[] - position, data, type
+  edges    Json // WorkflowEdge[] - source, target, conditions
+  viewport Json? // React Flow viewport state
+
+  // Configuration
+  config    Json? // Workflow-specific configuration
+  variables Json? // Workflow-level variables
+
+  // Trigger
+  triggerType   WorkflowTrigger @default(MANUAL)
+  triggerConfig Json? // Trigger-specific config (cron, webhook path, etc.)
+
+  // Status
+  enabled Boolean @default(false)
+
+  // Execution metrics
+  executionCount Int @default(0)
+  successCount   Int @default(0)
+  failureCount   Int @default(0)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  lastRunAt DateTime?
+
+  // Relations
+  plugin        Plugin?             @relation(fields: [pluginId], references: [id], onDelete: SetNull)
+  pluginId      String?
+  template      WorkflowTemplate?   @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  templateId    String?
+  workflowNodes WorkflowNode[]
+  executions    WorkflowExecution[]
+  steps         WorkflowStep[]
+  logs          WorkflowLog[]
+
+  @@index([enabled])
+  @@index([triggerType])
+  @@index([templateId])
+  @@map("workflows")
+}
+
+enum WorkflowTrigger {
+  MANUAL // User-initiated
+  SCHEDULE // Cron-based
+  WEBHOOK // HTTP webhook
+  EVENT // System event (order.created, etc.)
+  AI_AGENT // Triggered by AI agent
+}
+
+// WorkflowNode - Individual node in a workflow (join table with extra data)
+model WorkflowNode {
+  id          String  @id @default(cuid())
+  workflowId  String
+  primitiveId String? // null for trigger/condition nodes
+
+  // React Flow position
+  positionX Float
+  positionY Float
+
+  // Node configuration
+  nodeType String // primitive, trigger, condition, loop, output
+  label    String?
+  config   Json? // Node-specific config, input mappings
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  workflow  Workflow   @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  primitive Primitive? @relation(fields: [primitiveId], references: [id])
+
+  @@index([workflowId])
+  @@map("workflow_nodes")
+}
+
+// PrimitiveExecution - Audit log for primitive executions
+model PrimitiveExecution {
+  id          String @id @default(cuid())
+  primitiveId String
+
+  // Context
+  workflowExecutionId String?
+  userId              String? // Who triggered it (if manual)
+  agentId             String? // AI agent ID (if agent-triggered)
+
+  // Execution data
+  input  Json?
+  output Json?
+
+  // Status
+  success Boolean
+  error   String? @db.Text
+
+  // Metrics
+  startedAt     DateTime
+  completedAt   DateTime
+  executionTime Int // ms
+
+  // Relations
+  primitive         Primitive          @relation(fields: [primitiveId], references: [id], onDelete: Cascade)
+  workflowExecution WorkflowExecution? @relation(fields: [workflowExecutionId], references: [id])
+
+  @@index([primitiveId])
+  @@index([workflowExecutionId])
+  @@index([startedAt])
+  @@map("primitive_executions")
+}
+
+// WorkflowExecution - Audit log for workflow runs
+model WorkflowExecution {
+  id         String @id @default(cuid())
+  workflowId String
+
+  // Context
+  triggeredBy String // "manual", "schedule", "webhook", "event", "agent"
+  userId      String?
+  agentId     String?
+  eventData   Json? // Trigger event data
+
+  // Status
+  status WorkflowExecutionStatus @default(RUNNING)
+  error  String?                 @db.Text
+
+  // Output
+  result Json? // Final workflow result
+
+  // Metrics
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  // Relations
+  workflow       Workflow             @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  nodeExecutions PrimitiveExecution[]
+
+  @@index([workflowId])
+  @@index([status])
+  @@index([startedAt])
+  @@map("workflow_executions")
+}
+
+enum WorkflowExecutionStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// WorkflowTemplate - Pre-built workflow templates for common e-commerce scenarios
+model WorkflowTemplate {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String? @db.Text
+  category    WorkflowTemplateCategory
+
+  // Template structure (simplified representation)
+  trigger     WorkflowTrigger
+  triggerConfig Json?  // Default trigger configuration
+  steps       Json    // Simplified step definitions
+
+  // Template metadata
+  icon        String?  // Icon name (e.g., "ShoppingCart", "Mail")
+  color       String?  // Theme color for UI
+  tags        String[] @default([])
+
+  // Documentation
+  documentation String? @db.Text // Markdown documentation
+  exampleUseCase String? @db.Text
+
+  // Status
+  isSystem    Boolean @default(false) // Built-in templates (not editable)
+  isActive    Boolean @default(true)
+  version     String  @default("1.0.0")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations - Workflows created from this template
+  workflows   Workflow[]
+
+  @@index([category])
+  @@index([isActive])
+  @@map("workflow_templates")
+}
+
+enum WorkflowTemplateCategory {
+  ORDER           // Order-related workflows
+  CART            // Cart/checkout workflows
+  INVENTORY       // Stock management
+  CUSTOMER        // Customer lifecycle
+  MARKETING       // Email campaigns, promotions
+  SHIPPING        // Shipping notifications
+  REVIEW          // Review moderation
+  SUBSCRIPTION    // Subscription management
+  CUSTOM          // User-created templates
+}
+
+// WorkflowStep - Simplified step representation for workflows
+model WorkflowStep {
+  id         String @id @default(cuid())
+  workflowId String
+
+  // Step definition
+  name       String
+  type       WorkflowStepType
+  order      Int           // Execution order
+
+  // Configuration
+  config     Json?         // Step-specific configuration
+  conditions Json?         // Conditional execution rules
+
+  // Retry/error handling
+  retryCount     Int     @default(0)
+  retryDelay     Int     @default(1000) // ms
+  continueOnError Boolean @default(false)
+
+  // Status
+  enabled    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@index([workflowId])
+  @@index([order])
+  @@map("workflow_steps")
+}
+
+enum WorkflowStepType {
+  TRIGGER       // Entry point
+  ACTION        // Execute an action (send email, update order, etc.)
+  CONDITION     // Conditional branch
+  DELAY         // Wait for time period
+  LOOP          // Iterate over items
+  TRANSFORM     // Data transformation
+  HTTP          // External API call
+  DATABASE      // Database operation
+  NOTIFICATION  // Send notification
+  END           // Terminal step
+}
+
+// WorkflowLog - Detailed execution logs for debugging and monitoring
+model WorkflowLog {
+  id                  String @id @default(cuid())
+  workflowId          String
+  workflowExecutionId String?
+
+  // Log details
+  level       WorkflowLogLevel
+  message     String @db.Text
+  stepName    String?
+  stepType    WorkflowStepType?
+
+  // Context
+  context     Json?    // Additional context data
+  input       Json?    // Input to the step
+  output      Json?    // Output from the step
+  error       String?  @db.Text
+  stackTrace  String?  @db.Text
+
+  // Timing
+  duration    Int?     // ms
+  timestamp   DateTime @default(now())
+
+  // Relations
+  workflow    Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@index([workflowId])
+  @@index([workflowExecutionId])
+  @@index([level])
+  @@index([timestamp])
+  @@map("workflow_logs")
+}
+
+enum WorkflowLogLevel {
+  DEBUG
+  INFO
+  WARN
+  ERROR
+  FATAL
+}
+
+// =============================================================================
+// EMAIL CAMPAIGNS (for Puck Email Builder)
+// =============================================================================
+
+model EmailCampaign {
+  id        String  @id @default(cuid())
+  name      String
+  subject   String
+  preheader String?
+
+  // Template (optional - can use template or custom content)
+  templateId String?
+
+  // Puck content (if not using template)
+  content Json? // Puck editor JSON
+  html    String? @db.Text // Rendered HTML
+
+  // Sender
+  fromName  String?
+  fromEmail String?
+  replyTo   String?
+
+  // Status
+  status EmailCampaignStatus @default(DRAFT)
+  type   EmailCampaignType   @default(REGULAR)
+
+  // Targeting
+  segmentId String? // Send to specific segment
+
+  // Scheduling
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  completedAt DateTime?
+
+  // Stats (denormalized for quick access)
+  recipientCount   Int @default(0)
+  sentCount        Int @default(0)
+  openCount        Int @default(0)
+  clickCount       Int @default(0)
+  bounceCount      Int @default(0)
+  unsubscribeCount Int @default(0)
+
+  // Revenue attribution
+  revenueTotal Int @default(0) // in cents
+  orderCount   Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  template   EmailTemplate?   @relation("CampaignTemplate", fields: [templateId], references: [id])
+  recipients EmailRecipient[]
+  links      EmailLink[]
+  abTest     EmailABTest?
+
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([templateId])
+  @@map("email_campaigns")
+}
+
+enum EmailCampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  CANCELLED
+}
+
+enum EmailCampaignType {
+  REGULAR
+  AUTOMATED
+  TRANSACTIONAL
+}
+
+model EmailRecipient {
+  id           String  @id @default(cuid())
+  campaignId   String
+  subscriberId String? // Link to subscriber (if exists)
+  email        String
+  name         String?
+
+  // Personalization data
+  data Json?
+
+  // Tracking identifier (for open pixel and click tracking)
+  trackingId String @unique @default(cuid())
+
+  // A/B test variant (if campaign has A/B test)
+  variant String? // "A", "B", "C", "D"
+
+  // Provider message ID (for tracking webhooks)
+  providerMessageId String?
+
+  // Status
+  status EmailRecipientStatus @default(PENDING)
+
+  // Tracking
+  sentAt         DateTime?
+  openedAt       DateTime?
+  clickedAt      DateTime?
+  bouncedAt      DateTime?
+  unsubscribedAt DateTime?
+
+  // Engagement counts
+  openCount  Int @default(0)
+  clickCount Int @default(0)
+
+  // Bounce/error info
+  bounceType   String? // "hard", "soft"
+  errorMessage String?
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  campaign EmailCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@index([subscriberId])
+  @@index([email])
+  @@index([trackingId])
+  @@index([status])
+  @@index([providerMessageId])
+  @@map("email_recipients")
+}
+
+enum EmailRecipientStatus {
+  PENDING
+  QUEUED
+  SENT
+  DELIVERED
+  OPENED
+  CLICKED
+  BOUNCED
+  UNSUBSCRIBED
+  COMPLAINED
+  FAILED
+}
+
+model EmailSubscriber {
+  id        String  @id @default(cuid())
+  email     String  @unique
+  name      String?
+  firstName String?
+  lastName  String?
+
+  // Status
+  status EmailSubscriberStatus @default(PENDING)
+
+  // Double opt-in
+  confirmationToken String?   @unique
+  confirmedAt       DateTime?
+
+  // GDPR Consent tracking
+  consentTimestamp DateTime?
+  consentIp        String?
+  consentSource    String? // "signup_form", "checkout", "import"
+
+  // Metadata
+  source   String? // Where they subscribed from
+  metadata Json? // Custom fields
+
+  // Preferences
+  tags        String[] @default([])
+  preferences Json? // Email type preferences
+
+  // Engagement scoring
+  engagementScore Int       @default(0)
+  lastEngagedAt   DateTime?
+  totalOpens      Int       @default(0)
+  totalClicks     Int       @default(0)
+  totalPurchases  Int       @default(0)
+  lifetimeValue   Int       @default(0) // in cents
+
+  // Tracking
+  subscribedAt   DateTime  @default(now())
+  unsubscribedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  automationEnrollments EmailAutomationEnrollment[]
+  segmentMemberships    EmailSegmentMember[]
+
+  @@index([status])
+  @@index([confirmationToken])
+  @@index([engagementScore])
+  @@index([tags])
+  @@map("email_subscribers")
+}
+
+// =============================================================================
+// EMAIL TEMPLATES
+// =============================================================================
+
+model EmailTemplate {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String?
+
+  // Category
+  category EmailTemplateCategory @default(MARKETING)
+
+  // Content
+  subject   String? // Default subject (can use merge tags)
+  preheader String?
+  content   Json? // Puck editor JSON
+  html      String? @db.Text // Pre-rendered HTML
+
+  // Preview
+  thumbnailUrl String?
+
+  // Status
+  isSystem Boolean @default(false) // Built-in templates
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  campaigns       EmailCampaign[]       @relation("CampaignTemplate")
+  automationSteps EmailAutomationStep[]
+
+  @@index([category])
+  @@index([isActive])
+  @@map("email_templates")
+}
+
+enum EmailTemplateCategory {
+  TRANSACTIONAL // Order confirmation, shipping, etc.
+  MARKETING // Newsletters, promotions
+  AUTOMATION // Welcome series, abandoned cart
+  NOTIFICATION // Account alerts, security
+}
+
+// =============================================================================
+// EMAIL AUTOMATION (Customer Journeys)
+// =============================================================================
+
+model EmailAutomation {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+
+  // Trigger
+  triggerType   EmailAutomationTrigger
+  triggerConfig Json? // Trigger-specific config
+
+  // Status
+  status EmailAutomationStatus @default(DRAFT)
+
+  // Stats (denormalized)
+  enrollmentCount Int @default(0)
+  completedCount  Int @default(0)
+  activeCount     Int @default(0)
+
+  // Settings
+  allowReentry      Boolean @default(false) // Can subscriber re-enter?
+  reentryDelay      Int? // Days before re-entry allowed
+  exitOnUnsubscribe Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  steps       EmailAutomationStep[]
+  enrollments EmailAutomationEnrollment[]
+
+  @@index([status])
+  @@index([triggerType])
+  @@map("email_automations")
+}
+
+enum EmailAutomationTrigger {
+  SUBSCRIBER_CREATED // New subscriber
+  SUBSCRIBER_TAGGED // Tag added to subscriber
+  ORDER_PLACED // New order
+  ORDER_FULFILLED // Order shipped
+  ORDER_DELIVERED // Order delivered
+  CART_ABANDONED // Cart abandoned
+  DATE_FIELD // Based on subscriber date field (birthday, anniversary)
+  MANUAL // Manually enrolled
+  SEGMENT_ENTERED // Entered a segment
+  SEGMENT_EXITED // Left a segment
+}
+
+enum EmailAutomationStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+model EmailAutomationStep {
+  id           String @id @default(cuid())
+  automationId String
+  position     Int    @default(0)
+
+  // Step type
+  type EmailAutomationStepType
+
+  // Configuration (varies by type)
+  config Json // { templateId, waitDuration, conditions, etc. }
+
+  // For email steps - quick reference
+  templateId String?
+  subject    String? // Override template subject
+
+  // For wait steps
+  waitDuration Int? // Duration in minutes
+  waitUntil    String? // "9:00 AM" - wait until specific time
+
+  // For condition steps
+  yesStepId String? // Next step if condition true
+  noStepId  String? // Next step if condition false
+
+  // Stats (denormalized)
+  sentCount  Int @default(0)
+  openCount  Int @default(0)
+  clickCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  automation      EmailAutomation                 @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  template        EmailTemplate?                  @relation(fields: [templateId], references: [id])
+  enrollmentSteps EmailAutomationEnrollmentStep[]
+
+  @@index([automationId])
+  @@index([position])
+  @@map("email_automation_steps")
+}
+
+enum EmailAutomationStepType {
+  EMAIL // Send an email
+  WAIT // Wait for duration
+  WAIT_UNTIL // Wait until specific time
+  CONDITION // Branch based on condition
+  UPDATE_SUBSCRIBER // Update subscriber tags/fields
+  WEBHOOK // Call external webhook
+  EXIT // Exit the automation
+}
+
+model EmailAutomationEnrollment {
+  id           String @id @default(cuid())
+  automationId String
+  subscriberId String
+
+  // Current state
+  status        EmailEnrollmentStatus @default(ACTIVE)
+  currentStepId String?
+
+  // Tracking
+  enrolledAt  DateTime  @default(now())
+  completedAt DateTime?
+  exitedAt    DateTime?
+  exitReason  String? // "completed", "unsubscribed", "manual", "condition_not_met"
+
+  // Next scheduled action
+  nextActionAt DateTime?
+
+  // Relations
+  automation  EmailAutomation                 @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  subscriber  EmailSubscriber                 @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+  stepHistory EmailAutomationEnrollmentStep[]
+
+  @@unique([automationId, subscriberId])
+  @@index([automationId])
+  @@index([subscriberId])
+  @@index([status])
+  @@index([nextActionAt])
+  @@map("email_automation_enrollments")
+}
+
+enum EmailEnrollmentStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  EXITED
+}
+
+model EmailAutomationEnrollmentStep {
+  id           String @id @default(cuid())
+  enrollmentId String
+  stepId       String
+
+  // Execution
+  status       EmailStepExecutionStatus @default(PENDING)
+  executedAt   DateTime?
+  scheduledFor DateTime?
+
+  // For email steps - tracking
+  messageId String? // Provider message ID
+  openedAt  DateTime?
+  clickedAt DateTime?
+
+  // Error handling
+  errorMessage String?
+  retryCount   Int     @default(0)
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  enrollment EmailAutomationEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  step       EmailAutomationStep       @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  @@index([enrollmentId])
+  @@index([stepId])
+  @@index([status])
+  @@index([scheduledFor])
+  @@map("email_automation_enrollment_steps")
+}
+
+enum EmailStepExecutionStatus {
+  PENDING
+  SCHEDULED
+  EXECUTED
+  SKIPPED
+  FAILED
+}
+
+// =============================================================================
+// EMAIL SEGMENTATION
+// =============================================================================
+
+model EmailSegment {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+
+  // Conditions (JSON filter tree)
+  // Example: { "and": [{ "field": "tags", "op": "contains", "value": "vip" }, { "field": "totalPurchases", "op": "gte", "value": 3 }] }
+  conditions Json
+
+  // Dynamic vs Static
+  isDynamic Boolean @default(true) // Auto-update membership
+
+  // Stats
+  subscriberCount  Int       @default(0)
+  lastCalculatedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  members EmailSegmentMember[]
+
+  @@index([isDynamic])
+  @@map("email_segments")
+}
+
+model EmailSegmentMember {
+  segmentId    String
+  subscriberId String
+  addedAt      DateTime @default(now())
+
+  // Relations
+  segment    EmailSegment    @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+  subscriber EmailSubscriber @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+
+  @@id([segmentId, subscriberId])
+  @@map("email_segment_members")
+}
+
+// =============================================================================
+// EMAIL LINK TRACKING
+// =============================================================================
+
+model EmailLink {
+  id               String  @id @default(cuid())
+  campaignId       String?
+  automationStepId String?
+
+  // Link info
+  url        String // Original URL
+  trackingId String @unique @default(cuid()) // Used in redirect URL
+
+  // Stats
+  clickCount   Int @default(0)
+  uniqueClicks Int @default(0)
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  campaign EmailCampaign?   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  clicks   EmailLinkClick[]
+
+  @@index([campaignId])
+  @@index([trackingId])
+  @@map("email_links")
+}
+
+model EmailLinkClick {
+  id           String  @id @default(cuid())
+  linkId       String
+  recipientId  String?
+  subscriberId String?
+
+  // Click info
+  clickedAt DateTime @default(now())
+  ipAddress String?
+  userAgent String?
+
+  // Relations
+  link EmailLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@index([linkId])
+  @@index([recipientId])
+  @@index([clickedAt])
+  @@map("email_link_clicks")
+}
+
+// =============================================================================
+// EMAIL A/B TESTING
+// =============================================================================
+
+model EmailABTest {
+  id         String @id @default(cuid())
+  campaignId String @unique
+
+  // Test configuration
+  testType EmailABTestType // SUBJECT, CONTENT, SEND_TIME
+
+  // Variants
+  variantA Json // { subject?, content?, sendTime? }
+  variantB Json
+  variantC Json? // Optional third variant
+  variantD Json? // Optional fourth variant
+
+  // Traffic split (percentages, must sum to 100)
+  splitA Int  @default(50)
+  splitB Int  @default(50)
+  splitC Int?
+  splitD Int?
+
+  // Winner selection
+  winnerCriteria   EmailABWinnerCriteria @default(OPEN_RATE)
+  testDuration     Int                   @default(240) // Minutes before selecting winner
+  winnerVariant    String? // "A", "B", "C", "D"
+  winnerSelectedAt DateTime?
+
+  // Auto-send winner to remaining list
+  autoSendWinner Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  campaign EmailCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("email_ab_tests")
+}
+
+enum EmailABTestType {
+  SUBJECT
+  CONTENT
+  SEND_TIME
+  FROM_NAME
+}
+
+enum EmailABWinnerCriteria {
+  OPEN_RATE
+  CLICK_RATE
+  REVENUE
+}
+
+enum EmailSubscriberStatus {
+  PENDING // Awaiting double opt-in confirmation
+  ACTIVE // Confirmed and subscribed
+  UNSUBSCRIBED // Opted out
+  BOUNCED // Email bounced
+  COMPLAINED // Marked as spam
+  CLEANED // Removed due to inactivity
+}
+
+// =============================================================================
+// PAYMENTS & SUBSCRIPTIONS
+// =============================================================================
+
+model Payment {
+  id                    String  @id @default(cuid())
+  orderId               String?
+  stripePaymentIntentId String? @unique
+
+  // Amount
+  amount   Float // in dollars
+  currency String @default("usd")
+
+  // Status
+  status PaymentRecordStatus @default(PENDING)
+
+  // Customer info
+  customerEmail    String?
+  stripeCustomerId String?
+
+  // Error handling
+  errorMessage String?
+
+  // Refunds
+  refundedAmount Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  order Order? @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@index([stripePaymentIntentId])
+  @@index([status])
+  @@map("payments")
+}
+
+enum PaymentRecordStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+model Subscription {
+  id                   String @id @default(cuid())
+  stripeSubscriptionId String @unique
+  stripeCustomerId     String
+
+  // Plan info
+  priceId   String?
+  productId String?
+
+  // Status
+  status String // active, canceled, past_due, etc.
+
+  // Billing period
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+
+  // Cancellation
+  cancelAtPeriodEnd Boolean   @default(false)
+  canceledAt        DateTime?
+
+  // Trial
+  trialStart DateTime?
+  trialEnd   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([stripeCustomerId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+// =============================================================================
+// FORMS (Dynamic Form Builder)
+// =============================================================================
+
+model Form {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String?
+
+  // Form schema (JSON Schema format)
+  fields Json // Array of field definitions
+
+  // Settings
+  submitButtonText String  @default("Submit")
+  successMessage   String? @default("Thank you for your submission!")
+  redirectUrl      String?
+
+  // Notifications
+  notifyEmails String[] @default([])
+
+  // Status
+  status FormStatus @default(ACTIVE)
+
+  // Analytics
+  submissionCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  submissions FormSubmission[]
+
+  @@index([slug])
+  @@index([status])
+  @@map("forms")
+}
+
+enum FormStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+model FormSubmission {
+  id     String @id @default(cuid())
+  formId String
+
+  // Submission data
+  data Json // The submitted form data
+
+  // Metadata
+  ipAddress String?
+  userAgent String?
+  referrer  String?
+
+  // Status
+  read    Boolean @default(false)
+  starred Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId])
+  @@index([createdAt])
+  @@map("form_submissions")
+}
+
+// =============================================================================
+// BLOG
+// =============================================================================
+
+model BlogPost {
+  id      String  @id @default(cuid())
+  title   String
+  slug    String  @unique
+  excerpt String? @db.Text
+
+  // Content - TipTap JSON for rich text
+  content     Json? // TipTap editor JSON
+  contentHtml String? @db.Text // Rendered HTML for display
+
+  // Advanced layout - Puck JSON (optional)
+  puckContent   Json? // Puck editor JSON for advanced layouts
+  usePuckLayout Boolean @default(false)
+
+  // Author
+  authorId String?
+
+  // Featured image
+  featuredImageId String?
+
+  // Status & visibility
+  status     BlogPostStatus @default(DRAFT)
+  visibility PostVisibility @default(PUBLIC)
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  canonicalUrl    String?
+  noIndex         Boolean @default(false)
+
+  // Open Graph
+  ogTitle       String?
+  ogDescription String?
+  ogImageId     String?
+
+  // Publishing
+  publishedAt DateTime?
+  scheduledAt DateTime?
+
+  // Reading stats
+  readingTime Int? // in minutes
+  wordCount   Int?
+
+  // Engagement (denormalized for performance)
+  viewCount    Int @default(0)
+  likeCount    Int @default(0)
+  commentCount Int @default(0)
+
+  // Settings
+  allowComments Boolean @default(true)
+  featured      Boolean @default(false)
+  pinned        Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  author        User?              @relation(fields: [authorId], references: [id])
+  featuredImage Media?             @relation("BlogFeaturedImage", fields: [featuredImageId], references: [id])
+  ogImage       Media?             @relation("BlogOgImage", fields: [ogImageId], references: [id])
+  categories    BlogPostCategory[]
+  tags          BlogPostTag[]
+  comments      BlogComment[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([authorId])
+  @@index([publishedAt])
+  @@index([featured])
+  @@map("blog_posts")
+}
+
+enum BlogPostStatus {
+  DRAFT
+  PUBLISHED
+  SCHEDULED
+  ARCHIVED
+}
+
+enum PostVisibility {
+  PUBLIC
+  PRIVATE
+  PASSWORD_PROTECTED
+}
+
+model BlogCategory {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String? @db.Text
+
+  // Hierarchy
+  parentId String?
+  position Int     @default(0)
+
+  // Display
+  imageId String?
+  color   String? // Accent color for category
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+
+  // Stats
+  postCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  parent   BlogCategory?      @relation("BlogCategoryHierarchy", fields: [parentId], references: [id])
+  children BlogCategory[]     @relation("BlogCategoryHierarchy")
+  image    Media?             @relation(fields: [imageId], references: [id])
+  posts    BlogPostCategory[]
+
+  @@index([slug])
+  @@index([parentId])
+  @@map("blog_categories")
+}
+
+model BlogPostCategory {
+  postId     String
+  categoryId String
+  position   Int    @default(0)
+
+  post     BlogPost     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  category BlogCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([postId, categoryId])
+  @@map("blog_post_categories")
+}
+
+model BlogTag {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String?
+
+  // Stats
+  postCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  posts BlogPostTag[]
+
+  @@index([slug])
+  @@map("blog_tags")
+}
+
+model BlogPostTag {
+  postId String
+  tagId  String
+
+  post BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  BlogTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@map("blog_post_tags")
+}
+
+model BlogComment {
+  id     String @id @default(cuid())
+  postId String
+
+  // Author (can be guest or registered user)
+  userId     String?
+  guestName  String?
+  guestEmail String?
+
+  // Content
+  content String @db.Text
+
+  // Hierarchy (for replies)
+  parentId String?
+
+  // Moderation
+  status CommentStatus @default(PENDING)
+
+  // Metadata
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  post    BlogPost      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user    User?         @relation(fields: [userId], references: [id])
+  parent  BlogComment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies BlogComment[] @relation("CommentReplies")
+
+  @@index([postId])
+  @@index([userId])
+  @@index([status])
+  @@map("blog_comments")
+}
+
+enum CommentStatus {
+  PENDING
+  APPROVED
+  SPAM
+  TRASH
+}
+
+// =============================================================================
+// ANALYTICS EVENTS
+// =============================================================================
+
+model AnalyticsEvent {
+  id String @id @default(cuid())
+
+  // Event info
+  eventName String // page_view, purchase, add_to_cart, etc.
+  eventData Json? // Additional event data
+
+  // Page info
+  pageUrl   String?
+  pageTitle String?
+  referrer  String?
+
+  // User info
+  sessionId String?
+  userId    String?
+
+  // Device info
+  userAgent String?
+  ipAddress String?
+  country   String?
+  city      String?
+
+  // UTM parameters
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmTerm     String?
+  utmContent  String?
+
+  createdAt DateTime @default(now())
+
+  @@index([eventName])
+  @@index([sessionId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("analytics_events")
+}
+
+// =============================================================================
+// CART (for abandoned cart recovery and guest checkout)
+// =============================================================================
+
+model Cart {
+  id        String     @id @default(cuid())
+  sessionId String? // For guest carts
+  userId    String? // For logged-in users
+  email     String? // Email captured for recovery
+  status    CartStatus @default(ACTIVE)
+
+  // Cart totals (calculated, in cents)
+  subtotal      Int @default(0)
+  discountTotal Int @default(0)
+  taxTotal      Int @default(0)
+  shippingTotal Int @default(0)
+  total         Int @default(0)
+
+  // Applied discount
+  discountCodeId String?
+
+  // Shipping address (for rate calculation)
+  shippingAddressId String?
+
+  // Recovery tracking
+  abandonedAt     DateTime? // When cart was marked abandoned
+  recoveryEmailAt DateTime? // When recovery email was sent
+  recoveredAt     DateTime? // When customer returned
+
+  // Conversion
+  convertedToOrderId String? @unique
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  expiresAt DateTime? // Auto-delete old carts
+
+  // Relations
+  items           CartItem[]
+  discountCode    DiscountCode? @relation(fields: [discountCodeId], references: [id])
+  shippingAddress Address?      @relation("CartShippingAddress", fields: [shippingAddressId], references: [id])
+
+  @@unique([sessionId])
+  @@index([userId])
+  @@index([email])
+  @@index([status])
+  @@index([abandonedAt])
+  @@map("carts")
+}
+
+enum CartStatus {
+  ACTIVE
+  ABANDONED
+  CONVERTED
+  EXPIRED
+}
+
+model CartItem {
+  id        String  @id @default(cuid())
+  cartId    String
+  productId String
+  variantId String?
+  quantity  Int     @default(1)
+
+  // Snapshot of product info at time of adding
+  title        String
+  variantTitle String?
+  price        Int // Unit price in cents
+  imageUrl     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  cart    Cart            @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product         @relation(fields: [productId], references: [id])
+  variant ProductVariant? @relation(fields: [variantId], references: [id])
+
+  @@unique([cartId, productId, variantId])
+  @@index([cartId])
+  @@map("cart_items")
+}
+
+// =============================================================================
+// DISCOUNTS & COUPONS
+// =============================================================================
+
+model DiscountCode {
+  id          String       @id @default(cuid())
+  code        String       @unique // e.g., "SUMMER20"
+  description String?
+  type        DiscountType @default(PERCENTAGE)
+
+  // Discount value
+  value         Int // Percentage (e.g., 20 = 20%) or fixed amount in cents
+  minOrderValue Int? // Minimum order value to apply (cents)
+  maxDiscount   Int? // Maximum discount amount (for percentage discounts)
+
+  // Applicability
+  applyTo           DiscountApplyTo @default(ORDER)
+  productIds        String[] // Specific products (if PRODUCT apply type)
+  categoryIds       String[] // Specific categories
+  excludeProductIds String[] // Products to exclude
+  excludeSaleItems  Boolean         @default(false)
+
+  // Usage limits
+  usageLimit     Int? // Total uses allowed
+  usageCount     Int     @default(0)
+  perCustomer    Int? // Uses per customer
+  firstOrderOnly Boolean @default(false)
+
+  // Validity period
+  startsAt  DateTime  @default(now())
+  expiresAt DateTime?
+
+  // Status
+  enabled Boolean @default(true)
+
+  // Stripe sync
+  stripeCouponId        String? // Stripe coupon ID
+  stripePromotionCodeId String? // Stripe promotion code ID
+  stripeSyncEnabled     Boolean @default(true) // Whether to sync with Stripe
+  stripeSyncedAt        DateTime? // When last synced with Stripe
+
+  // Tracking
+  revenue     Int @default(0) // Total revenue generated (cents)
+  ordersCount Int @default(0) // Orders using this code
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  usages DiscountUsage[]
+  carts  Cart[]
+  orders Order[]         @relation("OrderDiscount")
+
+  @@index([code])
+  @@index([enabled])
+  @@index([startsAt, expiresAt])
+  @@index([stripeCouponId])
+  @@map("discount_codes")
+}
+
+enum DiscountType {
+  PERCENTAGE // e.g., 20% off
+  FIXED // e.g., $10 off
+  FREE_SHIPPING // Free shipping
+  BUY_X_GET_Y // Buy X get Y free/discounted
+}
+
+enum DiscountApplyTo {
+  ORDER // Entire order
+  PRODUCT // Specific products
+  CATEGORY // Products in category
+  SHIPPING // Shipping cost
+}
+
+model DiscountUsage {
+  id             String  @id @default(cuid())
+  discountCodeId String
+  orderId        String
+  userId         String?
+  email          String
+
+  // Amount saved
+  discountAmount Int // Cents saved
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  discountCode DiscountCode @relation(fields: [discountCodeId], references: [id], onDelete: Cascade)
+
+  @@index([discountCodeId])
+  @@index([userId])
+  @@index([email])
+  @@map("discount_usages")
+}
+
+// =============================================================================
+// GIFT CARDS
+// =============================================================================
+
+model GiftCard {
+  id             String         @id @default(cuid())
+  code           String         @unique // Unique redemption code
+  initialBalance Int // Original value (cents)
+  balance        Int // Current balance (cents)
+  currency       String         @default("USD")
+  status         GiftCardStatus @default(ACTIVE)
+
+  // Purchase info
+  purchasedById   String?
+  purchaserEmail  String?
+  recipientEmail  String?
+  recipientName   String?
+  personalMessage String? @db.Text
+  orderId         String? // Order where gift card was purchased
+
+  // Delivery
+  deliveryMethod GiftCardDelivery @default(EMAIL)
+  sentAt         DateTime?
+
+  // Validity
+  expiresAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  transactions GiftCardTransaction[]
+
+  @@index([code])
+  @@index([status])
+  @@index([recipientEmail])
+  @@map("gift_cards")
+}
+
+enum GiftCardStatus {
+  PENDING // Not yet delivered
+  ACTIVE // Can be used
+  DEPLETED // Zero balance
+  EXPIRED // Past expiration
+  DISABLED // Manually disabled
+}
+
+enum GiftCardDelivery {
+  EMAIL // Send to recipient email
+  PRINT // Printable PDF
+  PHYSICAL // Physical card
+}
+
+model GiftCardTransaction {
+  id         String                  @id @default(cuid())
+  giftCardId String
+  type       GiftCardTransactionType
+  amount     Int // Positive for credits, negative for debits
+  balance    Int // Balance after transaction
+
+  // Reference
+  orderId String?
+  note    String?
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  giftCard GiftCard @relation(fields: [giftCardId], references: [id], onDelete: Cascade)
+
+  @@index([giftCardId])
+  @@index([orderId])
+  @@map("gift_card_transactions")
+}
+
+enum GiftCardTransactionType {
+  ISSUE // Initial issuance
+  REDEMPTION // Used on order
+  REFUND // Refunded back to card
+  ADJUSTMENT // Manual adjustment
+}
+
+// =============================================================================
+// WISHLIST
+// =============================================================================
+
+model Wishlist {
+  id         String  @id @default(cuid())
+  customerId String
+  name       String  @default("My Wishlist")
+  isPublic   Boolean @default(false)
+  shareId    String? @unique // For sharing
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  customer Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  items    WishlistItem[]
+
+  @@index([customerId])
+  @@index([shareId])
+  @@map("wishlists")
+}
+
+model WishlistItem {
+  id         String  @id @default(cuid())
+  wishlistId String
+  productId  String
+  variantId  String?
+
+  // Notification preferences
+  notifyOnSale    Boolean @default(false)
+  notifyBackStock Boolean @default(false)
+
+  // Price at time of adding (for price drop notifications)
+  priceWhenAdded Int?
+
+  addedAt DateTime @default(now())
+
+  // Relations
+  wishlist Wishlist        @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  product  Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant  ProductVariant? @relation(fields: [variantId], references: [id])
+
+  @@unique([wishlistId, productId, variantId])
+  @@index([wishlistId])
+  @@index([productId])
+  @@map("wishlist_items")
+}
+
+// =============================================================================
+// INVENTORY ALERTS
+// =============================================================================
+
+model BackInStockSubscription {
+  id        String  @id @default(cuid())
+  email     String
+  productId String
+  variantId String?
+
+  // Notification status
+  notified   Boolean   @default(false)
+  notifiedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  product Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant ProductVariant? @relation(fields: [variantId], references: [id])
+
+  @@unique([email, productId, variantId])
+  @@index([productId])
+  @@index([variantId])
+  @@index([notified])
+  @@map("back_in_stock_subscriptions")
+}
+
+model StockReservation {
+  id        String  @id @default(cuid())
+  productId String
+  variantId String?
+  quantity  Int
+
+  // Session/Order linking
+  sessionId String? // Cart session for guest checkout
+  orderId   String? // Order ID once created
+
+  // Expiration
+  expiresAt DateTime
+  released  Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  product Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant ProductVariant? @relation(fields: [variantId], references: [id])
+  order   Order?          @relation(fields: [orderId], references: [id])
+
+  @@index([productId])
+  @@index([variantId])
+  @@index([sessionId])
+  @@index([orderId])
+  @@index([expiresAt])
+  @@map("stock_reservations")
+}
+
+// =============================================================================
+// PRODUCT REVIEWS
+// =============================================================================
+
+model ProductReview {
+  id         String  @id @default(cuid())
+  productId  String
+  customerId String?
+  orderId    String? // Verified purchase
+
+  // Reviewer info (for guest reviews)
+  reviewerName  String
+  reviewerEmail String
+
+  // Rating
+  rating Int // 1-5 stars
+
+  // Content
+  title   String?
+  content String  @db.Text
+  pros    String? @db.Text
+  cons    String? @db.Text
+
+  // Media
+  images Json? // Array of image URLs
+
+  // Verification
+  isVerifiedPurchase Boolean @default(false)
+
+  // Moderation
+  status ReviewStatus @default(PENDING)
+
+  // Helpfulness voting
+  helpfulCount   Int @default(0)
+  unhelpfulCount Int @default(0)
+
+  // Store response
+  responseContent String?   @db.Text
+  responseAt      DateTime?
+  respondedById   String?
+
+  // Metadata
+  ipAddress String?
+  userAgent String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
+
+  // Relations
+  product  Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  customer Customer?    @relation(fields: [customerId], references: [id])
+  votes    ReviewVote[]
+
+  @@index([productId])
+  @@index([customerId])
+  @@index([status])
+  @@index([rating])
+  @@map("product_reviews")
+}
+
+enum ReviewStatus {
+  PENDING // Awaiting moderation
+  APPROVED // Published
+  REJECTED // Not published
+  FLAGGED // Under review
+}
+
+model ReviewVote {
+  id       String  @id @default(cuid())
+  reviewId String
+  userId   String?
+  email    String?
+  helpful  Boolean // true = helpful, false = not helpful
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  review ProductReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+  @@unique([reviewId, email])
+  @@index([reviewId])
+  @@map("review_votes")
+}
+
+// =============================================================================
+// NOTIFICATIONS
+// =============================================================================
+
+model Notification {
+  id     String           @id @default(cuid())
+  userId String
+  type   NotificationType
+
+  // Content
+  title   String
+  message String  @db.Text
+  link    String? // URL to navigate to
+
+  // Reference
+  entityType String? // order, product, review, etc.
+  entityId   String?
+
+  // Status
+  read   Boolean   @default(false)
+  readAt DateTime?
+
+  // Delivery
+  emailSent   Boolean   @default(false)
+  emailSentAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  ORDER_PLACED
+  ORDER_SHIPPED
+  ORDER_DELIVERED
+  ORDER_CANCELLED
+  PAYMENT_RECEIVED
+  PAYMENT_FAILED
+  REVIEW_APPROVED
+  REVIEW_RESPONSE
+  PRICE_DROP
+  BACK_IN_STOCK
+  WISHLIST_SALE
+  SUBSCRIPTION_RENEWAL
+  SUBSCRIPTION_CANCELLED
+  ACCOUNT_SECURITY
+  SYSTEM
+}
+
+// =============================================================================
+// EMAIL QUEUE
+// =============================================================================
+
+model EmailQueueItem {
+  id          String   @id
+  message     Json     // Email message content
+  priority    String   @default("normal") // high, normal, low
+  status      String   @default("pending") // pending, processing, sent, failed, cancelled
+
+  // Retry handling
+  attempts    Int      @default(0)
+  maxAttempts Int      @default(3)
+  lastAttemptAt DateTime?
+  lastError   String?  @db.Text
+
+  // Scheduling
+  scheduledFor DateTime?
+
+  // Results
+  sentAt      DateTime?
+  result      Json?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@index([priority])
+  @@index([scheduledFor])
+  @@index([createdAt])
+  @@map("email_queue_items")
+}
+
+// =============================================================================
+// SITE SETTINGS (Global Header/Footer)
+// =============================================================================
+
+model SiteSettings {
+  id        String   @id @default("default") // Singleton pattern
+
+  // Global Header configuration (Puck JSON data)
+  header    Json?
+
+  // Global Footer configuration (Puck JSON data)
+  footer    Json?
+
+  // Global Announcement Bar configuration
+  announcementBar      Json?
+  showAnnouncementBar  Boolean @default(false)
+
+  // Site-wide settings
+  siteName    String?
+  siteTagline String?
+  logoUrl     String?
+  logoAlt     String?
+  faviconUrl  String?
+
+  // Social links (for footer)
+  socialLinks Json? // Array of { platform, url }
+
+  // SEO defaults
+  defaultMetaTitle       String?
+  defaultMetaDescription String?
+  defaultOgImage         String?
+
+  // Contact info
+  contactEmail String?
+  contactPhone String?
+  businessAddress Json? // { street1, street2, city, state, zip, country }
+
+  // Tracking & Analytics
+  googleAnalyticsId String?
+  facebookPixelId   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("site_settings")
+}
