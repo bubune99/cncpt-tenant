@@ -66,7 +66,7 @@ export function DashboardSidebar({
         { id: "repositories", label: "GitHub Integration", icon: Github },
         { id: "settings", label: "Site Settings", icon: Settings },
         { id: "appearance", label: "Appearance", icon: Palette },
-        { id: "frontend", label: "Frontend (VPS)", icon: Server },
+        { id: "frontend", label: "Frontend Hosting", icon: Server },
       ],
     },
     {

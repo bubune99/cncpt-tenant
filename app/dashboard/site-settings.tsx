@@ -82,7 +82,7 @@ export function SiteSettings({ selectedSubdomain, activeTab = "general" }: SiteS
   const [fontBody, setFontBody] = useState("Inter")
   const [themePreset, setThemePreset] = useState("default")
 
-  // Frontend VPS Settings (Dokploy)
+  // Frontend VPS Settings
   const [frontendEnabled, setFrontendEnabled] = useState(false)
   const [frontendDomain, setFrontendDomain] = useState("")
   const [frontendEnvVars, setFrontendEnvVars] = useState<Record<string, string>>({})
@@ -803,7 +803,7 @@ export function SiteSettings({ selectedSubdomain, activeTab = "general" }: SiteS
           </div>
         </TabsContent>
 
-        {/* Frontend VPS Settings (Dokploy) */}
+        {/* Frontend VPS Settings */}
         <TabsContent value="frontend" className="space-y-6">
           <Card>
             <CardHeader>
@@ -812,7 +812,7 @@ export function SiteSettings({ selectedSubdomain, activeTab = "general" }: SiteS
                 Frontend Deployment
               </CardTitle>
               <CardDescription>
-                Configure your frontend application hosted on VPS via Dokploy
+                Configure your frontend application hosting
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -841,7 +841,32 @@ export function SiteSettings({ selectedSubdomain, activeTab = "general" }: SiteS
                     </p>
                   </div>
 
-                  {/* Deployment Status */}
+                  {/* Deployment Management Link */}
+                  <Alert className="bg-blue-50 border-blue-200">
+                    <Server className="h-4 w-4 text-blue-600" />
+                    <AlertDescription className="text-blue-800">
+                      <p className="font-medium mb-2">Full Deployment Controls</p>
+                      <p className="text-sm mb-3">
+                        For full deployment controls including deploy, start, stop, restart,
+                        and custom domain management with SSL, use the dedicated Frontend panel.
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                        onClick={() => {
+                          // Navigate to the Frontend (VPS) section
+                          const event = new CustomEvent('navigate-to-section', { detail: 'frontend' })
+                          window.dispatchEvent(event)
+                        }}
+                      >
+                        <Server className="h-4 w-4 mr-2" />
+                        Open Frontend Panel
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+
+                  {/* Quick Status */}
                   <div className="p-4 bg-muted rounded-lg">
                     <div className="flex items-center justify-between mb-3">
                       <span className="font-medium">Deployment Status</span>
@@ -864,23 +889,6 @@ export function SiteSettings({ selectedSubdomain, activeTab = "general" }: SiteS
                         Last deployed: {new Date(settings.frontend_last_deployed_at).toLocaleString()}
                       </p>
                     )}
-                    <div className="flex gap-2 mt-3">
-                      <Button size="sm" variant="outline" disabled>
-                        <Play className="h-4 w-4 mr-1" />
-                        Deploy
-                      </Button>
-                      <Button size="sm" variant="outline" disabled>
-                        <Square className="h-4 w-4 mr-1" />
-                        Stop
-                      </Button>
-                      <Button size="sm" variant="outline" disabled>
-                        <RefreshCw className="h-4 w-4 mr-1" />
-                        Redeploy
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Dokploy integration coming soon
-                    </p>
                   </div>
                 </>
               )}

@@ -7,6 +7,7 @@ import { DeveloperTools } from "./developer-tools"
 import { Analytics } from "./analytics"
 import { Billing } from "./billing"
 import { RepositoryManagement } from "./repository-management"
+import { FrontendDeployment } from "./frontend-deployment"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -67,7 +68,7 @@ export function DashboardContent({
       case "security":
         return <SiteSettings selectedSubdomain={selectedSubdomain} activeTab="security" />
       case "frontend":
-        return <SiteSettings selectedSubdomain={selectedSubdomain} activeTab="frontend" />
+        return <FrontendDeployment selectedSubdomain={selectedSubdomain} />
       case "developer":
         return <DeveloperTools selectedSubdomain={selectedSubdomain} />
       case "analytics":

@@ -57,6 +57,17 @@ export default function DashboardPage({ user: initialUser, subdomains: initialSu
     setIsClient(true)
   }, [])
 
+  // Listen for navigation events from child components
+  useEffect(() => {
+    const handleNavigate = (event: CustomEvent) => {
+      setActiveSection(event.detail)
+    }
+    window.addEventListener('navigate-to-section', handleNavigate as EventListener)
+    return () => {
+      window.removeEventListener('navigate-to-section', handleNavigate as EventListener)
+    }
+  }, [])
+
   useEffect(() => {
     if (isClient && user && !initialSubdomains) {
       loadSubdomains()
