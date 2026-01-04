@@ -131,28 +131,28 @@ export function Analytics({ subdomains }: AnalyticsProps) {
         {
           label: "Total Deployments",
           value: deploymentData.totalDeployments.toString(),
-          change: "+12%",
+          change: "",
           icon: Zap,
           color: "text-blue-600",
         },
         {
           label: "Active Sites",
           value: deploymentData.activeDeployments.toString(),
-          change: "+8%",
+          change: "",
           icon: CheckCircle,
           color: "text-green-600",
         },
         {
           label: "Failed Deployments",
           value: deploymentData.failedDeployments.toString(),
-          change: "-2%",
+          change: "",
           icon: XCircle,
           color: "text-red-600",
         },
         {
           label: "Total Subdomains",
           value: deploymentData.totalSubdomains.toString(),
-          change: "0%",
+          change: "",
           icon: Globe,
           color: "text-purple-600",
         },
@@ -160,10 +160,10 @@ export function Analytics({ subdomains }: AnalyticsProps) {
     : []
 
   const traditionalStats = [
-    { label: "Total Visitors", value: "1,234", change: "+12%", icon: Users },
-    { label: "Page Views", value: "5,678", change: "+8%", icon: Eye },
-    { label: "Active Sites", value: subdomains.length.toString(), change: "0%", icon: Globe },
-    { label: "Conversion Rate", value: "3.2%", change: "+0.5%", icon: TrendingUp },
+    { label: "Total Visitors", value: "--", change: "N/A", icon: Users },
+    { label: "Page Views", value: "--", change: "N/A", icon: Eye },
+    { label: "Active Sites", value: subdomains.length.toString(), change: "", icon: Globe },
+    { label: "Conversion Rate", value: "--", change: "N/A", icon: TrendingUp },
   ]
 
   if (isLoading) {
@@ -218,12 +218,14 @@ export function Analytics({ subdomains }: AnalyticsProps) {
                       </div>
                       <Icon className={`w-8 h-8 ${stat.color}`} />
                     </div>
-                    <div className="mt-4 flex items-center">
-                      <Badge variant={stat.change.startsWith("+") ? "default" : "secondary"} className="text-xs">
-                        {stat.change}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground ml-2">vs last month</span>
-                    </div>
+                    {stat.change && (
+                      <div className="mt-4 flex items-center">
+                        <Badge variant={stat.change.startsWith("+") ? "default" : "secondary"} className="text-xs">
+                          {stat.change}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground ml-2">vs last month</span>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )
@@ -385,12 +387,14 @@ export function Analytics({ subdomains }: AnalyticsProps) {
                       </div>
                       <Icon className="w-8 h-8 text-muted-foreground" />
                     </div>
-                    <div className="mt-4 flex items-center">
-                      <Badge variant={stat.change.startsWith("+") ? "default" : "secondary"} className="text-xs">
-                        {stat.change}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground ml-2">vs last month</span>
-                    </div>
+                    {stat.change && (
+                      <div className="mt-4 flex items-center">
+                        <Badge variant={stat.change.startsWith("+") ? "default" : "secondary"} className="text-xs">
+                          {stat.change}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground ml-2">vs last month</span>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )
@@ -422,20 +426,9 @@ export function Analytics({ subdomains }: AnalyticsProps) {
                 <CardDescription>Most visited pages this month</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {[
-                    { page: "/", views: "1,234", percentage: "45%" },
-                    { page: "/about", views: "567", percentage: "20%" },
-                    { page: "/contact", views: "234", percentage: "8%" },
-                  ].map((item) => (
-                    <div key={item.page} className="flex items-center justify-between">
-                      <span className="font-medium">{item.page}</span>
-                      <div className="text-right">
-                        <p className="font-medium">{item.views}</p>
-                        <p className="text-sm text-muted-foreground">{item.percentage}</p>
-                      </div>
-                    </div>
-                  ))}
+                <div className="text-center py-8 text-muted-foreground">
+                  <Eye className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p>Analytics data will appear here once tracking is enabled</p>
                 </div>
               </CardContent>
             </Card>
@@ -446,20 +439,9 @@ export function Analytics({ subdomains }: AnalyticsProps) {
                 <CardDescription>Where your visitors come from</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {[
-                    { source: "Direct", visitors: "567", percentage: "42%" },
-                    { source: "Google", visitors: "234", percentage: "18%" },
-                    { source: "Social Media", visitors: "123", percentage: "9%" },
-                  ].map((item) => (
-                    <div key={item.source} className="flex items-center justify-between">
-                      <span className="font-medium">{item.source}</span>
-                      <div className="text-right">
-                        <p className="font-medium">{item.visitors}</p>
-                        <p className="text-sm text-muted-foreground">{item.percentage}</p>
-                      </div>
-                    </div>
-                  ))}
+                <div className="text-center py-8 text-muted-foreground">
+                  <Globe className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p>Traffic source data will appear here once tracking is enabled</p>
                 </div>
               </CardContent>
             </Card>

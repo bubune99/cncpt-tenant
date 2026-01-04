@@ -5,7 +5,7 @@ import type React from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ExternalLink, Trash2, PenSquare, BarChart3 } from "lucide-react"
+import { ExternalLink, Trash2, PenSquare } from "lucide-react"
 import { deleteSubdomainAction } from "@/app/actions"
 import { useState } from "react"
 import { rootDomain, protocol } from "@/lib/utils"
@@ -80,13 +80,6 @@ function SubdomainCard({ subdomain }: { subdomain: Subdomain }) {
               <Link href={adminUrl}>
                 <PenSquare className="h-4 w-4 mr-2" />
                 Manage Content
-              </Link>
-            </Button>
-
-            <Button variant="outline" size="sm" asChild>
-              <Link href={`/dashboard/subdomain/${subdomain.subdomain}/analytics`}>
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Analytics
               </Link>
             </Button>
 
