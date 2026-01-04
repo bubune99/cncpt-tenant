@@ -92,7 +92,7 @@ export function DashboardSidebar({
   }
 
   return (
-    <div className="w-64 bg-gray-950 text-white flex flex-col">
+    <div className="w-64 bg-gray-950 text-white flex flex-col h-screen sticky top-0">
       {/* Subdomain Selector */}
       <div className="p-4 border-b border-gray-800">
         <DropdownMenu>
@@ -143,7 +143,7 @@ export function DashboardSidebar({
       </div>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 p-4 space-y-6">
+      <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
         {menuSections.map((section) => (
           <div key={section.title}>
             <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">{section.title}</h3>
