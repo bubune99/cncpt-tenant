@@ -1,6 +1,5 @@
 "use client"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,15 +11,12 @@ import {
   Globe,
   Settings,
   BarChart3,
-  Code,
   Link,
-  Shield,
   Palette,
   ChevronDown,
   User,
   LogOut,
   CreditCard,
-  Github,
   Plus,
   Server,
 } from "lucide-react"
@@ -35,8 +31,6 @@ interface DashboardSidebarProps {
   setActiveSection: (section: string) => void
   selectedSubdomain: string | null
   setSelectedSubdomain: (subdomain: string | null) => void
-  isDeveloperMode: boolean
-  setIsDeveloperMode: (mode: boolean) => void
 }
 
 export function DashboardSidebar({
@@ -46,8 +40,6 @@ export function DashboardSidebar({
   setActiveSection,
   selectedSubdomain,
   setSelectedSubdomain,
-  isDeveloperMode,
-  setIsDeveloperMode,
 }: DashboardSidebarProps) {
   const router = useRouter()
 
@@ -63,21 +55,15 @@ export function DashboardSidebar({
       title: "Site Management",
       items: [
         { id: "domains", label: "Custom Domains", icon: Link },
-        { id: "repositories", label: "GitHub Integration", icon: Github },
         { id: "settings", label: "Site Settings", icon: Settings },
         { id: "appearance", label: "Appearance", icon: Palette },
-        { id: "frontend", label: "Frontend Hosting", icon: Server },
+        { id: "frontend", label: "Hosting", icon: Server },
       ],
     },
     {
-      title: "Billing",
-      items: [{ id: "billing", label: "Subscription & Billing", icon: CreditCard }],
-    },
-    {
-      title: "Advanced",
+      title: "Account",
       items: [
-        { id: "security", label: "Security", icon: Shield },
-        ...(isDeveloperMode ? [{ id: "developer", label: "Developer Tools", icon: Code }] : []),
+        { id: "billing", label: "Billing", icon: CreditCard },
       ],
     },
   ]
@@ -127,19 +113,6 @@ export function DashboardSidebar({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        {/* Developer Mode Toggle */}
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-400">Developer Mode</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsDeveloperMode(!isDeveloperMode)}
-            className={cn("h-6 px-2 text-xs", isDeveloperMode ? "bg-blue-600 text-white" : "bg-gray-800 text-gray-300")}
-          >
-            {isDeveloperMode ? "ON" : "OFF"}
-          </Button>
-        </div>
       </div>
 
       {/* Navigation Menu */}
@@ -164,11 +137,6 @@ export function DashboardSidebar({
                   >
                     <Icon className="w-5 h-5" />
                     <span>{item.label}</span>
-                    {item.id === "developer" && (
-                      <Badge variant="secondary" className="ml-auto text-xs">
-                        Beta
-                      </Badge>
-                    )}
                   </Button>
                 )
               })}

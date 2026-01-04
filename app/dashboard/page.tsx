@@ -16,7 +16,6 @@ interface DashboardPageProps {
 export default function DashboardPage({ user: initialUser, subdomains: initialSubdomains }: DashboardPageProps = {}) {
   const [activeSection, setActiveSection] = useState("overview")
   const [selectedSubdomain, setSelectedSubdomain] = useState<string | null>(null)
-  const [isDeveloperMode, setIsDeveloperMode] = useState(false)
   const [isClient, setIsClient] = useState(false)
   const [stackAuthError, setStackAuthError] = useState<string | null>(null)
   const [user, setUser] = useState<any>(null)
@@ -182,15 +181,12 @@ export default function DashboardPage({ user: initialUser, subdomains: initialSu
         setActiveSection={setActiveSection}
         selectedSubdomain={selectedSubdomain}
         setSelectedSubdomain={setSelectedSubdomain}
-        isDeveloperMode={isDeveloperMode}
-        setIsDeveloperMode={setIsDeveloperMode}
       />
       <DashboardContent
         user={user}
         subdomains={subdomains}
         activeSection={activeSection}
         selectedSubdomain={selectedSubdomain}
-        isDeveloperMode={isDeveloperMode}
       />
     </div>
   )

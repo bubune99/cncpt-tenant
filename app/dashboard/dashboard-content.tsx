@@ -3,10 +3,8 @@
 import { SubdomainList } from "./subdomain-list"
 import { DomainManagement } from "./domain-management"
 import { SiteSettings } from "./site-settings"
-import { DeveloperTools } from "./developer-tools"
 import { Analytics } from "./analytics"
 import { Billing } from "./billing"
-import { RepositoryManagement } from "./repository-management"
 import { FrontendDeployment } from "./frontend-deployment"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
@@ -17,7 +15,6 @@ interface DashboardContentProps {
   subdomains: any[]
   activeSection: string
   selectedSubdomain: string | null
-  isDeveloperMode: boolean
 }
 
 export function DashboardContent({
@@ -25,7 +22,6 @@ export function DashboardContent({
   subdomains,
   activeSection,
   selectedSubdomain,
-  isDeveloperMode,
 }: DashboardContentProps) {
   const router = useRouter()
 
@@ -59,18 +55,12 @@ export function DashboardContent({
         )
       case "domains":
         return <DomainManagement subdomains={subdomains} selectedSubdomain={selectedSubdomain} />
-      case "repositories":
-        return <RepositoryManagement user={user} subdomains={subdomains} selectedSubdomain={selectedSubdomain} />
       case "settings":
         return <SiteSettings selectedSubdomain={selectedSubdomain} />
       case "appearance":
         return <SiteSettings selectedSubdomain={selectedSubdomain} activeTab="appearance" />
-      case "security":
-        return <SiteSettings selectedSubdomain={selectedSubdomain} activeTab="security" />
       case "frontend":
         return <FrontendDeployment selectedSubdomain={selectedSubdomain} />
-      case "developer":
-        return <DeveloperTools selectedSubdomain={selectedSubdomain} />
       case "analytics":
         return <Analytics subdomains={subdomains} selectedSubdomain={selectedSubdomain} />
       case "billing":
