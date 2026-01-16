@@ -53,6 +53,13 @@ export const PERMISSIONS = {
   PAGES_PUBLISH: 'pages.publish',
   PAGES_ALL: 'pages.*',
 
+  // Puck Templates
+  PUCK_TEMPLATES_VIEW: 'puck_templates.view',
+  PUCK_TEMPLATES_CREATE: 'puck_templates.create',
+  PUCK_TEMPLATES_EDIT: 'puck_templates.edit',
+  PUCK_TEMPLATES_DELETE: 'puck_templates.delete',
+  PUCK_TEMPLATES_ALL: 'puck_templates.*',
+
   // Routes Configuration
   ROUTES_VIEW: 'routes.view',
   ROUTES_CREATE: 'routes.create',
@@ -218,6 +225,15 @@ export const PERMISSION_GROUPS = {
       { key: PERMISSIONS.PAGES_EDIT, label: 'Edit pages' },
       { key: PERMISSIONS.PAGES_DELETE, label: 'Delete pages' },
       { key: PERMISSIONS.PAGES_PUBLISH, label: 'Publish pages' },
+    ],
+  },
+  puck_templates: {
+    label: 'Page Templates',
+    permissions: [
+      { key: PERMISSIONS.PUCK_TEMPLATES_VIEW, label: 'View templates' },
+      { key: PERMISSIONS.PUCK_TEMPLATES_CREATE, label: 'Create templates' },
+      { key: PERMISSIONS.PUCK_TEMPLATES_EDIT, label: 'Edit templates' },
+      { key: PERMISSIONS.PUCK_TEMPLATES_DELETE, label: 'Delete templates' },
     ],
   },
   routes: {

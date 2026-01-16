@@ -1,20 +1,19 @@
 'use client';
 
-import { type ElementType, useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { useEffect, useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import {
   Users,
-  Building2,
   TrendingUp,
   Activity,
   DollarSign,
   Package,
   ShoppingCart,
-  Zap,
+  Zap
 } from 'lucide-react';
 
 interface Metrics {
-  totalBusinessOwners: number;
+  totalUsers: number;
   activeSubscriptions: number;
   trialsActive: number;
   totalCustomers: number;
@@ -65,18 +64,12 @@ export default function DashboardMetrics() {
     return null;
   }
 
-  const cards: Array<{
-    title: string;
-    value: string | number;
-    icon: ElementType;
-    description: string;
-    color: string;
-  }> = [
+  const cards = [
     {
-      title: 'Total Businesses',
-      value: metrics.totalBusinessOwners,
-      icon: Building2,
-      description: 'Registered business accounts',
+      title: 'Total Users',
+      value: metrics.totalUsers,
+      icon: Users,
+      description: 'Registered user accounts',
       color: 'text-blue-600'
     },
     {

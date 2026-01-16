@@ -2,9 +2,6 @@
  * Puck visual editor components exports
  */
 
-// Blog components
-export * from '../puck/blog'
-
 // Dashboard components
 export * from '../puck/dashboard'
 

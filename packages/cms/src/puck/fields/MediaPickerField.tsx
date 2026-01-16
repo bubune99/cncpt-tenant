@@ -58,10 +58,10 @@ export function MediaPickerField({
   const loadMedia = useCallback(async () => {
     setIsLoadingMedia(true)
     try {
-      const response = await fetch('/api/media?type=IMAGE&limit=50&sortBy=createdAt&sortOrder=desc')
+      const response = await fetch('/api/media?type=image&limit=50&sortBy=createdAt&sortOrder=desc')
       if (response.ok) {
         const data = await response.json()
-        setMediaItems(data.items || [])
+        setMediaItems(data.media || [])
       }
     } catch (error) {
       console.error('Failed to load media:', error)

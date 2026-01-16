@@ -3,35 +3,308 @@
 /**
  * Website Pages Puck Configuration
  *
- * Puck configuration for building website pages visually.
- * Reuses blog components since they work well for general page layouts.
+ * Enhanced Puck configuration for building website pages with:
+ * - Animation support
+ * - Lock/Group/Visibility features
+ * - Background with gradients/images/overlays
+ * - Responsive visibility controls
+ * - Platform integration embeds
  */
 
 import type { Config } from '@measured/puck';
+
+// Platform integration fields
 import { mediaPickerFieldConfig } from '../fields/MediaPickerField';
 import { formPickerFieldConfig } from '../fields/FormPickerField';
 import { productPickerFieldConfig } from '../fields/ProductPickerField';
 import { blogPostPickerFieldConfig } from '../fields/BlogPostPickerField';
+
+// Enhanced content components
 import {
-  HeroSection,
-  TextBlock,
-  ImageBlock,
-  ImageGallery,
-  QuoteBlock,
-  CTASection,
-  Divider,
-  TwoColumnLayout,
-  EmbedBlock,
-  type HeroSectionProps,
-  type TextBlockProps,
-  type ImageBlockProps,
-  type ImageGalleryProps,
-  type QuoteBlockProps,
-  type CTASectionProps,
-  type DividerProps,
-  type TwoColumnLayoutProps,
-  type EmbedBlockProps,
-} from '../blog/components';
+  HeadingConfig,
+  TextConfig,
+  ButtonConfig,
+  ImageConfig,
+  SpacerConfig,
+  type HeadingProps,
+  type TextProps,
+  type ButtonProps,
+  type ImageProps,
+  type SpacerProps,
+} from '../components/content';
+
+// Enhanced layout components
+import {
+  SectionConfig,
+  ContainerConfig,
+  ColumnsConfig,
+  FlexConfig,
+  GridConfig,
+  type SectionProps,
+  type ContainerProps,
+  type ColumnsProps,
+  type FlexProps,
+  type GridProps,
+} from '../components/layout';
+
+// Legacy component types (for backwards compatibility)
+export interface HeroSectionProps {
+  title?: string;
+  subtitle?: string;
+  backgroundImage?: string;
+  backgroundColor?: string;
+  textColor?: string;
+  height?: 'small' | 'medium' | 'large';
+  alignment?: 'left' | 'center' | 'right';
+  overlay?: boolean;
+  overlayOpacity?: number;
+}
+
+export interface TextBlockProps {
+  content?: string;
+  size?: 'small' | 'medium' | 'large';
+  alignment?: 'left' | 'center' | 'right' | 'justify';
+  maxWidth?: string;
+  padding?: 'none' | 'small' | 'medium' | 'large';
+}
+
+export interface ImageBlockProps {
+  src?: string;
+  alt?: string;
+  caption?: string;
+  width?: 'full' | 'wide' | 'medium' | 'small';
+  rounded?: boolean;
+  shadow?: boolean;
+}
+
+export interface ImageGalleryProps {
+  images?: string;
+  columns?: 2 | 3 | 4;
+  gap?: 'small' | 'medium' | 'large';
+  rounded?: boolean;
+}
+
+export interface QuoteBlockProps {
+  quote?: string;
+  author?: string;
+  authorTitle?: string;
+  style?: 'simple' | 'bordered' | 'highlighted';
+}
+
+export interface CTASectionProps {
+  title?: string;
+  description?: string;
+  buttonText?: string;
+  buttonUrl?: string;
+  backgroundColor?: string;
+  textColor?: string;
+  alignment?: 'left' | 'center' | 'right';
+}
+
+export interface DividerProps {
+  style?: 'line' | 'dots' | 'gradient';
+  spacing?: 'small' | 'medium' | 'large';
+  color?: string;
+}
+
+export interface TwoColumnLayoutProps {
+  leftContent?: string;
+  rightContent?: string;
+  leftWidth?: number;
+  gap?: 'small' | 'medium' | 'large';
+  verticalAlign?: 'top' | 'center' | 'bottom';
+}
+
+export interface EmbedBlockProps {
+  url?: string;
+  type?: 'youtube' | 'vimeo' | 'twitter' | 'custom';
+  aspectRatio?: '16:9' | '4:3' | '1:1';
+}
+
+// Legacy component renderers (inline for backwards compatibility)
+function HeroSection({
+  title,
+  subtitle,
+  backgroundImage,
+  backgroundColor = '#1a1a2e',
+  textColor = '#ffffff',
+  height = 'medium',
+  alignment = 'center',
+  overlay = true,
+  overlayOpacity = 50,
+}: HeroSectionProps) {
+  const heights = { small: '300px', medium: '500px', large: '700px' };
+  return (
+    <div
+      style={{
+        position: 'relative',
+        minHeight: heights[height],
+        backgroundColor,
+        color: textColor,
+        backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: alignment === 'center' ? 'center' : alignment === 'right' ? 'flex-end' : 'flex-start',
+        textAlign: alignment,
+        padding: '2rem',
+      }}
+    >
+      {overlay && backgroundImage && (
+        <div style={{ position: 'absolute', inset: 0, backgroundColor: '#000', opacity: overlayOpacity / 100 }} />
+      )}
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: '800px' }}>
+        {title && <h1 style={{ fontSize: '3rem', fontWeight: 'bold', marginBottom: '1rem' }}>{title}</h1>}
+        {subtitle && <p style={{ fontSize: '1.25rem', opacity: 0.9 }}>{subtitle}</p>}
+      </div>
+    </div>
+  );
+}
+
+function TextBlock({ content = '', size = 'medium', alignment = 'left', maxWidth = '100%', padding = 'medium' }: TextBlockProps) {
+  const sizes = { small: '0.875rem', medium: '1rem', large: '1.125rem' };
+  const paddings = { none: '0', small: '1rem', medium: '2rem', large: '3rem' };
+  return (
+    <div style={{ maxWidth, margin: '0 auto', padding: paddings[padding], fontSize: sizes[size], textAlign: alignment }}>
+      <div dangerouslySetInnerHTML={{ __html: content }} />
+    </div>
+  );
+}
+
+function ImageBlock({ src = '', alt = '', caption = '', width = 'full', rounded = true, shadow = true }: ImageBlockProps) {
+  const widths = { full: '100%', wide: '90%', medium: '70%', small: '50%' };
+  return (
+    <figure style={{ maxWidth: widths[width], margin: '2rem auto' }}>
+      {src && (
+        <img
+          src={src}
+          alt={alt}
+          style={{
+            width: '100%',
+            borderRadius: rounded ? '0.5rem' : 0,
+            boxShadow: shadow ? '0 4px 6px rgba(0,0,0,0.1)' : 'none',
+          }}
+        />
+      )}
+      {caption && <figcaption style={{ textAlign: 'center', marginTop: '0.5rem', color: '#666' }}>{caption}</figcaption>}
+    </figure>
+  );
+}
+
+function ImageGallery({ images = '', columns = 3, gap = 'medium', rounded = true }: ImageGalleryProps) {
+  const gaps = { small: '0.5rem', medium: '1rem', large: '1.5rem' };
+  const imageUrls = images.split(',').map((url) => url.trim()).filter(Boolean);
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: gaps[gap] }}>
+      {imageUrls.map((url, index) => (
+        <img key={index} src={url} alt="" style={{ width: '100%', borderRadius: rounded ? '0.5rem' : 0 }} />
+      ))}
+    </div>
+  );
+}
+
+function QuoteBlock({ quote = '', author = '', authorTitle = '', style = 'bordered' }: QuoteBlockProps) {
+  const styles = {
+    simple: { borderLeft: 'none', backgroundColor: 'transparent' },
+    bordered: { borderLeft: '4px solid #3b82f6', backgroundColor: 'transparent' },
+    highlighted: { borderLeft: 'none', backgroundColor: '#f3f4f6' },
+  };
+  return (
+    <blockquote style={{ padding: '1.5rem', margin: '2rem 0', ...styles[style] }}>
+      <p style={{ fontSize: '1.25rem', fontStyle: 'italic', marginBottom: '1rem' }}>{quote}</p>
+      {author && (
+        <footer style={{ color: '#666' }}>
+          <strong>{author}</strong>
+          {authorTitle && <span>, {authorTitle}</span>}
+        </footer>
+      )}
+    </blockquote>
+  );
+}
+
+function CTASection({
+  title = '',
+  description = '',
+  buttonText = '',
+  buttonUrl = '#',
+  backgroundColor = '#3b82f6',
+  textColor = '#ffffff',
+  alignment = 'center',
+}: CTASectionProps) {
+  return (
+    <div style={{ backgroundColor, color: textColor, padding: '3rem 2rem', textAlign: alignment }}>
+      {title && <h2 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1rem' }}>{title}</h2>}
+      {description && <p style={{ fontSize: '1.125rem', marginBottom: '1.5rem', opacity: 0.9 }}>{description}</p>}
+      {buttonText && (
+        <a
+          href={buttonUrl}
+          style={{
+            display: 'inline-block',
+            padding: '0.75rem 1.5rem',
+            backgroundColor: textColor,
+            color: backgroundColor,
+            borderRadius: '0.5rem',
+            textDecoration: 'none',
+            fontWeight: 500,
+          }}
+        >
+          {buttonText}
+        </a>
+      )}
+    </div>
+  );
+}
+
+function Divider({ style = 'line', spacing = 'medium', color = '#e5e7eb' }: DividerProps) {
+  const spacings = { small: '1rem', medium: '2rem', large: '3rem' };
+  return (
+    <div style={{ padding: `${spacings[spacing]} 0`, display: 'flex', justifyContent: 'center' }}>
+      {style === 'line' && <hr style={{ width: '100%', border: 'none', borderTop: `1px solid ${color}` }} />}
+      {style === 'dots' && <span style={{ color, fontSize: '1.5rem' }}>• • •</span>}
+      {style === 'gradient' && (
+        <div style={{ width: '200px', height: '2px', background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
+      )}
+    </div>
+  );
+}
+
+function TwoColumnLayout({ leftContent = '', rightContent = '', leftWidth = 50, gap = 'medium', verticalAlign = 'top' }: TwoColumnLayoutProps) {
+  const gaps = { small: '1rem', medium: '2rem', large: '3rem' };
+  const aligns = { top: 'flex-start', center: 'center', bottom: 'flex-end' };
+  return (
+    <div style={{ display: 'flex', gap: gaps[gap], alignItems: aligns[verticalAlign] }}>
+      <div style={{ flex: `0 0 ${leftWidth}%` }} dangerouslySetInnerHTML={{ __html: leftContent }} />
+      <div style={{ flex: 1 }} dangerouslySetInnerHTML={{ __html: rightContent }} />
+    </div>
+  );
+}
+
+function EmbedBlock({ url = '', type = 'youtube', aspectRatio = '16:9' }: EmbedBlockProps) {
+  const ratios = { '16:9': '56.25%', '4:3': '75%', '1:1': '100%' };
+  const getEmbedUrl = () => {
+    if (type === 'youtube') {
+      const videoId = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/)?.[1];
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : '';
+    }
+    if (type === 'vimeo') {
+      const videoId = url.match(/vimeo\.com\/(\d+)/)?.[1];
+      return videoId ? `https://player.vimeo.com/video/${videoId}` : '';
+    }
+    return url;
+  };
+  return (
+    <div style={{ position: 'relative', paddingBottom: ratios[aspectRatio], height: 0, overflow: 'hidden' }}>
+      <iframe
+        src={getEmbedUrl()}
+        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+        allowFullScreen
+      />
+    </div>
+  );
+}
+
+// Platform embeds
 import {
   FormEmbed,
   ProductEmbed,
@@ -46,6 +319,19 @@ import {
 } from '../embeds';
 
 export type PageComponents = {
+  // Enhanced Content Components
+  Heading: HeadingProps;
+  Text: TextProps;
+  Button: ButtonProps;
+  Image: ImageProps;
+  Spacer: SpacerProps;
+  // Enhanced Layout Components
+  Section: SectionProps;
+  Container: ContainerProps;
+  Columns: ColumnsProps;
+  Flex: FlexProps;
+  Grid: GridProps;
+  // Legacy Components (for backwards compatibility)
   HeroSection: HeroSectionProps;
   TextBlock: TextBlockProps;
   ImageBlock: ImageBlockProps;
@@ -55,6 +341,7 @@ export type PageComponents = {
   Divider: DividerProps;
   TwoColumnLayout: TwoColumnLayoutProps;
   EmbedBlock: EmbedBlockProps;
+  // Platform Embeds
   FormEmbed: FormEmbedProps;
   ProductEmbed: ProductEmbedProps;
   ProductGrid: ProductGridProps;
@@ -66,15 +353,15 @@ export const pagesPuckConfig: Config<PageComponents> = {
   categories: {
     layout: {
       title: 'Layout',
-      components: ['HeroSection', 'TwoColumnLayout', 'Divider'],
+      components: ['Section', 'Container', 'Columns', 'Flex', 'Grid'],
     },
     content: {
       title: 'Content',
-      components: ['TextBlock', 'QuoteBlock'],
+      components: ['Heading', 'Text', 'Button', 'Spacer'],
     },
     media: {
       title: 'Media',
-      components: ['ImageBlock', 'ImageGallery', 'EmbedBlock'],
+      components: ['Image', 'EmbedBlock', 'ImageGallery'],
     },
     actions: {
       title: 'Actions',
@@ -84,11 +371,30 @@ export const pagesPuckConfig: Config<PageComponents> = {
       title: 'Dynamic Content',
       components: ['ProductEmbed', 'ProductGrid', 'BlogPostEmbed', 'BlogGrid'],
     },
+    legacy: {
+      title: 'Legacy',
+      components: ['HeroSection', 'TextBlock', 'ImageBlock', 'QuoteBlock', 'Divider', 'TwoColumnLayout'],
+      defaultExpanded: false,
+    },
   },
   components: {
-    // ========== LAYOUT ==========
+    // ========== ENHANCED CONTENT ==========
+    Heading: HeadingConfig,
+    Text: TextConfig,
+    Button: ButtonConfig,
+    Image: ImageConfig,
+    Spacer: SpacerConfig,
+
+    // ========== ENHANCED LAYOUT ==========
+    Section: SectionConfig,
+    Container: ContainerConfig,
+    Columns: ColumnsConfig,
+    Flex: FlexConfig,
+    Grid: GridConfig,
+
+    // ========== LEGACY LAYOUT (for backwards compatibility) ==========
     HeroSection: {
-      label: 'Hero Section',
+      label: 'Hero Section (Legacy)',
       fields: {
         title: { type: 'text', label: 'Title' },
         subtitle: { type: 'textarea', label: 'Subtitle' },
@@ -141,7 +447,7 @@ export const pagesPuckConfig: Config<PageComponents> = {
       render: HeroSection,
     },
     TwoColumnLayout: {
-      label: 'Two Columns',
+      label: 'Two Columns (Legacy)',
       fields: {
         leftContent: { type: 'textarea', label: 'Left Column HTML' },
         rightContent: { type: 'textarea', label: 'Right Column HTML' },
@@ -180,7 +486,7 @@ export const pagesPuckConfig: Config<PageComponents> = {
       render: TwoColumnLayout,
     },
     Divider: {
-      label: 'Divider',
+      label: 'Divider (Legacy)',
       fields: {
         style: {
           type: 'select',
@@ -210,9 +516,9 @@ export const pagesPuckConfig: Config<PageComponents> = {
       render: Divider,
     },
 
-    // ========== CONTENT ==========
+    // ========== LEGACY CONTENT ==========
     TextBlock: {
-      label: 'Text Block',
+      label: 'Text Block (Legacy)',
       fields: {
         content: { type: 'textarea', label: 'Content (HTML)' },
         size: {
@@ -256,7 +562,7 @@ export const pagesPuckConfig: Config<PageComponents> = {
       render: TextBlock,
     },
     QuoteBlock: {
-      label: 'Quote',
+      label: 'Quote (Legacy)',
       fields: {
         quote: { type: 'textarea', label: 'Quote' },
         author: { type: 'text', label: 'Author Name' },
@@ -280,9 +586,9 @@ export const pagesPuckConfig: Config<PageComponents> = {
       render: QuoteBlock,
     },
 
-    // ========== MEDIA ==========
+    // ========== LEGACY MEDIA ==========
     ImageBlock: {
-      label: 'Image',
+      label: 'Image Block (Legacy)',
       fields: {
         src: { ...mediaPickerFieldConfig, label: 'Image' },
         alt: { type: 'text', label: 'Alt Text' },

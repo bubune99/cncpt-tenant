@@ -12,7 +12,15 @@
       "mcp__internal-code__validate_import_tree",
       "mcp__internal-code__validate_typescript",
       "mcp__vercel__list_teams",
-      "Bash(vercel env add:*)"
+      "Bash(vercel env add:*)",
+      "mcp__ai-project-planner__list_projects",
+      "mcp__ai-project-planner__add_progress_note",
+      "Bash(npx shadcn@latest add:*)",
+      "WebFetch(domain:developers.cloudflare.com)"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "postgresql"
+  ]
 }

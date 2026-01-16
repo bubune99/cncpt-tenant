@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../../hooks/use-auth';
 import { WizardProvider } from '../../contexts/WizardContext';
-import { CMSConfigProvider } from '../../contexts/CMSConfigContext';
 import { AdminChat } from '../../components/admin-chat';
 import {
   LayoutDashboard,
@@ -48,29 +47,10 @@ interface NavGroup {
   items: NavItem[];
 }
 
-export interface AdminShellConfig {
-  /** Base path prefix for all navigation links (e.g., '/cms/subdomain' for multi-tenant) */
-  basePath?: string;
-  /** Groups to hide from navigation (e.g., ['System'] for store managers) */
-  hiddenGroups?: string[];
-  /** Individual nav items to hide by name (e.g., ['Plugins', 'Workflows']) */
-  hiddenItems?: string[];
-  /** URL for "View Site" link (defaults to '/') */
-  siteUrl?: string;
-  /** Custom site name to display */
-  siteName?: string;
-  /** User role to display (defaults to 'Super Admin') */
-  userRole?: string;
-  /** Whether to show the AI chat panel */
-  showChat?: boolean;
-}
-
 export function AdminShell({
   children,
-  config = {},
 }: {
   children: React.ReactNode;
-  config?: AdminShellConfig;
 }) {
   const { user, signOut } = useAuth();
   const pathname = usePathname();
@@ -78,71 +58,45 @@ export function AdminShell({
   const [expandedGroups, setExpandedGroups] = useState<string[]>(['Main', 'E-Commerce', 'Content']);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const {
-    basePath = '',
-    hiddenGroups = [],
-    hiddenItems = [],
-    siteUrl = '/',
-    siteName,
-    userRole = 'Super Admin',
-    showChat = true,
-  } = config;
-
-  // Helper to prefix paths with basePath
-  const prefixPath = (path: string) => {
-    if (!basePath) return path;
-    // Replace /admin with basePath/admin
-    return path.replace('/admin', `${basePath}/admin`);
-  };
-
-  const allNavigationGroups: NavGroup[] = [
+  const navigationGroups: NavGroup[] = [
     {
       name: 'Main',
       items: [
-        { name: 'Dashboard', href: prefixPath('/admin'), icon: LayoutDashboard },
-        { name: 'Analytics', href: prefixPath('/admin/analytics'), icon: BarChart3 },
+        { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+        { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
       ],
     },
     {
       name: 'E-Commerce',
       items: [
-        { name: 'Products', href: prefixPath('/admin/products'), icon: Package },
-        { name: 'Orders', href: prefixPath('/admin/orders'), icon: ShoppingCart },
-        { name: 'Order Workflows', href: prefixPath('/admin/order-workflows'), icon: Workflow },
-        { name: 'Shipping', href: prefixPath('/admin/shipping'), icon: Truck },
-        { name: 'Customers', href: prefixPath('/admin/customers'), icon: Users },
+        { name: 'Products', href: '/admin/products', icon: Package },
+        { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
+        { name: 'Order Workflows', href: '/admin/order-workflows', icon: Workflow },
+        { name: 'Shipping', href: '/admin/shipping', icon: Truck },
+        { name: 'Customers', href: '/admin/customers', icon: Users },
       ],
     },
     {
       name: 'Content',
       items: [
-        { name: 'Pages', href: prefixPath('/admin/pages'), icon: Layers },
-        { name: 'Blog', href: prefixPath('/admin/blog'), icon: FileText },
-        { name: 'Forms', href: prefixPath('/admin/forms'), icon: ClipboardList },
-        { name: 'Media', href: prefixPath('/admin/media'), icon: Image },
-        { name: 'Email Marketing', href: prefixPath('/admin/email-marketing'), icon: Mail },
+        { name: 'Pages', href: '/admin/pages', icon: Layers },
+        { name: 'Blog', href: '/admin/blog', icon: FileText },
+        { name: 'Forms', href: '/admin/forms', icon: ClipboardList },
+        { name: 'Media', href: '/admin/media', icon: Image },
+        { name: 'Email Marketing', href: '/admin/email-marketing', icon: Mail },
       ],
     },
     {
       name: 'System',
       items: [
-        { name: 'Users', href: prefixPath('/admin/users'), icon: Users },
-        { name: 'Roles & Permissions', href: prefixPath('/admin/roles'), icon: Key },
-        { name: 'Plugins', href: prefixPath('/admin/plugins'), icon: Puzzle },
-        { name: 'Workflows', href: prefixPath('/admin/workflows'), icon: GitBranch },
-        { name: 'Settings', href: prefixPath('/admin/settings'), icon: Settings },
+        { name: 'Users', href: '/admin/users', icon: Users },
+        { name: 'Roles & Permissions', href: '/admin/roles', icon: Key },
+        { name: 'Plugins', href: '/admin/plugins', icon: Puzzle },
+        { name: 'Workflows', href: '/admin/workflows', icon: GitBranch },
+        { name: 'Settings', href: '/admin/settings', icon: Settings },
       ],
     },
   ];
-
-  // Filter navigation based on config
-  const navigationGroups = allNavigationGroups
-    .filter(group => !hiddenGroups.includes(group.name))
-    .map(group => ({
-      ...group,
-      items: group.items.filter(item => !hiddenItems.includes(item.name)),
-    }))
-    .filter(group => group.items.length > 0);
 
   const toggleGroup = (groupName: string) => {
     setExpandedGroups(prev =>
@@ -152,11 +106,9 @@ export function AdminShell({
     );
   };
 
-  const adminBasePath = prefixPath('/admin');
-
   const isActiveLink = (href: string) => {
-    if (href === adminBasePath) {
-      return pathname === adminBasePath;
+    if (href === '/admin') {
+      return pathname === '/admin';
     }
     return pathname?.startsWith(href);
   };
@@ -168,7 +120,6 @@ export function AdminShell({
   }
 
   return (
-    <CMSConfigProvider config={config}>
     <WizardProvider>
       <div className="min-h-screen bg-background">
       {/* Mobile sidebar toggle */}
@@ -188,10 +139,8 @@ export function AdminShell({
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="px-4 py-4 border-b border-border">
-            <Logo href={adminBasePath} size="sm" />
-            <p className="text-xs text-muted-foreground mt-1 pl-8">
-              {siteName ? `${siteName} Admin` : 'Admin Panel'}
-            </p>
+            <Logo href="/admin" size="sm" />
+            <p className="text-xs text-muted-foreground mt-1 pl-8">Admin Panel</p>
           </div>
 
           {/* Admin info */}
@@ -199,7 +148,7 @@ export function AdminShell({
             <p className="text-sm font-medium">{user.displayName || 'Admin'}</p>
             <p className="text-xs text-muted-foreground">{user.primaryEmail}</p>
             <span className="inline-flex items-center px-2 py-0.5 mt-1 text-xs font-medium rounded-full bg-primary/10 text-primary">
-              {userRole}
+              Super Admin
             </span>
           </div>
 
@@ -250,8 +199,7 @@ export function AdminShell({
           {/* Footer */}
           <div className="p-4 border-t border-border">
             <Link
-              href={siteUrl}
-              target={siteUrl.startsWith('http') ? '_blank' : undefined}
+              href="/"
               className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors mb-2"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -315,9 +263,8 @@ export function AdminShell({
       </div>
 
       {/* AI Chat Panel - persists across admin routes */}
-      {showChat && <AdminChat />}
+      <AdminChat />
     </div>
     </WizardProvider>
-    </CMSConfigProvider>
   );
 }

@@ -1,6 +1,9 @@
 import { Suspense } from 'react';
 import { AdminShell } from './AdminShell';
 
+// Prevent static generation - admin pages require auth context
+export const dynamic = 'force-dynamic';
+
 function AdminLoadingFallback() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">

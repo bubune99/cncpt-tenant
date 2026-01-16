@@ -383,3 +383,46 @@ export const DEFAULT_ALLOWED_TYPES = [
  * Default max file size (50MB)
  */
 export const DEFAULT_MAX_FILE_SIZE = 50 * 1024 * 1024
+
+// =============================================================================
+// R2/S3 CORS CONFIGURATION
+// =============================================================================
+
+export interface CorsRule {
+  AllowedOrigins: string[]
+  AllowedMethods: string[]
+  AllowedHeaders: string[]
+  ExposeHeaders?: string[]
+  MaxAgeSeconds?: number
+}
+
+/**
+ * Generate recommended CORS configuration for R2/S3 bucket
+ * This configuration is required for browser-based presigned URL uploads
+ */
+export function generateCorsConfig(allowedOrigins: string[]): CorsRule[] {
+  return [
+    {
+      AllowedOrigins: allowedOrigins,
+      AllowedMethods: ['GET', 'PUT', 'HEAD', 'DELETE'],
+      AllowedHeaders: [
+        'Content-Type',
+        'Content-Length',
+        'x-amz-acl',
+        'x-amz-content-sha256',
+        'x-amz-date',
+        'x-amz-user-agent',
+        'authorization',
+      ],
+      ExposeHeaders: ['ETag', 'Content-Length', 'Content-Type'],
+      MaxAgeSeconds: 3600,
+    },
+  ]
+}
+
+/**
+ * Get CORS configuration as JSON string for copying to Cloudflare dashboard
+ */
+export function getCorsConfigJson(allowedOrigins: string[]): string {
+  return JSON.stringify(generateCorsConfig(allowedOrigins), null, 2)
+}

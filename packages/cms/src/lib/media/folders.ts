@@ -178,6 +178,9 @@ export async function createFolder(input: FolderCreateInput): Promise<FolderWith
     _max: { position: true },
   })
 
+  // Remove slug from rest since we've already computed it
+  const { slug: _slug, ...restWithoutSlug } = rest
+
   const folder = await db.mediaFolder.create({
     data: {
       name,
@@ -186,7 +189,7 @@ export async function createFolder(input: FolderCreateInput): Promise<FolderWith
       depth,
       position: (maxPosition._max.position || 0) + 1,
       parentId,
-      ...rest,
+      ...restWithoutSlug,
     },
     include: {
       parent: true,

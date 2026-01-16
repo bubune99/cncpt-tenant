@@ -236,7 +236,6 @@ export const BLOG_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }> 
         title: post.title,
         slug: post.slug,
         content: post.content,
-        puckContent: post.puckContent,
         excerpt: post.excerpt,
         featuredImage: post.featuredImage,
         author: post.author,

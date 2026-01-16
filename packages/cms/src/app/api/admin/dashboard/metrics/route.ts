@@ -57,7 +57,7 @@ export async function GET() {
     }).catch(() => ({ _sum: { total: null } }))
 
     const metrics = {
-      totalBusinessOwners: totalUsers,
+      totalUsers: totalUsers,
       activeSubscriptions: 0, // Would need subscription model with active status
       trialsActive: 0, // Would need trial tracking
       totalCustomers: totalUsers,
@@ -72,7 +72,7 @@ export async function GET() {
     console.error('Failed to fetch dashboard metrics:', error)
     // Return default metrics on error to prevent UI crash
     return NextResponse.json({
-      totalBusinessOwners: 0,
+      totalUsers: 0,
       activeSubscriptions: 0,
       trialsActive: 0,
       totalCustomers: 0,
