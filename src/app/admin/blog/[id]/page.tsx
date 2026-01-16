@@ -14,25 +14,24 @@ import {
   Lock,
   Loader2,
   Trash2,
-  LayoutGrid,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from '../../../../components/ui/button';
+import { Input } from '../../../../components/ui/input';
+import { Label } from '../../../../components/ui/label';
+import { Textarea } from '../../../../components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../../components/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
+} from '../../../../components/ui/select';
+import { Switch } from '../../../../components/ui/switch';
+import { Badge } from '../../../../components/ui/badge';
+import { Separator } from '../../../../components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../components/ui/tabs';
+import { Checkbox } from '../../../../components/ui/checkbox';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,12 +42,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from '../../../../components/ui/alert-dialog';
 import { toast } from "sonner";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 
-const TipTapEditor = dynamic(() => import("@/components/editor/TipTapEditor"), {
+const TipTapEditor = dynamic(() => import('../../../../components/editor/TipTapEditor'), {
   ssr: false,
   loading: () => (
     <div className="border rounded-lg p-4 animate-pulse">
@@ -77,8 +76,6 @@ interface BlogPost {
   excerpt?: string;
   content?: object;
   contentHtml?: string;
-  puckContent?: object;
-  usePuckLayout: boolean;
   status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "SCHEDULED";
   visibility: "PUBLIC" | "PRIVATE" | "PASSWORD_PROTECTED" | "MEMBERS_ONLY";
   featured: boolean;
@@ -119,7 +116,6 @@ export default function EditBlogPostPage({
   const [allowComments, setAllowComments] = useState(true);
   const [metaTitle, setMetaTitle] = useState("");
   const [metaDescription, setMetaDescription] = useState("");
-  const [usePuckLayout, setUsePuckLayout] = useState(false);
 
   useEffect(() => {
     fetchPost();
@@ -147,7 +143,6 @@ export default function EditBlogPostPage({
         setAllowComments(data.allowComments);
         setMetaTitle(data.metaTitle || "");
         setMetaDescription(data.metaDescription || "");
-        setUsePuckLayout(data.usePuckLayout);
       } else {
         toast.error("Post not found");
         router.push("/blog");
@@ -207,7 +202,6 @@ export default function EditBlogPostPage({
         allowComments,
         metaTitle: metaTitle.trim() || undefined,
         metaDescription: metaDescription.trim() || undefined,
-        usePuckLayout,
       };
 
       const response = await fetch(`/api/blog/posts/${id}`, {
@@ -391,44 +385,17 @@ export default function EditBlogPostPage({
 
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Content</CardTitle>
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="puck-toggle" className="text-sm font-normal">
-                    Use Puck Layout
-                  </Label>
-                  <Switch
-                    id="puck-toggle"
-                    checked={usePuckLayout}
-                    onCheckedChange={setUsePuckLayout}
-                  />
-                </div>
-              </div>
+              <CardTitle>Content</CardTitle>
             </CardHeader>
             <CardContent>
-              {usePuckLayout ? (
-                <div className="border rounded-lg p-8 text-center bg-muted/30">
-                  <LayoutGrid className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="font-medium mb-2">Puck Visual Editor</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Use the visual page builder for advanced layouts
-                  </p>
-                  <Button asChild>
-                    <Link href={`/admin/blog/${id}/puck`}>
-                      Open Puck Editor
-                    </Link>
-                  </Button>
-                </div>
-              ) : (
-                <TipTapEditor
-                  content={contentHtml}
-                  onChange={(html) => setContentHtml(html)}
-                  onJsonChange={(json) => setContent(json)}
-                  placeholder="Start writing your post..."
-                  minHeight="400px"
-                  maxHeight="600px"
-                />
-              )}
+              <TipTapEditor
+                content={contentHtml}
+                onChange={(html) => setContentHtml(html)}
+                onJsonChange={(json) => setContent(json)}
+                placeholder="Start writing your post..."
+                minHeight="400px"
+                maxHeight="600px"
+              />
             </CardContent>
           </Card>
 

@@ -5,7 +5,7 @@
  * Handles primitive loading, validation, and execution logging.
  */
 
-import { prisma } from '@/lib/db';
+import { prisma } from '../db';
 import type { Primitive, PrimitiveExecution } from '@prisma/client';
 import Ajv from 'ajv';
 

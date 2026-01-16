@@ -1,30 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../components/ui/card';
+import { Button } from '../../../../components/ui/button';
+import { Badge } from '../../../../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../components/ui/tabs';
+import {
   ArrowLeft,
-  User,
   Mail,
+  Phone,
   Building2,
   Calendar,
-  Activity,
-  Database,
-  FileText,
-  Download,
-  Edit,
-  Ban,
-  CheckCircle,
-  Clock,
-  AlertCircle,
+  ShoppingCart,
+  CreditCard,
+  MapPin,
+  Package,
+  DollarSign,
   TrendingUp,
-  Image,
-  Code,
-  FileCode
+  Edit,
+  Trash2,
+  ExternalLink,
+  Bell,
+  BellOff
 } from 'lucide-react';
 import {
   Dialog,
@@ -33,173 +31,173 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from '../../../../components/ui/dialog';
+import { Label } from '../../../../components/ui/label';
+import { Input } from '../../../../components/ui/input';
+import { Textarea } from '../../../../components/ui/textarea';
+import { Switch } from '../../../../components/ui/switch';
 import Link from 'next/link';
+
+interface Address {
+  id: string;
+  label?: string;
+  firstName: string;
+  lastName: string;
+  company?: string;
+  street1: string;
+  street2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  phone?: string;
+  isDefault: boolean;
+}
+
+interface Order {
+  id: string;
+  orderNumber: string;
+  status: string;
+  total: number;
+  itemCount: number;
+  createdAt: string;
+}
 
 interface CustomerDetails {
   id: string;
-  name: string;
   email: string;
+  firstName?: string;
+  lastName?: string;
   phone?: string;
-  businessOwner: {
-    id: string;
-    businessName: string;
-    email: string;
-  };
-  stackAuthUserId?: string;
-  accessLevel: string;
-  storageUsed: number;
-  storageLimit: number;
-  isActive: boolean;
-  lastActivityAt: string | null;
+  company?: string;
+  taxId?: string;
+  notes?: string;
+  tags: string[];
+  stripeCustomerId?: string;
+  stripeSyncedAt?: string;
+  acceptsMarketing: boolean;
+  marketingOptInAt?: string;
+  marketingOptOutAt?: string;
+  totalOrders: number;
+  totalSpent: number;
+  averageOrder: number;
+  lastOrderAt?: string;
   createdAt: string;
-  metadata: any;
-  designs: Array<{
-    id: string;
-    designName: string;
-    designType: string;
-    fileSize: number;
-    createdAt: string;
-    updatedAt: string;
-    thumbnailUrl?: string;
-  }>;
-  activityLog: Array<{
-    id: string;
-    action: string;
-    details: string;
-    createdAt: string;
-  }>;
-  storageBreakdown: {
-    images: number;
-    designs: number;
-    other: number;
-  };
+  updatedAt: string;
+  orders: Order[];
+  addresses: Address[];
 }
 
 export default function CustomerDetailPage() {
-  const params = useParams();
+  const params = useParams<{ id: string }>();
   const router = useRouter();
   const [customer, setCustomer] = useState<CustomerDetails | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showStorageDialog, setShowStorageDialog] = useState(false);
-  const [showNotesDialog, setShowNotesDialog] = useState(false);
-  const [newStorageLimit, setNewStorageLimit] = useState('');
-  const [adminNotes, setAdminNotes] = useState('');
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [editForm, setEditForm] = useState({
+    firstName: '',
+    lastName: '',
+    phone: '',
+    company: '',
+    notes: '',
+    acceptsMarketing: false,
+  });
 
-  useEffect(() => {
-    if (params.id) {
-      fetchCustomerDetails();
-    }
-  }, [params.id]);
+  const customerId = params?.id;
 
-  const fetchCustomerDetails = async () => {
+  const fetchCustomerDetails = useCallback(async () => {
+    if (!customerId) return;
+
     try {
-      const response = await fetch(`/api/admin/customers/${params.id}`);
+      const response = await fetch(`/api/admin/customers/${customerId}`);
       if (response.ok) {
         const data = await response.json();
         setCustomer(data);
-        setNewStorageLimit(String(data.storageLimit / (1024 * 1024))); // Convert to MB
-        setAdminNotes(data.metadata?.adminNotes || '');
+        setEditForm({
+          firstName: data.firstName || '',
+          lastName: data.lastName || '',
+          phone: data.phone || '',
+          company: data.company || '',
+          notes: data.notes || '',
+          acceptsMarketing: data.acceptsMarketing,
+        });
+      } else {
+        console.error('Failed to fetch customer');
       }
     } catch (error) {
       console.error('Failed to fetch customer details:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [customerId]);
 
-  const updateStorageLimit = async () => {
+  useEffect(() => {
+    fetchCustomerDetails();
+  }, [fetchCustomerDetails]);
+
+  const updateCustomer = async () => {
     try {
-      const newLimitBytes = Number(newStorageLimit) * 1024 * 1024; // Convert MB to bytes
-      const response = await fetch(`/api/admin/customers/${params.id}/storage`, {
+      const response = await fetch(`/api/admin/customers/${customerId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ storageLimit: newLimitBytes })
+        body: JSON.stringify(editForm)
       });
 
       if (response.ok) {
         await fetchCustomerDetails();
-        setShowStorageDialog(false);
+        setShowEditDialog(false);
       }
     } catch (error) {
-      console.error('Failed to update storage limit:', error);
+      console.error('Failed to update customer:', error);
     }
   };
 
-  const toggleAccountStatus = async () => {
+  const deleteCustomer = async () => {
     try {
-      const response = await fetch(`/api/admin/customers/${params.id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isActive: !customer?.isActive })
+      const response = await fetch(`/api/admin/customers/${customerId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        router.push('/admin/customers');
+      }
+    } catch (error) {
+      console.error('Failed to delete customer:', error);
+    }
+  };
+
+  const syncToStripe = async () => {
+    try {
+      const response = await fetch(`/api/admin/customers/${customerId}/sync-stripe`, {
+        method: 'POST',
       });
 
       if (response.ok) {
         await fetchCustomerDetails();
       }
     } catch (error) {
-      console.error('Failed to toggle account status:', error);
+      console.error('Failed to sync to Stripe:', error);
     }
   };
 
-  const saveAdminNotes = async () => {
-    try {
-      const response = await fetch(`/api/admin/customers/${params.id}/notes`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes: adminNotes })
-      });
-
-      if (response.ok) {
-        await fetchCustomerDetails();
-        setShowNotesDialog(false);
-      }
-    } catch (error) {
-      console.error('Failed to save admin notes:', error);
-    }
+  const formatCurrency = (cents: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(cents / 100);
   };
 
-  const downloadCustomerData = async () => {
-    try {
-      const response = await fetch(`/api/admin/customers/${params.id}/export`);
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `customer-${customer?.email}-data.json`;
-        a.click();
-        window.URL.revokeObjectURL(url);
-      }
-    } catch (error) {
-      console.error('Failed to download customer data:', error);
-    }
-  };
-
-  const formatBytes = (bytes: number) => {
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    if (bytes === 0) return '0 Bytes';
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
-  };
-
-  const getStoragePercentage = () => {
-    if (!customer) return 0;
-    return Math.round((customer.storageUsed / customer.storageLimit) * 100);
-  };
-
-  const getFileIcon = (designType: string) => {
-    switch (designType) {
-      case 'image':
-        return Image;
-      case 'vector':
-        return Code;
-      default:
-        return FileCode;
-    }
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      pending: 'bg-yellow-100 text-yellow-800',
+      processing: 'bg-blue-100 text-blue-800',
+      shipped: 'bg-purple-100 text-purple-800',
+      delivered: 'bg-green-100 text-green-800',
+      cancelled: 'bg-red-100 text-red-800',
+      refunded: 'bg-gray-100 text-gray-800',
+    };
+    return colors[status.toLowerCase()] || 'bg-gray-100 text-gray-800';
   };
 
   if (loading) {
@@ -221,7 +219,7 @@ export default function CustomerDetailPage() {
     );
   }
 
-  const storagePercentage = getStoragePercentage();
+  const customerName = [customer.firstName, customer.lastName].filter(Boolean).join(' ') || customer.email;
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
@@ -236,27 +234,32 @@ export default function CustomerDetailPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">{customer.name || customer.email}</h1>
+            <h1 className="text-3xl font-bold">{customerName}</h1>
             <div className="flex items-center gap-2 mt-1">
-              <Badge variant={customer.isActive ? "default" : "secondary"}>
-                {customer.isActive ? 'Active' : 'Inactive'}
-              </Badge>
-              <Badge variant="outline">{customer.accessLevel}</Badge>
+              <span className="text-muted-foreground">{customer.email}</span>
+              {customer.acceptsMarketing ? (
+                <Badge variant="default" className="gap-1">
+                  <Bell className="h-3 w-3" />
+                  Subscribed
+                </Badge>
+              ) : (
+                <Badge variant="secondary" className="gap-1">
+                  <BellOff className="h-3 w-3" />
+                  Not subscribed
+                </Badge>
+              )}
             </div>
           </div>
         </div>
-        
+
         <div className="flex gap-2">
-          <Button variant="outline" onClick={downloadCustomerData}>
-            <Download className="h-4 w-4 mr-2" />
-            Export Data
+          <Button variant="outline" onClick={() => setShowEditDialog(true)}>
+            <Edit className="h-4 w-4 mr-2" />
+            Edit
           </Button>
-          <Button
-            variant={customer.isActive ? "destructive" : "default"}
-            onClick={toggleAccountStatus}
-          >
-            <Ban className="h-4 w-4 mr-2" />
-            {customer.isActive ? 'Deactivate' : 'Activate'}
+          <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete
           </Button>
         </div>
       </div>
@@ -265,145 +268,150 @@ export default function CustomerDetailPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Contact Info</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className="text-sm font-medium">{customer.email}</p>
-            {customer.phone && (
-              <p className="text-sm text-muted-foreground">{customer.phone}</p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Business Owner</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm font-medium">{customer.businessOwner.businessName}</p>
-            <p className="text-xs text-muted-foreground">{customer.businessOwner.email}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Last Activity</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm font-medium">
-              {customer.lastActivityAt 
-                ? new Date(customer.lastActivityAt).toLocaleDateString()
-                : 'Never'}
-            </p>
+            <p className="text-2xl font-bold">{formatCurrency(customer.totalSpent)}</p>
             <p className="text-xs text-muted-foreground">
-              Member since {new Date(customer.createdAt).toLocaleDateString()}
+              Lifetime value
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Designs</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{customer.designs.length}</p>
+            <p className="text-2xl font-bold">{customer.totalOrders}</p>
             <p className="text-xs text-muted-foreground">
-              Created designs
+              {customer.lastOrderAt
+                ? `Last order ${new Date(customer.lastOrderAt).toLocaleDateString()}`
+                : 'No orders yet'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Average Order</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{formatCurrency(customer.averageOrder)}</p>
+            <p className="text-xs text-muted-foreground">
+              Per order average
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Member Since</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">
+              {new Date(customer.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {new Date(customer.createdAt).toLocaleDateString()}
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Storage Usage */}
+      {/* Stripe Integration */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Storage Usage</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Stripe Integration
+              </CardTitle>
               <CardDescription>
-                {formatBytes(customer.storageUsed)} of {formatBytes(customer.storageLimit)} used
+                {customer.stripeCustomerId
+                  ? `Customer ID: ${customer.stripeCustomerId}`
+                  : 'Not synced to Stripe'}
               </CardDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={() => setShowStorageDialog(true)}>
-              <Edit className="h-4 w-4 mr-2" />
-              Adjust Limit
-            </Button>
+            <div className="flex gap-2">
+              {customer.stripeCustomerId && (
+                <Button variant="outline" size="sm" asChild>
+                  <a
+                    href={`https://dashboard.stripe.com/customers/${customer.stripeCustomerId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    View in Stripe
+                  </a>
+                </Button>
+              )}
+              <Button variant="outline" size="sm" onClick={syncToStripe}>
+                {customer.stripeCustomerId ? 'Re-sync' : 'Sync to Stripe'}
+              </Button>
+            </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="w-full bg-secondary rounded-full h-3">
-              <div 
-                className={`h-3 rounded-full transition-all ${
-                  storagePercentage >= 90 ? 'bg-red-600' : 
-                  storagePercentage >= 70 ? 'bg-yellow-600' : 
-                  'bg-green-600'
-                }`}
-                style={{ width: `${Math.min(storagePercentage, 100)}%` }}
-              />
-            </div>
-            
-            <div className="grid grid-cols-3 gap-4 text-sm">
-              <div>
-                <p className="text-muted-foreground">Images</p>
-                <p className="font-medium">{formatBytes(customer.storageBreakdown.images)}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Designs</p>
-                <p className="font-medium">{formatBytes(customer.storageBreakdown.designs)}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Other</p>
-                <p className="font-medium">{formatBytes(customer.storageBreakdown.other)}</p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
+        {customer.stripeSyncedAt && (
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Last synced: {new Date(customer.stripeSyncedAt).toLocaleString()}
+            </p>
+          </CardContent>
+        )}
       </Card>
 
       {/* Tabs */}
-      <Tabs defaultValue="designs" className="space-y-4">
+      <Tabs defaultValue="orders" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="designs">Designs</TabsTrigger>
-          <TabsTrigger value="activity">Activity Log</TabsTrigger>
-          <TabsTrigger value="notes">Admin Notes</TabsTrigger>
+          <TabsTrigger value="orders">Orders ({customer.orders.length})</TabsTrigger>
+          <TabsTrigger value="addresses">Addresses ({customer.addresses.length})</TabsTrigger>
+          <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="notes">Notes</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="designs" className="space-y-4">
+        <TabsContent value="orders" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Recent Designs</CardTitle>
+              <CardTitle>Order History</CardTitle>
               <CardDescription>
-                All designs created by this customer
+                All orders placed by this customer
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {customer.designs.map((design) => {
-                  const FileIcon = getFileIcon(design.designType);
-                  return (
-                    <div key={design.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <FileIcon className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium">{design.designName}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {formatBytes(design.fileSize)} • {new Date(design.createdAt).toLocaleDateString()}
-                          </p>
-                        </div>
+                {customer.orders.map((order) => (
+                  <Link
+                    key={order.id}
+                    href={`/admin/orders/${order.id}`}
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Package className="h-5 w-5 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium">#{order.orderNumber}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {order.itemCount} items • {new Date(order.createdAt).toLocaleDateString()}
+                        </p>
                       </div>
-                      <Badge variant="outline">{design.designType}</Badge>
                     </div>
-                  );
-                })}
-                
-                {customer.designs.length === 0 && (
+                    <div className="flex items-center gap-3">
+                      <span className="font-medium">{formatCurrency(order.total)}</span>
+                      <Badge className={getStatusColor(order.status)}>
+                        {order.status}
+                      </Badge>
+                    </div>
+                  </Link>
+                ))}
+
+                {customer.orders.length === 0 && (
                   <p className="text-center py-4 text-muted-foreground">
-                    No designs created yet
+                    No orders yet
                   </p>
                 )}
               </div>
@@ -411,36 +419,118 @@ export default function CustomerDetailPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="activity" className="space-y-4">
+        <TabsContent value="addresses" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Activity Log</CardTitle>
+              <CardTitle>Saved Addresses</CardTitle>
               <CardDescription>
-                Recent actions and events
+                Shipping and billing addresses
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {customer.activityLog.map((log) => (
-                  <div key={log.id} className="flex items-start gap-3 text-sm">
-                    <Clock className="h-4 w-4 text-muted-foreground mt-0.5" />
-                    <div className="flex-1">
-                      <p className="font-medium">{log.action}</p>
-                      {log.details && (
-                        <p className="text-muted-foreground">{log.details}</p>
+              <div className="grid gap-4 md:grid-cols-2">
+                {customer.addresses.map((address) => (
+                  <div key={address.id} className="p-4 border rounded-lg">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">
+                          {address.firstName} {address.lastName}
+                        </span>
+                      </div>
+                      {address.isDefault && (
+                        <Badge variant="secondary">Default</Badge>
                       )}
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(log.createdAt).toLocaleString()}
-                      </p>
+                    </div>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      <p>{address.street1}</p>
+                      {address.street2 && <p>{address.street2}</p>}
+                      <p>{address.city}, {address.state} {address.postalCode}</p>
+                      <p>{address.country}</p>
+                      {address.phone && <p>{address.phone}</p>}
                     </div>
                   </div>
                 ))}
-                
-                {customer.activityLog.length === 0 && (
-                  <p className="text-center py-4 text-muted-foreground">
-                    No activity recorded
+
+                {customer.addresses.length === 0 && (
+                  <p className="text-center py-4 text-muted-foreground col-span-2">
+                    No addresses saved
                   </p>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="details" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Customer Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-1">
+                  <Label className="text-muted-foreground">Email</Label>
+                  <p className="flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    {customer.email}
+                  </p>
+                </div>
+                {customer.phone && (
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground">Phone</Label>
+                    <p className="flex items-center gap-2">
+                      <Phone className="h-4 w-4" />
+                      {customer.phone}
+                    </p>
+                  </div>
+                )}
+                {customer.company && (
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground">Company</Label>
+                    <p className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4" />
+                      {customer.company}
+                    </p>
+                  </div>
+                )}
+                {customer.taxId && (
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground">Tax ID</Label>
+                    <p>{customer.taxId}</p>
+                  </div>
+                )}
+              </div>
+
+              {customer.tags.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Tags</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {customer.tags.map((tag) => (
+                      <Badge key={tag} variant="outline">{tag}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label className="text-muted-foreground">Marketing Preferences</Label>
+                <p className="text-sm">
+                  {customer.acceptsMarketing ? (
+                    <>
+                      Opted in on {customer.marketingOptInAt
+                        ? new Date(customer.marketingOptInAt).toLocaleDateString()
+                        : 'unknown date'}
+                    </>
+                  ) : (
+                    <>
+                      Not subscribed
+                      {customer.marketingOptOutAt && (
+                        <> (opted out {new Date(customer.marketingOptOutAt).toLocaleDateString()})</>
+                      )}
+                    </>
+                  )}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -449,22 +539,14 @@ export default function CustomerDetailPage() {
         <TabsContent value="notes" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Admin Notes</CardTitle>
-                  <CardDescription>
-                    Private notes about this customer
-                  </CardDescription>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => setShowNotesDialog(true)}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Notes
-                </Button>
-              </div>
+              <CardTitle>Admin Notes</CardTitle>
+              <CardDescription>
+                Private notes about this customer
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              {adminNotes ? (
-                <p className="whitespace-pre-wrap">{adminNotes}</p>
+              {customer.notes ? (
+                <p className="whitespace-pre-wrap">{customer.notes}</p>
               ) : (
                 <p className="text-muted-foreground">No notes added yet</p>
               )}
@@ -473,66 +555,89 @@ export default function CustomerDetailPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Storage Limit Dialog */}
-      <Dialog open={showStorageDialog} onOpenChange={setShowStorageDialog}>
-        <DialogContent>
+      {/* Edit Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Adjust Storage Limit</DialogTitle>
+            <DialogTitle>Edit Customer</DialogTitle>
             <DialogDescription>
-              Update the storage limit for {customer.name || customer.email}
+              Update customer information
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>First Name</Label>
+                <Input
+                  value={editForm.firstName}
+                  onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Last Name</Label>
+                <Input
+                  value={editForm.lastName}
+                  onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
+                />
+              </div>
+            </div>
             <div className="space-y-2">
-              <Label>Storage Limit (MB)</Label>
+              <Label>Phone</Label>
               <Input
-                type="number"
-                value={newStorageLimit}
-                onChange={(e) => setNewStorageLimit(e.target.value)}
-                placeholder="Enter storage limit in MB"
+                value={editForm.phone}
+                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
               />
-              <p className="text-sm text-muted-foreground">
-                Current usage: {formatBytes(customer.storageUsed)}
-              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Company</Label>
+              <Input
+                value={editForm.company}
+                onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Notes</Label>
+              <Textarea
+                value={editForm.notes}
+                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                rows={4}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label>Accepts Marketing</Label>
+              <Switch
+                checked={editForm.acceptsMarketing}
+                onCheckedChange={(checked) => setEditForm({ ...editForm, acceptsMarketing: checked })}
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowStorageDialog(false)}>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={updateStorageLimit}>
-              Update Limit
+            <Button onClick={updateCustomer}>
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Admin Notes Dialog */}
-      <Dialog open={showNotesDialog} onOpenChange={setShowNotesDialog}>
+      {/* Delete Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Admin Notes</DialogTitle>
+            <DialogTitle>Delete Customer</DialogTitle>
             <DialogDescription>
-              Add or update private notes about this customer
+              Are you sure you want to delete this customer? This action cannot be undone.
+              Order history will be preserved but disassociated from this customer.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Notes</Label>
-              <Textarea
-                value={adminNotes}
-                onChange={(e) => setAdminNotes(e.target.value)}
-                placeholder="Enter notes about this customer..."
-                rows={6}
-              />
-            </div>
-          </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowNotesDialog(false)}>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={saveAdminNotes}>
-              Save Notes
+            <Button variant="destructive" onClick={deleteCustomer}>
+              Delete Customer
             </Button>
           </DialogFooter>
         </DialogContent>

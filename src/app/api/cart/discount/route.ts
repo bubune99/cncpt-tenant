@@ -7,8 +7,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { getOrCreateCart, applyDiscount, removeDiscount } from '@/lib/cart';
-import { getCurrentUserId } from '@/lib/cart/auth';
+import { getOrCreateCart, applyDiscount, removeDiscount } from '../../../../lib/cart';
+import { getCurrentUserId } from '../../../../lib/cart/auth';
 
 const CART_SESSION_COOKIE = 'cart_session_id';
 

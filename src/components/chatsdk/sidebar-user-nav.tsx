@@ -3,7 +3,7 @@
 import { ChevronUp } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import type { User } from "@/lib/chatsdk/db/schema";
+import type { User } from '../../lib/chatsdk/db/schema';
 import { useUser } from "@stackframe/stack";
 import { useTheme } from "next-themes";
 import {
@@ -12,13 +12,13 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '../ui/dropdown-menu';
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/chatsdk/ui/sidebar";
-import { guestRegex } from "@/lib/chatsdk/constants";
+} from './ui/sidebar';
+import { guestRegex } from '../../lib/chatsdk/constants';
 import { LoaderIcon } from "./icons";
 import { toast } from "./toast";
 

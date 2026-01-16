@@ -7,9 +7,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getMedia, updateMedia, deleteMedia, restoreMedia } from '@/lib/media'
-import { deleteFromStorage } from '@/lib/media/upload'
-import type { MediaUpdateInput } from '@/lib/media/types'
+import { getMedia, updateMedia, deleteMedia, restoreMedia } from '../../../../lib/media'
+import { deleteFromStorage } from '../../../../lib/media/upload'
+import type { MediaUpdateInput } from '../../../../lib/media/types'
 
 export async function GET(
   request: NextRequest,

@@ -6,12 +6,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { prisma } from '../../../../../lib/db';
 import {
   syncDiscountToStripe,
   deleteStripeDiscount,
   toggleStripePromotionCode,
-} from '@/lib/discounts';
+} from '../../../../../lib/discounts';
 
 interface RouteParams {
   params: Promise<{ id: string }>;

@@ -5,7 +5,7 @@
  * including header, footer, and announcement bar configurations.
  */
 
-import { prisma } from '@/lib/db';
+import { prisma } from '../db';
 import { cache } from 'react';
 
 const DEFAULT_SITE_SETTINGS_ID = 'default';

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import type { UploadProgress } from '@/lib/media/types'
+import type { UploadProgress } from '../lib/media/types'
 
 interface UseMediaUploadOptions {
   folderId?: string | null

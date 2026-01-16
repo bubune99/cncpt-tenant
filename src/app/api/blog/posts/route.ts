@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { listPosts, createPost } from '@/lib/blog'
+import { listPosts, createPost } from '../../../../lib/blog'
 
 export async function GET(request: NextRequest) {
   try {

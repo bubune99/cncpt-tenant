@@ -6,9 +6,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { stackServerApp } from '@/lib/stack';
-import { prisma } from '@/lib/db';
-import { encrypt } from '@/lib/encryption';
+import { stackServerApp } from '../../../../lib/stack';
+import { prisma } from '../../../../lib/db';
+import { encrypt } from '../../../../lib/encryption';
 
 export const dynamic = 'force-dynamic';
 

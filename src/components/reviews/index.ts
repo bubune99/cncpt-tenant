@@ -13,7 +13,7 @@
  *   StarRating,
  *   RatingStars,
  *   ReviewStatsBadge,
- * } from '@/components/reviews';
+ * } from './';
  * ```
  */
 

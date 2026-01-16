@@ -7,10 +7,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
-import { constructWebhookEvent } from '@/lib/stripe'
-import { sendOrderConfirmation, sendRefundNotification } from '@/lib/notifications'
-import { deductStockForOrder, releaseSessionReservations } from '@/lib/inventory'
+import { prisma } from '../../../../lib/db'
+import { constructWebhookEvent } from '../../../../lib/stripe'
+import { sendOrderConfirmation, sendRefundNotification } from '../../../../lib/notifications'
+import { deductStockForOrder, releaseSessionReservations } from '../../../../lib/inventory'
 import type Stripe from 'stripe'
 
 // Map Stripe payment status to our order status

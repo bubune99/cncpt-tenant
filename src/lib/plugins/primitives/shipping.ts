@@ -88,7 +88,7 @@ export const SHIPPING_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true
       required: ['addressTo', 'parcels'],
     },
     handler: `
-      const { createShipment, getDefaultFromAddress } = await import('@/lib/shippo');
+      const { createShipment, getDefaultFromAddress } = await import('../../shippo');
 
       // Use default from address if not provided
       const addressFrom = args.addressFrom || await getDefaultFromAddress();
@@ -152,8 +152,8 @@ export const SHIPPING_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true
       required: ['rateId'],
     },
     handler: `
-      const { purchaseLabel } = await import('@/lib/shippo');
-      const { prisma } = await import('@/lib/db');
+      const { purchaseLabel } = await import('../../shippo');
+      const { prisma } = await import('../../db');
 
       const label = await purchaseLabel({
         rateId: args.rateId,
@@ -212,7 +212,7 @@ export const SHIPPING_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true
       required: ['carrier', 'trackingNumber'],
     },
     handler: `
-      const { getTracking } = await import('@/lib/shippo');
+      const { getTracking } = await import('../../shippo');
 
       const tracking = await getTracking(args.carrier, args.trackingNumber);
 
@@ -293,7 +293,7 @@ export const SHIPPING_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true
       required: ['name', 'street1', 'city', 'state', 'zip'],
     },
     handler: `
-      const { validateAddress } = await import('@/lib/shippo');
+      const { validateAddress } = await import('../../shippo');
 
       const result = await validateAddress({
         name: args.name,
@@ -350,8 +350,8 @@ export const SHIPPING_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true
       required: ['transactionId'],
     },
     handler: `
-      const { refundLabel } = await import('@/lib/shippo');
-      const { prisma } = await import('@/lib/db');
+      const { refundLabel } = await import('../../shippo');
+      const { prisma } = await import('../../db');
 
       const refund = await refundLabel(args.transactionId);
 

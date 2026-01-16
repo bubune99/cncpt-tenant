@@ -5,8 +5,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
-import { refundLabel, getShippingSettings } from '@/lib/shippo'
+import { prisma } from '../../../../lib/db'
+import { refundLabel, getShippingSettings } from '../../../../lib/shippo'
 
 interface RefundRequestBody {
   shipmentId: string // Our internal shipment ID

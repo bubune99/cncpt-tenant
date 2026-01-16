@@ -5,8 +5,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
-import { executeWorkflowInstance, triggerWorkflowManually } from '@/lib/workflows';
+import { prisma } from '../../../../../../lib/db';
+import { executeWorkflowInstance, triggerWorkflowManually } from '../../../../../../lib/workflows';
 
 interface RouteParams {
   params: Promise<{ id: string }>;

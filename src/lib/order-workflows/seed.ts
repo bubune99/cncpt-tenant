@@ -4,7 +4,7 @@
  * Create default workflow templates
  */
 
-import { prisma } from '@/lib/db'
+import { prisma } from '../db'
 import { DEFAULT_WORKFLOW_TEMPLATES } from './types'
 import type { WorkflowTemplate } from './types'
 

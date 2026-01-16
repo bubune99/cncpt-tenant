@@ -4,7 +4,7 @@
  * Process bounce, complaint, and delivery events from email providers
  */
 
-import { prisma } from '@/lib/db'
+import { prisma } from '../db'
 import type { EmailWebhookEvent, EmailProvider, EmailEventType } from './types'
 import crypto from 'crypto'
 

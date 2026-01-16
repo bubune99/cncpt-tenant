@@ -15,7 +15,7 @@ import {
   getLowStockItems,
   sendLowStockAlert,
   cleanupExpiredReservations,
-} from '@/lib/inventory';
+} from '../../../../lib/inventory';
 
 // Verify cron secret for security
 function verifyCronSecret(request: NextRequest): boolean {

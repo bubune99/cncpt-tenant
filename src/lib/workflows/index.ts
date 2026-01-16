@@ -6,7 +6,7 @@
  *
  * @example Basic workflow execution
  * ```ts
- * import { executeWorkflow, triggerWorkflowManually } from '@/lib/workflows';
+ * import { executeWorkflow, triggerWorkflowManually } from './';
  *
  * // Execute by ID
  * const result = await triggerWorkflowManually('workflow-id', { orderId: '123' });
@@ -17,7 +17,7 @@
  *
  * @example Event-driven workflows
  * ```ts
- * import { events, emit } from '@/lib/workflows';
+ * import { events, emit } from './';
  *
  * // Emit predefined events
  * await events.order.created(order);
@@ -34,7 +34,7 @@
  *   toReactFlowEdges,
  *   validateWorkflow,
  *   serializeWorkflow,
- * } from '@/lib/workflows';
+ * } from './';
  *
  * // Load workflow for editor
  * const { nodes, edges } = deserializeWorkflow(workflow);

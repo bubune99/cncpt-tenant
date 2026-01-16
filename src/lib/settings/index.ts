@@ -4,8 +4,8 @@
  * Centralized settings management with database storage and encryption
  */
 
-import { prisma } from '@/lib/db'
-import { encrypt, safeDecrypt, isEncrypted } from '@/lib/encryption'
+import { prisma } from '../db'
+import { encrypt, safeDecrypt, isEncrypted } from '../encryption'
 import type {
   SettingGroup,
   BrandingSettings,

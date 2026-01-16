@@ -17,22 +17,22 @@ import {
   Printer,
   Plus
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '../../../components/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '../../../components/ui/select';
 import {
   Table,
   TableBody,
@@ -40,7 +40,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '../../../components/ui/table';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,13 +48,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
+} from '../../../components/ui/dropdown-menu';
+import { Badge } from '../../../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
+import { Checkbox } from '../../../components/ui/checkbox';
 import { toast } from "sonner";
 import Link from "next/link";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from '../../../hooks/use-auth';
 
 interface Order {
   id: string;

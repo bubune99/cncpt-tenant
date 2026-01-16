@@ -14,13 +14,13 @@ import {
 } from "lucide-react";
 import type React from "react";
 import type { ComponentProps, ReactNode } from "react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from '../../ui/badge';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { cn } from "@/lib/utils";
+} from '../../ui/collapsible';
+import { cn } from '../../../lib/utils';
 import { CodeBlock } from "./code-block";
 
 export type ToolProps = ComponentProps<typeof Collapsible> & {

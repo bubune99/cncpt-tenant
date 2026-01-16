@@ -17,8 +17,8 @@ import {
   AlertCircle,
   CheckCircle,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '../../../../components/ui/button';
+import { Input } from '../../../../components/ui/input';
 import {
   Dialog,
   DialogContent,
@@ -26,7 +26,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from '../../../../components/ui/dialog';
 
 interface WorkflowTemplate {
   id: string;

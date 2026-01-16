@@ -13,13 +13,13 @@ import {
   Server,
   Send,
 } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
+import { Label } from '../ui/label'
+import { Input } from '../ui/input'
+import { Button } from '../ui/button'
+import { Switch } from '../ui/switch'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
+import { Alert, AlertDescription } from '../ui/alert'
 
 interface EmailSettings {
   provider: 'smtp' | 'sendgrid' | 'resend' | 'mailgun' | 'ses'

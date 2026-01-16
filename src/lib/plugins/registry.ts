@@ -9,7 +9,7 @@
  * Write path: Memory + DB (write-through)
  */
 
-import { prisma } from '@/lib/db';
+import { prisma } from '../db';
 import type {
   PrimitiveDefinition,
   MountedPrimitive,

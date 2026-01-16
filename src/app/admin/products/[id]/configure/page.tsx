@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { ProductEditor } from '@/components/products/ProductEditor';
+import { ProductEditor } from '../../../../../components/products/ProductEditor';
 
 export default function ConfigureProductPage() {
   const params = useParams();

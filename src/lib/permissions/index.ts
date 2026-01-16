@@ -3,7 +3,7 @@
  * Core RBAC logic for checking user permissions
  */
 
-import { prisma } from '@/lib/db'
+import { prisma } from '../db'
 import { PERMISSIONS, BUILT_IN_ROLES } from './constants'
 import type {
   UserWithPermissions,

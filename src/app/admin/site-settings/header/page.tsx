@@ -10,31 +10,31 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, Save, Eye, EyeOff } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '../../../../components/ui/button';
 import { toast } from 'sonner';
 import {
   Header,
   type HeaderProps,
-} from '@/puck/layout/components';
-import { defaultHeaderProps } from '@/components/page-wrapper/defaults';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+} from '../../../../puck/layout/components';
+import { defaultHeaderProps } from '../../../../components/page-wrapper/defaults';
+import { Input } from '../../../../components/ui/input';
+import { Label } from '../../../../components/ui/label';
+import { Switch } from '../../../../components/ui/switch';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '../../../../components/ui/select';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+} from '../../../../components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../components/ui/tabs';
 
 interface NavLink {
   label: string;

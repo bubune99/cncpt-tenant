@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { recordEmailClick } from '@/lib/email/tracking'
+import { recordEmailClick } from '../../../../../lib/email/tracking'
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams

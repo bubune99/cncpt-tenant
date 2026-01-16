@@ -5,7 +5,7 @@
  * Uses in-memory queue with optional database persistence for reliability.
  */
 
-import { prisma } from '@/lib/db'
+import { prisma } from '../db'
 import { sendEmail, sendBulkEmail, EmailMessage, BulkEmailMessage, EmailSendResult, BulkEmailResult } from './index'
 
 // =============================================================================

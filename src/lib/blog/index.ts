@@ -4,7 +4,7 @@
  * Core functions for blog post, category, and tag management
  */
 
-import { prisma } from '@/lib/db'
+import { prisma } from '../db'
 import type { Prisma, PostVisibility } from '@prisma/client'
 
 // ============ SLUG UTILITIES ============
@@ -48,8 +48,6 @@ export interface CreatePostInput {
   excerpt?: string
   content?: object
   contentHtml?: string
-  puckContent?: object
-  usePuckLayout?: boolean
   authorId?: string
   featuredImageId?: string
   status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' | 'SCHEDULED'
@@ -105,8 +103,6 @@ export async function createPost(input: CreatePostInput) {
       excerpt: input.excerpt,
       content: input.content as Prisma.InputJsonValue,
       contentHtml: input.contentHtml,
-      puckContent: input.puckContent as Prisma.InputJsonValue,
-      usePuckLayout: input.usePuckLayout ?? false,
       authorId: input.authorId,
       featuredImageId: input.featuredImageId,
       status: input.status ?? 'DRAFT',
@@ -336,8 +332,6 @@ export async function updatePost(id: string, input: UpdatePostInput) {
       excerpt: input.excerpt,
       content: input.content as Prisma.InputJsonValue,
       contentHtml: input.contentHtml,
-      puckContent: input.puckContent as Prisma.InputJsonValue,
-      usePuckLayout: input.usePuckLayout,
       authorId: input.authorId,
       featuredImageId: input.featuredImageId,
       status: input.status,

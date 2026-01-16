@@ -1,16 +1,16 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
+import { Button } from '../../ui/button'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Input } from '@/components/ui/input'
+} from '../../ui/select'
+import { Input } from '../../ui/input'
 import { LayoutGrid, List, Upload, Search, SlidersHorizontal } from 'lucide-react'
-import type { ViewMode, MediaType, MediaFilters } from '@/lib/media/types'
+import type { ViewMode, MediaType, MediaFilters } from '../../../lib/media/types'
 
 interface MediaToolbarProps {
   viewMode: ViewMode

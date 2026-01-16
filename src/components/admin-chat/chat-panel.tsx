@@ -39,18 +39,18 @@ import {
   Users,
   PenLine,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '../ui/button';
+import { Textarea } from '../ui/textarea';
+import { ScrollArea } from '../ui/scroll-area';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
-import { useChatStore, useChatPanel, useChatContext } from '@/lib/ai/chat-store';
-import { useAutoChatContext } from '@/hooks/use-chat-context';
+} from '../ui/tooltip';
+import { cn } from '../../lib/utils';
+import { useChatStore, useChatPanel, useChatContext } from '../../lib/ai/chat-store';
+import { useAutoChatContext } from '../../hooks/use-chat-context';
 
 // Animated typing dots component
 const TypingDots = () => (

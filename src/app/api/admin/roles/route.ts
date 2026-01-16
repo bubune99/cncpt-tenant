@@ -6,12 +6,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { prisma } from '../../../../lib/db'
 import {
   withPermission,
   type AuthContext,
-} from '@/lib/permissions/middleware'
-import { PERMISSIONS, logAuditEvent, seedBuiltInRoles } from '@/lib/permissions'
+} from '../../../../lib/permissions/middleware'
+import { PERMISSIONS, logAuditEvent, seedBuiltInRoles } from '../../../../lib/permissions'
 
 // GET - List all roles
 export const GET = withPermission(

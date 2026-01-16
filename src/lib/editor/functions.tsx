@@ -5,10 +5,10 @@ import { DOMParser, type Node } from "prosemirror-model";
 import { Decoration, DecorationSet, type EditorView } from "prosemirror-view";
 import { renderToString } from "react-dom/server";
 
-import { Response } from "@/components/chatsdk/elements/response";
+import { Response } from '../../components/chatsdk/elements/response';
 
-import { documentSchema } from "@/lib/chatsdk/editor/config";
-import { createSuggestionWidget, type UISuggestion } from "@/lib/chatsdk/editor/suggestions";
+import { documentSchema } from '../chatsdk/editor/config';
+import { createSuggestionWidget, type UISuggestion } from '../chatsdk/editor/suggestions';
 
 export const buildDocumentFromContent = (content: string) => {
   const parser = DOMParser.fromSchema(documentSchema);

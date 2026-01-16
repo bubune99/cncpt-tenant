@@ -42,7 +42,7 @@ export const CART_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }> 
       },
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       let cart = null;
       const include = args.includeItems !== false ? {
@@ -107,7 +107,7 @@ export const CART_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }> 
       },
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       if (!args.sessionId && !args.userId) {
         throw new Error('Must provide sessionId or userId');
@@ -181,7 +181,7 @@ export const CART_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }> 
       required: ['cartId', 'productId'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       const quantity = args.quantity || 1;
 
@@ -283,7 +283,7 @@ export const CART_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }> 
       required: ['cartId', 'itemId', 'quantity'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       if (args.quantity <= 0) {
         // Remove item
@@ -340,7 +340,7 @@ export const CART_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }> 
       required: ['cartId', 'itemId'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       await prisma.cartItem.delete({
         where: { id: args.itemId },
@@ -385,7 +385,7 @@ export const CART_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }> 
       required: ['cartId'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       // Delete all items
       await prisma.cartItem.deleteMany({
@@ -440,7 +440,7 @@ export const CART_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }> 
       required: ['cartId', 'code'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       // Find the discount code
       const discount = await prisma.discountCode.findUnique({
@@ -556,7 +556,7 @@ export const CART_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }> 
       required: ['cartId'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       const cart = await prisma.cart.findUnique({
         where: { id: args.cartId },
@@ -615,7 +615,7 @@ export const CART_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }> 
       required: ['cartId', 'address'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       const cart = await prisma.cart.findUnique({
         where: { id: args.cartId },
@@ -635,7 +635,7 @@ export const CART_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }> 
 
       // Try to get rates from Shippo if configured
       try {
-        const { getShippingRates } = await import('@/lib/shippo');
+        const { getShippingRates } = await import('../../shippo');
         const rates = await getShippingRates({
           addressTo: {
             street1: args.address.street1,

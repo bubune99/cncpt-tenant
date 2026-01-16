@@ -1,0 +1,5 @@
+# .npmrc template for consuming @farcncpt/cms package
+# Copy this to your project as .npmrc and set GITHUB_TOKEN env var
+
+@farcncpt:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}

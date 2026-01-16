@@ -40,7 +40,7 @@ export const searchProducts = tool({
   }),
   execute: async ({ query, limit }: { query: string; limit?: number }) => {
     // Import prisma dynamically to avoid issues
-    const { prisma } = await import('@/lib/db');
+    const { prisma } = await import('../../db');
     const searchLimit = limit ?? 10;
 
     const products = await prisma.product.findMany({
@@ -86,7 +86,7 @@ export const searchOrders = tool({
     limit: z.number().optional().default(10),
   }),
   execute: async ({ query, status, limit }: { query?: string; status?: string; limit?: number }) => {
-    const { prisma } = await import('@/lib/db');
+    const { prisma } = await import('../../db');
     const searchLimit = limit ?? 10;
 
     type OrderStatus = 'PENDING' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
@@ -140,7 +140,7 @@ export const getDashboardStats = tool({
     period: z.enum(['today', 'week', 'month', 'year']).optional().default('month'),
   }),
   execute: async ({ period }: { period?: 'today' | 'week' | 'month' | 'year' }) => {
-    const { prisma } = await import('@/lib/db');
+    const { prisma } = await import('../../db');
     const selectedPeriod = period ?? 'month';
 
     // Calculate date range
@@ -193,7 +193,7 @@ export const getRecentActivity = tool({
   }),
   execute: async ({ limit }: { limit?: number }) => {
     const activityLimit = limit ?? 10;
-    const { prisma } = await import('@/lib/db');
+    const { prisma } = await import('../../db');
 
     const [recentOrders, recentUsers] = await Promise.all([
       prisma.order.findMany({

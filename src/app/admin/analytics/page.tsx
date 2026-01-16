@@ -19,23 +19,23 @@ import {
   PieChart,
   LineChart,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from '../../../components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '../../../components/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
+} from '../../../components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
+import { Badge } from '../../../components/ui/badge';
 import {
   Table,
   TableBody,
@@ -43,10 +43,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Progress } from "@/components/ui/progress";
+} from '../../../components/ui/table';
+import { Progress } from '../../../components/ui/progress';
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from '../../../hooks/use-auth';
 
 interface AnalyticsData {
   overview: {

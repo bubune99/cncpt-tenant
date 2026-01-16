@@ -1,9 +1,9 @@
-import { prisma } from "@/lib/db";
+import { prisma } from '../../../lib/db';
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { Calendar, Clock, User, Tag as TagIcon } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Badge } from '../../../components/ui/badge';
+import { Card, CardContent, CardFooter, CardHeader } from '../../../components/ui/card';
 
 export const metadata = {
   title: "Blog",

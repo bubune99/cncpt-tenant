@@ -10,7 +10,7 @@
  * - Abandonment tracking
  */
 
-import { prisma } from '@/lib/db';
+import { prisma } from '../db';
 import { CartStatus } from '@prisma/client';
 
 // Types

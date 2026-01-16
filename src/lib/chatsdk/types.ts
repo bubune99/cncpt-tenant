@@ -1,9 +1,9 @@
 import type { InferUITool, UIMessage } from "ai";
 import { z } from "zod";
-import type { ArtifactKind } from "@/components/chatsdk/artifact";
-import type { createDocument } from "@/lib/ai/tools/create-document";
-import type { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
-import type { updateDocument } from "@/lib/ai/tools/update-document";
+import type { ArtifactKind } from '../../components/chatsdk/artifact';
+import type { createDocument } from '../ai/tools/create-document';
+import type { requestSuggestions } from '../ai/tools/request-suggestions';
+import type { updateDocument } from '../ai/tools/update-document';
 import type { Suggestion } from "./db/schema";
 import type { AppUsage } from "./usage";
 

@@ -10,7 +10,7 @@ import {
   getProductReviewStats,
   canCustomerReviewProduct,
   type ReviewSort,
-} from '@/lib/reviews';
+} from '../../../../../lib/reviews';
 
 interface RouteParams {
   params: Promise<{ productId: string }>;

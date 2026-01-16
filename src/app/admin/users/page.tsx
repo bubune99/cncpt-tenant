@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
-import { isAdminUser } from '@/lib/admin-config';
+import { useAuth } from '../../../hooks/use-auth';
+import { isAdminUser } from '../../../lib/admin-config';
 import {
   Search,
   MoreVertical,
@@ -19,23 +19,23 @@ import {
   UserCheck,
   UserX,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
+import { Badge } from '../../../components/ui/badge';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from '../../../components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '../../../components/ui/dropdown-menu';
 import {
   Table,
   TableBody,
@@ -43,8 +43,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+} from '../../../components/ui/table';
+import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/avatar';
 import { toast } from 'sonner';
 
 interface UserRole {

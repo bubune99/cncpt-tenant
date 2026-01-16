@@ -9,19 +9,19 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, Save, Eye, EyeOff } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '../../../../components/ui/button';
 import { toast } from 'sonner';
-import { AnnouncementBar, type AnnouncementBarProps } from '@/puck/layout/components';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+import { AnnouncementBar, type AnnouncementBarProps } from '../../../../puck/layout/components';
+import { Input } from '../../../../components/ui/input';
+import { Label } from '../../../../components/ui/label';
+import { Switch } from '../../../../components/ui/switch';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from '../../../../components/ui/card';
 
 const defaultAnnouncementProps: AnnouncementBarProps = {
   message: 'Free shipping on orders over $50!',

@@ -7,16 +7,16 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { getMediaType, formatFileSize } from '@/lib/media/types'
-import type { MediaWithRelations, UsageInfo } from '@/lib/media/types'
+} from '../../ui/sheet'
+import { Button } from '../../ui/button'
+import { Input } from '../../ui/input'
+import { Label } from '../../ui/label'
+import { Textarea } from '../../ui/textarea'
+import { Badge } from '../../ui/badge'
+import { Separator } from '../../ui/separator'
+import { ScrollArea } from '../../ui/scroll-area'
+import { getMediaType, formatFileSize } from '../../../lib/media/types'
+import type { MediaWithRelations, UsageInfo } from '../../../lib/media/types'
 import { format } from 'date-fns'
 import {
   FileText,

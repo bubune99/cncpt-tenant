@@ -1,12 +1,11 @@
-import { prisma } from "@/lib/db";
+import { prisma } from '../../../../lib/db';
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
 import { Calendar, Clock, User, ArrowLeft, Tag as TagIcon, Eye } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { Badge } from '../../../../components/ui/badge';
+import { Separator } from '../../../../components/ui/separator';
 import type { Metadata } from "next";
-import BlogPostPuckRenderer from "./puck-renderer";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -121,12 +120,7 @@ export default async function BlogPostPage({ params }: PageProps) {
   const categoryIds = post.categories.map((c: (typeof post.categories)[number]) => c.categoryId);
   const relatedPosts = await getRelatedPosts(post.id, categoryIds);
 
-  // If using Puck layout, render with Puck
-  if (post.usePuckLayout && post.puckContent) {
-    return <BlogPostPuckRenderer post={post as Parameters<typeof BlogPostPuckRenderer>[0]['post']} relatedPosts={relatedPosts} />;
-  }
-
-  // Otherwise render with TipTap HTML content
+  // Render with TipTap HTML content
   return (
     <article className="container mx-auto px-4 py-12">
       {/* Back Link */}

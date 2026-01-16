@@ -6,9 +6,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
-import { purchaseLabel, getShippingSettings } from '@/lib/shippo'
-import type { LabelFormat } from '@/lib/shippo/types'
+import { prisma } from '../../../../lib/db'
+import { purchaseLabel, getShippingSettings } from '../../../../lib/shippo'
+import type { LabelFormat } from '../../../../lib/shippo/types'
 
 interface PurchaseLabelBody {
   rateId: string

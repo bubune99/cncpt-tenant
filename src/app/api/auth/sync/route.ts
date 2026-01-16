@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from '../../../../lib/db';
 
 /**
  * POST /api/auth/sync
@@ -18,22 +18,50 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Upsert user - create if doesn't exist, update if exists
-    const user = await prisma.user.upsert({
+    // First check if user exists by stackAuthId
+    let user = await prisma.user.findUnique({
       where: { stackAuthId },
-      create: {
-        stackAuthId,
-        email,
-        name: name || null,
-        avatar: avatar || null,
-        role: "CUSTOMER",
-      },
-      update: {
-        email,
-        name: name || undefined,
-        avatar: avatar || undefined,
-      },
     });
+
+    if (user) {
+      // Update existing user
+      user = await prisma.user.update({
+        where: { stackAuthId },
+        data: {
+          email,
+          name: name || undefined,
+          avatar: avatar || undefined,
+        },
+      });
+    } else {
+      // Check if email already exists (user may have been created before Stack Auth sync)
+      const existingByEmail = await prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (existingByEmail) {
+        // Link existing user to Stack Auth
+        user = await prisma.user.update({
+          where: { email },
+          data: {
+            stackAuthId,
+            name: name || existingByEmail.name,
+            avatar: avatar || existingByEmail.avatar,
+          },
+        });
+      } else {
+        // Create new user
+        user = await prisma.user.create({
+          data: {
+            stackAuthId,
+            email,
+            name: name || null,
+            avatar: avatar || null,
+            role: "CUSTOMER",
+          },
+        });
+      }
+    }
 
     return NextResponse.json({
       success: true,

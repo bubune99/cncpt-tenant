@@ -4,8 +4,8 @@
  * Supports S3, R2, and local storage providers
  */
 
-import { getStorageSettings } from '@/lib/settings'
-import type { StorageSettings } from '@/lib/settings/types'
+import { getStorageSettings } from '../settings'
+import type { StorageSettings } from '../settings/types'
 import type { StorageProvider, PresignedUrlResponse, UploadOptions } from './types'
 import { createMedia } from './index'
 import { v4 as uuidv4 } from 'uuid'
@@ -34,7 +34,11 @@ export async function checkStorageConfig(): Promise<StorageConfigStatus> {
     if (!settings.accessKeyId) missingFields.push('accessKeyId')
     if (!settings.secretAccessKey) missingFields.push('secretAccessKey')
     if (provider === 'S3' && !settings.region) missingFields.push('region')
-    if (provider === 'R2' && !settings.endpoint) missingFields.push('endpoint')
+    if (provider === 'R2') {
+      if (!settings.endpoint) missingFields.push('endpoint')
+      // R2 requires a public URL for serving files - the API endpoint is NOT for public access
+      if (!settings.publicUrl) missingFields.push('publicUrl')
+    }
   }
 
   const configured = missingFields.length === 0
@@ -44,7 +48,14 @@ export async function checkStorageConfig(): Promise<StorageConfigStatus> {
     if (provider === 'S3') {
       message = `S3 storage is not configured. Please add your AWS S3 credentials in Settings > Storage. Missing: ${missingFields.join(', ')}`
     } else if (provider === 'R2') {
-      message = `Cloudflare R2 storage is not configured. Please add your R2 credentials in Settings > Storage. Missing: ${missingFields.join(', ')}`
+      const missingFieldsStr = missingFields.join(', ')
+      message = `Cloudflare R2 storage is not fully configured. Missing: ${missingFieldsStr}.\n\n`
+      if (missingFields.includes('publicUrl')) {
+        message += 'IMPORTANT: R2 requires a public URL to serve files. Configure either:\n' +
+          '• A custom domain connected to your bucket, OR\n' +
+          '• Enable the r2.dev public URL in Cloudflare Dashboard > R2 > Your Bucket > Settings > Public access\n\n' +
+          'Then set R2_PUBLIC_URL environment variable or publicUrl in Storage settings.'
+      }
     } else {
       message = 'Storage provider is not properly configured.'
     }
@@ -128,14 +139,32 @@ async function generateS3PresignedUrl(
 
   const uploadUrl = await getSignedUrl(client, command, { expiresIn: 3600 })
 
-  // Build public URL
+  // Build public URL based on provider
   let publicUrl: string
-  if (settings.publicUrl) {
+
+  if (provider === 'R2') {
+    // R2 REQUIRES a publicUrl to be set - the API endpoint is NOT for public access
+    // Public access must be configured via:
+    // 1. Custom domain (e.g., https://cdn.example.com)
+    // 2. r2.dev subdomain (e.g., https://pub-xxx.r2.dev)
+    if (!settings.publicUrl) {
+      throw new Error(
+        'R2 public URL is required. Please configure either:\n' +
+        '1. A custom domain connected to your R2 bucket, OR\n' +
+        '2. Enable the r2.dev public URL in your Cloudflare dashboard.\n' +
+        'Then set R2_PUBLIC_URL in your environment or Storage settings.'
+      )
+    }
+    // Custom domains and r2.dev URLs: simply append the key (no bucket in path)
     publicUrl = `${settings.publicUrl.replace(/\/$/, '')}/${key}`
-  } else if (settings.endpoint) {
-    publicUrl = `${settings.endpoint}/${settings.bucket}/${key}`
   } else {
-    publicUrl = `https://${settings.bucket}.s3.${settings.region}.amazonaws.com/${key}`
+    // S3 or S3-compatible storage
+    if (settings.publicUrl) {
+      publicUrl = `${settings.publicUrl.replace(/\/$/, '')}/${key}`
+    } else {
+      // Standard S3 URL format
+      publicUrl = `https://${settings.bucket}.s3.${settings.region}.amazonaws.com/${key}`
+    }
   }
 
   return {

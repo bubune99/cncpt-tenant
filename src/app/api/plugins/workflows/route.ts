@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { prisma } from '../../../../lib/db';
 
 // GET - List all workflows
 export async function GET(request: NextRequest) {

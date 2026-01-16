@@ -9,7 +9,7 @@ import {
   bulkApproveReviews,
   bulkRejectReviews,
   bulkDeleteReviews,
-} from '@/lib/reviews';
+} from '../../../../lib/reviews';
 
 // POST - Bulk actions
 export async function POST(request: NextRequest) {

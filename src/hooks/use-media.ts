@@ -8,7 +8,7 @@ import type {
   MediaType,
   FolderTree,
   TagWithCount,
-} from '@/lib/media/types'
+} from '../lib/media/types'
 
 interface UseMediaState {
   media: MediaWithRelations[]
@@ -117,7 +117,8 @@ export function useMedia(): UseMediaState & UseMediaActions {
       const data = await response.json()
 
       // Ensure we always set an array, even if API returns an error object
-      const mediaItems = Array.isArray(data.items) ? data.items : Array.isArray(data) ? data : []
+      // API returns { media: [...] } so check for data.media first, then data.items for backwards compatibility
+      const mediaItems = Array.isArray(data.media) ? data.media : Array.isArray(data.items) ? data.items : Array.isArray(data) ? data : []
       setMedia(mediaItems)
       setPagination({
         page: data.page || 1,

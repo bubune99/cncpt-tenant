@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { listUnimportedStripeCoupons, importFromStripe } from '@/lib/discounts';
+import { listUnimportedStripeCoupons, importFromStripe } from '../../../../lib/discounts';
 
 // GET - List unimported Stripe coupons
 export async function GET() {

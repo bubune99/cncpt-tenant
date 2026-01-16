@@ -1,10 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import type { FolderTree } from '@/lib/media/types'
+import { cn } from '../../../lib/utils'
+import { Button } from '../../ui/button'
+import { ScrollArea } from '../../ui/scroll-area'
+import type { FolderTree } from '../../../lib/media/types'
 import {
   Folder,
   FolderOpen,

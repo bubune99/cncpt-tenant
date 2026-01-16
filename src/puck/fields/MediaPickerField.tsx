@@ -7,18 +7,18 @@
  */
 
 import React, { useState, useCallback } from 'react'
-import { Button } from '@/components/ui/button'
+import { Button } from '../../components/ui/button'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ScrollArea } from '@/components/ui/scroll-area'
+} from '../../components/ui/dialog'
+import { Input } from '../../components/ui/input'
+import { Label } from '../../components/ui/label'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs'
+import { ScrollArea } from '../../components/ui/scroll-area'
 import { Upload, Image, Link as LinkIcon, Loader2, X, Check } from 'lucide-react'
 import { useDropzone } from 'react-dropzone'
 import { toast } from 'sonner'
@@ -58,10 +58,10 @@ export function MediaPickerField({
   const loadMedia = useCallback(async () => {
     setIsLoadingMedia(true)
     try {
-      const response = await fetch('/api/media?type=IMAGE&limit=50&sortBy=createdAt&sortOrder=desc')
+      const response = await fetch('/api/media?type=image&limit=50&sortBy=createdAt&sortOrder=desc')
       if (response.ok) {
         const data = await response.json()
-        setMediaItems(data.items || [])
+        setMediaItems(data.media || [])
       }
     } catch (error) {
       console.error('Failed to load media:', error)

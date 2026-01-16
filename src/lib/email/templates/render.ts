@@ -4,10 +4,10 @@
  * Renders EmailTemplate records that contain Puck JSON content
  */
 
-import { prisma } from '@/lib/db';
+import { prisma } from '../../db';
 import { parseMergeTags, MergeTagData } from '../merge-tags';
 import { wrapInBaseTemplate, htmlToPlainText } from './renderer';
-import { getEmailSettings } from '@/lib/settings';
+import { getEmailSettings } from '../../settings';
 
 interface RenderResult {
   html: string;

@@ -5,11 +5,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
-import type { AppUsage } from "@/lib/chatsdk/usage";
-import { cn } from "@/lib/utils";
+} from '../../ui/dropdown-menu';
+import { Progress } from '../../ui/progress';
+import { Separator } from '../../ui/separator';
+import type { AppUsage } from '../../../lib/chatsdk/usage';
+import { cn } from '../../../lib/utils';
 
 export type ContextProps = ComponentProps<"button"> & {
   /** Optional full usage payload to enable breakdown view */

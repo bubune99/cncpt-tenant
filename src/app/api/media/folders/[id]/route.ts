@@ -7,8 +7,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getFolder, updateFolder, deleteFolder, reorderFolders } from '@/lib/media/folders'
-import type { FolderUpdateInput } from '@/lib/media/types'
+import { getFolder, updateFolder, deleteFolder, reorderFolders } from '../../../../../lib/media/folders'
+import type { FolderUpdateInput } from '../../../../../lib/media/types'
 
 export async function GET(
   request: NextRequest,

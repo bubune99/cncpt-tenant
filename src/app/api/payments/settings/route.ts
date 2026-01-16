@@ -6,9 +6,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
-import { getStripeSettings, clearStripeSettingsCache } from '@/lib/stripe'
-import type { StripeSettings } from '@/lib/stripe/types'
+import { prisma } from '../../../../lib/db'
+import { getStripeSettings, clearStripeSettingsCache } from '../../../../lib/stripe'
+import type { StripeSettings } from '../../../../lib/stripe/types'
 
 export async function GET() {
   try {

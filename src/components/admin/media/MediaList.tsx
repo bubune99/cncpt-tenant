@@ -8,10 +8,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Skeleton } from '@/components/ui/skeleton'
-import type { MediaWithRelations, FolderTree, TagWithCount } from '@/lib/media/types'
+} from '../../ui/table'
+import { Checkbox } from '../../ui/checkbox'
+import { Skeleton } from '../../ui/skeleton'
+import type { MediaWithRelations, FolderTree, TagWithCount } from '../../../lib/media/types'
 
 interface MediaListProps {
   media: MediaWithRelations[]

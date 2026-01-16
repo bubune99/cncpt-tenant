@@ -15,8 +15,8 @@ import {
   XCircle,
   Truck,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '../../../components/ui/button'
+import { Badge } from '../../../components/ui/badge'
 import {
   Table,
   TableBody,
@@ -24,21 +24,21 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from '../../../components/ui/table'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '../../../components/ui/dropdown-menu'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
+} from '../../../components/ui/card'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,7 +48,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+} from '../../../components/ui/alert-dialog'
 import { toast } from 'sonner'
 
 interface WorkflowStage {

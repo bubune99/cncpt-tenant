@@ -14,7 +14,7 @@ import {
   approveReview,
   rejectReview,
   flagReview,
-} from '@/lib/reviews';
+} from '../../../../lib/reviews';
 import type { ReviewStatus } from '@prisma/client';
 
 interface RouteParams {

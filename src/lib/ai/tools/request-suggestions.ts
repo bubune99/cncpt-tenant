@@ -8,7 +8,7 @@
 import { streamObject, tool, type UIMessageStreamWriter } from 'ai';
 import { z } from 'zod';
 import { generateId } from 'ai';
-import { prisma } from '@/lib/db';
+import { prisma } from '../../db';
 import { getDocumentById } from '../artifacts/server';
 import { createModelFromSettings } from '../index';
 import type { ArtifactSession } from '../artifacts/types';

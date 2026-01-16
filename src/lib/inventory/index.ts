@@ -4,9 +4,9 @@
  * Handles stock alerts, back-in-stock subscriptions, and stock reservations
  */
 
-import { prisma } from '@/lib/db';
-import { sendEmail } from '@/lib/email';
-import { getEmailSettings } from '@/lib/settings';
+import { prisma } from '../db';
+import { sendEmail } from '../email';
+import { getEmailSettings } from '../settings';
 
 // =============================================================================
 // Types

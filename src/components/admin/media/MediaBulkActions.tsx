@@ -1,6 +1,6 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
+import { Button } from '../../ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,8 +10,8 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import type { FolderTree, TagWithCount } from '@/lib/media/types'
+} from '../../ui/dropdown-menu'
+import type { FolderTree, TagWithCount } from '../../../lib/media/types'
 import {
   X,
   FolderInput,

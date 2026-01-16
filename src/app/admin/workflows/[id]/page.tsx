@@ -25,13 +25,13 @@ import {
   FileText,
   Calendar,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '../../../../components/ui/button';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@/components/ui/tabs';
+} from '../../../../components/ui/tabs';
 
 interface WorkflowExecution {
   id: string;

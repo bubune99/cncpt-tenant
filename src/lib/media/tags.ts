@@ -2,7 +2,7 @@
  * Media Tags - Tag Management Operations
  */
 
-import { prisma } from '@/lib/db'
+import { prisma } from '../db'
 import type { TagWithCount, TagCreateInput, TagUpdateInput } from './types'
 
 // Type augmentation for Prisma client with MediaTag model

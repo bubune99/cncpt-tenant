@@ -34,7 +34,7 @@ export const CUSTOMER_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true
       required: ['userId'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       const includeOptions = {};
       if (args.include?.includes('addresses')) includeOptions.addresses = true;
@@ -87,7 +87,7 @@ export const CUSTOMER_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true
       required: ['userId'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       const updateData = {};
       if (args.name !== undefined) updateData.name = args.name;
@@ -147,7 +147,7 @@ export const CUSTOMER_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true
       required: ['userId'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       const page = args.page || 1;
       const limit = Math.min(args.limit || 10, 50);
@@ -218,7 +218,7 @@ export const CUSTOMER_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true
       required: ['userId', 'orderId'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       const order = await prisma.order.findFirst({
         where: {
@@ -281,7 +281,7 @@ export const CUSTOMER_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true
       required: ['userId'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       const where = { userId: args.userId };
       if (args.type) where.type = args.type;
@@ -370,7 +370,7 @@ export const CUSTOMER_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true
       required: ['userId', 'firstName', 'lastName', 'street1', 'city', 'state', 'zip'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       const addressData = {
         type: args.type || 'SHIPPING',
@@ -438,7 +438,7 @@ export const CUSTOMER_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true
       required: ['userId', 'addressId'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       await prisma.address.delete({
         where: {
@@ -478,7 +478,7 @@ export const CUSTOMER_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true
       required: ['userId'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       const where = { userId: args.userId };
       if (args.status) where.status = args.status;
@@ -528,7 +528,7 @@ export const CUSTOMER_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true
       required: ['userId', 'subscriptionId'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       // Verify ownership
       const subscription = await prisma.subscription.findFirst({
@@ -545,7 +545,7 @@ export const CUSTOMER_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true
 
       // Cancel in Stripe if applicable
       if (subscription.stripeSubscriptionId) {
-        const { stripe } = await import('@/lib/stripe');
+        const { stripe } = await import('../../stripe');
         await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
           cancel_at_period_end: !args.cancelImmediately,
         });
@@ -595,7 +595,7 @@ export const CUSTOMER_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true
       required: ['userId'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       // Get all orders with digital products
       const downloads = await prisma.digitalDownload.findMany({
@@ -648,7 +648,7 @@ export const CUSTOMER_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true
       required: ['userId', 'downloadId'],
     },
     handler: `
-      const { prisma } = await import('@/lib/db');
+      const { prisma } = await import('../../db');
 
       const download = await prisma.digitalDownload.findFirst({
         where: {

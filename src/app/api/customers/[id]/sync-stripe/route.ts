@@ -6,11 +6,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { prisma } from '../../../../../lib/db'
 import {
   syncCustomerToStripe,
   getCustomerSyncStatus,
-} from '@/lib/stripe/customer-sync'
+} from '../../../../../lib/stripe/customer-sync'
 
 export async function POST(
   request: NextRequest,

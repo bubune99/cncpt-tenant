@@ -1,27 +1,12 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
-import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
+import { Loader2, LayoutTemplate, AlertCircle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Link from "next/link";
-import dynamic from "next/dynamic";
-
-// Dynamically import Puck to avoid SSR issues
-const Puck = dynamic(
-  () => import("@measured/puck").then((mod) => mod.Puck),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    ),
-  }
-);
-
-// Import Puck styles (required for proper rendering)
-import "@measured/puck/puck.css";
+import { useRouter } from "next/navigation";
+import type { Data } from "@measured/puck";
 
 // Import Puck AI plugin
 import { createAiPlugin } from "@puckeditor/plugin-ai";
@@ -32,7 +17,12 @@ const aiPlugin = createAiPlugin();
 
 // Import the pages Puck configuration
 import { pagesPuckConfig } from "@/puck/pages/config";
-import type { Data } from "@measured/puck";
+
+// Import the new professional builder
+import { PuckBuilder } from "@/puck/components/builder";
+
+// Import template components
+import { SaveAsTemplateDialog } from "@/puck/components";
 
 interface Page {
   id: string;
@@ -48,11 +38,13 @@ export default function PagePuckEditorPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const router = useRouter();
   const [page, setPage] = useState<Page | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [puckData, setPuckData] = useState<Data | null>(null);
+  const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
 
   useEffect(() => {
     fetchPage();
@@ -75,8 +67,6 @@ export default function PagePuckEditorPage({
 
       const pageData = await response.json();
       setPage(pageData);
-
-      // Initialize Puck data from saved content or create empty structure
       setPuckData(
         pageData.content || {
           root: { props: {} },
@@ -95,6 +85,7 @@ export default function PagePuckEditorPage({
 
   const handleSave = async (data: Data) => {
     setIsSaving(true);
+    setPuckData(data);
 
     try {
       const response = await fetch(`/api/admin/pages/${id}`, {
@@ -111,7 +102,6 @@ export default function PagePuckEditorPage({
       }
 
       toast.success("Page saved successfully");
-      setPuckData(data);
     } catch (error) {
       console.error("Error saving page:", error);
       toast.error(error instanceof Error ? error.message : "Failed to save page");
@@ -151,42 +141,38 @@ export default function PagePuckEditorPage({
   }
 
   return (
-    <div className="h-screen flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 border-b bg-background">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href={`/admin/pages/${id}`}>
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-          </Button>
-          <div>
-            <h1 className="font-semibold">{page.title}</h1>
-            <p className="text-xs text-muted-foreground">
-              Visual Editor (Puck) • {page.slug}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" asChild>
-            <Link href={`/admin/pages/${id}`}>
-              Back to Settings
-            </Link>
-          </Button>
-        </div>
-      </div>
-
-      {/* Puck Editor with AI Plugin */}
-      <div className="flex-1 overflow-hidden">
-        <Puck
-          config={pagesPuckConfig}
-          data={puckData}
-          onPublish={handleSave}
-          plugins={[aiPlugin]}
-          headerTitle=""
-          headerPath=""
-        />
-      </div>
-    </div>
+    <PuckBuilder
+      config={pagesPuckConfig}
+      data={puckData}
+      onPublish={handleSave}
+      plugins={[aiPlugin]}
+      page={{
+        id: page.id,
+        name: page.title,
+        slug: page.slug,
+      }}
+      onBack={() => router.push("/admin/pages")}
+      headerActions={
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowSaveTemplateDialog(true)}
+        >
+          <LayoutTemplate className="mr-2 h-4 w-4" />
+          Save as Template
+        </Button>
+      }
+    >
+      {/* Save as Template Dialog */}
+      <SaveAsTemplateDialog
+        open={showSaveTemplateDialog}
+        onOpenChange={setShowSaveTemplateDialog}
+        currentConfig="pages"
+        currentData={puckData}
+        onSaved={() => {
+          toast.success("Template saved");
+        }}
+      />
+    </PuckBuilder>
   );
 }

@@ -5,7 +5,7 @@
  */
 
 import type { Metadata, Viewport } from 'next'
-import { prisma } from '@/lib/db'
+import { prisma } from '../db'
 import type {
   SeoConfig,
   PageSeo,

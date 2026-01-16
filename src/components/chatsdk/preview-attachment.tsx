@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { Attachment } from "@/lib/chatsdk/types";
+import type { Attachment } from '../../lib/chatsdk/types';
 import { Loader } from "./elements/loader";
 import { CrossSmallIcon } from "./icons";
 import { Button } from "./ui/button";

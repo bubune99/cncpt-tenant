@@ -4,10 +4,10 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
 import { ThumbsUp, ThumbsDown, ShieldCheck, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { cn } from '../../lib/utils';
 import { StarRating } from './StarRating';
 
 export interface Review {

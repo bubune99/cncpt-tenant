@@ -5,7 +5,7 @@
  * without pulling in server-only dependencies like Prisma.
  */
 
-import type { HeaderProps, FooterProps } from '@/puck/layout/components';
+import type { HeaderProps, FooterProps } from '../../puck/layout/components';
 
 /**
  * Default header props for when no configuration exists

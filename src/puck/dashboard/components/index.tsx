@@ -9,6 +9,8 @@
  * - Wishlist and favorites
  * - Shipping status
  * - Support and help
+ *
+ * These components are data-aware and fetch real data from APIs.
  */
 
 import React from 'react';
@@ -32,7 +34,9 @@ import {
   Mail,
   Phone,
   ExternalLink,
+  Loader2,
 } from 'lucide-react';
+import { useCustomerOrders, useCustomerProfile, type Order } from '../hooks';
 
 // ============================================================================
 // ORDER SUMMARY CARD
@@ -107,7 +111,7 @@ export function OrderSummaryCard({
 }
 
 // ============================================================================
-// ORDER HISTORY LIST
+// ORDER HISTORY LIST (DATA-AWARE)
 // ============================================================================
 export interface OrderHistoryListProps {
   title: string;
@@ -117,6 +121,23 @@ export interface OrderHistoryListProps {
   viewAllUrl: string;
 }
 
+// Helper to format currency from cents
+function formatCurrency(cents: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(cents / 100);
+}
+
+// Helper to format date
+function formatDate(dateString: string): string {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
 export function OrderHistoryList({
   title = 'Recent Orders',
   emptyMessage = 'No orders yet',
@@ -124,12 +145,13 @@ export function OrderHistoryList({
   maxItems = 5,
   viewAllUrl = '/account/orders',
 }: OrderHistoryListProps) {
-  // This component would fetch real data in production
-  const mockOrders = [
-    { id: 'ORD-001', date: 'Dec 28, 2024', status: 'delivered' as const, total: '$149.99', items: 2 },
-    { id: 'ORD-002', date: 'Dec 20, 2024', status: 'shipped' as const, total: '$89.50', items: 1, tracking: '1Z999AA10123456784' },
-    { id: 'ORD-003', date: 'Dec 15, 2024', status: 'processing' as const, total: '$224.00', items: 4 },
-  ];
+  const [statusFilter, setStatusFilter] = React.useState<string>('all');
+
+  // Fetch real order data from API
+  const { orders, isLoading, isError } = useCustomerOrders({
+    limit: maxItems,
+    status: statusFilter !== 'all' ? statusFilter : undefined,
+  });
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
@@ -139,32 +161,47 @@ export function OrderHistoryList({
           {title}
         </h3>
         {showFilters && (
-          <select className="text-sm border rounded-md px-2 py-1 dark:bg-gray-700 dark:border-gray-600">
-            <option>All Orders</option>
-            <option>Last 30 Days</option>
-            <option>Last 6 Months</option>
+          <select
+            className="text-sm border rounded-md px-2 py-1 dark:bg-gray-700 dark:border-gray-600"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="all">All Orders</option>
+            <option value="pending">Pending</option>
+            <option value="processing">Processing</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
           </select>
         )}
       </div>
 
-      {mockOrders.length === 0 ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        </div>
+      ) : isError ? (
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+          <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50 text-red-400" />
+          <p>Unable to load orders</p>
+        </div>
+      ) : orders.length === 0 ? (
         <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
           <p>{emptyMessage}</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {mockOrders.slice(0, maxItems).map((order) => (
+          {orders.slice(0, maxItems).map((order: Order) => (
             <OrderSummaryCard
               key={order.id}
-              orderNumber={order.id}
-              date={order.date}
-              status={order.status}
-              total={order.total}
-              itemCount={order.items}
-              trackingNumber={order.tracking}
+              orderNumber={order.orderNumber}
+              date={formatDate(order.createdAt)}
+              status={order.status as 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'}
+              total={formatCurrency(order.total)}
+              itemCount={order.itemCount}
+              trackingNumber={order.shipment?.trackingNumber}
               showViewButton={true}
-              viewOrderUrl="/orders/{id}"
+              viewOrderUrl={`/orders/${order.id}`}
             />
           ))}
         </div>
@@ -273,7 +310,7 @@ export function ShippingTracker({
 }
 
 // ============================================================================
-// ACCOUNT OVERVIEW
+// ACCOUNT OVERVIEW (DATA-AWARE)
 // ============================================================================
 export interface AccountOverviewProps {
   title: string;
@@ -292,13 +329,61 @@ export function AccountOverview({
   showEditButton = true,
   editProfileUrl = '/account/profile',
 }: AccountOverviewProps) {
-  // Mock user data - would come from auth context in production
-  const user = {
-    name: 'John Doe',
-    email: 'john@example.com',
-    memberSince: 'January 2024',
-    avatar: null,
-  };
+  // Fetch real profile data from API (backed by Stack Auth)
+  const { profile, isLoading, isAuthenticated } = useCustomerProfile();
+
+  // Format member since date
+  const memberSince = profile?.memberSince
+    ? new Date(profile.memberSince).toLocaleDateString('en-US', {
+        month: 'long',
+        year: 'numeric',
+      })
+    : '';
+
+  // Get display name
+  const displayName = profile?.name ||
+    (profile?.customer?.firstName && profile?.customer?.lastName
+      ? `${profile.customer.firstName} ${profile.customer.lastName}`
+      : profile?.customer?.firstName || profile?.email?.split('@')[0] || 'User');
+
+  // Get initials for avatar
+  const initials = displayName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
+  if (isLoading) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !profile) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <User className="h-5 w-5" />
+          {title}
+        </h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Please sign in to view your account.
+        </p>
+        <a
+          href="/handler/sign-in"
+          className="mt-4 inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400"
+        >
+          Sign In
+          <ChevronRight className="h-4 w-4" />
+        </a>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
@@ -309,22 +394,30 @@ export function AccountOverview({
 
       <div className="flex items-center gap-4">
         {showAvatar && (
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl font-semibold">
-            {user.name.split(' ').map(n => n[0]).join('')}
-          </div>
+          profile.avatar ? (
+            <img
+              src={profile.avatar}
+              alt={displayName}
+              className="w-16 h-16 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl font-semibold">
+              {initials}
+            </div>
+          )
         )}
         <div className="flex-1">
-          <p className="font-semibold text-gray-900 dark:text-white">{user.name}</p>
+          <p className="font-semibold text-gray-900 dark:text-white">{displayName}</p>
           {showEmail && (
             <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
               <Mail className="h-3.5 w-3.5" />
-              {user.email}
+              {profile.email}
             </p>
           )}
-          {showMemberSince && (
+          {showMemberSince && memberSince && (
             <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
               <Calendar className="h-3.5 w-3.5" />
-              Member since {user.memberSince}
+              Member since {memberSince}
             </p>
           )}
         </div>
@@ -698,7 +791,7 @@ export function QuickActionsGrid({
 }
 
 // ============================================================================
-// PAYMENT METHODS LIST
+// PAYMENT METHODS LIST (DATA-AWARE - STRIPE INTEGRATION)
 // ============================================================================
 export interface PaymentMethodsListProps {
   title: string;
@@ -711,17 +804,73 @@ export function PaymentMethodsList({
   showAddButton = true,
   addPaymentUrl = '/account/payments/add',
 }: PaymentMethodsListProps) {
-  // Mock data - would come from Stripe/payment provider in production
-  const methods = [
-    { id: '1', type: 'visa', last4: '4242', expiry: '12/25', isDefault: true },
-    { id: '2', type: 'mastercard', last4: '8888', expiry: '03/26', isDefault: false },
-  ];
+  const { profile, isLoading, isAuthenticated } = useCustomerProfile();
+  const [methods, setMethods] = React.useState<Array<{
+    id: string;
+    type: string;
+    last4: string;
+    expiry: string;
+    isDefault: boolean;
+  }>>([]);
+  const [isLoadingMethods, setIsLoadingMethods] = React.useState(false);
+
+  // Fetch payment methods from Stripe when customer has stripeCustomerId
+  React.useEffect(() => {
+    const fetchPaymentMethods = async () => {
+      if (!profile?.customer?.id) return;
+
+      setIsLoadingMethods(true);
+      try {
+        const res = await fetch('/api/customer/payment-methods');
+        if (res.ok) {
+          const data = await res.json();
+          setMethods(data.methods || []);
+        }
+      } catch {
+        // Payment methods API may not be set up yet
+        console.log('Payment methods API not available');
+      } finally {
+        setIsLoadingMethods(false);
+      }
+    };
+
+    fetchPaymentMethods();
+  }, [profile?.customer?.id]);
 
   const cardIcons: Record<string, string> = {
     visa: 'VISA',
     mastercard: 'MC',
     amex: 'AMEX',
+    discover: 'DISC',
   };
+
+  if (isLoading || isLoadingMethods) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <CreditCard className="h-5 w-5" />
+          {title}
+        </h3>
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <CreditCard className="h-5 w-5" />
+          {title}
+        </h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Please sign in to view your payment methods.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
@@ -730,34 +879,41 @@ export function PaymentMethodsList({
         {title}
       </h3>
 
-      <div className="space-y-3">
-        {methods.map((method) => (
-          <div
-            key={method.id}
-            className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-8 bg-gray-100 dark:bg-gray-700 rounded flex items-center justify-center text-xs font-bold text-gray-600 dark:text-gray-400">
-                {cardIcons[method.type] || method.type.toUpperCase()}
+      {methods.length === 0 ? (
+        <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+          <CreditCard className="h-10 w-10 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">No payment methods saved</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {methods.map((method) => (
+            <div
+              key={method.id}
+              className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-8 bg-gray-100 dark:bg-gray-700 rounded flex items-center justify-center text-xs font-bold text-gray-600 dark:text-gray-400">
+                  {cardIcons[method.type] || method.type.toUpperCase()}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    •••• {method.last4}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Expires {method.expiry}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  •••• {method.last4}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Expires {method.expiry}</p>
+              <div className="flex items-center gap-2">
+                {method.isDefault && (
+                  <span className="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-2 py-0.5 rounded">
+                    Default
+                  </span>
+                )}
+                <button className="text-sm text-gray-400 hover:text-gray-600">Edit</button>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {method.isDefault && (
-                <span className="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-2 py-0.5 rounded">
-                  Default
-                </span>
-              )}
-              <button className="text-sm text-gray-400 hover:text-gray-600">Edit</button>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {showAddButton && (
         <a

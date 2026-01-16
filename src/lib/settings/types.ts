@@ -118,10 +118,10 @@ export interface EnvVarStatus {
 // All settings combined
 export interface AllSettings {
   general: GeneralSettings
-  payments: import('@/lib/stripe/types').StripeSettings
-  shipping: import('@/lib/shippo/types').ShippingSettings
-  analytics: import('@/lib/analytics/types').AnalyticsSettings
-  seo: import('@/lib/seo/types').SeoConfig
+  payments: import('../stripe/types').StripeSettings
+  shipping: import('../shippo/types').ShippingSettings
+  analytics: import('../analytics/types').AnalyticsSettings
+  seo: import('../seo/types').SeoConfig
   email: EmailSettings
   storage: StorageSettings
   ai: AiSettings

@@ -10,8 +10,8 @@ import {
   listWorkflows,
   createWorkflow,
   getDefaultWorkflow,
-} from '@/lib/order-workflows'
-import { seedDefaultWorkflows } from '@/lib/order-workflows/seed'
+} from '../../../lib/order-workflows'
+import { seedDefaultWorkflows } from '../../../lib/order-workflows/seed'
 
 export async function GET(request: NextRequest) {
   try {

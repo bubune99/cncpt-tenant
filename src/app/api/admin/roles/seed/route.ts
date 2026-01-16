@@ -6,8 +6,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { withSuperAdmin, type AuthContext } from '@/lib/permissions/middleware'
-import { seedBuiltInRoles, BUILT_IN_ROLES } from '@/lib/permissions'
+import { withSuperAdmin, type AuthContext } from '../../../../../lib/permissions/middleware'
+import { seedBuiltInRoles, BUILT_IN_ROLES } from '../../../../../lib/permissions'
 
 export const POST = withSuperAdmin(
   async (_request: NextRequest, _context: AuthContext) => {

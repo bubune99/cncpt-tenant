@@ -8,12 +8,12 @@
  * Examples: /p/about, /p/contact, /p/services/consulting
  */
 
-import { prisma } from '@/lib/db';
+import { prisma } from '../../../../lib/db';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import type { Data } from '@measured/puck';
-import { PageWrapper, getPageLayoutSettings } from '@/components/page-wrapper';
-import { PageRenderer } from '@/components/page-wrapper/page-renderer';
+import { PageWrapper, getPageLayoutSettings } from '../../../../components/page-wrapper';
+import { PageRenderer } from '../../../../components/page-wrapper/page-renderer';
 
 interface PageProps {
   params: Promise<{ slug: string[] }>;

@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getCategory, updateCategory, deleteCategory } from '@/lib/blog'
+import { getCategory, updateCategory, deleteCategory } from '../../../../../lib/blog'
 
 interface RouteParams {
   params: Promise<{ id: string }>

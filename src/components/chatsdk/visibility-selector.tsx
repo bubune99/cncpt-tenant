@@ -8,15 +8,15 @@
  */
 
 import { useMemo, useState } from 'react';
-import { Button } from '@/components/chatsdk/ui/button';
+import { Button } from './ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/chatsdk/ui/dropdown-menu';
-import { useChatVisibility } from '@/hooks/use-chat-visibility';
-import { cn } from '@/lib/utils';
+} from './ui/dropdown-menu';
+import { useChatVisibility } from '../../hooks/use-chat-visibility';
+import { cn } from '../../lib/utils';
 import { CheckCircle, ChevronDown, Globe, Lock } from 'lucide-react';
 
 export type VisibilityType = 'private' | 'public';

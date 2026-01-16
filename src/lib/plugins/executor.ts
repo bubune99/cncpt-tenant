@@ -9,7 +9,7 @@
  * - Execution logging
  */
 
-import { prisma } from '@/lib/db';
+import { prisma } from '../db';
 import type {
   PrimitiveDefinition,
   ExecutionContext,

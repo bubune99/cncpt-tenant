@@ -6,20 +6,20 @@
 'use client'
 
 import React from 'react'
-import { Button } from '@/components/ui/button'
+import { Button } from '../../ui/button'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip'
+} from '../../ui/tooltip'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '../../ui/dropdown-menu'
 import {
   Plus,
   Copy,

@@ -1,12 +1,12 @@
 'use client'
 
-import { forwardRef } from 'react'
+import { forwardRef, useState } from 'react'
 import Image from 'next/image'
-import { cn } from '@/lib/utils'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Badge } from '@/components/ui/badge'
-import { getMediaType, formatFileSize, getMediaTypeIcon } from '@/lib/media/types'
-import type { MediaWithRelations } from '@/lib/media/types'
+import { cn } from '../../../lib/utils'
+import { Checkbox } from '../../ui/checkbox'
+import { Badge } from '../../ui/badge'
+import { getMediaType, formatFileSize, getMediaTypeIcon } from '../../../lib/media/types'
+import type { MediaWithRelations } from '../../../lib/media/types'
 import {
   FileText,
   Film,
@@ -14,6 +14,7 @@ import {
   ImageIcon,
   File,
   MoreVertical,
+  AlertCircle,
 } from 'lucide-react'
 
 interface MediaCardProps {
@@ -37,6 +38,19 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
   ({ media, selected, onSelect, onToggle, onClick, onContextMenu }, ref) => {
     const mediaType = getMediaType(media.mimeType)
     const Icon = typeIcons[mediaType]
+    const [imageError, setImageError] = useState(false)
+
+    // Validate URL format
+    const isValidUrl = (url: string) => {
+      try {
+        new URL(url)
+        return true
+      } catch {
+        return false
+      }
+    }
+
+    const hasValidUrl = media.url && isValidUrl(media.url)
 
     return (
       <div
@@ -65,14 +79,21 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
 
         {/* Thumbnail */}
         <div className="aspect-square relative bg-muted rounded-t-lg overflow-hidden">
-          {mediaType === 'image' ? (
+          {mediaType === 'image' && hasValidUrl && !imageError ? (
             <Image
               src={media.url}
               alt={media.alt || media.filename}
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              onError={() => setImageError(true)}
+              unoptimized={!media.url.includes('.r2.dev') && !media.url.includes('.amazonaws.com')}
             />
+          ) : imageError || !hasValidUrl ? (
+            <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground">
+              <AlertCircle className="h-12 w-12" />
+              <span className="text-xs">Image unavailable</span>
+            </div>
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <Icon className="h-16 w-16 text-muted-foreground" />
