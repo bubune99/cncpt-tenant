@@ -80,7 +80,7 @@ export function Billing({ stripeCustomerPortalUrl }: BillingProps) {
       </Alert>
 
       {/* Current Plan */}
-      <Card>
+      <Card data-help-key="dashboard.billing.plan">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Your Plan</span>
@@ -97,7 +97,7 @@ export function Billing({ stripeCustomerPortalUrl }: BillingProps) {
                 {currentPlan.price === 0 ? "Free forever" : `$${currentPlan.price}/${currentPlan.billing}`}
               </p>
             </div>
-            <Button onClick={handleManageSubscription} className="gap-2">
+            <Button onClick={handleManageSubscription} className="gap-2" data-help-key="dashboard.billing.manage">
               Manage Subscription
               <ExternalLink className="w-4 h-4" />
             </Button>
@@ -109,7 +109,7 @@ export function Billing({ stripeCustomerPortalUrl }: BillingProps) {
       </Card>
 
       {/* Usage Overview */}
-      <Card>
+      <Card data-help-key="dashboard.billing.usage">
         <CardHeader>
           <CardTitle>Usage</CardTitle>
           <CardDescription>Current usage for your plan</CardDescription>
@@ -139,7 +139,7 @@ export function Billing({ stripeCustomerPortalUrl }: BillingProps) {
       </Card>
 
       {/* Available Plans */}
-      <Card>
+      <Card data-help-key="dashboard.billing.plans">
         <CardHeader>
           <CardTitle>Available Plans</CardTitle>
           <CardDescription>Compare plans and features</CardDescription>

@@ -18,7 +18,7 @@ export default function CMSDashboardPage() {
   const params = useParams()
   const subdomain = params.subdomain as string
   const { user } = useAuth()
-  const { config } = useCMSConfig()
+  const { siteName } = useCMSConfig()
 
   // Mock data - will be replaced with real API calls scoped to subdomain
   const stats = [
@@ -79,7 +79,7 @@ export default function CMSDashboardPage() {
         </h1>
         <p className="text-muted-foreground">
           Here&apos;s what&apos;s happening with{" "}
-          <strong>{config.siteName || subdomain}</strong> today.
+          <strong>{siteName || subdomain}</strong> today.
         </p>
       </div>
 

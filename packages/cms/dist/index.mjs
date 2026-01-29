@@ -22,7 +22,7 @@ import {
   QuickActions,
   WizardProvider,
   useWizard
-} from "./chunk-TW4A7IPE.mjs";
+} from "./chunk-6B6G5HQC.mjs";
 import "./chunk-SW5EORPE.mjs";
 import {
   Badge,
@@ -40,11 +40,13 @@ import {
   useDebounceValue,
   useIsMobile,
   usePermissions
-} from "./chunk-M7YUFPQC.mjs";
+} from "./chunk-L4ALNJLH.mjs";
 import {
+  CMSConfigProvider,
   useAuth,
+  useCMSConfig,
   useMediaUpload
-} from "./chunk-L2ZOWITB.mjs";
+} from "./chunk-6L4YFY6D.mjs";
 import {
   BUILT_IN_ROLES,
   CARRIER_OPTIONS,
@@ -329,7 +331,7 @@ import {
   validateStripePromotionCode,
   validateWorkflow,
   voteReview
-} from "./chunk-G5BYVDQS.mjs";
+} from "./chunk-SGPGKXOM.mjs";
 import {
   DEFAULT_AI_SETTINGS,
   DEFAULT_BRANDING_SETTINGS,
@@ -405,7 +407,7 @@ import {
   verifyResendWebhook,
   verifySendGridWebhook,
   verifySubscriptionToken
-} from "./chunk-NJLISLIB.mjs";
+} from "./chunk-LSKIDFZZ.mjs";
 import {
   addError,
   cancelWorkflowExecution,
@@ -442,7 +444,7 @@ import {
   triggerWorkflowByWebhook,
   triggerWorkflowManually,
   validatePrimitiveInput
-} from "./chunk-MLQRXA5Y.mjs";
+} from "./chunk-DZOH65BU.mjs";
 import {
   DEFAULT_ALLOWED_TYPES,
   DEFAULT_MAX_FILE_SIZE,
@@ -462,17 +464,13 @@ import {
   AddressCard,
   AlertBox,
   AnnouncementBar,
-  AuthorBio,
   Body,
   Button as Button2,
-  CTASection,
   CardContainer,
   ChartWidget,
   CheckoutSection,
-  CodeBlock,
   Column,
   Container,
-  Divider,
   EmailButton,
   EmailCard,
   EmailColumns,
@@ -487,7 +485,6 @@ import {
   EmailProduct,
   EmailSpacer,
   EmailText,
-  EmbedBlock,
   FeatureList,
   Footer,
   FormSection,
@@ -495,11 +492,8 @@ import {
   Head,
   Header,
   Heading,
-  HeroSection,
   Hr,
   Html,
-  ImageBlock,
-  ImageGallery,
   Img,
   Link,
   LoyaltyPointsWidget,
@@ -513,42 +507,37 @@ import {
   ProductCard,
   ProductGrid,
   QuickActionsGrid,
-  QuoteBlock,
   Row,
   Section,
   SelectField,
   ShippingTracker,
-  SocialShare,
   StatWidget,
   SupportWidget,
   TableWidget,
   TabsContainer,
   Testimonial,
   Text,
-  TextBlock,
   TextInputField,
   ToggleField,
-  TwoColumnLayout,
   WishlistItem,
-  blogPuckConfig,
   config_default,
   dashboardPuckConfig,
   ecommercePuckConfig,
   emailPuckConfig,
   pluginUIPuckConfig
-} from "./chunk-ZFIKIYFP.mjs";
-import "./chunk-BA3R2WOQ.mjs";
+} from "./chunk-N2CXHRNO.mjs";
+import "./chunk-CNVEYGBG.mjs";
 import {
   Input,
   Label
 } from "./chunk-5IKORTYA.mjs";
 import {
   prisma
-} from "./chunk-3YIJWBFE.mjs";
+} from "./chunk-BY6YNCHO.mjs";
 import {
   ChatPanel
-} from "./chunk-N2UEDXYG.mjs";
-import "./chunk-HC2NDME5.mjs";
+} from "./chunk-Y4Y34FFA.mjs";
+import "./chunk-TY2KIHYV.mjs";
 import {
   Button,
   buttonVariants
@@ -566,14 +555,13 @@ export {
   AdminShell,
   AlertBox,
   AnnouncementBar,
-  AuthorBio,
   BUILT_IN_ROLES,
   Badge,
   Body,
   BrandingSettings as BrandingSettingsPanel,
   Button,
   CARRIER_OPTIONS,
-  CTASection,
+  CMSConfigProvider,
   Card,
   CardContainer,
   CardContent,
@@ -584,7 +572,6 @@ export {
   ChartWidget,
   ChatPanel,
   CheckoutSection,
-  CodeBlock,
   Column,
   Container,
   DASHBOARD_PRESETS,
@@ -603,7 +590,6 @@ export {
   DEFAULT_WIDGETS,
   DEFAULT_WORKFLOW_TEMPLATES,
   DashboardMetrics,
-  Divider,
   EmailButton,
   EmailCard,
   EmailColumns,
@@ -621,7 +607,6 @@ export {
   EmailService,
   EmailSpacer,
   EmailText,
-  EmbedBlock,
   EnvManager,
   FIELD_TEMPLATES,
   FeatureList,
@@ -631,10 +616,7 @@ export {
   GridLayout,
   Head,
   Header,
-  HeroSection,
   Html,
-  ImageBlock,
-  ImageGallery,
   Input,
   LABEL_FORMAT_OPTIONS,
   Label,
@@ -666,7 +648,6 @@ export {
   ProductGrid,
   QuickActions,
   QuickActionsGrid,
-  QuoteBlock,
   Button2 as REButton,
   Heading as REHeading,
   Hr as REHr,
@@ -681,16 +662,13 @@ export {
   SelectField,
   Separator,
   ShippingTracker,
-  SocialShare,
   StatWidget,
   SupportWidget,
   TableWidget,
   TabsContainer,
   Testimonial,
-  TextBlock,
   TextInputField,
   ToggleField,
-  TwoColumnLayout,
   WishlistItem,
   WizardProvider,
   actionCategories,
@@ -706,7 +684,6 @@ export {
   assignWorkflowToOrder,
   autoLayoutNodes,
   badgeVariants,
-  blogPuckConfig,
   bulkApproveReviews,
   bulkDeleteMedia,
   bulkDeleteReviews,
@@ -1066,6 +1043,7 @@ export {
   updateTemplate,
   updateWorkflow,
   useAuth,
+  useCMSConfig,
   useDebounceCallback,
   useDebounceValue,
   useIsMobile,

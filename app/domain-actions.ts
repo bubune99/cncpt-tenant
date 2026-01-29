@@ -4,6 +4,10 @@ import { getCurrentUser } from "@/lib/auth"
 import { getVercelAPI, type DomainStatus } from "@/lib/vercel"
 import { sql } from "@/lib/neon"
 import { revalidatePath } from "next/cache"
+import {
+  syncDomainToEdgeConfig,
+  removeDomainFromEdgeConfig,
+} from "@/lib/edge-config"
 
 export interface DomainInfo {
   id: string
@@ -218,6 +222,9 @@ export async function removeCustomDomain(
       }
     }
 
+    // Remove from Edge Config (for middleware routing)
+    await removeDomainFromEdgeConfig(domain)
+
     // Remove from database
     await sql`
       DELETE FROM custom_domains WHERE subdomain = ${subdomain} AND domain = ${domain}
@@ -277,6 +284,12 @@ export async function verifyDomainDns(
         verified_at = ${status.verified ? new Date().toISOString() : null}
       WHERE subdomain = ${subdomain} AND domain = ${domain}
     `
+
+    // Sync to Edge Config when domain becomes active
+    // This enables ultra-fast routing in middleware
+    if (status.verified) {
+      await syncDomainToEdgeConfig(domain, subdomain)
+    }
 
     revalidatePath("/dashboard")
     return { success: true, status }

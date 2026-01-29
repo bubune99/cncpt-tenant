@@ -19,10 +19,14 @@ import {
   CreditCard,
   Plus,
   Server,
+  Shield,
+  Eye,
+  HelpCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { logoutAction } from "@/app/auth-actions"
+import { useHelp } from "@/components/help-system"
 
 interface DashboardSidebarProps {
   user: any
@@ -43,27 +47,31 @@ export function DashboardSidebar({
 }: DashboardSidebarProps) {
   const router = useRouter()
 
+  const { helpMode, toggleHelpMode } = useHelp()
+
   const menuSections = [
     {
       title: "Dashboard",
       items: [
-        { id: "overview", label: "Overview", icon: Globe },
-        { id: "analytics", label: "Analytics", icon: BarChart3 },
+        { id: "overview", label: "Overview", icon: Globe, helpKey: "dashboard.sidebar.overview" },
+        { id: "analytics", label: "Analytics", icon: BarChart3, helpKey: "dashboard.sidebar.analytics" },
       ],
     },
     {
       title: "Site Management",
       items: [
-        { id: "domains", label: "Custom Domains", icon: Link },
-        { id: "settings", label: "Site Settings", icon: Settings },
-        { id: "appearance", label: "Appearance", icon: Palette },
-        { id: "frontend", label: "Hosting", icon: Server },
+        { id: "visibility", label: "Site Visibility", icon: Eye, helpKey: "dashboard.sidebar.visibility" },
+        { id: "domains", label: "Custom Domains", icon: Link, helpKey: "dashboard.sidebar.domains" },
+        { id: "settings", label: "Site Settings", icon: Settings, helpKey: "dashboard.sidebar.settings" },
+        { id: "appearance", label: "Appearance", icon: Palette, helpKey: "dashboard.sidebar.appearance" },
+        { id: "frontend", label: "Hosting", icon: Server, helpKey: "dashboard.sidebar.frontend" },
+        { id: "security", label: "Security", icon: Shield, helpKey: "dashboard.sidebar.security" },
       ],
     },
     {
       title: "Account",
       items: [
-        { id: "billing", label: "Billing", icon: CreditCard },
+        { id: "billing", label: "Billing", icon: CreditCard, helpKey: "dashboard.sidebar.billing" },
       ],
     },
   ]
@@ -80,7 +88,7 @@ export function DashboardSidebar({
   return (
     <div className="w-64 bg-gray-950 text-white flex flex-col h-screen sticky top-0">
       {/* Subdomain Selector */}
-      <div className="p-4 border-b border-gray-800">
+      <div className="p-4 border-b border-gray-800" data-help-key="dashboard.sidebar.sites">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="w-full justify-between mb-3 h-auto p-2">
@@ -128,6 +136,7 @@ export function DashboardSidebar({
                     key={item.id}
                     variant="ghost"
                     onClick={() => handleSectionClick(item.id)}
+                    data-help-key={item.helpKey}
                     className={cn(
                       "w-full justify-start space-x-3 px-3 py-2 h-auto text-sm font-medium transition-colors",
                       activeSection === item.id
@@ -145,9 +154,27 @@ export function DashboardSidebar({
         ))}
       </nav>
 
+      {/* Help Button */}
+      <div className="px-4 py-2 border-t border-gray-800">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={toggleHelpMode}
+          data-help-key="dashboard.header.help"
+          className={cn(
+            "w-full justify-start text-gray-300 hover:text-white",
+            helpMode.isActive && "bg-[#C26A3A] text-white hover:bg-[#A85830]"
+          )}
+        >
+          <HelpCircle className="w-4 h-4 mr-2" />
+          {helpMode.isActive ? "Exit Help Mode" : "Help Mode"}
+          <kbd className="ml-auto text-xs bg-gray-700 px-1.5 py-0.5 rounded">Ctrl+Q</kbd>
+        </Button>
+      </div>
+
       {/* User Menu */}
       <div className="p-4 border-t border-gray-800">
-        <div className="flex items-center space-x-3 mb-3">
+        <div className="flex items-center space-x-3 mb-3" data-help-key="dashboard.header.user">
           <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
             <User className="w-4 h-4" />
           </div>

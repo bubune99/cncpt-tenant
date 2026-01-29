@@ -50,7 +50,7 @@ function SubdomainCard({ subdomain }: { subdomain: Subdomain }) {
   }
 
   return (
-    <Card>
+    <Card data-help-key="dashboard.site.card">
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -67,16 +67,16 @@ function SubdomainCard({ subdomain }: { subdomain: Subdomain }) {
           </div>
 
           <div className="flex items-center space-x-2">
-            <Badge variant="secondary">Active</Badge>
+            <Badge variant="secondary" data-help-key="dashboard.site.status">Active</Badge>
 
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" size="sm" asChild data-help-key="dashboard.site.visit">
               <Link href={subdomainUrl} target="_blank">
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Visit Site
               </Link>
             </Button>
 
-            <Button variant="default" size="sm" asChild>
+            <Button variant="default" size="sm" asChild data-help-key="dashboard.site.manage">
               <Link href={adminUrl}>
                 <PenSquare className="h-4 w-4 mr-2" />
                 Manage Content
@@ -91,6 +91,7 @@ function SubdomainCard({ subdomain }: { subdomain: Subdomain }) {
                 type="submit"
                 disabled={isDeleting}
                 className="text-destructive hover:text-destructive bg-transparent"
+                data-help-key="dashboard.site.delete"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 {isDeleting ? "Deleting..." : "Delete"}

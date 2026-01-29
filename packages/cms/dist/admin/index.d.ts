@@ -1,9 +1,12 @@
 import * as react_jsx_runtime from 'react/jsx-runtime';
+import { a as CMSConfig } from '../CMSConfigContext-C3VKc9sS.js';
 import { h as MediaWithRelations, l as FolderTree, T as TagWithCount, V as ViewMode, g as MediaFilters, d as MediaType, r as UploadProgress, F as FolderWithRelations } from '../types-3nuadCDa.js';
 import * as React$1 from 'react';
 
-declare function AdminShell({ children, }: {
+type AdminShellConfig = CMSConfig;
+declare function AdminShell({ children, config, }: {
     children: React.ReactNode;
+    config?: CMSConfig;
 }): react_jsx_runtime.JSX.Element;
 
 declare function BrandingSettings(): react_jsx_runtime.JSX.Element;
@@ -188,4 +191,4 @@ interface LogoProps {
 }
 declare function Logo({ href, className, size, showText, }: LogoProps): react_jsx_runtime.JSX.Element;
 
-export { AdminChat, AdminShell, BrandingSettings as BrandingSettingsPanel, ChatPanel, DashboardMetrics, EmailProviderSettings, EnvManager, FolderDialog, Logo, MediaBulkActions, MediaCard, MediaContextMenu, MediaFolderTree, MediaGrid, MediaList, MediaManager, MediaPicker, MediaPreviewSheet, MediaRow, MediaToolbar, MediaUploader, QuickActions };
+export { AdminChat, AdminShell, type AdminShellConfig, BrandingSettings as BrandingSettingsPanel, ChatPanel, DashboardMetrics, EmailProviderSettings, EnvManager, FolderDialog, Logo, MediaBulkActions, MediaCard, MediaContextMenu, MediaFolderTree, MediaGrid, MediaList, MediaManager, MediaPicker, MediaPreviewSheet, MediaRow, MediaToolbar, MediaUploader, QuickActions };

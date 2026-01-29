@@ -3,11 +3,8 @@ import path from "node:path";
 import { defineConfig } from "prisma/config";
 
 // Get the database URL (prefer unpooled for schema operations)
-const databaseUrl = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
-
-if (!databaseUrl) {
-  throw new Error('DATABASE_URL or DATABASE_URL_UNPOOLED must be set');
-}
+// Use a placeholder for build/generate which doesn't need a real database connection
+const databaseUrl = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL || 'postgresql://placeholder:placeholder@localhost:5432/placeholder';
 
 // Prisma 7 config with datasource URL
 // Uses unpooled connection for schema operations (db push, migrate)

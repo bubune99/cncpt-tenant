@@ -143,8 +143,6 @@ interface CreatePostInput {
     excerpt?: string;
     content?: object;
     contentHtml?: string;
-    puckContent?: object;
-    usePuckLayout?: boolean;
     authorId?: string;
     featuredImageId?: string;
     status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' | 'SCHEDULED';
@@ -253,8 +251,6 @@ declare function createPost(input: CreatePostInput): Promise<{
     slug: string;
     excerpt: string | null;
     contentHtml: string | null;
-    puckContent: Prisma.JsonValue | null;
-    usePuckLayout: boolean;
     authorId: string | null;
     featuredImageId: string | null;
     metaTitle: string | null;
@@ -374,8 +370,6 @@ declare function getPost(id: string): Promise<({
     slug: string;
     excerpt: string | null;
     contentHtml: string | null;
-    puckContent: Prisma.JsonValue | null;
-    usePuckLayout: boolean;
     authorId: string | null;
     featuredImageId: string | null;
     metaTitle: string | null;
@@ -495,8 +489,6 @@ declare function getPostBySlug(slug: string): Promise<({
     slug: string;
     excerpt: string | null;
     contentHtml: string | null;
-    puckContent: Prisma.JsonValue | null;
-    usePuckLayout: boolean;
     authorId: string | null;
     featuredImageId: string | null;
     metaTitle: string | null;
@@ -561,8 +553,6 @@ declare function listPosts(options?: ListPostsOptions): Promise<{
         slug: string;
         excerpt: string | null;
         contentHtml: string | null;
-        puckContent: Prisma.JsonValue | null;
-        usePuckLayout: boolean;
         authorId: string | null;
         featuredImageId: string | null;
         metaTitle: string | null;
@@ -661,8 +651,6 @@ declare function updatePost(id: string, input: UpdatePostInput): Promise<{
     slug: string;
     excerpt: string | null;
     contentHtml: string | null;
-    puckContent: Prisma.JsonValue | null;
-    usePuckLayout: boolean;
     authorId: string | null;
     featuredImageId: string | null;
     metaTitle: string | null;
@@ -694,8 +682,6 @@ declare function deletePost(id: string): Promise<{
     slug: string;
     excerpt: string | null;
     contentHtml: string | null;
-    puckContent: Prisma.JsonValue | null;
-    usePuckLayout: boolean;
     authorId: string | null;
     featuredImageId: string | null;
     metaTitle: string | null;
@@ -727,8 +713,6 @@ declare function incrementPostViews(id: string): Promise<{
     slug: string;
     excerpt: string | null;
     contentHtml: string | null;
-    puckContent: Prisma.JsonValue | null;
-    usePuckLayout: boolean;
     authorId: string | null;
     featuredImageId: string | null;
     metaTitle: string | null;

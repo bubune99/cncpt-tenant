@@ -1,6 +1,6 @@
 import {
   prisma
-} from "../chunk-3YIJWBFE.mjs";
+} from "../chunk-BY6YNCHO.mjs";
 import "../chunk-C2QMXRW7.mjs";
 
 // src/lib/mcp/auth.ts
@@ -151,6 +151,20 @@ function normalizePagination(limit, offset) {
     offset: offset || 0
   };
 }
+
+// src/lib/mcp/index.ts
+async function loadMcpConfig() {
+  return null;
+}
+async function getMcpServerStatus() {
+  return [];
+}
+async function getMcpTools() {
+  return {};
+}
+async function invalidateMcpServerCache(_serverName) {
+  return;
+}
 export {
   API_KEY_PREFIX,
   DEFAULT_LIMIT,
@@ -160,10 +174,14 @@ export {
   generateApiKey,
   getMcpContext,
   getMcpContextOrNull,
+  getMcpServerStatus,
+  getMcpTools,
   getMcpUserId,
   hasMcpScope,
   hashApiKey,
+  invalidateMcpServerCache,
   isValidApiKeyFormat,
+  loadMcpConfig,
   mcpError,
   mcpResponse,
   normalizePagination,

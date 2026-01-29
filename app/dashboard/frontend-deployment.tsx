@@ -425,7 +425,7 @@ export function FrontendDeployment({ selectedSubdomain }: FrontendDeploymentProp
       )}
 
       {/* Application Selection / Status */}
-      <Card>
+      <Card data-help-key="dashboard.frontend.status">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Server className="h-5 w-5" />
@@ -487,11 +487,12 @@ export function FrontendDeployment({ selectedSubdomain }: FrontendDeploymentProp
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2" data-help-key="dashboard.frontend.controls">
                 <Button
                   size="sm"
                   onClick={handleDeploy}
                   disabled={isActionLoading}
+                  data-help-key="dashboard.frontend.deploy"
                 >
                   <Play className="h-4 w-4 mr-1" />
                   Deploy
@@ -501,6 +502,7 @@ export function FrontendDeployment({ selectedSubdomain }: FrontendDeploymentProp
                   variant="outline"
                   onClick={handleRedeploy}
                   disabled={isActionLoading}
+                  data-help-key="dashboard.frontend.redeploy"
                 >
                   <RefreshCw className="h-4 w-4 mr-1" />
                   Redeploy
@@ -510,6 +512,7 @@ export function FrontendDeployment({ selectedSubdomain }: FrontendDeploymentProp
                   variant="outline"
                   onClick={handleStart}
                   disabled={isActionLoading || selectedApplication.applicationStatus === "running"}
+                  data-help-key="dashboard.frontend.start"
                 >
                   <Play className="h-4 w-4 mr-1" />
                   Start
@@ -519,6 +522,7 @@ export function FrontendDeployment({ selectedSubdomain }: FrontendDeploymentProp
                   variant="outline"
                   onClick={handleStop}
                   disabled={isActionLoading || selectedApplication.applicationStatus === "idle"}
+                  data-help-key="dashboard.frontend.stop"
                 >
                   <Square className="h-4 w-4 mr-1" />
                   Stop
@@ -528,6 +532,7 @@ export function FrontendDeployment({ selectedSubdomain }: FrontendDeploymentProp
                   variant="outline"
                   onClick={handleRestart}
                   disabled={isActionLoading}
+                  data-help-key="dashboard.frontend.restart"
                 >
                   <RefreshCw className="h-4 w-4 mr-1" />
                   Restart
@@ -540,7 +545,7 @@ export function FrontendDeployment({ selectedSubdomain }: FrontendDeploymentProp
 
       {/* Domain Management */}
       {selectedApplication && (
-        <Card>
+        <Card data-help-key="dashboard.frontend.domains">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Globe className="h-5 w-5" />

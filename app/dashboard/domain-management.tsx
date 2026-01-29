@@ -208,7 +208,7 @@ export function DomainManagement({ subdomains, selectedSubdomain }: DomainManage
       )}
 
       {/* Default Subdomain */}
-      <Card>
+      <Card data-help-key="dashboard.domains.default">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Globe className="h-5 w-5" />
@@ -237,7 +237,7 @@ export function DomainManagement({ subdomains, selectedSubdomain }: DomainManage
       </Card>
 
       {/* Add Custom Domain */}
-      <Card>
+      <Card data-help-key="dashboard.domains.add">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5" />
@@ -253,9 +253,10 @@ export function DomainManagement({ subdomains, selectedSubdomain }: DomainManage
                 value={newDomain}
                 onChange={(e) => setNewDomain(e.target.value.toLowerCase())}
                 disabled={isAdding}
+                data-help-key="dashboard.domains.input"
               />
             </div>
-            <Button onClick={handleAddDomain} disabled={isAdding || !newDomain}>
+            <Button onClick={handleAddDomain} disabled={isAdding || !newDomain} data-help-key="dashboard.domains.add-btn">
               {isAdding ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -287,7 +288,7 @@ export function DomainManagement({ subdomains, selectedSubdomain }: DomainManage
 
       {/* Custom Domains List */}
       {domains.length > 0 && (
-        <Card>
+        <Card data-help-key="dashboard.domains.list">
           <CardHeader>
             <CardTitle>Custom Domains</CardTitle>
             <CardDescription>Manage your connected domains</CardDescription>
@@ -309,7 +310,7 @@ export function DomainManagement({ subdomains, selectedSubdomain }: DomainManage
       )}
 
       {/* DNS Configuration Guide */}
-      <Card>
+      <Card data-help-key="dashboard.domains.dns-guide">
         <CardHeader>
           <CardTitle>DNS Configuration Guide</CardTitle>
           <CardDescription>How to configure your domain's DNS</CardDescription>

@@ -1,6 +1,6 @@
 "use strict";Object.defineProperty(exports, "__esModule", {value: true}); function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var _chunkH7VBPMCNjs = require('../chunk-H7VBPMCN.js');
+var _chunkI5PINI5Tjs = require('../chunk-I5PINI5T.js');
 require('../chunk-HY7GTCJM.js');
 
 // src/lib/mcp/auth.ts
@@ -50,7 +50,7 @@ async function validateMcpApiKey(apiKeyOrHeader) {
   }
   const keyHash = hashApiKey(apiKey);
   try {
-    const keyRecord = await _chunkH7VBPMCNjs.prisma.apiKey.findFirst({
+    const keyRecord = await _chunkI5PINI5Tjs.prisma.apiKey.findFirst({
       where: {
         keyHash,
         revokedAt: null,
@@ -71,7 +71,7 @@ async function validateMcpApiKey(apiKeyOrHeader) {
     if (!keyRecord) {
       return null;
     }
-    _chunkH7VBPMCNjs.prisma.apiKey.update({
+    _chunkI5PINI5Tjs.prisma.apiKey.update({
       where: { id: keyRecord.id },
       data: { lastUsedAt: /* @__PURE__ */ new Date() }
     }).catch(
@@ -152,6 +152,19 @@ function normalizePagination(limit, offset) {
   };
 }
 
+// src/lib/mcp/index.ts
+async function loadMcpConfig() {
+  return null;
+}
+async function getMcpServerStatus() {
+  return [];
+}
+async function getMcpTools() {
+  return {};
+}
+async function invalidateMcpServerCache(_serverName) {
+  return;
+}
 
 
 
@@ -172,5 +185,10 @@ function normalizePagination(limit, offset) {
 
 
 
-exports.API_KEY_PREFIX = API_KEY_PREFIX; exports.DEFAULT_LIMIT = DEFAULT_LIMIT; exports.MAX_LIMIT = MAX_LIMIT; exports.compactJson = compactJson; exports.extractApiKey = extractApiKey; exports.generateApiKey = generateApiKey; exports.getMcpContext = getMcpContext; exports.getMcpContextOrNull = getMcpContextOrNull; exports.getMcpUserId = getMcpUserId; exports.hasMcpScope = hasMcpScope; exports.hashApiKey = hashApiKey; exports.isValidApiKeyFormat = isValidApiKeyFormat; exports.mcpError = mcpError; exports.mcpResponse = mcpResponse; exports.normalizePagination = normalizePagination; exports.pickFields = pickFields; exports.requireMcpScope = requireMcpScope; exports.runWithMcpContext = runWithMcpContext; exports.truncate = truncate; exports.validateMcpApiKey = validateMcpApiKey;
+
+
+
+
+
+exports.API_KEY_PREFIX = API_KEY_PREFIX; exports.DEFAULT_LIMIT = DEFAULT_LIMIT; exports.MAX_LIMIT = MAX_LIMIT; exports.compactJson = compactJson; exports.extractApiKey = extractApiKey; exports.generateApiKey = generateApiKey; exports.getMcpContext = getMcpContext; exports.getMcpContextOrNull = getMcpContextOrNull; exports.getMcpServerStatus = getMcpServerStatus; exports.getMcpTools = getMcpTools; exports.getMcpUserId = getMcpUserId; exports.hasMcpScope = hasMcpScope; exports.hashApiKey = hashApiKey; exports.invalidateMcpServerCache = invalidateMcpServerCache; exports.isValidApiKeyFormat = isValidApiKeyFormat; exports.loadMcpConfig = loadMcpConfig; exports.mcpError = mcpError; exports.mcpResponse = mcpResponse; exports.normalizePagination = normalizePagination; exports.pickFields = pickFields; exports.requireMcpScope = requireMcpScope; exports.runWithMcpContext = runWithMcpContext; exports.truncate = truncate; exports.validateMcpApiKey = validateMcpApiKey;
 //# sourceMappingURL=index.js.map

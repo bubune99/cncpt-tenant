@@ -1,7 +1,23 @@
 'use client';
 
 import { createContext, useContext, ReactNode } from 'react';
-import type { AdminShellConfig } from '../app/admin/AdminShell';
+
+export interface CMSConfig {
+  /** Base path prefix for all admin routes (e.g., '/cms/subdomain') */
+  basePath?: string;
+  /** Navigation groups to hide entirely */
+  hiddenGroups?: string[];
+  /** Individual navigation items to hide by name */
+  hiddenItems?: string[];
+  /** URL for "View Site" link */
+  siteUrl?: string;
+  /** Site name to display */
+  siteName?: string;
+  /** User's role to display */
+  userRole?: string;
+  /** Whether to show the AI chat panel */
+  showChat?: boolean;
+}
 
 interface CMSConfigContextValue {
   basePath: string;
@@ -21,7 +37,7 @@ export function CMSConfigProvider({
   config,
 }: {
   children: ReactNode;
-  config: AdminShellConfig;
+  config: CMSConfig;
 }) {
   const basePath = config.basePath || '';
   const siteUrl = config.siteUrl || '/';

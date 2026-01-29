@@ -1,5 +1,5 @@
 {
-  "name": "@farcncpt/cms",
+  "name": "@cncpt/cms",
   "version": "0.1.0",
   "private": false,
   "description": "Next.js CMS with e-commerce, visual page builder, blog, AI chat, and plugin system",

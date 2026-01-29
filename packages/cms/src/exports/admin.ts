@@ -3,8 +3,9 @@
  * These are the main admin UI components for the CMS
  */
 
-// Admin Shell - main layout component
+// Admin Shell - main layout component and config type
 export { AdminShell } from '../app/admin/AdminShell'
+export type { AdminShellConfig } from '../app/admin/AdminShell'
 
 // Admin components (default exports)
 // BrandingSettingsPanel to avoid conflict with BrandingSettings interface from lib/settings

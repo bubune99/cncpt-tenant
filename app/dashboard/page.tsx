@@ -5,6 +5,7 @@ import { getUserSubdomains } from "@/app/actions"
 import { DashboardSidebar } from "./dashboard-sidebar"
 import { DashboardContent } from "./dashboard-content"
 import { useUser } from "@stackframe/stack"
+import { HelpProvider } from "@/components/help-system"
 
 export const dynamic = "force-dynamic"
 
@@ -173,21 +174,23 @@ export default function DashboardPage({ user: initialUser, subdomains: initialSu
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
-      <DashboardSidebar
-        user={user}
-        subdomains={subdomains}
-        activeSection={activeSection}
-        setActiveSection={setActiveSection}
-        selectedSubdomain={selectedSubdomain}
-        setSelectedSubdomain={setSelectedSubdomain}
-      />
-      <DashboardContent
-        user={user}
-        subdomains={subdomains}
-        activeSection={activeSection}
-        selectedSubdomain={selectedSubdomain}
-      />
-    </div>
+    <HelpProvider>
+      <div className="min-h-screen bg-background flex">
+        <DashboardSidebar
+          user={user}
+          subdomains={subdomains}
+          activeSection={activeSection}
+          setActiveSection={setActiveSection}
+          selectedSubdomain={selectedSubdomain}
+          setSelectedSubdomain={setSelectedSubdomain}
+        />
+        <DashboardContent
+          user={user}
+          subdomains={subdomains}
+          activeSection={activeSection}
+          selectedSubdomain={selectedSubdomain}
+        />
+      </div>
+    </HelpProvider>
   )
 }

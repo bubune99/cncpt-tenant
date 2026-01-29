@@ -146,4 +146,45 @@ declare function normalizePagination(limit?: number, offset?: number): {
     offset: number;
 };
 
-export { API_KEY_PREFIX, DEFAULT_LIMIT, MAX_LIMIT, type McpContext, compactJson, extractApiKey, generateApiKey, getMcpContext, getMcpContextOrNull, getMcpUserId, hasMcpScope, hashApiKey, isValidApiKeyFormat, mcpError, mcpResponse, normalizePagination, pickFields, requireMcpScope, runWithMcpContext, truncate, validateMcpApiKey };
+/**
+ * MCP (Model Context Protocol) Server Utilities
+ *
+ * This module provides utilities for building MCP servers that expose
+ * CMS functionality to AI agents (Claude Code, Cursor, Windsurf, etc.)
+ *
+ * Key exports:
+ * - Auth: API key generation and validation
+ * - Context: Request-scoped user context via AsyncLocalStorage
+ * - Utils: Response formatting and token optimization helpers
+ */
+
+interface McpServerStatus {
+    name: string;
+    connected: boolean;
+    toolCount: number;
+    source: 'file' | 'database';
+}
+interface McpConfig {
+    mcpServers: Record<string, unknown>;
+}
+/**
+ * Load MCP configuration from file and database
+ * Returns null if no MCP servers are configured
+ */
+declare function loadMcpConfig(): Promise<McpConfig | null>;
+/**
+ * Get status of all configured MCP servers
+ */
+declare function getMcpServerStatus(): Promise<McpServerStatus[]>;
+/**
+ * Get tools from all connected MCP servers
+ * Returns an empty object if no MCP servers are connected
+ */
+declare function getMcpTools(): Promise<Record<string, unknown>>;
+/**
+ * Invalidate cache for a specific MCP server
+ * Called when server config is updated or deleted
+ */
+declare function invalidateMcpServerCache(_serverName: string): Promise<void>;
+
+export { API_KEY_PREFIX, DEFAULT_LIMIT, MAX_LIMIT, type McpConfig, type McpContext, type McpServerStatus, compactJson, extractApiKey, generateApiKey, getMcpContext, getMcpContextOrNull, getMcpServerStatus, getMcpTools, getMcpUserId, hasMcpScope, hashApiKey, invalidateMcpServerCache, isValidApiKeyFormat, loadMcpConfig, mcpError, mcpResponse, normalizePagination, pickFields, requireMcpScope, runWithMcpContext, truncate, validateMcpApiKey };

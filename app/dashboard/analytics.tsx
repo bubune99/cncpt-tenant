@@ -204,8 +204,8 @@ export function Analytics({ subdomains }: AnalyticsProps) {
           <TabsTrigger value="analytics">Site Analytics</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="deployments" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <TabsContent value="deployments" className="space-y-6" data-help-key="dashboard.analytics.deployments">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" data-help-key="dashboard.analytics.stats">
             {deploymentStats.map((stat) => {
               const Icon = stat.icon
               return (
@@ -232,7 +232,7 @@ export function Analytics({ subdomains }: AnalyticsProps) {
             })}
           </div>
 
-          <Card>
+          <Card data-help-key="dashboard.analytics.recent">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Activity className="w-5 h-5" />
@@ -283,7 +283,7 @@ export function Analytics({ subdomains }: AnalyticsProps) {
           </Card>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
+            <Card data-help-key="dashboard.analytics.status">
               <CardHeader>
                 <CardTitle>Deployment Status</CardTitle>
                 <CardDescription>Distribution of deployment states</CardDescription>
@@ -304,7 +304,7 @@ export function Analytics({ subdomains }: AnalyticsProps) {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card data-help-key="dashboard.analytics.trends">
               <CardHeader>
                 <CardTitle>Deployment Trends</CardTitle>
                 <CardDescription>Daily deployment activity (last 7 days)</CardDescription>
@@ -373,8 +373,8 @@ export function Analytics({ subdomains }: AnalyticsProps) {
           )}
         </TabsContent>
 
-        <TabsContent value="analytics" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <TabsContent value="analytics" className="space-y-6" data-help-key="dashboard.analytics.site">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" data-help-key="dashboard.analytics.visitor-stats">
             {traditionalStats.map((stat) => {
               const Icon = stat.icon
               return (
@@ -401,7 +401,7 @@ export function Analytics({ subdomains }: AnalyticsProps) {
             })}
           </div>
 
-          <Card>
+          <Card data-help-key="dashboard.analytics.traffic">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <BarChart3 className="w-5 h-5" />

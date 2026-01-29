@@ -353,8 +353,8 @@ export function SiteSettings({ selectedSubdomain, activeTab = "general" }: SiteS
         </TabsList>
 
         {/* General Settings */}
-        <TabsContent value="general" className="space-y-6">
-          <Card>
+        <TabsContent value="general" className="space-y-6" data-help-key="dashboard.settings.general">
+          <Card data-help-key="dashboard.settings.basic-info">
             <CardHeader>
               <CardTitle>Basic Information</CardTitle>
               <CardDescription>Set your site's basic details</CardDescription>
@@ -442,8 +442,8 @@ export function SiteSettings({ selectedSubdomain, activeTab = "general" }: SiteS
         </TabsContent>
 
         {/* Appearance Settings */}
-        <TabsContent value="appearance" className="space-y-6">
-          <Card>
+        <TabsContent value="appearance" className="space-y-6" data-help-key="dashboard.settings.appearance">
+          <Card data-help-key="dashboard.settings.colors">
             <CardHeader>
               <CardTitle>Brand Colors</CardTitle>
               <CardDescription>Customize your site's color scheme</CardDescription>
@@ -502,7 +502,7 @@ export function SiteSettings({ selectedSubdomain, activeTab = "general" }: SiteS
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-help-key="dashboard.settings.typography">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Type className="h-5 w-5" />
@@ -535,7 +535,7 @@ export function SiteSettings({ selectedSubdomain, activeTab = "general" }: SiteS
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-help-key="dashboard.settings.themes">
             <CardHeader>
               <CardTitle>Theme Presets</CardTitle>
               <CardDescription>Quick theme options</CardDescription>
@@ -580,8 +580,8 @@ export function SiteSettings({ selectedSubdomain, activeTab = "general" }: SiteS
         </TabsContent>
 
         {/* SEO Settings */}
-        <TabsContent value="seo" className="space-y-6">
-          <Card>
+        <TabsContent value="seo" className="space-y-6" data-help-key="dashboard.settings.seo">
+          <Card data-help-key="dashboard.settings.meta">
             <CardHeader>
               <CardTitle>Search Engine Optimization</CardTitle>
               <CardDescription>Improve your site's visibility in search results</CardDescription>
@@ -616,7 +616,7 @@ export function SiteSettings({ selectedSubdomain, activeTab = "general" }: SiteS
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-help-key="dashboard.settings.social">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Image className="h-5 w-5" />
@@ -702,8 +702,8 @@ export function SiteSettings({ selectedSubdomain, activeTab = "general" }: SiteS
         </TabsContent>
 
         {/* Security Settings */}
-        <TabsContent value="security" className="space-y-6">
-          <Card>
+        <TabsContent value="security" className="space-y-6" data-help-key="dashboard.settings.security">
+          <Card data-help-key="dashboard.settings.password">
             <CardHeader>
               <CardTitle>Password Protection</CardTitle>
               <CardDescription>Restrict access to your site with a password</CardDescription>
@@ -733,7 +733,7 @@ export function SiteSettings({ selectedSubdomain, activeTab = "general" }: SiteS
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-help-key="dashboard.settings.ssl">
             <CardHeader>
               <CardTitle>SSL Certificate</CardTitle>
               <CardDescription>Secure your site with HTTPS</CardDescription>
@@ -749,7 +749,7 @@ export function SiteSettings({ selectedSubdomain, activeTab = "general" }: SiteS
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-help-key="dashboard.settings.headers">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Code className="h-5 w-5" />
