@@ -2,72 +2,83 @@
  * Dashboard AI Tools - Index
  *
  * Exports all dashboard-specific tools for the AI chat agent.
+ * Tools that require user context are exported as factory functions.
  */
 
-import { subdomainTools } from "./subdomain-tools"
-import { teamTools } from "./team-tools"
-import { domainTools } from "./domain-tools"
-import { billingTools } from "./billing-tools"
-import { navigationTools } from "./navigation-tools"
+// Factory function exports for user-context-aware tools
+export { createSubdomainTools } from "./subdomain-tools"
+export { createTeamTools } from "./team-tools"
+export { createDomainTools } from "./domain-tools"
+export { createBillingTools } from "./billing-tools"
 
-// Re-export individual tool groups
-export { subdomainTools } from "./subdomain-tools"
-export { teamTools } from "./team-tools"
-export { domainTools } from "./domain-tools"
-export { billingTools } from "./billing-tools"
-export { navigationTools } from "./navigation-tools"
-
-// Re-export individual tools
-export {
-  listSubdomains,
-  getSubdomainDetails,
-  searchSubdomains,
-  getSubdomainStats,
-} from "./subdomain-tools"
-
-export {
-  listTeams,
-  getTeamDetails,
-  listTeamMembers,
-  getTeamInvitations,
-  checkTeamAccess,
-} from "./team-tools"
-
-export {
-  listDomains,
-  getDomainStatus,
-  troubleshootDomain,
-  getDnsInstructions,
-} from "./domain-tools"
-
-export {
-  getBillingStatus,
-  getUsageStats,
-  comparePlans,
-  explainBilling,
-} from "./billing-tools"
-
+// Direct exports for context-free tools
 export {
   navigateTo,
   explainFeature,
   suggestActions,
   getHelp,
+  navigationTools,
 } from "./navigation-tools"
 
 /**
- * Combined dashboard tools object for easy registration with streamText
+ * Create all dashboard tools with user context
+ * Use this in API routes to get all tools configured for a specific user
  */
-export const dashboardTools = {
-  ...subdomainTools,
-  ...teamTools,
-  ...domainTools,
-  ...billingTools,
-  ...navigationTools,
+export function createDashboardTools(userId: string) {
+  // Import factory functions
+  const { createSubdomainTools } = require("./subdomain-tools")
+  const { createTeamTools } = require("./team-tools")
+  const { createDomainTools } = require("./domain-tools")
+  const { createBillingTools } = require("./billing-tools")
+  const { navigationTools } = require("./navigation-tools")
+
+  // Create tools with user context
+  const subdomainTools = createSubdomainTools(userId)
+  const teamTools = createTeamTools(userId)
+  const domainTools = createDomainTools(userId)
+  const billingTools = createBillingTools(userId)
+
+  return {
+    // User-context tools
+    ...subdomainTools,
+    ...teamTools,
+    ...domainTools,
+    ...billingTools,
+    // Navigation tools (no user context needed)
+    ...navigationTools,
+  }
 }
 
 /**
- * Get all dashboard tools as an array for inspection
+ * Get list of all available dashboard tool names
  */
 export function getDashboardToolList() {
-  return Object.keys(dashboardTools)
+  return [
+    // Subdomain tools
+    "listSubdomains",
+    "getSubdomainDetails",
+    "searchSubdomains",
+    "getSubdomainStats",
+    // Team tools
+    "listTeams",
+    "getTeamDetails",
+    "listTeamMembers",
+    "getTeamInvitations",
+    "checkTeamAccess",
+    // Domain tools
+    "listDomains",
+    "getDomainStatus",
+    "troubleshootDomain",
+    "getDnsInstructions",
+    // Billing tools
+    "getBillingStatus",
+    "getUsageStats",
+    "comparePlans",
+    "explainBilling",
+    // Navigation tools
+    "navigateTo",
+    "explainFeature",
+    "suggestActions",
+    "getHelp",
+  ]
 }

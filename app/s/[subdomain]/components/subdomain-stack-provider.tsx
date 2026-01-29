@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, createContext, useContext } from "react"
-import { StackProvider, StackTheme } from "@stackframe/stack"
+import { StackProvider, StackTheme, type StackClientApp } from "@stackframe/stack"
 import {
   createSubdomainStackClientApp,
   type SubdomainAuthConfigPublic,
@@ -42,7 +42,7 @@ export function SubdomainStackProvider({
 }: SubdomainStackProviderProps) {
   // Memoize the Stack app to avoid recreation on re-renders
   const stackApp = useMemo(
-    () => createSubdomainStackClientApp(config),
+    () => createSubdomainStackClientApp(config) as StackClientApp<true, string>,
     [config.stack_auth_project_id, config.stack_auth_publishable_key]
   )
 

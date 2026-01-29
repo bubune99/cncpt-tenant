@@ -5,11 +5,11 @@
  * Uses streaming with tool execution for real-time responses.
  */
 
-import { streamText, smoothStream } from "ai"
+import { streamText, smoothStream, stepCountIs } from "ai"
 import { z } from "zod"
 import { stackServerApp } from "@/stack"
 import { getLanguageModel, DEFAULT_CHAT_MODEL } from "@/lib/ai/core"
-import { dashboardTools } from "@/lib/ai/tools/dashboard"
+import { createDashboardTools } from "@/lib/ai/tools/dashboard"
 import { buildDashboardSystemPrompt } from "@/lib/ai/prompts/dashboard-system-prompt"
 import type { DashboardChatContext } from "@/lib/ai/core/types"
 
@@ -122,31 +122,18 @@ export async function POST(request: Request) {
       content: getMessageContent(m),
     }))
 
-    // Create tools with user context injected
-    const toolsWithContext = Object.fromEntries(
-      Object.entries(dashboardTools).map(([name, toolDef]) => [
-        name,
-        {
-          ...toolDef,
-          execute: async (args: unknown) => {
-            // Inject userId into the execution context
-            return (toolDef as { execute: (args: unknown, context: { userId: string }) => Promise<unknown> }).execute(args, { userId: user.id })
-          },
-        },
-      ])
-    )
+    // Create tools with user context (userId captured in closure)
+    const tools = createDashboardTools(user.id)
 
     // Stream the response with tools
     const result = streamText({
       model,
       system: systemPrompt,
       messages: aiMessages,
-      tools: toolsWithContext,
-      maxSteps: 5, // Allow multi-step tool usage
+      tools,
+      stopWhen: stepCountIs(5), // AI SDK 6.0: replaces maxSteps
       experimental_transform: smoothStream(),
-      experimental_toolCallStreaming: true,
-      async onStepFinish({ toolCalls }) {
-        // Log tool usage for debugging
+      onStepFinish({ toolCalls }) {
         if (toolCalls && toolCalls.length > 0) {
           console.log(
             `[dashboard-chat] Tools called: ${toolCalls.map((t) => t.toolName).join(", ")}`
@@ -155,16 +142,8 @@ export async function POST(request: Request) {
       },
     })
 
-    // Return the stream with proper headers
-    return result.toDataStreamResponse({
-      getErrorMessage: (error) => {
-        console.error("[dashboard-chat] Stream error:", error)
-        if (error instanceof Error) {
-          return error.message
-        }
-        return "An error occurred while processing your request"
-      },
-    })
+    // Return the stream (AI SDK 6.0: use toTextStreamResponse)
+    return result.toTextStreamResponse()
   } catch (error) {
     console.error("[dashboard-chat] Error:", error)
 

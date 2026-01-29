@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { useChat } from "ai/react"
+import { useChat } from "@ai-sdk/react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   MessageCircle,
@@ -16,7 +16,6 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import {
   useDashboardChatPanel,
@@ -192,7 +191,7 @@ export function ChatPanel({ className }: ChatPanelProps) {
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4">
+      <div className="flex-1 overflow-y-auto p-4">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-8">
             <Bot className="h-12 w-12 text-muted-foreground mb-4" />
@@ -269,7 +268,7 @@ export function ChatPanel({ className }: ChatPanelProps) {
             <div ref={messagesEndRef} />
           </div>
         )}
-      </ScrollArea>
+      </div>
 
       {/* Error display */}
       {error && (

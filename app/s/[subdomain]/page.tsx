@@ -1,5 +1,5 @@
 import Link from "next/link"
-import type { Metadata } from "next/metadata"
+import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getTenantData, getTenantSettings, getTenantPages, getTenantPosts } from "@/lib/tenant"
 import { protocol, rootDomain } from "@/lib/utils"
