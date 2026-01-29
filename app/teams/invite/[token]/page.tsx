@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Building2, Loader2, CheckCircle, XCircle, Clock } from "lucide-react"
 import { useUser } from "@stackframe/stack"
-import { getRoleLabel } from "@/lib/team-auth"
+import { getRoleLabel } from "@/lib/team-utils"
 
 type InvitationInfo = {
   id: string
