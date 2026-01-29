@@ -1,4 +1,4 @@
-import type { Config, Data } from "@measured/puck"
+import type { Config, Data } from "@puckeditor/core"
 import type { JSX } from "react"
 
 // Define all the component configurations

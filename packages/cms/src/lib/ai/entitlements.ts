@@ -29,7 +29,7 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
    */
   customer: {
     maxMessagesPerDay: 50,
-    availableChatModelIds: ['chat-model'],
+    availableChatModelIds: ['anthropic/claude-sonnet-4.5'],
   },
 
   /**
@@ -37,7 +37,7 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
    */
   admin: {
     maxMessagesPerDay: 500,
-    availableChatModelIds: ['chat-model', 'chat-model-reasoning'],
+    availableChatModelIds: ['anthropic/claude-sonnet-4.5', 'anthropic/claude-haiku-4.5', 'anthropic/claude-opus-4.5'],
   },
 };
 

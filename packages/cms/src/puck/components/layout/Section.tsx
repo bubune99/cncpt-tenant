@@ -1,18 +1,29 @@
 "use client";
 
-import { ComponentConfig, DropZone } from "@measured/puck";
-import { ReactNode } from "react";
+import { ComponentConfig } from "@puckeditor/core";
+import React, { ReactNode } from "react";
 import { AnimatedWrapper } from "../../animations/AnimatedWrapper";
 import { AnimationConfig, LockConfig, GroupConfig, defaultAnimationConfig, defaultLockConfig, defaultGroupConfig } from "../../animations/types";
-import { AnimationField } from "../../fields/AnimationField";
-import { LockField } from "../../fields/LockField";
-import { GroupField } from "../../fields/GroupField";
 import { SpacingField } from "../../fields/SpacingField";
-import { ResponsiveVisibility, VisibilitySettings } from "../../fields/ResponsiveVisibility";
 import { getVisibilityClassName, defaultVisibility } from "../../utils/visibility";
 import { BackgroundField, BackgroundSettings, defaultBackgroundSettings, getBackgroundStyles, BackgroundOverlay, getBlurStyles } from "../../fields/BackgroundField";
+import {
+  AdvancedFieldsPanel,
+  AdvancedFieldsSettings,
+  defaultAdvancedSettings,
+  getSizeStyles,
+  getPositionStyles,
+  getBorderStyles,
+  getEffectsStyles,
+  getTransformStyles,
+} from "../../fields";
 
 export interface SectionProps {
+  // Slot layout
+  slotDirection?: "vertical" | "horizontal";
+  slotGap?: string;
+  slotAlign?: "start" | "center" | "end" | "stretch" | "space-between";
+  // Background and spacing
   background: BackgroundSettings;
   paddingTop: string;
   paddingBottom: string;
@@ -22,16 +33,18 @@ export interface SectionProps {
   maxWidth: string;
   fullWidth: boolean;
   children?: ReactNode;
-  // Enhanced props
-  animation?: Partial<AnimationConfig>;
-  lock?: Partial<LockConfig>;
-  group?: Partial<GroupConfig>;
-  visibility?: VisibilitySettings;
+  // All advanced settings combined
+  advanced?: AdvancedFieldsSettings;
+  // Content (slot)
+  content?: React.FC | never[];
   // Editor state
   puck?: { isEditing?: boolean };
 }
 
 export const Section = ({
+  slotDirection = "vertical",
+  slotGap = "0px",
+  slotAlign = "stretch",
   background,
   paddingTop,
   paddingBottom,
@@ -40,19 +53,34 @@ export const Section = ({
   minHeight,
   maxWidth,
   fullWidth,
-  animation,
-  lock,
-  visibility,
+  advanced,
+  content: Content,
   puck,
 }: SectionProps) => {
   const isEditing = puck?.isEditing ?? false;
+  const animation = advanced?.animation;
+  const lock = advanced?.lock;
+  const visibility = advanced?.visibility;
+  const size = advanced?.size;
+  const position = advanced?.position;
+  const border = advanced?.border;
+  const effects = advanced?.effects;
+  const transform = advanced?.transform;
+
   const isLocked = lock?.isLocked ?? false;
   const visibilityClasses = getVisibilityClassName(visibility);
   const bgStyles = getBackgroundStyles(background);
   const blurStyles = getBlurStyles(background);
   const hasBlur = background?.blur && background.blur > 0;
 
-  const content = (
+  // Combine all Framer-style styles
+  const sizeStyles = getSizeStyles(size);
+  const positionStyles = getPositionStyles(position);
+  const borderStyles = getBorderStyles(border);
+  const effectsStyles = getEffectsStyles(effects);
+  const transformStyles = getTransformStyles(transform);
+
+  const sectionContent = (
     <section
       className={visibilityClasses}
       style={{
@@ -60,11 +88,23 @@ export const Section = ({
         paddingBottom,
         paddingLeft,
         paddingRight,
-        minHeight: minHeight || undefined,
-        width: "100%",
-        position: "relative",
-        pointerEvents: isLocked && !isEditing ? "none" : undefined,
-        overflow: "hidden",
+        minHeight: sizeStyles.minHeight || minHeight || undefined,
+        width: sizeStyles.width || "100%",
+        height: sizeStyles.height,
+        maxWidth: sizeStyles.maxWidth,
+        maxHeight: sizeStyles.maxHeight,
+        aspectRatio: sizeStyles.aspectRatio,
+        overflow: sizeStyles.overflow || "hidden",
+        position: positionStyles.position || "relative",
+        top: positionStyles.top,
+        right: positionStyles.right,
+        bottom: positionStyles.bottom,
+        left: positionStyles.left,
+        zIndex: positionStyles.zIndex,
+        ...borderStyles,
+        ...effectsStyles,
+        ...transformStyles,
+        pointerEvents: isLocked && !isEditing ? "none" : effectsStyles.pointerEvents,
       }}
     >
       {/* Background layer with optional blur */}
@@ -114,9 +154,18 @@ export const Section = ({
           width: "100%",
           position: "relative",
           zIndex: 1,
+          display: "flex",
+          flexDirection: slotDirection === "horizontal" ? "row" : "column",
+          gap: slotGap,
+          alignItems: slotAlign === "space-between" ? "stretch" :
+                      slotAlign === "start" ? "flex-start" :
+                      slotAlign === "end" ? "flex-end" :
+                      slotAlign,
+          justifyContent: slotAlign === "space-between" ? "space-between" : undefined,
+          flexWrap: slotDirection === "horizontal" ? "wrap" : undefined,
         }}
       >
-        <DropZone zone="content" />
+        {typeof Content === 'function' && <Content />}
       </div>
     </section>
   );
@@ -125,17 +174,20 @@ export const Section = ({
   if (animation?.enabled && !isEditing) {
     return (
       <AnimatedWrapper animation={animation} isEditing={isEditing}>
-        {content}
+        {sectionContent}
       </AnimatedWrapper>
     );
   }
 
-  return content;
+  return sectionContent;
 };
 
 export const SectionConfig: ComponentConfig<SectionProps> = {
   label: "Section",
   defaultProps: {
+    slotDirection: "vertical",
+    slotGap: "0px",
+    slotAlign: "stretch",
     background: defaultBackgroundSettings,
     paddingTop: "48px",
     paddingBottom: "48px",
@@ -143,12 +195,44 @@ export const SectionConfig: ComponentConfig<SectionProps> = {
     paddingRight: "24px",
     maxWidth: "1200px",
     fullWidth: false,
-    animation: defaultAnimationConfig,
-    lock: defaultLockConfig,
-    group: defaultGroupConfig,
-    visibility: defaultVisibility,
+    advanced: defaultAdvancedSettings,
+    content: [],
   },
   fields: {
+    content: {
+      type: "slot",
+    },
+    slotDirection: {
+      type: "radio",
+      label: "Content Direction",
+      options: [
+        { label: "Vertical", value: "vertical" },
+        { label: "Horizontal", value: "horizontal" },
+      ],
+    },
+    slotGap: {
+      type: "select",
+      label: "Content Gap",
+      options: [
+        { label: "None", value: "0px" },
+        { label: "8px", value: "8px" },
+        { label: "16px", value: "16px" },
+        { label: "24px", value: "24px" },
+        { label: "32px", value: "32px" },
+        { label: "48px", value: "48px" },
+      ],
+    },
+    slotAlign: {
+      type: "select",
+      label: "Content Align",
+      options: [
+        { label: "Stretch", value: "stretch" },
+        { label: "Start", value: "start" },
+        { label: "Center", value: "center" },
+        { label: "End", value: "end" },
+        { label: "Space Between", value: "space-between" },
+      ],
+    },
     background: {
       type: "custom",
       label: "Background",
@@ -200,32 +284,14 @@ export const SectionConfig: ComponentConfig<SectionProps> = {
         { label: "No", value: false },
       ],
     },
-    animation: {
+    advanced: {
       type: "custom",
-      label: "Animation",
+      label: "",
       render: ({ value, onChange }) => (
-        <AnimationField value={value || defaultAnimationConfig} onChange={onChange} />
-      ),
-    },
-    lock: {
-      type: "custom",
-      label: "Lock",
-      render: ({ value, onChange }) => (
-        <LockField value={value || defaultLockConfig} onChange={onChange} />
-      ),
-    },
-    group: {
-      type: "custom",
-      label: "Group",
-      render: ({ value, onChange }) => (
-        <GroupField value={value || defaultGroupConfig} onChange={onChange} />
-      ),
-    },
-    visibility: {
-      type: "custom",
-      label: "Visibility",
-      render: ({ value, onChange }) => (
-        <ResponsiveVisibility value={value || defaultVisibility} onChange={onChange} />
+        <AdvancedFieldsPanel
+          value={value || defaultAdvancedSettings}
+          onChange={onChange}
+        />
       ),
     },
   },

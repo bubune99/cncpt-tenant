@@ -86,6 +86,7 @@ export function Chat({
     stop,
     regenerate,
     resumeStream,
+    addToolApprovalResponse,
   } = useChat<ChatMessage>({
     id,
     messages: initialMessages,
@@ -98,7 +99,7 @@ export function Chat({
         return {
           body: {
             id: request.id,
-            message: request.messages.at(-1),
+            messages: request.messages, // Send full messages array, not just last message
             selectedChatModel: currentModelIdRef.current,
             selectedVisibilityType: visibilityType,
             ...customBody,
@@ -234,18 +235,19 @@ export function Chat({
         )}
 
         <Messages
+          addToolApprovalResponse={addToolApprovalResponse}
           chatId={id}
           isArtifactVisible={isArtifactVisible}
           isReadonly={isReadonly}
           messages={messages}
           regenerate={regenerate}
-          selectedModelId={initialChatModel}
+          selectedModelId={currentModelId}
           setMessages={setMessages}
           status={status}
           votes={votes}
         />
 
-        <div className="sticky bottom-0 z-1 mx-auto flex w-full max-w-4xl gap-2 border-t-0 bg-background px-2 pb-3 md:px-4 md:pb-4">
+        <div className="shrink-0 z-10 flex w-full gap-2 border-t bg-background px-4 py-3">
           {!isReadonly && (
             <MultimodalInput
               attachments={attachments}

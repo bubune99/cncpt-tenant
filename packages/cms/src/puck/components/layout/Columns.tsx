@@ -1,7 +1,7 @@
 "use client";
 
-import { ComponentConfig, DropZone } from "@measured/puck";
-import { ReactNode } from "react";
+import { ComponentConfig } from "@puckeditor/core";
+import React, { ReactNode } from "react";
 import { AnimatedWrapper } from "../../animations/AnimatedWrapper";
 import { AnimationConfig, LockConfig, GroupConfig, defaultAnimationConfig, defaultLockConfig, defaultGroupConfig } from "../../animations/types";
 import { AnimationField } from "../../fields/AnimationField";
@@ -22,6 +22,11 @@ export interface ColumnsProps {
   lock?: Partial<LockConfig>;
   group?: Partial<GroupConfig>;
   visibility?: VisibilitySettings;
+  // Column slots (up to 4)
+  column0?: React.FC | never[];
+  column1?: React.FC | never[];
+  column2?: React.FC | never[];
+  column3?: React.FC | never[];
   puck?: { isEditing?: boolean };
 }
 
@@ -46,6 +51,10 @@ export const Columns = ({
   animation,
   lock,
   visibility,
+  column0: Column0,
+  column1: Column1,
+  column2: Column2,
+  column3: Column3,
   puck,
 }: ColumnsProps) => {
   const isEditing = puck?.isEditing ?? false;
@@ -53,7 +62,10 @@ export const Columns = ({
   const visibilityClasses = getVisibilityClassName(visibility);
   const widths = layoutOptions[layout] || layoutOptions["1-1"];
 
-  const content = (
+  // Array of column slots
+  const columnSlots = [Column0, Column1, Column2, Column3];
+
+  const columnsContent = (
     <div
       className={`puck-columns ${stackOnMobile ? "stack-mobile" : ""} ${reverseOnMobile ? "reverse-mobile" : ""} ${visibilityClasses}`}
       style={{
@@ -84,18 +96,21 @@ export const Columns = ({
           🔒 LOCKED
         </div>
       )}
-      {widths.map((width, index) => (
-        <div
-          key={index}
-          className="puck-column"
-          style={{
-            flex: `0 0 calc(${width} - ${gap} * ${(widths.length - 1) / widths.length})`,
-            minWidth: 0,
-          }}
-        >
-          <DropZone zone={`column-${index}`} />
-        </div>
-      ))}
+      {widths.map((width, index) => {
+        const ColumnSlot = columnSlots[index];
+        return (
+          <div
+            key={index}
+            className="puck-column"
+            style={{
+              flex: `0 0 calc(${width} - ${gap} * ${(widths.length - 1) / widths.length})`,
+              minWidth: 0,
+            }}
+          >
+            {typeof ColumnSlot === 'function' && <ColumnSlot />}
+          </div>
+        );
+      })}
       <style>{`
         @media (max-width: 768px) {
           .puck-columns.stack-mobile {
@@ -115,12 +130,12 @@ export const Columns = ({
   if (animation?.enabled && !isEditing) {
     return (
       <AnimatedWrapper animation={animation} isEditing={isEditing}>
-        {content}
+        {columnsContent}
       </AnimatedWrapper>
     );
   }
 
-  return content;
+  return columnsContent;
 };
 
 export const ColumnsConfig: ComponentConfig<ColumnsProps> = {
@@ -135,8 +150,28 @@ export const ColumnsConfig: ComponentConfig<ColumnsProps> = {
     lock: defaultLockConfig,
     group: defaultGroupConfig,
     visibility: defaultVisibility,
+    column0: [],
+    column1: [],
+    column2: [],
+    column3: [],
   },
   fields: {
+    column0: {
+      type: "slot",
+      label: "Column 1",
+    },
+    column1: {
+      type: "slot",
+      label: "Column 2",
+    },
+    column2: {
+      type: "slot",
+      label: "Column 3",
+    },
+    column3: {
+      type: "slot",
+      label: "Column 4",
+    },
     layout: {
       type: "select",
       label: "Layout",

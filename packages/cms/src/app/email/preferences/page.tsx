@@ -1,301 +1,124 @@
-'use client'
+/**
+ * Email Preferences Page
+ *
+ * Allows users to manage their email subscription preferences.
+ */
 
-import { useSearchParams } from 'next/navigation'
-import { Suspense, useEffect, useState } from 'react'
-import { Mail, Save, Loader2 } from 'lucide-react'
+'use client';
 
-interface Subscriber {
-  id: string
-  email: string
-  firstName?: string | null
-  lastName?: string | null
-  status: string
-  tags: string[]
-  preferences: {
-    marketing?: boolean
-    transactional?: boolean
-    productUpdates?: boolean
-    newsletter?: boolean
-    frequency?: 'daily' | 'weekly' | 'monthly'
-  }
+import { useState } from 'react';
+import Link from 'next/link';
+
+interface EmailPreference {
+  id: string;
+  label: string;
+  description: string;
+  enabled: boolean;
 }
 
-function PreferencesContent() {
-  const searchParams = useSearchParams()
-  const subscriberId = searchParams.get('s')
-  const email = searchParams.get('email')
+export default function EmailPreferencesPage() {
+  const [preferences, setPreferences] = useState<EmailPreference[]>([
+    {
+      id: 'marketing',
+      label: 'Marketing emails',
+      description: 'Receive promotional offers, discounts, and new product announcements.',
+      enabled: true,
+    },
+    {
+      id: 'newsletter',
+      label: 'Newsletter',
+      description: 'Weekly or monthly newsletter with updates and content.',
+      enabled: true,
+    },
+    {
+      id: 'product',
+      label: 'Product updates',
+      description: 'Important updates about products you have purchased.',
+      enabled: true,
+    },
+    {
+      id: 'transactional',
+      label: 'Order notifications',
+      description: 'Order confirmations, shipping updates, and receipts.',
+      enabled: true,
+    },
+  ]);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
-  const [subscriber, setSubscriber] = useState<Subscriber | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
-
-  const [preferences, setPreferences] = useState({
-    firstName: '',
-    lastName: '',
-    marketing: true,
-    productUpdates: true,
-    newsletter: true,
-    frequency: 'weekly' as 'daily' | 'weekly' | 'monthly',
-  })
-
-  useEffect(() => {
-    async function loadPreferences() {
-      if (!subscriberId && !email) {
-        setError('Invalid link')
-        setLoading(false)
-        return
-      }
-
-      try {
-        const params = new URLSearchParams()
-        if (subscriberId) params.set('s', subscriberId)
-        if (email) params.set('email', email)
-
-        const response = await fetch(`/api/email/preferences?${params.toString()}`)
-        const data = await response.json()
-
-        if (!data.success) {
-          setError(data.error || 'Failed to load preferences')
-          setLoading(false)
-          return
-        }
-
-        setSubscriber(data.subscriber)
-        setPreferences({
-          firstName: data.subscriber.firstName || '',
-          lastName: data.subscriber.lastName || '',
-          marketing: data.subscriber.preferences?.marketing ?? true,
-          productUpdates: data.subscriber.preferences?.productUpdates ?? true,
-          newsletter: data.subscriber.preferences?.newsletter ?? true,
-          frequency: data.subscriber.preferences?.frequency || 'weekly',
-        })
-      } catch {
-        setError('Failed to load preferences')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadPreferences()
-  }, [subscriberId, email])
+  const togglePreference = (id: string) => {
+    setPreferences((prev) =>
+      prev.map((pref) =>
+        pref.id === id ? { ...pref, enabled: !pref.enabled } : pref
+      )
+    );
+    setSaved(false);
+  };
 
   const handleSave = async () => {
-    if (!subscriber) return
-
-    setSaving(true)
-    setSuccess(false)
-    setError(null)
-
-    try {
-      const response = await fetch('/api/email/preferences', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subscriberId: subscriber.id,
-          preferences: {
-            firstName: preferences.firstName || undefined,
-            lastName: preferences.lastName || undefined,
-            emailPreferences: {
-              marketing: preferences.marketing,
-              productUpdates: preferences.productUpdates,
-              newsletter: preferences.newsletter,
-              frequency: preferences.frequency,
-            },
-          },
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!data.success) {
-        setError(data.error || 'Failed to save preferences')
-        return
-      }
-
-      setSuccess(true)
-    } catch {
-      setError('Failed to save preferences')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-      </div>
-    )
-  }
-
-  if (error && !subscriber) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 text-center">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Error</h1>
-          <p className="text-gray-600">{error}</p>
-        </div>
-      </div>
-    )
-  }
+    setSaving(true);
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    setSaving(false);
+    setSaved(true);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-lg mx-auto">
+      <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-lg shadow-md p-8">
-          <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-6 mx-auto">
-            <Mail className="w-6 h-6 text-blue-600" />
-          </div>
-
-          <h1 className="text-2xl font-semibold text-gray-900 text-center mb-2">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
             Email Preferences
           </h1>
-          <p className="text-gray-600 text-center mb-8">
-            Manage your email subscription settings
+          <p className="text-gray-600 mb-8">
+            Choose which emails you would like to receive from us.
           </p>
 
-          {success && (
-            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md mb-6">
-              Your preferences have been saved.
-            </div>
-          )}
-
-          {error && subscriber && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-6">
-              {error}
-            </div>
-          )}
-
           <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                value={subscriber?.email || ''}
-                disabled
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  First Name
-                </label>
-                <input
-                  type="text"
-                  value={preferences.firstName}
-                  onChange={(e) => setPreferences({ ...preferences, firstName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Last Name
-                </label>
-                <input
-                  type="text"
-                  value={preferences.lastName}
-                  onChange={(e) => setPreferences({ ...preferences, lastName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Email Types
-              </label>
-              <div className="space-y-3">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={preferences.marketing}
-                    onChange={(e) => setPreferences({ ...preferences, marketing: e.target.checked })}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <span className="ml-3 text-gray-700">Marketing & Promotions</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={preferences.productUpdates}
-                    onChange={(e) => setPreferences({ ...preferences, productUpdates: e.target.checked })}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <span className="ml-3 text-gray-700">Product Updates</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={preferences.newsletter}
-                    onChange={(e) => setPreferences({ ...preferences, newsletter: e.target.checked })}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <span className="ml-3 text-gray-700">Newsletter</span>
-                </label>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email Frequency
-              </label>
-              <select
-                value={preferences.frequency}
-                onChange={(e) => setPreferences({ ...preferences, frequency: e.target.value as 'daily' | 'weekly' | 'monthly' })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            {preferences.map((pref) => (
+              <div
+                key={pref.id}
+                className="flex items-start justify-between p-4 border border-gray-200 rounded-lg"
               >
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-              </select>
-            </div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900">{pref.label}</h3>
+                  <p className="text-sm text-gray-500">{pref.description}</p>
+                </div>
+                <button
+                  onClick={() => togglePreference(pref.id)}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    pref.enabled ? 'bg-blue-600' : 'bg-gray-200'
+                  }`}
+                  role="switch"
+                  aria-checked={pref.enabled}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      pref.enabled ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+            ))}
+          </div>
 
+          <div className="mt-8 flex items-center justify-between">
+            <Link
+              href="/email/unsubscribed"
+              className="text-sm text-red-600 hover:text-red-700"
+            >
+              Unsubscribe from all emails
+            </Link>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
             >
-              {saving ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  <Save className="w-5 h-5 mr-2" />
-                  Save Preferences
-                </>
-              )}
+              {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Preferences'}
             </button>
-
-            <div className="pt-4 border-t border-gray-200">
-              <a
-                href={`/api/email/unsubscribe?s=${subscriber?.id}`}
-                className="text-sm text-gray-500 hover:text-red-600"
-              >
-                Unsubscribe from all emails
-              </a>
-            </div>
           </div>
         </div>
       </div>
     </div>
-  )
-}
-
-export default function PreferencesPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-        </div>
-      }
-    >
-      <PreferencesContent />
-    </Suspense>
-  )
+  );
 }

@@ -1,8 +1,25 @@
-import type React from "react"
+/**
+ * Editor Layout
+ *
+ * Layout for the visual page editor. Uses a minimal layout
+ * without the main navigation to maximize editing space.
+ */
+
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Page Editor',
+  description: 'Visual page editor',
+};
+
 export default function EditorLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  return <div style={{ height: "100vh", width: "100vw", overflow: "hidden" }}>{children}</div>
+  return (
+    <div className="min-h-screen bg-gray-100">
+      {children}
+    </div>
+  );
 }

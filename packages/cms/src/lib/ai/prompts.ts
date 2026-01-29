@@ -136,7 +136,8 @@ export const systemPrompt = ({
 }) => {
   const requestPrompt = requestHints ? getRequestPromptFromHints(requestHints) : '';
 
-  if (selectedChatModel === 'chat-model-reasoning') {
+  // For reasoning/thinking models, don't include artifacts prompt
+  if (selectedChatModel.includes('reasoning') || selectedChatModel.includes('thinking')) {
     return `${regularPrompt}\n\n${requestPrompt}`;
   }
 

@@ -11,7 +11,7 @@
  * - Platform integration embeds
  */
 
-import type { Config } from '@measured/puck';
+import type { Config } from '@puckeditor/core';
 
 // Platform integration fields
 import { mediaPickerFieldConfig } from '../fields/MediaPickerField';

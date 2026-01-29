@@ -6,7 +6,8 @@
  */
 
 import { prisma } from '../db'
-import { sendEmail, sendBulkEmail, EmailMessage, BulkEmailMessage, EmailSendResult, BulkEmailResult } from './index'
+import { sendEmail } from './core'
+import type { EmailMessage, EmailSendResult } from './types'
 
 // =============================================================================
 // TYPES

@@ -207,9 +207,9 @@ export default function RolesPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-6 lg:p-8 space-y-6" data-help-key="admin.roles.page">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between" data-help-key="admin.roles.header">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
             Roles & Permissions
@@ -218,12 +218,13 @@ export default function RolesPage() {
             Manage user roles and their permission bundles
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2" data-help-key="admin.roles.actions">
           {roles.length === 0 && (
             <Button
               variant="outline"
               onClick={seedRoles}
               disabled={isSeeding}
+              data-help-key="admin.roles.seed"
             >
               {isSeeding ? (
                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -233,11 +234,11 @@ export default function RolesPage() {
               Seed Built-in Roles
             </Button>
           )}
-          <Button variant="outline" onClick={fetchRoles} disabled={isLoading}>
+          <Button variant="outline" onClick={fetchRoles} disabled={isLoading} data-help-key="admin.roles.refresh">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
-          <Button asChild>
+          <Button asChild data-help-key="admin.roles.create">
             <Link href="/admin/roles/new">
               <Plus className="h-4 w-4 mr-2" />
               Create Role
@@ -248,8 +249,8 @@ export default function RolesPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4" data-help-key="admin.roles.stats">
+          <Card data-help-key="admin.roles.stat.total">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Roles</CardTitle>
               <Shield className="h-4 w-4 text-muted-foreground" />
@@ -262,7 +263,7 @@ export default function RolesPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-help-key="admin.roles.stat.assignments">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Total Assignments
@@ -277,7 +278,7 @@ export default function RolesPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-help-key="admin.roles.stat.system">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">System Roles</CardTitle>
               <Lock className="h-4 w-4 text-muted-foreground" />
@@ -290,7 +291,7 @@ export default function RolesPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-help-key="admin.roles.stat.custom">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Custom Roles</CardTitle>
               <Key className="h-4 w-4 text-muted-foreground" />
@@ -306,8 +307,8 @@ export default function RolesPage() {
       )}
 
       {/* Search */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex items-center gap-4" data-help-key="admin.roles.filters">
+        <div className="relative flex-1 max-w-sm" data-help-key="admin.roles.search">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search roles..."
@@ -319,7 +320,7 @@ export default function RolesPage() {
       </div>
 
       {/* Roles List */}
-      <div className="space-y-4">
+      <div className="space-y-4" data-help-key="admin.roles.list">
         {filteredRoles.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
@@ -452,7 +453,7 @@ export default function RolesPage() {
       </AlertDialog>
 
       {/* Help Section */}
-      <Card>
+      <Card data-help-key="admin.roles.help-section">
         <CardHeader>
           <CardTitle className="text-lg">About Roles & Permissions</CardTitle>
         </CardHeader>

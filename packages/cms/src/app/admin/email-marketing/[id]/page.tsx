@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { ArrowLeft, Save, Send, Eye, Settings, Clock, Users, TestTube } from "lucide-react";
+import { ArrowLeft, Save, Send, Eye, Settings, Clock, Users, TestTube, Mail } from "lucide-react";
 import { Button } from '../../../../components/ui/button';
 import { Input } from '../../../../components/ui/input';
 import { Textarea } from '../../../../components/ui/textarea';
@@ -36,20 +36,15 @@ import { Switch } from '../../../../components/ui/switch';
 import { toast } from "sonner";
 import Link from "next/link";
 
-// Dynamically import Puck to avoid SSR issues
-const Puck = dynamic(
-  () => import("@measured/puck").then((mod) => mod.Puck),
-  { ssr: false }
-);
-
+// Dynamically import Render for email preview (Puck editor is in dedicated /design route)
 const Render = dynamic(
-  () => import("@measured/puck").then((mod) => mod.Render),
+  () => import("@puckeditor/core").then((mod) => mod.Render),
   { ssr: false }
 );
 
 // Import email Puck config
 import { emailPuckConfig } from '../../../../puck/email/config';
-import type { Data } from "@measured/puck";
+import type { Data } from "@puckeditor/core";
 
 interface EmailCampaign {
   id: string;
@@ -395,17 +390,40 @@ export default function EmailCampaignEditorPage() {
               <CardHeader>
                 <CardTitle>Email Design</CardTitle>
                 <CardDescription>
-                  Use the visual editor to design your email
+                  Use the visual editor to design your email with AI assistance
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-0">
-                <div className="min-h-[600px]">
-                  <Puck
-                    config={emailPuckConfig}
-                    data={campaign.content}
-                    onPublish={handlePuckPublish}
-                    headerTitle="Email Builder"
-                  />
+              <CardContent>
+                <div className="flex flex-col items-center justify-center py-12 space-y-6">
+                  {/* Preview of current design */}
+                  {campaign.content?.content?.length > 0 ? (
+                    <div className="w-full max-w-[600px] border rounded-lg overflow-hidden bg-white shadow-sm">
+                      <div className="p-2 bg-gray-50 border-b text-xs text-muted-foreground text-center">
+                        Current Design Preview
+                      </div>
+                      <div className="max-h-[300px] overflow-hidden relative">
+                        <Render config={emailPuckConfig} data={campaign.content} />
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white pointer-events-none" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="w-full max-w-[600px] border-2 border-dashed rounded-lg p-12 text-center bg-gray-50">
+                      <Mail className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">No design yet. Open the editor to create your email.</p>
+                    </div>
+                  )}
+
+                  <div className="text-center space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      Open the full-screen editor with AI assistance, component previews, and drag-and-drop
+                    </p>
+                    <Link href={`/admin/email-marketing/${campaignId}/design`}>
+                      <Button size="lg" className="gap-2">
+                        <Settings className="h-4 w-4" />
+                        Open Email Designer
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </CardContent>
             </Card>

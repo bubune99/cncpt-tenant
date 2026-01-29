@@ -68,12 +68,23 @@ Self-extending architecture with:
 - `Setting` - Runtime configuration (encrypted for sensitive values)
 - `AnalyticsEvent` - Event tracking
 
+### v0 Component Import System
+Converts v0.dev components to Puck editor components:
+- `src/lib/v0/` - Parser and converter utilities
+- `src/lib/v0-agent/` - Claude-powered intelligent conversion agent
+- `src/app/api/v0/` - Import and component management APIs
+- `src/puck/components/V0ImportDialog.tsx` - UI for importing components
+- `CustomComponent` model - Database storage for imported components
+
+**Future**: External agent package planned - see `docs/OPTION_B_EXTERNAL_V0_AGENT.md`
+
 ## Integrations
 - **Payments**: Stripe (products, checkout, webhooks)
 - **Shipping**: Shippo (rates, labels, tracking)
 - **Email**: SMTP, SendGrid, Resend, Mailgun, or AWS SES
 - **Storage**: S3, Cloudflare R2, or local
 - **AI**: OpenAI, Anthropic, Google AI for chat; Puck AI for visual editor
+- **v0.dev**: Component import and conversion (see v0 section above)
 
 ## Environment
 Required: `DATABASE_URL`, `NEXT_PUBLIC_APP_URL`, `ENCRYPTION_KEY`

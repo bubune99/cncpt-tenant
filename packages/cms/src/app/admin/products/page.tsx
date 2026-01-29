@@ -141,8 +141,8 @@ export default function ProductsPage() {
             Manage your product catalog and inventory
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchProducts} disabled={isLoading}>
+        <div className="flex gap-2" data-help-key="admin.products.actions">
+          <Button variant="outline" onClick={fetchProducts} disabled={isLoading} data-help-key="admin.products.refresh">
             {isLoading ? (
               <>
                 <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -155,7 +155,7 @@ export default function ProductsPage() {
               </>
             )}
           </Button>
-          <Button asChild>
+          <Button asChild data-help-key="admin.products.add">
             <Link href="/admin/products/new">
               <Plus className="mr-2 h-4 w-4" />
               Add Product
@@ -168,6 +168,7 @@ export default function ProductsPage() {
         defaultValue="all"
         className="mb-6"
         onValueChange={(value) => setActiveTab(value)}
+        data-help-key="admin.products.tabs"
       >
         <TabsList>
           <TabsTrigger value="all">All Products</TabsTrigger>
@@ -176,8 +177,8 @@ export default function ProductsPage() {
         </TabsList>
       </Tabs>
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-center mb-6">
-        <div className="relative flex-1">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center mb-6" data-help-key="admin.products.filters">
+        <div className="relative flex-1" data-help-key="admin.products.search">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search products..."
@@ -219,7 +220,7 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <Card>
+      <Card data-help-key="admin.products.table">
         <CardContent className="p-0">
           <Table>
             <TableHeader>

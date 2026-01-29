@@ -27,7 +27,7 @@ export { StatsBlock, statsBlockConfig, type StatsBlockProps } from './StatsBlock
 export { FAQBlock, faqBlockConfig, type FAQBlockProps } from './FAQBlock'
 
 // Combined config for all blocks
-import type { Config } from '@measured/puck'
+import type { Config } from '@puckeditor/core'
 import { heroBlockConfig } from './HeroBlock'
 import { featuresBlockConfig } from './FeaturesBlock'
 import { ctaBlockConfig } from './CTABlock'

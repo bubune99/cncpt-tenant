@@ -7,7 +7,7 @@
  * Provides components for orders, accounts, shipping, wishlist, and support.
  */
 
-import type { Config } from '@measured/puck';
+import type { Config } from '@puckeditor/core';
 import {
   OrderSummaryCard,
   OrderHistoryList,

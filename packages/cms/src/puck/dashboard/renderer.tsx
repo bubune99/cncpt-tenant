@@ -7,9 +7,9 @@
  * Uses the dashboard Puck config with data-aware components.
  */
 
-import { Render } from '@measured/puck';
+import { Render } from '@puckeditor/core';
 import { dashboardPuckConfig } from './config';
-import type { Data } from '@measured/puck';
+import type { Data } from '@puckeditor/core';
 
 export interface DashboardRendererProps {
   puckContent: Data;

@@ -10,12 +10,15 @@
 
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
-import type { Data } from '@measured/puck'
+import type { Data } from '@puckeditor/core'
 import { getRouteConfig } from '../lib/routes'
 import { getCustomComponent } from '../lib/routes/custom-components'
 import { PageWrapper, getPageLayoutSettings } from '../components/page-wrapper'
 import { PageRenderer } from '../components/page-wrapper/page-renderer'
 import { prisma } from '../lib/db'
+
+// Force dynamic rendering to avoid SSR issues with Puck components
+export const dynamic = 'force-dynamic'
 
 /**
  * Generate metadata for the root page

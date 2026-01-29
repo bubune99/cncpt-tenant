@@ -82,12 +82,11 @@ export interface StorageSettings {
   allowedFileTypes: string[]
 }
 
-// AI settings
+// AI settings (Vercel AI Gateway)
 export interface AiSettings {
   enabled: boolean
-  provider: 'openai' | 'anthropic' | 'google'
-  apiKey?: string
-  model: string
+  provider: 'gateway' // Uses Vercel AI Gateway
+  enabledModels: string[] // Models available in chat UI (e.g., ['anthropic/claude-sonnet-4.5'])
   maxTokens: number
   temperature: number
 }
@@ -158,9 +157,9 @@ export const DEFAULT_STORAGE_SETTINGS: StorageSettings = {
 }
 
 export const DEFAULT_AI_SETTINGS: AiSettings = {
-  enabled: false,
-  provider: 'openai',
-  model: 'gpt-4o',
+  enabled: true,
+  provider: 'gateway',
+  enabledModels: ['anthropic/claude-sonnet-4.5', 'anthropic/claude-haiku-4.5'],
   maxTokens: 4096,
   temperature: 0.7,
 }
@@ -208,10 +207,8 @@ export const REQUIRED_ENV_VARS: EnvVarStatus[] = [
   { name: 'S3_SECRET_ACCESS_KEY', configured: false, required: false, group: 'storage', description: 'S3 secret access key' },
   { name: 'S3_ENDPOINT', configured: false, required: false, group: 'storage', description: 'S3-compatible endpoint (for R2)' },
 
-  // AI
-  { name: 'OPENAI_API_KEY', configured: false, required: false, group: 'ai', description: 'OpenAI API key' },
-  { name: 'ANTHROPIC_API_KEY', configured: false, required: false, group: 'ai', description: 'Anthropic API key' },
-  { name: 'GOOGLE_AI_API_KEY', configured: false, required: false, group: 'ai', description: 'Google AI API key' },
+  // AI (Anthropic/Claude)
+  { name: 'ANTHROPIC_API_KEY', configured: false, required: true, group: 'ai', description: 'Anthropic API key for Claude Sonnet/Haiku' },
 
   // Email
   { name: 'SMTP_HOST', configured: false, required: false, group: 'email', description: 'SMTP server host' },

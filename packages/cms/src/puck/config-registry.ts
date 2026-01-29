@@ -5,7 +5,7 @@
  * Used for template compatibility checking and config discovery.
  */
 
-import type { Config } from '@measured/puck'
+import type { Config } from '@puckeditor/core'
 import { pagesPuckConfig } from './pages/config'
 import { withBlocks, blocksComponents, blocksCategories } from './blocks'
 

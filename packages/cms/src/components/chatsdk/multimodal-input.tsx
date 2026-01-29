@@ -40,6 +40,8 @@ import {
   CpuIcon,
   PaperclipIcon,
   StopIcon,
+  ClockIcon,
+  XIcon,
 } from "./icons";
 import { PreviewAttachment } from "./preview-attachment";
 import { SuggestedActions } from "./suggested-actions";
@@ -129,6 +131,67 @@ function PureMultimodalInput({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadQueue, setUploadQueue] = useState<string[]>([]);
+
+  // Queued message state for when user submits while AI is streaming
+  const [queuedMessage, setQueuedMessage] = useState<{
+    text: string;
+    attachments: Attachment[];
+  } | null>(null);
+
+  // Process queued message when status becomes ready
+  useEffect(() => {
+    if (status === "ready" && queuedMessage) {
+      // Send the queued message
+      sendMessage({
+        role: "user",
+        parts: [
+          ...queuedMessage.attachments.map((attachment) => ({
+            type: "file" as const,
+            url: attachment.url,
+            name: attachment.name,
+            mediaType: attachment.contentType,
+          })),
+          {
+            type: "text",
+            text: queuedMessage.text,
+          },
+        ],
+      });
+
+      // Clear the queue
+      setQueuedMessage(null);
+      toast.success("Queued message sent!");
+    }
+  }, [status, queuedMessage, sendMessage]);
+
+  // Queue a message for later sending
+  const queueMessage = useCallback(() => {
+    if (!input.trim() && attachments.length === 0) return;
+
+    setQueuedMessage({
+      text: input,
+      attachments: [...attachments],
+    });
+
+    // Clear current input
+    setAttachments([]);
+    setLocalStorageInput("");
+    resetHeight();
+    setInput("");
+
+    toast.success("Message queued - will send when AI finishes");
+  }, [input, attachments, setAttachments, setLocalStorageInput, resetHeight, setInput]);
+
+  // Cancel queued message
+  const cancelQueuedMessage = useCallback(() => {
+    if (queuedMessage) {
+      // Restore the queued message to the input
+      setInput(queuedMessage.text);
+      setAttachments(queuedMessage.attachments);
+      setQueuedMessage(null);
+      toast.info("Queued message cancelled");
+    }
+  }, [queuedMessage, setInput, setAttachments]);
 
   const submitForm = useCallback(() => {
     window.history.replaceState({}, "", `/chat/${chatId}`);
@@ -250,12 +313,33 @@ function PureMultimodalInput({
         type="file"
       />
 
+      {/* Queued message indicator */}
+      {queuedMessage && (
+        <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm dark:border-amber-800 dark:bg-amber-950/30">
+          <ClockIcon size={14} className="text-amber-600 dark:text-amber-400" />
+          <span className="flex-1 truncate text-amber-700 dark:text-amber-300">
+            Queued: {queuedMessage.text.slice(0, 50)}{queuedMessage.text.length > 50 ? "..." : ""}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0 text-amber-600 hover:bg-amber-100 hover:text-amber-700 dark:text-amber-400 dark:hover:bg-amber-900/50"
+            onClick={cancelQueuedMessage}
+          >
+            <XIcon size={14} />
+          </Button>
+        </div>
+      )}
+
       <PromptInput
         className="rounded-xl border border-border bg-background p-3 shadow-xs transition-all duration-200 focus-within:border-border hover:border-muted-foreground/50"
         onSubmit={(event) => {
           event.preventDefault();
           if (status !== "ready") {
-            toast.error("Please wait for the model to finish its response!");
+            // Queue the message instead of showing an error
+            if (input.trim() || attachments.length > 0) {
+              queueMessage();
+            }
           } else {
             submitForm();
           }
@@ -324,7 +408,7 @@ function PureMultimodalInput({
             />
           </PromptInputTools>
 
-          {status === "submitted" ? (
+          {status === "submitted" || status === "streaming" ? (
             <StopButton setMessages={setMessages} stop={stop} />
           ) : (
             <PromptInputSubmit
@@ -357,9 +441,7 @@ export const MultimodalInput = memo(
     if (prevProps.selectedVisibilityType !== nextProps.selectedVisibilityType) {
       return false;
     }
-    if (prevProps.selectedModelId !== nextProps.selectedModelId) {
-      return false;
-    }
+    // selectedModelId comparison removed - model is now from settings only
 
     return true;
   }

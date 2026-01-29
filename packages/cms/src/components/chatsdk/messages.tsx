@@ -21,6 +21,7 @@ type MessagesProps = {
   isReadonly: boolean;
   isArtifactVisible: boolean;
   selectedModelId: string;
+  addToolApprovalResponse?: UseChatHelpers<ChatMessage>["addToolApprovalResponse"];
 };
 
 function PureMessages({
@@ -32,6 +33,7 @@ function PureMessages({
   regenerate,
   isReadonly,
   selectedModelId,
+  addToolApprovalResponse,
 }: MessagesProps) {
   const {
     containerRef: messagesContainerRef,
@@ -61,16 +63,17 @@ function PureMessages({
 
   return (
     <div
-      className="overscroll-behavior-contain -webkit-overflow-scrolling-touch flex-1 touch-pan-y overflow-y-scroll"
+      className="flex-1 min-h-0 overflow-y-auto"
       ref={messagesContainerRef}
       style={{ overflowAnchor: "none" }}
     >
-      <Conversation className="mx-auto flex min-w-0 max-w-4xl flex-col gap-4 md:gap-6">
-        <ConversationContent className="flex flex-col gap-4 px-2 py-4 md:gap-6 md:px-4" data-testid="message-list">
+      <Conversation className="flex min-w-0 w-full flex-col gap-4 md:gap-6">
+        <ConversationContent className="flex flex-col gap-4 px-4 py-4 md:gap-6" data-testid="message-list">
           {messages.length === 0 && <Greeting />}
 
           {messages.map((message, index) => (
             <PreviewMessage
+              addToolApprovalResponse={addToolApprovalResponse}
               chatId={chatId}
               isLoading={
                 status === "streaming" && messages.length - 1 === index
@@ -137,6 +140,7 @@ export const Messages = memo(PureMessages, (prevProps, nextProps) => {
   if (!equal(prevProps.votes, nextProps.votes)) {
     return false;
   }
+  // addToolApprovalResponse is a stable function reference, no need to compare
 
   return false;
 });

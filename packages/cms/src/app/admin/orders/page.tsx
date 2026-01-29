@@ -266,8 +266,8 @@ export default function OrdersPage() {
             Manage and track customer orders
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchOrders} disabled={isLoading}>
+        <div className="flex gap-2" data-help-key="admin.orders.actions">
+          <Button variant="outline" onClick={fetchOrders} disabled={isLoading} data-help-key="admin.orders.refresh">
             {isLoading ? (
               <>
                 <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -280,11 +280,11 @@ export default function OrdersPage() {
               </>
             )}
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" data-help-key="admin.orders.export">
             <Download className="mr-2 h-4 w-4" />
             Export
           </Button>
-          <Button asChild>
+          <Button asChild data-help-key="admin.orders.new">
             <Link href="/admin/orders/new">
               <Plus className="mr-2 h-4 w-4" />
               New Order
@@ -294,7 +294,7 @@ export default function OrdersPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 mb-8">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 mb-8" data-help-key="admin.orders.stats">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
@@ -346,6 +346,7 @@ export default function OrdersPage() {
         defaultValue="all"
         className="mb-6"
         onValueChange={(value) => setActiveTab(value)}
+        data-help-key="admin.orders.tabs"
       >
         <TabsList>
           <TabsTrigger value="all">All Orders</TabsTrigger>
@@ -356,8 +357,8 @@ export default function OrdersPage() {
         </TabsList>
       </Tabs>
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-center mb-6">
-        <div className="relative flex-1">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center mb-6" data-help-key="admin.orders.filters">
+        <div className="relative flex-1" data-help-key="admin.orders.search">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search orders by number, customer..."
@@ -402,7 +403,7 @@ export default function OrdersPage() {
       </div>
 
       {selectedOrders.length > 0 && (
-        <div className="mb-4 p-4 bg-muted rounded-lg flex items-center justify-between">
+        <div className="mb-4 p-4 bg-muted rounded-lg flex items-center justify-between" data-help-key="admin.orders.bulk-actions">
           <span className="text-sm font-medium">{selectedOrders.length} order(s) selected</span>
           <div className="flex gap-2">
             <Button variant="outline" size="sm">
@@ -417,7 +418,7 @@ export default function OrdersPage() {
         </div>
       )}
 
-      <Card>
+      <Card data-help-key="admin.orders.table">
         <CardContent className="p-0">
           <Table>
             <TableHeader>

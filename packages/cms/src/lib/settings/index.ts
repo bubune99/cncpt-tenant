@@ -197,22 +197,7 @@ export async function getStorageSettings(): Promise<StorageSettings> {
 
 export async function getAiSettings(): Promise<AiSettings> {
   const settings = await getSettings('ai', DEFAULT_AI_SETTINGS)
-
-  // Fallback to environment variables
-  if (!settings.apiKey) {
-    switch (settings.provider) {
-      case 'openai':
-        settings.apiKey = process.env.OPENAI_API_KEY
-        break
-      case 'anthropic':
-        settings.apiKey = process.env.ANTHROPIC_API_KEY
-        break
-      case 'google':
-        settings.apiKey = process.env.GOOGLE_AI_API_KEY
-        break
-    }
-  }
-
+  // Uses Vercel AI Gateway - no API key handling needed
   return settings
 }
 
@@ -267,10 +252,7 @@ export async function getAllSettings(): Promise<{
       ...storage,
       secretAccessKey: storage.secretAccessKey ? '********' : undefined,
     },
-    ai: {
-      ...ai,
-      apiKey: ai.apiKey ? '********' : undefined,
-    },
+    ai,
     security,
     envVars: getEnvVarStatus(),
   }

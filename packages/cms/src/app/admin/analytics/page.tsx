@@ -259,7 +259,7 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8" data-help-key="admin.analytics.dashboard">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
@@ -267,9 +267,9 @@ export default function AnalyticsPage() {
             Track your store performance and customer insights
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2" data-help-key="admin.analytics.actions">
           <Select value={dateRange} onValueChange={setDateRange}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[180px]" data-help-key="admin.analytics.date-range">
               <Calendar className="mr-2 h-4 w-4" />
               <SelectValue />
             </SelectTrigger>
@@ -281,14 +281,14 @@ export default function AnalyticsPage() {
               <SelectItem value="12m">Last 12 months</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" onClick={fetchAnalytics} disabled={isLoading}>
+          <Button variant="outline" onClick={fetchAnalytics} disabled={isLoading} data-help-key="admin.analytics.refresh">
             {isLoading ? (
               <RefreshCw className="h-4 w-4 animate-spin" />
             ) : (
               <RefreshCw className="h-4 w-4" />
             )}
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" data-help-key="admin.analytics.export">
             <Download className="mr-2 h-4 w-4" />
             Export
           </Button>
@@ -296,8 +296,8 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Overview Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 mb-8">
-        <Card>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 mb-8" data-help-key="admin.analytics.stats">
+        <Card data-help-key="admin.analytics.stat.revenue">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Revenue</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -315,7 +315,7 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-help-key="admin.analytics.stat.orders">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Orders</CardTitle>
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
@@ -333,7 +333,7 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-help-key="admin.analytics.stat.customers">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Customers</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -351,7 +351,7 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-help-key="admin.analytics.stat.avg-order">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Avg. Order</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
@@ -369,7 +369,7 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-help-key="admin.analytics.stat.conversion">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Conversion</CardTitle>
             <MousePointerClick className="h-4 w-4 text-muted-foreground" />
@@ -387,7 +387,7 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-help-key="admin.analytics.stat.pageviews">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Page Views</CardTitle>
             <Eye className="h-4 w-4 text-muted-foreground" />
@@ -407,17 +407,17 @@ export default function AnalyticsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList>
+        <TabsList data-help-key="admin.analytics.tabs">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="products">Products</TabsTrigger>
           <TabsTrigger value="traffic">Traffic</TabsTrigger>
           <TabsTrigger value="customers">Customers</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent value="overview" className="space-y-6" data-help-key="admin.analytics.overview">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {/* Sales by Channel */}
-            <Card>
+            <Card data-help-key="admin.analytics.sales-channel">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <PieChart className="h-5 w-5" />
@@ -442,7 +442,7 @@ export default function AnalyticsPage() {
             </Card>
 
             {/* Traffic Sources */}
-            <Card>
+            <Card data-help-key="admin.analytics.traffic-sources">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
@@ -467,7 +467,7 @@ export default function AnalyticsPage() {
             </Card>
 
             {/* Recent Activity */}
-            <Card>
+            <Card data-help-key="admin.analytics.recent-activity">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <LineChart className="h-5 w-5" />
@@ -500,7 +500,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Revenue Chart Placeholder */}
-          <Card>
+          <Card data-help-key="admin.analytics.revenue-chart">
             <CardHeader>
               <CardTitle>Revenue Over Time</CardTitle>
               <CardDescription>
@@ -519,8 +519,8 @@ export default function AnalyticsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="products" className="space-y-6">
-          <Card>
+        <TabsContent value="products" className="space-y-6" data-help-key="admin.analytics.products-tab">
+          <Card data-help-key="admin.analytics.top-products">
             <CardHeader>
               <CardTitle>Top Selling Products</CardTitle>
               <CardDescription>
@@ -568,7 +568,7 @@ export default function AnalyticsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="traffic" className="space-y-6">
+        <TabsContent value="traffic" className="space-y-6" data-help-key="admin.analytics.traffic-tab">
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
@@ -610,7 +610,7 @@ export default function AnalyticsPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="customers" className="space-y-6">
+        <TabsContent value="customers" className="space-y-6" data-help-key="admin.analytics.customers-tab">
           <div className="grid gap-6 md:grid-cols-3">
             <Card>
               <CardHeader>
@@ -669,7 +669,7 @@ export default function AnalyticsPage() {
       </Tabs>
 
       {/* Analytics Integrations */}
-      <Card className="mt-8">
+      <Card className="mt-8" data-help-key="admin.analytics.integrations">
         <CardHeader>
           <CardTitle>Analytics Integrations</CardTitle>
           <CardDescription>

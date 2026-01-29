@@ -1,8 +1,16 @@
 "use client"
 
-import { Render } from "@measured/puck"
-import "@measured/puck/puck.css"
-import { puckConfig, initialData } from "@/lib/puck-config"
+import { Render } from "@puckeditor/core"
+import "@puckeditor/core/puck.css"
+import puckConfig from "@/puck/config"
+import type { Data } from "@puckeditor/core"
+
+const initialData: Data = {
+  content: [],
+  root: {
+    props: {},
+  },
+}
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"

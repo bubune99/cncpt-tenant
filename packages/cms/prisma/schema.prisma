@@ -1120,6 +1120,7 @@ model Page {
   children      Page[]       @relation("PageHierarchy")
   featuredImage Media?       @relation(fields: [featuredImageId], references: [id])
   routeConfig   RouteConfig? // If this page is mapped to a root-level route
+  bundles       PageBundle[] // Bundles that created this page
 
   @@index([slug])
   @@index([status])
@@ -3450,4 +3451,302 @@ model SiteSettings {
   updatedAt DateTime @updatedAt
 
   @@map("site_settings")
+}
+
+// =============================================================================
+// PAGE BUNDLES - Track imported .puckbundle files
+// =============================================================================
+
+model PageBundle {
+  id           String       @id @default(cuid())
+  pageId       String?      // Reference to the created page (null if import failed)
+  name         String       // Bundle name from manifest
+  version      String       // Bundle version
+  manifestHash String?      // SHA-256 hash of manifest for integrity
+  status       BundleStatus @default(ACTIVE)
+
+  // Metadata from manifest
+  description  String?
+  category     String?
+  tags         String[]     // Array of tags
+  author       String?
+
+  // Import tracking
+  importedAt   DateTime     @default(now())
+  importedBy   String?      // User ID who imported
+
+  // Original manifest stored for reference
+  manifest     Json?
+
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  // Relations
+  page         Page?        @relation(fields: [pageId], references: [id], onDelete: SetNull)
+  assets       BundleAsset[]
+  animations   CustomAnimation[]
+
+  @@index([pageId])
+  @@index([status])
+  @@index([category])
+  @@map("page_bundles")
+}
+
+enum BundleStatus {
+  PENDING    // Import in progress
+  ACTIVE     // Successfully imported and in use
+  FAILED     // Import failed
+  ARCHIVED   // Archived/disabled
+}
+
+// Track bundle assets after import
+model BundleAsset {
+  id           String            @id @default(cuid())
+  bundleId     String
+
+  // Original asset info from bundle
+  originalPath String            // Path in bundle zip (e.g., "assets/images/hero.jpg")
+  placeholderId String?          // Placeholder ID used in page content (e.g., "hero-image")
+  mimeType     String
+  originalSize Int               // Size in bytes
+  originalHash String?           // SHA-256 hash from manifest
+
+  // Storage info after upload
+  storageUrl   String?           // New public URL after upload
+  storageKey   String?           // Storage provider key
+  storageProvider String?        // Which provider was used (s3, r2, local, etc.)
+
+  // Status
+  status       AssetUploadStatus @default(PENDING)
+  errorMessage String?           // Error message if upload failed
+
+  createdAt    DateTime          @default(now())
+  uploadedAt   DateTime?
+
+  // Relations
+  bundle       PageBundle        @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+
+  @@index([bundleId])
+  @@index([status])
+  @@map("bundle_assets")
+}
+
+enum AssetUploadStatus {
+  PENDING    // Not yet uploaded
+  UPLOADING  // Currently uploading
+  COMPLETED  // Successfully uploaded
+  FAILED     // Upload failed
+  SKIPPED    // Skipped (e.g., asset already exists)
+}
+
+// Store custom animations (global or per-bundle)
+model CustomAnimation {
+  id          String        @id @default(cuid())
+  bundleId    String?       // Null for global animations
+
+  name        String        // Display name
+  type        AnimationType // keyframe, lottie, sequence
+
+  // Animation definition
+  definition  Json          // Full animation config/data
+
+  // For Lottie animations
+  lottieData  Json?         // Lottie JSON data
+  lottiePath  String?       // Path to Lottie file (if stored externally)
+
+  // Metadata
+  isGlobal    Boolean       @default(false) // Available to all pages
+  description String?
+  tags        String[]
+
+  // Dimensions (for Lottie)
+  width       Int?
+  height      Int?
+  duration    Float?        // Duration in seconds
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  bundle      PageBundle?   @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+
+  @@index([bundleId])
+  @@index([type])
+  @@index([isGlobal])
+  @@map("custom_animations")
+}
+
+enum AnimationType {
+  KEYFRAME   // CSS keyframe animation
+  LOTTIE     // Lottie animation
+  SEQUENCE   // Timeline sequence
+  PRESET     // Predefined animation preset
+}
+
+// =============================================================================
+// CUSTOM COMPONENTS (v0 imports and user-defined components)
+// =============================================================================
+
+model CustomComponent {
+  id          String              @id @default(cuid())
+
+  // Component identity
+  name        String              @unique // PascalCase component name
+  displayName String              // Human-readable name
+  description String?             @db.Text
+
+  // Organization
+  category    String              @default("Custom") // Category for grouping
+  tags        String[]            // Tags for filtering
+
+  // Source code
+  sourceCode  String              @db.Text // Original React/TSX code
+  sourceUrl   String?             // Original v0.dev URL if imported
+
+  // Puck configuration (stored as JSON)
+  puckConfig  Json                // Complete PuckComponentConfig
+
+  // Status and versioning
+  version     Int                 @default(1)
+  status      ComponentStatus     @default(DRAFT)
+  isPublished Boolean             @default(false)
+
+  // Metadata
+  language    String              @default("typescript") // typescript or javascript
+  dependencies String[]           // npm dependencies needed
+  complexity  String              @default("simple") // simple, moderate, complex
+
+  // Audit
+  createdBy   String?             // User ID
+  updatedBy   String?             // User ID
+
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([category])
+  @@index([status])
+  @@index([isPublished])
+  @@map("custom_components")
+}
+
+enum ComponentStatus {
+  DRAFT      // Not ready for use
+  ACTIVE     // Ready to use
+  DEPRECATED // Marked for removal
+  ARCHIVED   // Hidden from component list
+}
+
+// =============================================================================
+// HELP SYSTEM (Help Mode & Walkthroughs)
+// =============================================================================
+
+// Help content for individual UI elements
+model HelpContent {
+  id          String   @id @default(cuid())
+
+  // Element identification
+  elementKey  String   // Unique key for the UI element (e.g., "admin.sidebar.products")
+
+  // Content
+  title       String   // Short title for the element
+  summary     String   @db.Text // Quick one-liner description
+  details     String?  @db.Text // Fuller explanation (markdown supported)
+
+  // Media (optional)
+  mediaUrl    String?  // URL to video/image
+  mediaType   HelpMediaType?
+
+  // Related content
+  relatedKeys String[] // Related elementKeys for cross-referencing
+  tourId      String?  // Optional linked walkthrough tour
+
+  // Multi-tenant support
+  storeId     String?  // NULL = global default, otherwise store-specific override
+
+  // Source tracking
+  createdBy   HelpContentSource @default(MANUAL)
+  authorId    String?  // User ID if manually created
+
+  // Lifecycle management
+  status      HelpContentStatus @default(ACTIVE)
+  lastVerifiedAt DateTime?      // When content was last confirmed to be relevant
+  orphanedAt     DateTime?      // When the source element was detected as removed
+  archiveReason  String?        // Reason for archival (if archived)
+
+  // Dynamic entity linking (for help on specific records)
+  entityType  String?  // e.g., "Product", "Order", "Page"
+  entityId    String?  // ID of the linked entity
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  tour        HelpTour? @relation(fields: [tourId], references: [id], onDelete: SetNull)
+
+  @@unique([elementKey, storeId]) // One entry per element per store (or global)
+  @@index([elementKey])
+  @@index([storeId])
+  @@index([status])
+  @@index([entityType, entityId])
+  @@map("help_content")
+}
+
+enum HelpMediaType {
+  VIDEO
+  IMAGE
+  LOTTIE
+}
+
+enum HelpContentSource {
+  SYSTEM  // Default content shipped with app
+  MANUAL  // Created by admin/store owner
+  AI      // Generated by AI
+}
+
+enum HelpContentStatus {
+  ACTIVE    // Currently in use
+  DRAFT     // Being edited, not shown to users
+  ORPHANED  // Source element no longer exists, pending review
+  ARCHIVED  // Intentionally removed, kept for history
+  DELETED   // Soft deleted, can be purged
+}
+
+// Walkthrough tours (Joyride integration)
+model HelpTour {
+  id          String   @id @default(cuid())
+
+  // Tour identification
+  slug        String   @unique // URL-friendly identifier
+  title       String   // Display name
+  description String?  @db.Text // What this tour covers
+
+  // Tour configuration
+  steps       Json     // Array of Joyride step configurations
+  options     Json?    // Joyride options (continuous, scrollToFirstStep, etc.)
+
+  // Targeting
+  route       String?  // Optional: only show on specific route pattern
+  roles       String[] // Optional: restrict to specific user roles
+
+  // Multi-tenant support
+  storeId     String?  // NULL = global, otherwise store-specific
+
+  // Status
+  isActive    Boolean  @default(true)
+  priority    Int      @default(0) // For ordering when multiple tours available
+
+  // Metrics
+  timesStarted   Int   @default(0)
+  timesCompleted Int   @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  helpContent HelpContent[]
+
+  @@index([slug])
+  @@index([storeId])
+  @@index([isActive])
+  @@map("help_tours")
 }

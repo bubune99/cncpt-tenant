@@ -9,8 +9,8 @@
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Puck, type Data } from '@measured/puck';
-import '@measured/puck/puck.css';
+import { Puck, type Data } from '@puckeditor/core';
+import '@puckeditor/core/puck.css';
 import { ArrowLeft, Save, Eye, Layout, Settings, Monitor } from 'lucide-react';
 import { pluginUIPuckConfig, type PluginUIComponents } from '../../../../../puck/plugin';
 

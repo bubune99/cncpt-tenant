@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AnimationConfig, defaultAnimationConfig } from "../animations/types";
-import { entrancePresets, attentionPresets } from "../animations/presets";
+import { entrancePresets, attentionPresets, staggerPresets } from "../animations/presets";
 
 interface AnimationFieldProps {
   value: Partial<AnimationConfig>;
