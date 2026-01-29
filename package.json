@@ -9,6 +9,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@ai-sdk/gateway": "^3.0.27",
     "@cncpt/cms": "workspace:*",
     "@hookform/resolvers": "^3.10.0",
     "@neondatabase/serverless": "latest",
@@ -46,6 +47,7 @@
     "@vercel/edge-config": "^1.4.3",
     "@vercel/sdk": "^1.18.8",
     "@vercel/speed-insights": "latest",
+    "ai": "^6.0.6",
     "autoprefixer": "^10.4.20",
     "axios": "^1.7.0",
     "bcryptjs": "latest",
@@ -54,6 +56,7 @@
     "cmdk": "1.0.4",
     "date-fns": "4.1.0",
     "embla-carousel-react": "8.5.1",
+    "framer-motion": "^12.23.26",
     "frimousse": "latest",
     "geist": "^1.3.1",
     "input-otp": "1.4.1",
@@ -76,7 +79,8 @@
     "vaul": "^0.9.9",
     "vue": "latest",
     "vue-router": "latest",
-    "zod": "3.25.67"
+    "zod": "3.25.67",
+    "zustand": "^5.0.9"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.9",

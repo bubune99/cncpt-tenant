@@ -3,6 +3,7 @@
 import { AdminShell } from "@cncpt/cms/admin"
 import type { AdminShellConfig } from "@cncpt/cms/admin"
 import { rootDomain, protocol } from "@/lib/utils"
+import { AccessProvider } from "./access-context"
 
 // Role-based navigation configuration
 const STORE_MANAGER_HIDDEN_GROUPS = ['System']
@@ -11,27 +12,41 @@ const STORE_MANAGER_HIDDEN_ITEMS = ['Order Workflows', 'Plugins', 'Workflows']
 interface CMSAdminShellProps {
   children: React.ReactNode
   subdomain: string
-  userRole?: 'owner' | 'manager'
+  accessType: "owner" | "team" | null
+  accessLevel: "view" | "edit" | "admin"
 }
 
 export function CMSAdminShell({
   children,
   subdomain,
-  userRole = 'owner',
+  accessType,
+  accessLevel,
 }: CMSAdminShellProps) {
   // Build the site URL for "View Site" link
   const siteUrl = `${protocol}://${subdomain}.${rootDomain}`
 
-  // Configure AdminShell based on subdomain and role
+  // Determine user role label based on access type and level
+  const isOwner = accessType === "owner"
+  const isTeamAdmin = accessType === "team" && accessLevel === "admin"
+  const userRoleLabel = isOwner ? "Site Owner" : isTeamAdmin ? "Team Admin" : "Store Manager"
+
+  // Team members with non-admin access have restricted UI
+  const hasRestrictedAccess = accessType === "team" && accessLevel !== "admin"
+
+  // Configure AdminShell based on subdomain and access
   const config: AdminShellConfig = {
     basePath: `/cms/${subdomain}`,
     siteUrl,
     siteName: subdomain,
-    userRole: userRole === 'owner' ? 'Site Owner' : 'Store Manager',
-    hiddenGroups: userRole === 'manager' ? STORE_MANAGER_HIDDEN_GROUPS : [],
-    hiddenItems: userRole === 'manager' ? STORE_MANAGER_HIDDEN_ITEMS : [],
+    userRole: userRoleLabel,
+    hiddenGroups: hasRestrictedAccess ? STORE_MANAGER_HIDDEN_GROUPS : [],
+    hiddenItems: hasRestrictedAccess ? STORE_MANAGER_HIDDEN_ITEMS : [],
     showChat: true,
   }
 
-  return <AdminShell config={config}>{children}</AdminShell>
+  return (
+    <AccessProvider value={{ subdomain, accessType, accessLevel }}>
+      <AdminShell config={config}>{children}</AdminShell>
+    </AccessProvider>
+  )
 }

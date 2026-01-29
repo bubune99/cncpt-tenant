@@ -6,6 +6,7 @@ import { DashboardSidebar } from "./dashboard-sidebar"
 import { DashboardContent } from "./dashboard-content"
 import { useUser } from "@stackframe/stack"
 import { HelpProvider } from "@/components/help-system"
+import { DashboardChat } from "@/components/dashboard-chat"
 
 export const dynamic = "force-dynamic"
 
@@ -190,6 +191,7 @@ export default function DashboardPage({ user: initialUser, subdomains: initialSu
           activeSection={activeSection}
           selectedSubdomain={selectedSubdomain}
         />
+        <DashboardChat />
       </div>
     </HelpProvider>
   )

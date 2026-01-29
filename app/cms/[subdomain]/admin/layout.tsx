@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { stackServerApp } from "@/stack"
+import { canAccessSubdomain } from "@/lib/team-auth"
 import { CMSAdminShell } from "./cms-admin-shell"
 
 export default async function CMSAdminLayout({
@@ -7,21 +8,28 @@ export default async function CMSAdminLayout({
   params,
 }: {
   children: React.ReactNode
-  params: { subdomain: string }
+  params: Promise<{ subdomain: string }>
 }) {
-  // Server-side auth check
+  const { subdomain } = await params
   const user = await stackServerApp.getUser()
 
   if (!user) {
-    redirect(`/login?redirect=/cms/${params.subdomain}/admin`)
+    redirect(`/login?redirect=/cms/${subdomain}/admin`)
   }
 
-  // TODO: Verify user has permission for this subdomain
-  // - Site owner: full access
-  // - Store manager: invited access only
+  // Verify subdomain access - requires "edit" level for CMS admin
+  const access = await canAccessSubdomain(user.id, subdomain, "edit")
+
+  if (!access.hasAccess) {
+    redirect("/dashboard/teams?error=no-subdomain-access")
+  }
 
   return (
-    <CMSAdminShell subdomain={params.subdomain}>
+    <CMSAdminShell
+      subdomain={subdomain}
+      accessType={access.accessType}
+      accessLevel={access.accessLevel || "admin"}
+    >
       {children}
     </CMSAdminShell>
   )
