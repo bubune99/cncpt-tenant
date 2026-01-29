@@ -62,7 +62,7 @@
   "scripts": {
     "postinstall": "prisma generate",
     "dev": "next dev",
-    "build:next": "prisma db push && next build",
+    "build:next": "prisma db push --accept-data-loss && next build",
     "build:lib": "tsup",
     "build": "npm run build:next",
     "start": "next start",
