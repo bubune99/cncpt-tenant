@@ -152,16 +152,16 @@ export default function WorkflowsPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8" data-help-key="admin.workflows.page">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8" data-help-key="admin.workflows.header">
         <div>
           <h1 className="text-2xl font-bold">Workflows</h1>
           <p className="text-muted-foreground mt-1">
             Create and manage automated workflows using visual builder
           </p>
         </div>
-        <Link href="/admin/workflows/new">
+        <Link href="/admin/workflows/new" data-help-key="admin.workflows.new">
           <Button>
             <Plus className="h-4 w-4 mr-2" />
             New Workflow
@@ -170,14 +170,14 @@ export default function WorkflowsPage() {
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700" data-help-key="admin.workflows.error">
           {error}
         </div>
       )}
 
       {/* Workflows List */}
       {workflows.length === 0 ? (
-        <div className="border border-dashed rounded-lg p-12 text-center">
+        <div className="border border-dashed rounded-lg p-12 text-center" data-help-key="admin.workflows.empty">
           <GitBranch className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-lg font-medium mb-2">No workflows yet</h3>
           <p className="text-muted-foreground mb-4">
@@ -191,7 +191,7 @@ export default function WorkflowsPage() {
           </Link>
         </div>
       ) : (
-        <div className="bg-card border rounded-lg overflow-hidden">
+        <div className="bg-card border rounded-lg overflow-hidden" data-help-key="admin.workflows.table">
           <table className="w-full">
             <thead className="bg-muted/50">
               <tr>

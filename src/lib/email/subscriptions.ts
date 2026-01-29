@@ -362,8 +362,8 @@ export async function updateSubscriberPreferences(
  * Send confirmation email for double opt-in
  */
 async function sendConfirmationEmail(email: string, token: string): Promise<void> {
-  // Import dynamically to avoid circular dependency
-  const { sendEmail } = await import('./index')
+  // Import from core to avoid circular dependency
+  const { sendEmail } = await import('./core')
 
   const confirmUrl = `${APP_URL}/api/email/confirm?token=${token}`
 

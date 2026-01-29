@@ -7,7 +7,7 @@
  */
 
 import React, { ReactNode } from 'react'
-import type { ComponentConfig } from '@measured/puck'
+import type { ComponentConfig } from '@puckeditor/core'
 import { Card, CardContent } from '../../components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar'
 import { cn } from '../../lib/utils'

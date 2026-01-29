@@ -169,7 +169,7 @@ export default function BlogPostsPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8" data-help-key="admin.blog.page">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Blog Posts</h1>
@@ -177,14 +177,14 @@ export default function BlogPostsPage() {
             Create and manage your blog content
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" asChild>
+        <div className="flex gap-2" data-help-key="admin.blog.actions">
+          <Button variant="outline" asChild data-help-key="admin.blog.categories">
             <Link href="/admin/blog/categories">Categories</Link>
           </Button>
-          <Button variant="outline" asChild>
+          <Button variant="outline" asChild data-help-key="admin.blog.tags">
             <Link href="/admin/blog/tags">Tags</Link>
           </Button>
-          <Button variant="outline" onClick={fetchPosts} disabled={isLoading}>
+          <Button variant="outline" onClick={fetchPosts} disabled={isLoading} data-help-key="admin.blog.refresh">
             {isLoading ? (
               <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
             ) : (
@@ -192,7 +192,7 @@ export default function BlogPostsPage() {
             )}
             Refresh
           </Button>
-          <Button asChild>
+          <Button asChild data-help-key="admin.blog.new">
             <Link href="/admin/blog/new">
               <Plus className="mr-2 h-4 w-4" />
               New Post
@@ -206,7 +206,7 @@ export default function BlogPostsPage() {
         className="mb-6"
         onValueChange={(value) => setActiveTab(value)}
       >
-        <TabsList>
+        <TabsList data-help-key="admin.blog.tabs">
           <TabsTrigger value="all">
             All Posts ({total})
           </TabsTrigger>
@@ -216,8 +216,8 @@ export default function BlogPostsPage() {
         </TabsList>
       </Tabs>
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-center mb-6">
-        <div className="relative flex-1">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center mb-6" data-help-key="admin.blog.filters">
+        <div className="relative flex-1" data-help-key="admin.blog.search">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search posts..."
@@ -227,7 +227,7 @@ export default function BlogPostsPage() {
           />
         </div>
         <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[180px]" data-help-key="admin.blog.status-filter">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -240,7 +240,7 @@ export default function BlogPostsPage() {
         </Select>
       </div>
 
-      <Card>
+      <Card data-help-key="admin.blog.table">
         <CardContent className="p-0">
           <Table>
             <TableHeader>

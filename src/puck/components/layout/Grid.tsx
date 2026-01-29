@@ -1,7 +1,7 @@
 "use client";
 
-import { ComponentConfig, DropZone } from "@measured/puck";
-import { ReactNode } from "react";
+import { ComponentConfig } from "@puckeditor/core";
+import React, { ReactNode } from "react";
 import { AnimatedWrapper } from "../../animations/AnimatedWrapper";
 import { AnimationConfig, LockConfig, GroupConfig, defaultAnimationConfig, defaultLockConfig, defaultGroupConfig } from "../../animations/types";
 import { AnimationField } from "../../fields/AnimationField";
@@ -23,6 +23,13 @@ export interface GridProps {
   lock?: Partial<LockConfig>;
   group?: Partial<GroupConfig>;
   visibility?: VisibilitySettings;
+  // Column slots (up to 6)
+  column0?: React.FC | never[];
+  column1?: React.FC | never[];
+  column2?: React.FC | never[];
+  column3?: React.FC | never[];
+  column4?: React.FC | never[];
+  column5?: React.FC | never[];
   puck?: { isEditing?: boolean };
 }
 
@@ -36,14 +43,22 @@ export const Grid = ({
   animation,
   lock,
   visibility,
+  column0: Column0,
+  column1: Column1,
+  column2: Column2,
+  column3: Column3,
+  column4: Column4,
+  column5: Column5,
   puck,
 }: GridProps) => {
   const isEditing = puck?.isEditing ?? false;
   const isLocked = lock?.isLocked ?? false;
   const visibilityClasses = getVisibilityClassName(visibility);
-  const zones = Array.from({ length: columns }, (_, i) => `column-${i}`);
 
-  const content = (
+  // Array of column slots
+  const columnSlots = [Column0, Column1, Column2, Column3, Column4, Column5];
+
+  const gridContent = (
     <div
       className={visibilityClasses}
       style={{
@@ -78,9 +93,9 @@ export const Grid = ({
           🔒 LOCKED
         </div>
       )}
-      {zones.map((zone) => (
-        <div key={zone} style={{ minWidth: 0 }}>
-          <DropZone zone={zone} />
+      {columnSlots.slice(0, columns).map((ColumnSlot, index) => (
+        <div key={index} style={{ minWidth: 0 }}>
+          {typeof ColumnSlot === 'function' && <ColumnSlot />}
         </div>
       ))}
     </div>
@@ -89,12 +104,12 @@ export const Grid = ({
   if (animation?.enabled && !isEditing) {
     return (
       <AnimatedWrapper animation={animation} isEditing={isEditing}>
-        {content}
+        {gridContent}
       </AnimatedWrapper>
     );
   }
 
-  return content;
+  return gridContent;
 };
 
 export const GridConfig: ComponentConfig<GridProps> = {
@@ -108,8 +123,38 @@ export const GridConfig: ComponentConfig<GridProps> = {
     lock: defaultLockConfig,
     group: defaultGroupConfig,
     visibility: defaultVisibility,
+    column0: [],
+    column1: [],
+    column2: [],
+    column3: [],
+    column4: [],
+    column5: [],
   },
   fields: {
+    column0: {
+      type: "slot",
+      label: "Column 1",
+    },
+    column1: {
+      type: "slot",
+      label: "Column 2",
+    },
+    column2: {
+      type: "slot",
+      label: "Column 3",
+    },
+    column3: {
+      type: "slot",
+      label: "Column 4",
+    },
+    column4: {
+      type: "slot",
+      label: "Column 5",
+    },
+    column5: {
+      type: "slot",
+      label: "Column 6",
+    },
     columns: {
       type: "select",
       label: "Columns",

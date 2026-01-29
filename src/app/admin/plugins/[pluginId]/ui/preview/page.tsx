@@ -8,11 +8,11 @@
 
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
-import { Render } from '@measured/puck';
-import '@measured/puck/puck.css';
+import { Render } from '@puckeditor/core';
+import '@puckeditor/core/puck.css';
 import { ArrowLeft, Edit } from 'lucide-react';
 import { pluginUIPuckConfig, type PluginUIComponents } from '../../../../../../puck/plugin';
-import type { Data } from '@measured/puck';
+import type { Data } from '@puckeditor/core';
 
 interface PageProps {
   params: Promise<{ pluginId: string }>;

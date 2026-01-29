@@ -8,7 +8,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { usePuck, type Config, type Data } from '@measured/puck'
+import { usePuck, type Config, type Data } from '@puckeditor/core'
 import { TemplateCard, type PuckTemplateData } from './TemplateCard'
 import { Input } from '../../components/ui/input'
 import { Button } from '../../components/ui/button'

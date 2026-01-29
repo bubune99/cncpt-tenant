@@ -103,18 +103,18 @@ export default function AdminDashboard() {
       </div>
 
       {/* Enhanced Metrics Dashboard */}
-      <div className="mb-6">
+      <div className="mb-6" data-help-key="admin.dashboard.metrics">
         <DashboardMetrics />
       </div>
 
       {/* Quick Actions Panel */}
-      <div className="mb-6">
+      <div className="mb-6" data-help-key="admin.dashboard.quick-actions">
         <QuickActions />
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        <Card>
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6" data-help-key="admin.dashboard.stats">
+        <Card data-help-key="admin.dashboard.stat.users">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -124,7 +124,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-help-key="admin.dashboard.stat.products">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Products</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
@@ -134,7 +134,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-help-key="admin.dashboard.stat.orders">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Orders</CardTitle>
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
@@ -144,7 +144,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-help-key="admin.dashboard.stat.blog">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Blog Posts</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
@@ -156,7 +156,7 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-        <Card>
+        <Card data-help-key="admin.dashboard.quick-links">
           <CardHeader>
             <CardTitle>Quick Links</CardTitle>
             <CardDescription>Navigate to common sections</CardDescription>
@@ -183,7 +183,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-help-key="admin.dashboard.content-management">
           <CardHeader>
             <CardTitle>Content Management</CardTitle>
             <CardDescription>Manage your site content</CardDescription>

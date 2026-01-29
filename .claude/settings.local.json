@@ -16,7 +16,13 @@
       "mcp__ai-project-planner__list_projects",
       "mcp__ai-project-planner__add_progress_note",
       "Bash(npx shadcn@latest add:*)",
-      "WebFetch(domain:developers.cloudflare.com)"
+      "WebFetch(domain:developers.cloudflare.com)",
+      "mcp__plugin_neon-plugin_neon__get_database_tables",
+      "mcp__plugin_neon-plugin_neon__run_sql",
+      "mcp__plugin_neon-plugin_neon__describe_table_schema",
+      "mcp__plugin_neon-plugin_neon__list_projects",
+      "mcp__plugin_neon-plugin_neon__list_shared_projects",
+      "mcp__plugin_neon-plugin_neon__list_organizations"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -1,6 +1,6 @@
 "use client";
 
-import { ComponentConfig } from "@measured/puck";
+import { ComponentConfig } from "@puckeditor/core";
 import { useState, useRef, useEffect } from "react";
 import { AnimatedWrapper } from "../../animations/AnimatedWrapper";
 import { AnimationConfig, LockConfig, GroupConfig, defaultAnimationConfig, defaultLockConfig, defaultGroupConfig } from "../../animations/types";
@@ -26,6 +26,20 @@ export interface HeadingProps {
   puck?: { isEditing?: boolean };
 }
 
+// Helper to normalize level prop (handles corrupted data where level might be a number)
+function normalizeLevel(level: unknown): "h1" | "h2" | "h3" | "h4" | "h5" | "h6" {
+  // If it's already a valid string
+  if (typeof level === "string" && /^h[1-6]$/.test(level)) {
+    return level as "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+  }
+  // If it's a number (1-6), convert to h1-h6
+  if (typeof level === "number" && level >= 1 && level <= 6) {
+    return `h${level}` as "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+  }
+  // Default fallback
+  return "h2";
+}
+
 export const Heading = ({
   text,
   level,
@@ -39,7 +53,7 @@ export const Heading = ({
   visibility,
   puck,
 }: HeadingProps) => {
-  const Tag = level;
+  const Tag = normalizeLevel(level);
   const [isInlineEditing, setIsInlineEditing] = useState(false);
   const [editedText, setEditedText] = useState(text);
   const editRef = useRef<HTMLDivElement>(null);

@@ -35,51 +35,10 @@ export interface ChatRequestBody {
   context?: ChatContext;
 }
 
-export interface ChatModel {
-  id: string;
-  name: string;
-  description: string;
-  provider: 'openai' | 'anthropic' | 'google';
-}
-
-export const chatModels: ChatModel[] = [
-  {
-    id: 'gpt-4o',
-    name: 'GPT-4o',
-    description: 'Most capable OpenAI model',
-    provider: 'openai',
-  },
-  {
-    id: 'gpt-4o-mini',
-    name: 'GPT-4o Mini',
-    description: 'Fast and efficient OpenAI model',
-    provider: 'openai',
-  },
-  {
-    id: 'claude-3-5-sonnet-latest',
-    name: 'Claude 3.5 Sonnet',
-    description: 'Balanced Anthropic model',
-    provider: 'anthropic',
-  },
-  {
-    id: 'claude-3-5-haiku-latest',
-    name: 'Claude 3.5 Haiku',
-    description: 'Fast Anthropic model',
-    provider: 'anthropic',
-  },
-  {
-    id: 'gemini-1.5-pro',
-    name: 'Gemini 1.5 Pro',
-    description: 'Advanced Google model',
-    provider: 'google',
-  },
-  {
-    id: 'gemini-1.5-flash',
-    name: 'Gemini 1.5 Flash',
-    description: 'Fast Google model',
-    provider: 'google',
-  },
-];
+// ChatModel type - re-exported from models.ts for backwards compatibility
+// Use the chatModels from './models' instead
+export type { ChatModel } from './models';
+export { chatModels } from './models';
 
 export type VisibilityType = 'public' | 'private';
 

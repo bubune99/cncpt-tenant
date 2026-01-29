@@ -85,3 +85,69 @@ export const defaultGroupConfig: GroupConfig = {
   isGroupParent: false,
   collapsed: false,
 };
+
+// Lottie animation config
+export interface LottieConfig {
+  /** Unique ID for the animation */
+  animationId: string;
+  /** Play mode */
+  playMode: "auto" | "hover" | "scroll" | "click";
+  /** Whether to loop */
+  loop: boolean;
+  /** Playback speed */
+  speed: number;
+  /** Playback direction (1 = forward, -1 = reverse) */
+  direction?: 1 | -1;
+  /** Start frame for segment playback */
+  startFrame?: number;
+  /** End frame for segment playback */
+  endFrame?: number;
+}
+
+// Default Lottie config
+export const defaultLottieConfig: LottieConfig = {
+  animationId: "",
+  playMode: "auto",
+  loop: true,
+  speed: 1,
+  direction: 1,
+};
+
+// Timeline entry for sequenced animations
+export interface TimelineEntry {
+  /** Target component ID */
+  target: string;
+  /** Optional label for the entry */
+  label?: string;
+  /** Start time (number in seconds, or relative like "+=0.5", "-=0.2", or "previous"/"start") */
+  startAt: number | "previous" | "start" | `+=${number}` | `-=${number}`;
+  /** Animation config for this entry */
+  animation: Partial<AnimationConfig>;
+}
+
+// Timeline config for orchestrated animations
+export interface TimelineConfig {
+  /** Unique ID for the timeline */
+  id?: string;
+  /** Display name for the timeline */
+  name?: string;
+  /** Sequence of animations */
+  sequence: TimelineEntry[];
+  /** Trigger for the timeline */
+  trigger: "onLoad" | "onScroll" | "onClick";
+  /** Loop the timeline (true = infinite, number = specific count) */
+  loop?: boolean | number;
+  /** Delay before starting */
+  delay?: number;
+  /** Auto-play on trigger */
+  autoPlay?: boolean;
+}
+
+// Default timeline config
+export const defaultTimelineConfig: TimelineConfig = {
+  sequence: [],
+  trigger: "onScroll",
+  loop: false,
+  delay: 0,
+  autoPlay: true,
+};

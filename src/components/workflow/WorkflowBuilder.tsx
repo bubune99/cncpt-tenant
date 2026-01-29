@@ -234,6 +234,10 @@ function WorkflowBuilderInner({
           onDragOver={onDragOver}
           nodeTypes={nodeTypes}
           fitView
+          fitViewOptions={{ padding: 0.3, maxZoom: 0.8 }}
+          defaultViewport={{ x: 0, y: 0, zoom: 0.7 }}
+          minZoom={0.3}
+          maxZoom={1.5}
           snapToGrid
           snapGrid={[15, 15]}
           defaultEdgeOptions={{
@@ -243,7 +247,7 @@ function WorkflowBuilderInner({
           }}
           proOptions={{ hideAttribution: true }}
         >
-          <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#e2e8f0" />
+          <Background variant={BackgroundVariant.Dots} gap={24} size={0.8} color="#d1d5db" />
           <Controls showInteractive={false} />
           <MiniMap
             nodeColor={nodeColor}

@@ -3,14 +3,24 @@ import type { UseChatHelpers } from "@ai-sdk/react";
 import equal from "fast-deep-equal";
 import { motion } from "framer-motion";
 import { memo, useState } from "react";
+import { CheckCircle, XCircle, Shield, AlertTriangle } from "lucide-react";
 import type { Vote } from '../../lib/chatsdk/db/schema';
 import type { ChatMessage } from '../../lib/chatsdk/types';
 import { cn, sanitizeText } from '../../lib/utils';
+import { Button } from '../ui/button';
 import { useDataStream } from "./data-stream-provider";
 import { DocumentToolResult } from "./document";
 import { DocumentPreview } from "./document-preview";
 import { MessageContent } from "./elements/message";
 import { Response } from "./elements/response";
+import {
+  WalkthroughSuggestions,
+  WalkthroughStarted,
+  ElementExplanation,
+  type WalkthroughSuggestionsData,
+  type WalkthroughStartedData,
+  type ElementExplanationData,
+} from "../admin-chat/walkthrough-suggestions";
 import {
   Tool,
   ToolContent,
@@ -25,6 +35,7 @@ import { MessageReasoning } from "./message-reasoning";
 import { PreviewAttachment } from "./preview-attachment";
 
 const PurePreviewMessage = ({
+  addToolApprovalResponse,
   chatId,
   message,
   vote,
@@ -34,6 +45,7 @@ const PurePreviewMessage = ({
   isReadonly,
   requiresScrollPadding,
 }: {
+  addToolApprovalResponse?: UseChatHelpers<ChatMessage>["addToolApprovalResponse"];
   chatId: string;
   message: ChatMessage;
   vote: Vote | undefined;
@@ -253,12 +265,144 @@ const PurePreviewMessage = ({
               );
             }
 
-            // Generic handler for any LMS tools (createCourse, addChapter, etc.)
+            // Walkthrough suggestion tool - renders clickable tour cards
+            if ((type as string) === "tool-suggestWalkthroughs") {
+              const toolPart = part as any;
+              const { toolCallId, state, output } = toolPart;
+
+              if (state === "output-available" && output?.action === "suggest_walkthroughs") {
+                return (
+                  <WalkthroughSuggestions
+                    key={toolCallId}
+                    data={output as WalkthroughSuggestionsData}
+                  />
+                );
+              }
+
+              return null;
+            }
+
+            // Start walkthrough tool - shows tour starting notification
+            if ((type as string) === "tool-startWalkthrough" || (type as string) === "tool-generateWalkthrough") {
+              const toolPart = part as any;
+              const { toolCallId, state, output } = toolPart;
+
+              if (state === "output-available" && output?.action === "start_walkthrough") {
+                return (
+                  <WalkthroughStarted
+                    key={toolCallId}
+                    data={output as WalkthroughStartedData}
+                  />
+                );
+              }
+
+              return null;
+            }
+
+            // Explain element tool - shows element explanation with optional tour link
+            if ((type as string) === "tool-explainElement") {
+              const toolPart = part as any;
+              const { toolCallId, state, output } = toolPart;
+
+              if (state === "output-available" && output?.action === "explain_element") {
+                return (
+                  <ElementExplanation
+                    key={toolCallId}
+                    data={output as ElementExplanationData}
+                  />
+                );
+              }
+
+              return null;
+            }
+
+            // Generic handler for all tool calls including VMCP tools
+            // Uses native AI SDK v6 needsApproval handling
             if (typeof type === "string" && type.startsWith("tool-")) {
               const toolPart = part as any;
-              const { toolCallId, state, input, output } = toolPart;
+              const { toolCallId, state, input, output, approval } = toolPart;
               const toolName = type.replace("tool-", "");
 
+              // Check for tools requiring human approval (AI SDK v6 native)
+              if (state === "approval-requested" && addToolApprovalResponse) {
+                const isVmcpTool = toolName.startsWith("vmcp_");
+                const isDangerousOperation = ["vmcp_create_tool", "vmcp_iterate_tool", "vmcp_delete_tool", "vmcp_enable_autonomous"].includes(toolName);
+
+                return (
+                  <motion.div
+                    key={toolCallId}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 p-4"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={cn(
+                        "flex size-10 shrink-0 items-center justify-center rounded-lg",
+                        isDangerousOperation
+                          ? "bg-amber-100 dark:bg-amber-900/50"
+                          : "bg-blue-100 dark:bg-blue-900/50"
+                      )}>
+                        {isDangerousOperation ? (
+                          <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                        ) : (
+                          <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-amber-900 dark:text-amber-100">
+                          Approval Required
+                        </h4>
+                        <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                          The AI wants to execute: <code className="bg-amber-100 dark:bg-amber-900/50 px-1.5 py-0.5 rounded font-mono text-xs">{toolName}</code>
+                        </p>
+
+                        {/* Show tool input details */}
+                        {input && (
+                          <div className="mt-3 rounded border border-amber-200 dark:border-amber-800 bg-white dark:bg-amber-950/30 p-3">
+                            <p className="text-xs font-medium text-amber-800 dark:text-amber-200 mb-2">Parameters:</p>
+                            <pre className="text-xs text-amber-700 dark:text-amber-300 overflow-auto max-h-40 whitespace-pre-wrap">
+                              {JSON.stringify(input, null, 2)}
+                            </pre>
+                          </div>
+                        )}
+
+                        {/* Approval/Denial buttons */}
+                        <div className="flex gap-2 mt-4">
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              addToolApprovalResponse({
+                                id: toolCallId,
+                                approved: true,
+                              });
+                            }}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            <CheckCircle className="h-4 w-4 mr-1.5" />
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              addToolApprovalResponse({
+                                id: toolCallId,
+                                approved: false,
+                              });
+                            }}
+                            className="border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/50"
+                          >
+                            <XCircle className="h-4 w-4 mr-1.5" />
+                            Deny
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              }
+
+              // Normal tool rendering for approved or non-approval tools
               return (
                 <Tool defaultOpen={true} key={toolCallId}>
                   <ToolHeader state={state} type={type as `tool-${string}`} />

@@ -28,7 +28,8 @@ import {
   Package,
   Truck,
   Receipt,
-  Server
+  Server,
+  Bot
 } from "lucide-react";
 
 import { Button } from '../../../components/ui/button';
@@ -56,6 +57,7 @@ import Link from "next/link";
 import EnvManager from '../../../components/admin/EnvManager';
 import BrandingSettings from '../../../components/admin/BrandingSettings';
 import EmailProviderSettings from '../../../components/admin/EmailProviderSettings';
+import AiSettings from '../../../components/admin/AiSettings';
 
 interface StoreSettings {
   general: {
@@ -259,14 +261,14 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-6xl">
-      <div className="mb-8">
+    <div className="p-6 lg:p-8 max-w-6xl" data-help-key="admin.settings.page">
+      <div className="mb-8" data-help-key="admin.settings.header">
         <h1 className="text-3xl font-bold">Settings</h1>
         <p className="text-muted-foreground">Manage your store settings and preferences</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-9 lg:w-[1050px]">
+        <TabsList className="grid w-full grid-cols-10 lg:w-[1150px]" data-help-key="admin.settings.tabs">
           <TabsTrigger value="branding">
             <Palette className="mr-2 h-4 w-4" />
             Branding
@@ -278,6 +280,10 @@ export default function SettingsPage() {
           <TabsTrigger value="email">
             <Mail className="mr-2 h-4 w-4" />
             Email
+          </TabsTrigger>
+          <TabsTrigger value="ai">
+            <Bot className="mr-2 h-4 w-4" />
+            AI
           </TabsTrigger>
           <TabsTrigger value="notifications">
             <Bell className="mr-2 h-4 w-4" />
@@ -305,16 +311,20 @@ export default function SettingsPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="branding" className="space-y-4">
+        <TabsContent value="branding" className="space-y-4" data-help-key="admin.settings.branding-tab">
           <BrandingSettings />
         </TabsContent>
 
-        <TabsContent value="email" className="space-y-4">
+        <TabsContent value="email" className="space-y-4" data-help-key="admin.settings.email-tab">
           <EmailProviderSettings />
         </TabsContent>
 
-        <TabsContent value="general" className="space-y-4">
-          <Card>
+        <TabsContent value="ai" className="space-y-4" data-help-key="admin.settings.ai-tab">
+          <AiSettings />
+        </TabsContent>
+
+        <TabsContent value="general" className="space-y-4" data-help-key="admin.settings.store-tab">
+          <Card data-help-key="admin.settings.store-info">
             <CardHeader>
               <CardTitle>Store Information</CardTitle>
               <CardDescription>Basic information about your store</CardDescription>
@@ -407,8 +417,8 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="notifications" className="space-y-4">
-          <Card>
+        <TabsContent value="notifications" className="space-y-4" data-help-key="admin.settings.notifications-tab">
+          <Card data-help-key="admin.settings.email-notifications">
             <CardHeader>
               <CardTitle>Email Notifications</CardTitle>
               <CardDescription>Configure when you receive email alerts</CardDescription>
@@ -460,7 +470,7 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-help-key="admin.settings.push-notifications">
             <CardHeader>
               <CardTitle>Push Notifications</CardTitle>
               <CardDescription>Real-time browser notifications</CardDescription>
@@ -506,8 +516,8 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="shipping" className="space-y-4">
-          <Card>
+        <TabsContent value="shipping" className="space-y-4" data-help-key="admin.settings.shipping-tab">
+          <Card data-help-key="admin.settings.shipping-config">
             <CardHeader>
               <CardTitle>Shipping Settings</CardTitle>
               <CardDescription>Configure shipping options for your store</CardDescription>
@@ -575,8 +585,8 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="taxes" className="space-y-4">
-          <Card>
+        <TabsContent value="taxes" className="space-y-4" data-help-key="admin.settings.taxes-tab">
+          <Card data-help-key="admin.settings.tax-config">
             <CardHeader>
               <CardTitle>Tax Settings</CardTitle>
               <CardDescription>Configure tax rates and options</CardDescription>
@@ -625,12 +635,12 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="environment" className="space-y-4">
+        <TabsContent value="environment" className="space-y-4" data-help-key="admin.settings.environment-tab">
           <EnvManager />
         </TabsContent>
 
-        <TabsContent value="appearance" className="space-y-4">
-          <Card>
+        <TabsContent value="appearance" className="space-y-4" data-help-key="admin.settings.appearance-tab">
+          <Card data-help-key="admin.settings.theme-config">
             <CardHeader>
               <CardTitle>Theme</CardTitle>
               <CardDescription>Customize the appearance of your dashboard</CardDescription>
@@ -719,8 +729,8 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="security" className="space-y-4">
-          <Card>
+        <TabsContent value="security" className="space-y-4" data-help-key="admin.settings.security-tab">
+          <Card data-help-key="admin.settings.security-config">
             <CardHeader>
               <CardTitle>Security Settings</CardTitle>
               <CardDescription>Manage your account security</CardDescription>
@@ -762,7 +772,7 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-help-key="admin.settings.danger-zone">
             <CardHeader>
               <CardTitle className="text-destructive">Danger Zone</CardTitle>
               <CardDescription>Irreversible actions for your account</CardDescription>
@@ -797,7 +807,7 @@ export default function SettingsPage() {
         </TabsContent>
       </Tabs>
 
-      <div className="mt-8 flex justify-end space-x-4">
+      <div className="mt-8 flex justify-end space-x-4" data-help-key="admin.settings.actions">
         <Button
           variant="outline"
           onClick={() => {
@@ -805,12 +815,14 @@ export default function SettingsPage() {
             setHasChanges(false);
           }}
           disabled={!hasChanges || isSaving}
+          data-help-key="admin.settings.cancel"
         >
           Cancel
         </Button>
         <Button
           onClick={handleSaveSettings}
           disabled={!hasChanges || isSaving}
+          data-help-key="admin.settings.save"
         >
           {isSaving ? (
             <>

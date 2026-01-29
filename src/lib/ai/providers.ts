@@ -1,89 +1,58 @@
 /**
  * AI Providers Configuration
  *
- * Maps abstract model IDs to actual provider models.
- * Integrates with the project's AI settings system.
+ * Uses Vercel AI Gateway for model access.
+ * When deployed on Vercel, authentication is automatic via OIDC.
+ * For local development, set AI_GATEWAY_API_KEY environment variable.
  */
 
-import { customProvider, extractReasoningMiddleware, wrapLanguageModel, type LanguageModel } from 'ai';
-import { createModelFromSettings } from './index';
-
-// Test environment detection
-const isTestEnvironment = process.env.NODE_ENV === 'test';
-
-// Cached model instance
-let cachedModel: LanguageModel | null = null;
+import { gateway } from '@ai-sdk/gateway';
+import { extractReasoningMiddleware, wrapLanguageModel } from 'ai';
+import { isReasoningModel } from './models';
 
 /**
- * Get the language model for a given model ID
+ * Get a language model from the Vercel AI Gateway
  *
- * Maps abstract model IDs (chat-model, chat-model-reasoning) to
- * actual provider models based on project settings.
+ * @param modelId - Gateway model ID (e.g., "anthropic/claude-sonnet-4.5")
+ * @returns Language model instance
  */
-export async function getLanguageModel(modelId: string) {
-  const { model } = await createModelFromSettings();
+export function getLanguageModel(modelId: string) {
+  // For reasoning models, wrap with middleware to extract thinking tags
+  if (isReasoningModel(modelId)) {
+    const baseModelId = modelId
+      .replace('-reasoning', '')
+      .replace('-thinking', '');
 
-  // For reasoning models, wrap with reasoning middleware
-  if (modelId === 'chat-model-reasoning') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return wrapLanguageModel({
-      model: model as any,
+      model: gateway.languageModel(baseModelId),
       middleware: extractReasoningMiddleware({ tagName: 'thinking' }),
     });
   }
 
-  return model;
+  return gateway.languageModel(modelId);
 }
 
 /**
  * Get the title generation model
- * Uses a smaller/faster model for generating chat titles
+ * Uses a fast, cost-effective model for generating chat titles
  */
-export async function getTitleModel() {
-  const { model } = await createModelFromSettings();
-  return model;
+export function getTitleModel() {
+  return gateway.languageModel('anthropic/claude-haiku-4.5');
 }
 
 /**
  * Get the artifact model for document generation
  */
-export async function getArtifactModel() {
-  const { model } = await createModelFromSettings();
-  return model;
+export function getArtifactModel() {
+  return gateway.languageModel('anthropic/claude-haiku-4.5');
 }
 
 /**
- * Create a custom provider that wraps async model creation
+ * Legacy myProvider export for backwards compatibility
+ * Wraps the gateway in the old interface
  */
-export function createChatProvider() {
-  if (isTestEnvironment) {
-    // In test environment, use mock models
-    try {
-      const { artifactModel, chatModel, reasoningModel, titleModel } = require('./models.mock');
-      return customProvider({
-        languageModels: {
-          'chat-model': chatModel,
-          'chat-model-reasoning': reasoningModel,
-          'title-model': titleModel,
-          'artifact-model': artifactModel,
-        },
-      });
-    } catch {
-      // Mock file not available, fall through to dynamic provider
-    }
-  }
-
-  // Return a provider that creates models dynamically
-  // Note: This uses a proxy pattern to lazily load models
-  return {
-    languageModel: (modelId: string) => {
-      // Return a placeholder that will be replaced with the actual model
-      // This is a workaround for the synchronous customProvider API
-      throw new Error(
-        `Use getLanguageModel('${modelId}') or getArtifactModel() instead of myProvider.languageModel()`
-      );
-    },
-  };
-}
-
-export const myProvider = createChatProvider();
+export const myProvider = {
+  languageModel(modelId: string) {
+    return getLanguageModel(modelId);
+  },
+};

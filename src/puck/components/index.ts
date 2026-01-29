@@ -6,9 +6,6 @@
 
 export { TemplateCard, type PuckTemplateData } from './TemplateCard'
 export { TemplatesPanel } from './TemplatesPanel'
-export { SaveAsTemplateDialog } from './SaveAsTemplateDialog'
-export { DrawerWithTemplates } from './DrawerWithTemplates'
-export { PuckEditorWrapper } from './PuckEditorWrapper'
 
 // Content components
 export * from './content'

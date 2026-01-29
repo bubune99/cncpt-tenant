@@ -5,7 +5,7 @@
  * in global site settings or per-page customization.
  */
 
-import { Config, ComponentConfig } from '@measured/puck';
+import { Config, ComponentConfig } from '@puckeditor/core';
 import {
   Header,
   HeaderProps,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Plus, Send, Clock, CheckCircle, XCircle, Eye, Copy, Trash2, MoreHorizontal, Mail, Users, TrendingUp, BarChart3, RefreshCw } from "lucide-react";
+import { Search, Plus, Send, Clock, CheckCircle, XCircle, Eye, Copy, Trash2, MoreHorizontal, Mail, Users, TrendingUp, BarChart3, RefreshCw, Settings, Paintbrush } from "lucide-react";
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import {
@@ -250,16 +250,16 @@ export default function EmailMarketingPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-6 lg:p-8" data-help-key="admin.email-marketing.page">
+      <div className="flex justify-between items-center mb-8" data-help-key="admin.email-marketing.header">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Email Marketing</h1>
           <p className="text-muted-foreground mt-2">
             Create and manage email campaigns with visual editor
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchCampaigns} disabled={isLoading}>
+        <div className="flex gap-2" data-help-key="admin.email-marketing.actions">
+          <Button variant="outline" onClick={fetchCampaigns} disabled={isLoading} data-help-key="admin.email-marketing.refresh">
             {isLoading ? (
               <>
                 <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -272,7 +272,7 @@ export default function EmailMarketingPage() {
               </>
             )}
           </Button>
-          <Button asChild>
+          <Button asChild data-help-key="admin.email-marketing.new">
             <Link href="/admin/email-marketing/new">
               <Plus className="mr-2 h-4 w-4" />
               Create Campaign
@@ -282,8 +282,8 @@ export default function EmailMarketingPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-5 mb-8">
-        <Card>
+      <div className="grid gap-4 md:grid-cols-5 mb-8" data-help-key="admin.email-marketing.stats">
+        <Card data-help-key="admin.email-marketing.stat.campaigns">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Campaigns</CardTitle>
             <Mail className="h-4 w-4 text-muted-foreground" />
@@ -293,7 +293,7 @@ export default function EmailMarketingPage() {
             <p className="text-xs text-muted-foreground">Total campaigns</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card data-help-key="admin.email-marketing.stat.sent">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Emails Sent</CardTitle>
             <Send className="h-4 w-4 text-muted-foreground" />
@@ -303,7 +303,7 @@ export default function EmailMarketingPage() {
             <p className="text-xs text-muted-foreground">All time</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card data-help-key="admin.email-marketing.stat.open-rate">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Open Rate</CardTitle>
             <Eye className="h-4 w-4 text-muted-foreground" />
@@ -313,7 +313,7 @@ export default function EmailMarketingPage() {
             <p className="text-xs text-muted-foreground">Average</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card data-help-key="admin.email-marketing.stat.click-rate">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Click Rate</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -323,7 +323,7 @@ export default function EmailMarketingPage() {
             <p className="text-xs text-muted-foreground">Average</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card data-help-key="admin.email-marketing.stat.subscribers">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Subscribers</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -336,16 +336,16 @@ export default function EmailMarketingPage() {
       </div>
 
       <Tabs defaultValue="campaigns" className="mb-6" onValueChange={(value) => setActiveTab(value)}>
-        <TabsList>
+        <TabsList data-help-key="admin.email-marketing.tabs">
           <TabsTrigger value="campaigns">All Campaigns</TabsTrigger>
           <TabsTrigger value="automated">Automated</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="subscribers">Subscribers</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="campaigns" className="mt-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center mb-6">
-            <div className="relative flex-1">
+        <TabsContent value="campaigns" className="mt-6" data-help-key="admin.email-marketing.campaigns-tab">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center mb-6" data-help-key="admin.email-marketing.filters">
+            <div className="relative flex-1" data-help-key="admin.email-marketing.search">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search campaigns..."
@@ -354,9 +354,9 @@ export default function EmailMarketingPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2" data-help-key="admin.email-marketing.filter-selects">
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="w-[150px]" data-help-key="admin.email-marketing.status-filter">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -370,7 +370,7 @@ export default function EmailMarketingPage() {
               </Select>
 
               <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="w-[150px]" data-help-key="admin.email-marketing.type-filter">
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -383,7 +383,7 @@ export default function EmailMarketingPage() {
             </div>
           </div>
 
-          <Card>
+          <Card data-help-key="admin.email-marketing.table">
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
@@ -449,11 +449,24 @@ export default function EmailMarketingPage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
                               <DropdownMenuItem asChild>
-                                <Link href={`/admin/email-marketing/${campaign.id}`}>
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  View / Edit
+                                <Link href={`/admin/email-marketing/${campaign.id}/design`}>
+                                  <Paintbrush className="mr-2 h-4 w-4" />
+                                  Design Email
                                 </Link>
                               </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link href={`/admin/email-marketing/${campaign.id}`}>
+                                  <Settings className="mr-2 h-4 w-4" />
+                                  Edit Settings
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link href={`/admin/email-marketing/${campaign.id}`}>
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  Preview
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleDuplicate(campaign)}>
                                 <Copy className="mr-2 h-4 w-4" />
                                 Duplicate
@@ -497,8 +510,8 @@ export default function EmailMarketingPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="automated" className="mt-6">
-          <Card>
+        <TabsContent value="automated" className="mt-6" data-help-key="admin.email-marketing.automated-tab">
+          <Card data-help-key="admin.email-marketing.automated-workflows">
             <CardHeader>
               <CardTitle>Automated Workflows</CardTitle>
               <CardDescription>
@@ -550,8 +563,8 @@ export default function EmailMarketingPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="templates" className="mt-6">
-          <Card>
+        <TabsContent value="templates" className="mt-6" data-help-key="admin.email-marketing.templates-tab">
+          <Card data-help-key="admin.email-marketing.templates">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -583,8 +596,8 @@ export default function EmailMarketingPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="subscribers" className="mt-6">
-          <Card>
+        <TabsContent value="subscribers" className="mt-6" data-help-key="admin.email-marketing.subscribers-tab">
+          <Card data-help-key="admin.email-marketing.subscribers">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -617,7 +630,7 @@ export default function EmailMarketingPage() {
         </TabsContent>
       </Tabs>
 
-      <div className="mt-8 bg-muted p-6 rounded-lg">
+      <div className="mt-8 bg-muted p-6 rounded-lg" data-help-key="admin.email-marketing.features-info">
         <h2 className="text-xl font-semibold mb-4">Email Marketing Features</h2>
         <ul className="space-y-2 text-muted-foreground">
           <li>- Design beautiful emails with our visual Puck editor</li>

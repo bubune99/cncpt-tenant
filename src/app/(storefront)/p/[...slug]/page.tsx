@@ -11,9 +11,95 @@
 import { prisma } from '../../../../lib/db';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import type { Data } from '@measured/puck';
+import type { Data } from '@puckeditor/core';
 import { PageWrapper, getPageLayoutSettings } from '../../../../components/page-wrapper';
 import { PageRenderer } from '../../../../components/page-wrapper/page-renderer';
+
+// Force dynamic rendering to avoid SSR issues with Puck components
+export const dynamic = 'force-dynamic';
+
+/**
+ * Recursively validate component data
+ * Returns true if the component and all its nested content are valid
+ */
+function isValidComponent(item: unknown, depth = 0): boolean {
+  // Prevent infinite recursion
+  if (depth > 50) {
+    console.warn('Component nesting too deep, stopping validation');
+    return false;
+  }
+
+  if (!item || typeof item !== 'object') return false;
+
+  const component = item as Record<string, unknown>;
+
+  // Type must be a non-empty string
+  if (typeof component.type !== 'string' || !component.type.trim()) {
+    console.warn('Invalid component type:', typeof component.type, component.type, 'in component:', JSON.stringify(component).slice(0, 200));
+    return false;
+  }
+
+  // Check props for nested content arrays (slots)
+  if (component.props && typeof component.props === 'object') {
+    const props = component.props as Record<string, unknown>;
+
+    // Check all props that might contain nested content
+    for (const [key, value] of Object.entries(props)) {
+      if (Array.isArray(value)) {
+        // This might be a slot with nested components
+        for (const nestedItem of value) {
+          if (nestedItem && typeof nestedItem === 'object' && 'type' in nestedItem) {
+            if (!isValidComponent(nestedItem, depth + 1)) {
+              return false;
+            }
+          }
+        }
+      } else if (value && typeof value === 'object' && 'type' in value) {
+        // Single nested component
+        if (!isValidComponent(value, depth + 1)) {
+          return false;
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Validate and sanitize Puck content data
+ * Ensures all component types are strings to prevent rendering errors
+ */
+function validatePuckContent(content: unknown): Data | null {
+  if (!content || typeof content !== 'object') return null;
+
+  const data = content as Data;
+  if (!Array.isArray(data.content)) return null;
+
+  // Deep validate all components including nested ones
+  for (const item of data.content) {
+    if (!isValidComponent(item)) {
+      console.warn('Invalid Puck content detected in main content');
+      return null; // Return null to trigger error page instead of filtering
+    }
+  }
+
+  // Also validate zones if present (legacy DropZone content)
+  if (data.zones && typeof data.zones === 'object') {
+    for (const [zoneName, zoneContent] of Object.entries(data.zones)) {
+      if (Array.isArray(zoneContent)) {
+        for (const item of zoneContent) {
+          if (!isValidComponent(item)) {
+            console.warn(`Invalid Puck content detected in zone: ${zoneName}`);
+            return null;
+          }
+        }
+      }
+    }
+  }
+
+  return data as Data;
+}
 
 interface PageProps {
   params: Promise<{ slug: string[] }>;
@@ -66,11 +152,41 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 /**
+ * Render error page for invalid content
+ */
+function ContentErrorPage({ title }: { title: string }) {
+  return (
+    <div className="container mx-auto px-4 py-12">
+      <header className="max-w-3xl mx-auto mb-12">
+        <h1 className="text-4xl md:text-5xl font-bold mb-6">{title}</h1>
+      </header>
+      <div className="max-w-3xl mx-auto">
+        <p className="text-destructive font-medium mb-2">
+          Content Error
+        </p>
+        <p className="text-muted-foreground">
+          This page has invalid content data. Please edit the page in the editor to fix it.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Render the CMS page
  */
 export default async function CMSPage({ params }: PageProps) {
-  const { slug } = await params;
-  const page = await getPage(slug);
+  let page;
+  let slugParts: string[];
+
+  try {
+    const { slug } = await params;
+    slugParts = slug;
+    page = await getPage(slug);
+  } catch (error) {
+    console.error('Error loading page:', error);
+    notFound();
+  }
 
   if (!page) {
     notFound();
@@ -95,33 +211,27 @@ export default async function CMSPage({ params }: PageProps) {
     );
   }
 
+  // Validate and sanitize the Puck content
+  let validatedContent: Data | null = null;
+  try {
+    validatedContent = validatePuckContent(page.content);
+  } catch (error) {
+    console.error('Error validating Puck content for page:', slugParts?.join('/'), error);
+    validatedContent = null;
+  }
+
+  if (!validatedContent) {
+    // Content is invalid, show error page without PageWrapper to avoid potential rendering issues
+    return <ContentErrorPage title={page.title} />;
+  }
+
   // Render with Puck
   return (
     <PageWrapper pageSettings={getPageLayoutSettings(page)}>
-      <PageRenderer puckContent={page.content as Data} />
+      <PageRenderer puckContent={validatedContent} />
     </PageWrapper>
   );
 }
 
-/**
- * Generate static params for common pages (optional optimization)
- * Note: Filters out root/empty slugs as [...slug] requires at least one segment
- */
-export async function generateStaticParams() {
-  const pages = await prisma.page.findMany({
-    where: { status: 'PUBLISHED' },
-    select: { slug: true },
-    take: 50, // Limit to prevent build slowdowns
-  });
-
-  return pages
-    .map((page) => {
-      const cleanSlug = page.slug.replace(/^\//, '').trim();
-      // Filter out empty slugs - [...slug] requires at least one segment
-      if (!cleanSlug) return null;
-      return {
-        slug: cleanSlug.split('/'),
-      };
-    })
-    .filter(Boolean) as { slug: string[] }[];
-}
+// Note: generateStaticParams is disabled because we use dynamic rendering
+// to avoid SSR issues with Puck components. Pages are rendered on-demand.

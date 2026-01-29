@@ -1,7 +1,7 @@
 "use client";
 
-import { ComponentConfig, DropZone } from "@measured/puck";
-import { ReactNode } from "react";
+import { ComponentConfig } from "@puckeditor/core";
+import React, { ReactNode } from "react";
 import { AnimatedWrapper } from "../../animations/AnimatedWrapper";
 import { AnimationConfig, LockConfig, GroupConfig, defaultAnimationConfig, defaultLockConfig, defaultGroupConfig } from "../../animations/types";
 import { AnimationField } from "../../fields/AnimationField";
@@ -22,6 +22,8 @@ export interface FlexProps {
   lock?: Partial<LockConfig>;
   group?: Partial<GroupConfig>;
   visibility?: VisibilitySettings;
+  // Content (slot)
+  content?: React.FC | never[];
   puck?: { isEditing?: boolean };
 }
 
@@ -34,13 +36,14 @@ export const Flex = ({
   animation,
   lock,
   visibility,
+  content: Content,
   puck,
 }: FlexProps) => {
   const isEditing = puck?.isEditing ?? false;
   const isLocked = lock?.isLocked ?? false;
   const visibilityClasses = getVisibilityClassName(visibility);
 
-  const content = (
+  const flexContent = (
     <div
       className={visibilityClasses}
       style={{
@@ -73,19 +76,19 @@ export const Flex = ({
           🔒 LOCKED
         </div>
       )}
-      <DropZone zone="content" />
+      {typeof Content === 'function' && <Content />}
     </div>
   );
 
   if (animation?.enabled && !isEditing) {
     return (
       <AnimatedWrapper animation={animation} isEditing={isEditing}>
-        {content}
+        {flexContent}
       </AnimatedWrapper>
     );
   }
 
-  return content;
+  return flexContent;
 };
 
 export const FlexConfig: ComponentConfig<FlexProps> = {
@@ -100,8 +103,12 @@ export const FlexConfig: ComponentConfig<FlexProps> = {
     lock: defaultLockConfig,
     group: defaultGroupConfig,
     visibility: defaultVisibility,
+    content: [],
   },
   fields: {
+    content: {
+      type: "slot",
+    },
     direction: {
       type: "select",
       label: "Direction",

@@ -187,20 +187,20 @@ export default function FormsPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-6 lg:p-8" data-help-key="admin.forms.page">
+      <div className="flex justify-between items-center mb-8" data-help-key="admin.forms.header">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Forms</h1>
           <p className="text-muted-foreground mt-2">
             Create and manage contact forms, surveys, and more
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchForms} disabled={isLoading}>
+        <div className="flex gap-2" data-help-key="admin.forms.actions">
+          <Button variant="outline" onClick={fetchForms} disabled={isLoading} data-help-key="admin.forms.refresh">
             <RefreshCw className={'h-4 w-4 mr-2 ' + (isLoading ? 'animate-spin' : '')} />
             Refresh
           </Button>
-          <Button asChild>
+          <Button asChild data-help-key="admin.forms.new">
             <Link href="/admin/forms/new">
               <Plus className="mr-2 h-4 w-4" />
               New Form
@@ -210,8 +210,8 @@ export default function FormsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4 mb-8">
-        <Card>
+      <div className="grid gap-4 md:grid-cols-4 mb-8" data-help-key="admin.forms.stats">
+        <Card data-help-key="admin.forms.stat.total">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Forms</CardTitle>
             <ClipboardList className="h-4 w-4 text-muted-foreground" />
@@ -220,7 +220,7 @@ export default function FormsPage() {
             <div className="text-2xl font-bold">{stats.total}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card data-help-key="admin.forms.stat.active">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active</CardTitle>
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
@@ -229,7 +229,7 @@ export default function FormsPage() {
             <div className="text-2xl font-bold">{stats.active}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card data-help-key="admin.forms.stat.drafts">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Drafts</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
@@ -238,7 +238,7 @@ export default function FormsPage() {
             <div className="text-2xl font-bold">{stats.draft}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card data-help-key="admin.forms.stat.submissions">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Submissions</CardTitle>
             <Inbox className="h-4 w-4 text-muted-foreground" />
@@ -250,8 +250,8 @@ export default function FormsPage() {
       </div>
 
       {/* Search */}
-      <div className="flex items-center gap-4 mb-6">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex items-center gap-4 mb-6" data-help-key="admin.forms.filters">
+        <div className="relative flex-1 max-w-sm" data-help-key="admin.forms.search">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search forms..."
@@ -263,7 +263,7 @@ export default function FormsPage() {
       </div>
 
       {/* Forms Table */}
-      <Card>
+      <Card data-help-key="admin.forms.table">
         <CardHeader>
           <CardTitle>All Forms</CardTitle>
           <CardDescription>
@@ -385,7 +385,7 @@ export default function FormsPage() {
       </Card>
 
       {/* Form Types Info */}
-      <Card className="mt-8">
+      <Card className="mt-8" data-help-key="admin.forms.types-info">
         <CardHeader>
           <CardTitle>Form Types</CardTitle>
           <CardDescription>

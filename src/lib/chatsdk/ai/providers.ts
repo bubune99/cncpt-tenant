@@ -1,31 +1,53 @@
 /**
  * AI providers for chatsdk artifacts
- * Configured to use Anthropic Claude models
- * - Sonnet 4: Main chat and artifacts (balanced intelligence and speed)
- * - Sonnet 4 + Reasoning: Extended thinking for complex tasks
- * - Haiku 4: Title generation (fast, cost-effective)
+ * Uses Vercel AI Gateway for model access.
+ * When deployed on Vercel, authentication is automatic via OIDC.
  */
 
-import { anthropic } from "@ai-sdk/anthropic";
+import { gateway } from "@ai-sdk/gateway";
 import {
-  customProvider,
   extractReasoningMiddleware,
   wrapLanguageModel,
 } from "ai";
 
-// Claude model IDs (valid as of 2025)
-const CLAUDE_SONNET_4 = "claude-sonnet-4-20250514";
-const CLAUDE_HAIKU_4 = "claude-haiku-4-20250414";
+/**
+ * Get a language model from the Vercel AI Gateway
+ */
+export function getLanguageModel(modelId: string) {
+  // For reasoning models, wrap with middleware to extract thinking tags
+  if (modelId.includes('reasoning') || modelId.endsWith('-thinking')) {
+    const baseModelId = modelId
+      .replace('-reasoning', '')
+      .replace('-thinking', '');
 
-// Use Anthropic Claude models for the chat SDK
-export const myProvider = customProvider({
-  languageModels: {
-    "chat-model": anthropic(CLAUDE_SONNET_4),
-    "chat-model-reasoning": wrapLanguageModel({
-      model: anthropic(CLAUDE_SONNET_4),
-      middleware: extractReasoningMiddleware({ tagName: "thinking" }),
-    }),
-    "title-model": anthropic(CLAUDE_HAIKU_4), // Fast model for simple title generation
-    "artifact-model": anthropic(CLAUDE_SONNET_4),
+    return wrapLanguageModel({
+      model: gateway.languageModel(baseModelId),
+      middleware: extractReasoningMiddleware({ tagName: 'thinking' }),
+    });
+  }
+
+  return gateway.languageModel(modelId);
+}
+
+/**
+ * Get the title generation model
+ */
+export function getTitleModel() {
+  return gateway.languageModel('anthropic/claude-haiku-4.5');
+}
+
+/**
+ * Get the artifact model
+ */
+export function getArtifactModel() {
+  return gateway.languageModel('anthropic/claude-haiku-4.5');
+}
+
+/**
+ * Legacy myProvider export for backwards compatibility
+ */
+export const myProvider = {
+  languageModel(modelId: string) {
+    return getLanguageModel(modelId);
   },
-});
+};

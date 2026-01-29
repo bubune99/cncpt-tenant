@@ -1,7 +1,7 @@
 "use client";
 
-import { ComponentConfig, DropZone } from "@measured/puck";
-import { ReactNode } from "react";
+import { ComponentConfig } from "@puckeditor/core";
+import React, { ReactNode } from "react";
 import { AnimatedWrapper } from "../../animations/AnimatedWrapper";
 import { AnimationConfig, LockConfig, GroupConfig, defaultAnimationConfig, defaultLockConfig, defaultGroupConfig } from "../../animations/types";
 import { AnimationField } from "../../fields/AnimationField";
@@ -14,6 +14,11 @@ import { getVisibilityClassName, defaultVisibility } from "../../utils/visibilit
 import { BackgroundField, BackgroundSettings, defaultBackgroundSettings, getBackgroundStyles, BackgroundOverlay, getBlurStyles } from "../../fields/BackgroundField";
 
 export interface ContainerProps {
+  // Slot layout
+  slotDirection?: "vertical" | "horizontal";
+  slotGap?: string;
+  slotAlign?: "start" | "center" | "end" | "stretch" | "space-between";
+  // Container settings
   maxWidth: string;
   padding: string;
   background: BackgroundSettings;
@@ -25,10 +30,15 @@ export interface ContainerProps {
   lock?: Partial<LockConfig>;
   group?: Partial<GroupConfig>;
   visibility?: VisibilitySettings;
+  // Content (slot)
+  content?: React.FC | never[];
   puck?: { isEditing?: boolean };
 }
 
 export const Container = ({
+  slotDirection = "vertical",
+  slotGap = "0px",
+  slotAlign = "stretch",
   maxWidth,
   padding,
   background,
@@ -37,6 +47,7 @@ export const Container = ({
   animation,
   lock,
   visibility,
+  content: Content,
   puck,
 }: ContainerProps) => {
   const isEditing = puck?.isEditing ?? false;
@@ -46,7 +57,7 @@ export const Container = ({
   const blurStyles = getBlurStyles(background);
   const hasBlur = background?.blur && background.blur > 0;
 
-  const content = (
+  const containerContent = (
     <div
       className={visibilityClasses}
       style={{
@@ -96,11 +107,28 @@ export const Container = ({
             zIndex: 10,
           }}
         >
-          🔒 LOCKED
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+          </svg>
+          LOCKED
         </div>
       )}
-      <div style={{ position: "relative", zIndex: 1 }}>
-        <DropZone zone="content" />
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+          display: "flex",
+          flexDirection: slotDirection === "horizontal" ? "row" : "column",
+          gap: slotGap,
+          alignItems: slotAlign === "space-between" ? "stretch" :
+                      slotAlign === "start" ? "flex-start" :
+                      slotAlign === "end" ? "flex-end" :
+                      slotAlign,
+          justifyContent: slotAlign === "space-between" ? "space-between" : undefined,
+          flexWrap: slotDirection === "horizontal" ? "wrap" : undefined,
+        }}
+      >
+        {typeof Content === 'function' && <Content />}
       </div>
     </div>
   );
@@ -108,17 +136,20 @@ export const Container = ({
   if (animation?.enabled && !isEditing) {
     return (
       <AnimatedWrapper animation={animation} isEditing={isEditing}>
-        {content}
+        {containerContent}
       </AnimatedWrapper>
     );
   }
 
-  return content;
+  return containerContent;
 };
 
 export const ContainerConfig: ComponentConfig<ContainerProps> = {
   label: "Container",
   defaultProps: {
+    slotDirection: "vertical",
+    slotGap: "0px",
+    slotAlign: "stretch",
     maxWidth: "1200px",
     padding: "24px",
     background: defaultBackgroundSettings,
@@ -128,8 +159,43 @@ export const ContainerConfig: ComponentConfig<ContainerProps> = {
     lock: defaultLockConfig,
     group: defaultGroupConfig,
     visibility: defaultVisibility,
+    content: [],
   },
   fields: {
+    content: {
+      type: "slot",
+    },
+    slotDirection: {
+      type: "radio",
+      label: "Content Direction",
+      options: [
+        { label: "↓ Vertical", value: "vertical" },
+        { label: "→ Horizontal", value: "horizontal" },
+      ],
+    },
+    slotGap: {
+      type: "select",
+      label: "Content Gap",
+      options: [
+        { label: "None", value: "0px" },
+        { label: "8px", value: "8px" },
+        { label: "16px", value: "16px" },
+        { label: "24px", value: "24px" },
+        { label: "32px", value: "32px" },
+        { label: "48px", value: "48px" },
+      ],
+    },
+    slotAlign: {
+      type: "select",
+      label: "Content Align",
+      options: [
+        { label: "Stretch", value: "stretch" },
+        { label: "Start", value: "start" },
+        { label: "Center", value: "center" },
+        { label: "End", value: "end" },
+        { label: "Space Between", value: "space-between" },
+      ],
+    },
     maxWidth: {
       type: "select",
       label: "Max Width",

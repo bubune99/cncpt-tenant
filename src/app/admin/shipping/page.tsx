@@ -199,7 +199,7 @@ export default function ShippingPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8" data-help-key="admin.shipping.page">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -211,7 +211,7 @@ export default function ShippingPage() {
       </div>
 
       <Tabs defaultValue="create" className="space-y-6">
-        <TabsList>
+        <TabsList data-help-key="admin.shipping.tabs">
           <TabsTrigger value="create" className="flex items-center gap-2">
             <PlusCircle className="h-4 w-4" />
             Create Shipment
@@ -227,7 +227,7 @@ export default function ShippingPage() {
         </TabsList>
 
         {/* Create Shipment Tab - Shippo Elements Widget */}
-        <TabsContent value="create">
+        <TabsContent value="create" data-help-key="admin.shipping.create">
           {!settings.enabled ? (
             <div className="border border-dashed rounded-lg p-12 text-center">
               <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -275,9 +275,9 @@ export default function ShippingPage() {
         </TabsContent>
 
         {/* Settings Tab */}
-        <TabsContent value="settings" className="space-y-6">
+        <TabsContent value="settings" className="space-y-6" data-help-key="admin.shipping.settings">
           {/* API Configuration */}
-          <div className="bg-card border rounded-lg p-6">
+          <div className="bg-card border rounded-lg p-6" data-help-key="admin.shipping.api-config">
             <h2 className="text-lg font-semibold mb-4">Shippo API Configuration</h2>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -341,7 +341,7 @@ export default function ShippingPage() {
           </div>
 
           {/* From Address */}
-          <div className="bg-card border rounded-lg p-6">
+          <div className="bg-card border rounded-lg p-6" data-help-key="admin.shipping.from-address">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <MapPin className="h-5 w-5" />
               Default From Address
@@ -429,7 +429,7 @@ export default function ShippingPage() {
           </div>
 
           {/* Carrier Settings */}
-          <div className="bg-card border rounded-lg p-6">
+          <div className="bg-card border rounded-lg p-6" data-help-key="admin.shipping.carriers">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <Truck className="h-5 w-5" />
               Carriers & Preferences
@@ -498,7 +498,7 @@ export default function ShippingPage() {
           </div>
 
           {/* Save Button */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4" data-help-key="admin.shipping.save">
             <Button onClick={saveSettings} disabled={isSaving}>
               {isSaving ? (
                 <>
@@ -528,7 +528,7 @@ export default function ShippingPage() {
         </TabsContent>
 
         {/* Shipments Tab */}
-        <TabsContent value="shipments">
+        <TabsContent value="shipments" data-help-key="admin.shipping.shipments-list">
           {shipments.length === 0 ? (
             <div className="border border-dashed rounded-lg p-12 text-center">
               <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />

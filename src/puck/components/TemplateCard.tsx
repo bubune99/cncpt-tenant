@@ -8,7 +8,7 @@
  */
 
 import React, { useMemo } from 'react'
-import { Render, type Config, type Data } from '@measured/puck'
+import { Render, type Config, type Data } from '@puckeditor/core'
 import { cn } from '../../lib/utils'
 
 export interface PuckTemplateData {

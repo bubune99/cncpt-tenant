@@ -305,7 +305,7 @@ export default function CustomersPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-6 lg:p-8 space-y-6" data-help-key="admin.customers.page">
       <div className="flex items-center justify-between customers-header">
         <div>
           <h1 className="text-3xl font-bold">Customers</h1>
@@ -313,12 +313,12 @@ export default function CustomersPage() {
             Manage all customers across the platform
           </p>
         </div>
-        <div className="flex gap-2 customers-actions">
-          <Button onClick={() => setIsCreateDialogOpen(true)} variant="default">
+        <div className="flex gap-2 customers-actions" data-help-key="admin.customers.actions">
+          <Button onClick={() => setIsCreateDialogOpen(true)} variant="default" data-help-key="admin.customers.create">
             <User className="h-4 w-4 mr-2" />
             Create Customer
           </Button>
-          <Button onClick={exportCustomers} variant="outline">
+          <Button onClick={exportCustomers} variant="outline" data-help-key="admin.customers.export">
             <Download className="h-4 w-4 mr-2" />
             Export CSV
           </Button>
@@ -451,8 +451,8 @@ export default function CustomersPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 customers-stats">
-          <Card>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 customers-stats" data-help-key="admin.customers.stats">
+          <Card data-help-key="admin.customers.stat.total">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
               <User className="h-4 w-4 text-muted-foreground" />
@@ -465,7 +465,7 @@ export default function CustomersPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-help-key="admin.customers.stat.active">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Today</CardTitle>
               <Activity className="h-4 w-4 text-muted-foreground" />
@@ -478,7 +478,7 @@ export default function CustomersPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-help-key="admin.customers.stat.new">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">New This Month</CardTitle>
               <User className="h-4 w-4 text-muted-foreground" />
@@ -491,7 +491,7 @@ export default function CustomersPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-help-key="admin.customers.stat.storage">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Avg Storage</CardTitle>
               <Database className="h-4 w-4 text-muted-foreground" />
@@ -509,10 +509,10 @@ export default function CustomersPage() {
       )}
 
       {/* Filters */}
-      <Card>
+      <Card data-help-key="admin.customers.filters">
         <CardContent className="p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center customers-filters">
-            <div className="relative flex-1">
+            <div className="relative flex-1" data-help-key="admin.customers.search">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by name, email, or business..."
@@ -566,7 +566,7 @@ export default function CustomersPage() {
       </Card>
 
       {/* Customer List */}
-      <Card>
+      <Card data-help-key="admin.customers.list">
         <CardHeader>
           <CardTitle>All Customers</CardTitle>
           <CardDescription>
@@ -574,7 +574,7 @@ export default function CustomersPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4 customers-list">
+          <div className="space-y-4 customers-list" data-help-key="admin.customers.table">
             {filteredCustomers.map((customer) => {
               const activityStatus = getActivityStatus(customer.lastActivityAt);
               const ActivityIcon = activityStatus.icon;

@@ -9,7 +9,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { ChatMessage } from './types';
 
-export type ChatPanelMode = 'collapsed' | 'side' | 'full';
+export type ChatPanelMode = 'collapsed' | 'minimized' | 'side' | 'full';
 
 export interface ChatContext {
   type: 'general' | 'product' | 'order' | 'page' | 'user' | 'blog';
@@ -23,6 +23,8 @@ interface ChatState {
   mode: ChatPanelMode;
   setMode: (mode: ChatPanelMode) => void;
   togglePanel: () => void;
+  minimizePanel: () => void;
+  expandPanel: () => void;
 
   // Current conversation
   conversationId: string | null;
@@ -70,8 +72,24 @@ export const useChatStore = create<ChatState>()(
         const current = get().mode;
         if (current === 'collapsed') {
           set({ mode: 'side' });
+        } else if (current === 'minimized') {
+          set({ mode: 'side' });
         } else {
           set({ mode: 'collapsed' });
+        }
+      },
+      minimizePanel: () => {
+        const current = get().mode;
+        if (current === 'side' || current === 'full') {
+          set({ mode: 'minimized' });
+        }
+      },
+      expandPanel: () => {
+        const current = get().mode;
+        if (current === 'minimized') {
+          set({ mode: 'side' });
+        } else if (current === 'collapsed') {
+          set({ mode: 'side' });
         }
       },
 
@@ -164,7 +182,9 @@ export const useChatPanel = () => {
   const mode = useChatStore((s) => s.mode);
   const setMode = useChatStore((s) => s.setMode);
   const togglePanel = useChatStore((s) => s.togglePanel);
-  return { mode, setMode, togglePanel };
+  const minimizePanel = useChatStore((s) => s.minimizePanel);
+  const expandPanel = useChatStore((s) => s.expandPanel);
+  return { mode, setMode, togglePanel, minimizePanel, expandPanel };
 };
 
 export const useChatMessages = () => {

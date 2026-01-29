@@ -189,17 +189,17 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-6 lg:p-8 space-y-6" data-help-key="admin.users.page">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between" data-help-key="admin.users.header">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Users</h1>
           <p className="text-muted-foreground mt-2">
             Manage platform users, roles, and permissions
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchUsers} disabled={isLoading}>
+        <div className="flex gap-2" data-help-key="admin.users.actions">
+          <Button variant="outline" onClick={fetchUsers} disabled={isLoading} data-help-key="admin.users.refresh">
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
@@ -208,8 +208,8 @@ export default function UsersPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4" data-help-key="admin.users.stats">
+          <Card data-help-key="admin.users.stat.total">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Users</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
@@ -222,7 +222,7 @@ export default function UsersPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-help-key="admin.users.stat.super-admins">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Super Admins</CardTitle>
               <Shield className="h-4 w-4 text-muted-foreground" />
@@ -235,7 +235,7 @@ export default function UsersPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-help-key="admin.users.stat.with-roles">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">With Roles</CardTitle>
               <Key className="h-4 w-4 text-muted-foreground" />
@@ -248,7 +248,7 @@ export default function UsersPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-help-key="admin.users.stat.active">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active (30d)</CardTitle>
               <UserCheck className="h-4 w-4 text-muted-foreground" />
@@ -264,8 +264,8 @@ export default function UsersPage() {
       )}
 
       {/* Search */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex items-center gap-4" data-help-key="admin.users.filters">
+        <div className="relative flex-1 max-w-sm" data-help-key="admin.users.search">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search users..."
@@ -277,7 +277,7 @@ export default function UsersPage() {
       </div>
 
       {/* Users Table */}
-      <Card>
+      <Card data-help-key="admin.users.table">
         <CardHeader>
           <CardTitle>All Users</CardTitle>
           <CardDescription>
@@ -407,7 +407,7 @@ export default function UsersPage() {
       </Card>
 
       {/* Quick Actions */}
-      <Card>
+      <Card data-help-key="admin.users.quick-actions">
         <CardHeader>
           <CardTitle className="text-lg">Quick Actions</CardTitle>
         </CardHeader>

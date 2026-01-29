@@ -8,7 +8,7 @@
  */
 
 import React, { ReactNode } from 'react'
-import type { ComponentConfig } from '@measured/puck'
+import type { ComponentConfig } from '@puckeditor/core'
 import { Button } from '../../components/ui/button'
 import { cn } from '../../lib/utils'
 

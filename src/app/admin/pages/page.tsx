@@ -195,7 +195,7 @@ export default function PagesPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8" data-help-key="admin.pages.page">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Pages</h1>
@@ -203,12 +203,12 @@ export default function PagesPage() {
             Manage your website pages and content
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchPages} disabled={isLoading}>
+        <div className="flex gap-2" data-help-key="admin.pages.actions">
+          <Button variant="outline" onClick={fetchPages} disabled={isLoading} data-help-key="admin.pages.refresh">
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button asChild>
+          <Button asChild data-help-key="admin.pages.new">
             <Link href="/admin/pages/new">
               <Plus className="mr-2 h-4 w-4" />
               New Page
@@ -218,7 +218,7 @@ export default function PagesPage() {
       </div>
 
       {/* Site Layout Section */}
-      <Card className="mb-8 border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
+      <Card className="mb-8 border-primary/20 bg-gradient-to-r from-primary/5 to-transparent" data-help-key="admin.pages.layout">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -277,8 +277,8 @@ export default function PagesPage() {
       </Card>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4 mb-8">
-        <Card>
+      <div className="grid gap-4 md:grid-cols-4 mb-8" data-help-key="admin.pages.stats">
+        <Card data-help-key="admin.pages.stat.total">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Pages</CardTitle>
             <Layers className="h-4 w-4 text-muted-foreground" />
@@ -317,8 +317,8 @@ export default function PagesPage() {
       </div>
 
       {/* Search and Filters */}
-      <div className="flex items-center gap-4 mb-6">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex items-center gap-4 mb-6" data-help-key="admin.pages.filters">
+        <div className="relative flex-1 max-w-sm" data-help-key="admin.pages.search">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search pages..."
@@ -330,7 +330,7 @@ export default function PagesPage() {
       </div>
 
       {/* Pages Table */}
-      <Card>
+      <Card data-help-key="admin.pages.table">
         <CardHeader>
           <CardTitle>All Pages</CardTitle>
           <CardDescription>
