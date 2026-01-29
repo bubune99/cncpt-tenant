@@ -55,25 +55,66 @@ export async function requireSuperAdmin(): Promise<SuperAdminContext> {
     redirect("/login")
   }
 
-  const result = await sql`
-    SELECT id, user_id, email, granted_by, granted_at, revoked_at, permissions
-    FROM super_admins
-    WHERE user_id = ${user.id} AND revoked_at IS NULL
-  `
+  const userEmail = user.primaryEmail || ""
 
-  if (result.length === 0) {
-    // Check SUPER_ADMIN_EMAILS env var as fallback
-    const superAdminEmails = process.env.SUPER_ADMIN_EMAILS?.split(",") || []
-    const userEmail = user.primaryEmail || ""
+  // Check SUPER_ADMIN_EMAILS env var first (always available, even if table doesn't exist)
+  const superAdminEmails = process.env.SUPER_ADMIN_EMAILS?.split(",").map(e => e.trim()) || []
+  const isEnvSuperAdmin = superAdminEmails.includes(userEmail)
 
-    if (superAdminEmails.includes(userEmail)) {
-      // Auto-provision super admin from env var
-      await sql`
-        INSERT INTO super_admins (user_id, email, granted_by, permissions)
-        VALUES (${user.id}, ${userEmail}, 'system', '["*"]')
-        ON CONFLICT (user_id) DO UPDATE SET revoked_at = NULL
-      `
+  try {
+    const result = await sql`
+      SELECT id, user_id, email, granted_by, granted_at, revoked_at, permissions
+      FROM super_admins
+      WHERE user_id = ${user.id} AND revoked_at IS NULL
+    `
 
+    if (result.length === 0) {
+      if (isEnvSuperAdmin) {
+        // Auto-provision super admin from env var
+        try {
+          await sql`
+            INSERT INTO super_admins (user_id, email, granted_by, permissions)
+            VALUES (${user.id}, ${userEmail}, 'system', '["*"]')
+            ON CONFLICT (user_id) DO UPDATE SET revoked_at = NULL
+          `
+        } catch (insertError) {
+          // Table might not exist, but we can still grant access via env var
+          console.warn("[super-admin] Could not auto-provision super admin:", insertError)
+        }
+
+        return {
+          user: {
+            id: user.id,
+            email: userEmail,
+            displayName: user.displayName,
+          },
+          permissions: ["*"],
+          isSuperAdmin: true,
+        }
+      }
+
+      redirect("/dashboard")
+    }
+
+    const superAdmin = result[0]
+    const permissions = Array.isArray(superAdmin.permissions)
+      ? superAdmin.permissions
+      : JSON.parse(superAdmin.permissions as string)
+
+    return {
+      user: {
+        id: user.id,
+        email: user.primaryEmail || superAdmin.email,
+        displayName: user.displayName,
+      },
+      permissions,
+      isSuperAdmin: true,
+    }
+  } catch (error) {
+    // Table doesn't exist yet - fall back to env var check
+    console.warn("[super-admin] super_admins table may not exist:", error)
+
+    if (isEnvSuperAdmin) {
       return {
         user: {
           id: user.id,
@@ -86,21 +127,6 @@ export async function requireSuperAdmin(): Promise<SuperAdminContext> {
     }
 
     redirect("/dashboard")
-  }
-
-  const superAdmin = result[0]
-  const permissions = Array.isArray(superAdmin.permissions)
-    ? superAdmin.permissions
-    : JSON.parse(superAdmin.permissions as string)
-
-  return {
-    user: {
-      id: user.id,
-      email: user.primaryEmail || superAdmin.email,
-      displayName: user.displayName,
-    },
-    permissions,
-    isSuperAdmin: true,
   }
 }
 
