@@ -276,7 +276,7 @@ export function createBillingTools(userId: string) {
           "The billing topic to explain (e.g., 'upgrade', 'limits', 'payment', 'cancel')"
         ),
     }),
-    execute: async ({ topic }) => {
+    execute: async ({ topic }: { topic: string }) => {
       const explanations: Record<
         string,
         { title: string; explanation: string; steps?: string[] }

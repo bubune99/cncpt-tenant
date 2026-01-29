@@ -151,7 +151,7 @@ export const navigateTo = tool({
       .optional()
       .describe("Optional subdomain context for the navigation"),
   }),
-  execute: async ({ page, subdomain }) => {
+  execute: async ({ page, subdomain }: { page: string; subdomain?: string }) => {
     const normalizedPage = page.toLowerCase().replace(/[^a-z]/g, "")
 
     // Find matching page
@@ -218,7 +218,7 @@ export const explainFeature = tool({
         "The feature to explain (e.g., 'teams', 'custom domains', 'visibility', 'cms')"
       ),
   }),
-  execute: async ({ feature }) => {
+  execute: async ({ feature }: { feature: string }) => {
     const normalizedFeature = feature.toLowerCase().replace(/[^a-z]/g, "")
 
     // Find matching feature
@@ -256,7 +256,7 @@ export const suggestActions = tool({
       .optional()
       .describe("What the user is trying to accomplish"),
   }),
-  execute: async ({ currentPage, goal }) => {
+  execute: async ({ currentPage, goal }: { currentPage?: string; goal?: string }) => {
     const suggestions: Array<{
       action: string
       description: string
@@ -389,7 +389,7 @@ export const getHelp = tool({
   parameters: z.object({
     topic: z.string().describe("What the user needs help with"),
   }),
-  execute: async ({ topic }) => {
+  execute: async ({ topic }: { topic: string }) => {
     const normalizedTopic = topic.toLowerCase()
 
     const helpTopics: Record<string, { title: string; steps: string[]; tips?: string[] }> = {

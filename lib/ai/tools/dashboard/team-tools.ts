@@ -25,7 +25,7 @@ export function createTeamTools(userId: string) {
         .default("all")
         .describe("Filter by role: 'owner' for owned teams, 'member' for teams user joined, 'all' for both"),
     }),
-    execute: async ({ role }) => {
+    execute: async ({ role }: { role?: "owner" | "member" | "all" }) => {
       if (!userId) {
         return { error: "User not authenticated" }
       }
@@ -118,7 +118,7 @@ export function createTeamTools(userId: string) {
     parameters: z.object({
       teamId: z.string().describe("The team ID to get details for"),
     }),
-    execute: async ({ teamId }) => {
+    execute: async ({ teamId }: { teamId: string }) => {
       if (!userId) {
         return { error: "User not authenticated" }
       }
@@ -201,7 +201,7 @@ export function createTeamTools(userId: string) {
     parameters: z.object({
       teamId: z.string().describe("The team ID to list members for"),
     }),
-    execute: async ({ teamId }) => {
+    execute: async ({ teamId }: { teamId: string }) => {
       if (!userId) {
         return { error: "User not authenticated" }
       }
@@ -270,7 +270,7 @@ export function createTeamTools(userId: string) {
         .default("all")
         .describe("Filter invitations: 'sent' for invites user sent, 'received' for invites to user"),
     }),
-    execute: async ({ type }) => {
+    execute: async ({ type }: { type?: "sent" | "received" | "all" }) => {
       if (!userId) {
         return { error: "User not authenticated" }
       }
@@ -321,7 +321,7 @@ export function createTeamTools(userId: string) {
     parameters: z.object({
       teamId: z.string().describe("The team ID to check access for"),
     }),
-    execute: async ({ teamId }) => {
+    execute: async ({ teamId }: { teamId: string }) => {
       if (!userId) {
         return { error: "User not authenticated" }
       }

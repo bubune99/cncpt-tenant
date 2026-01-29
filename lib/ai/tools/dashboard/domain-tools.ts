@@ -61,7 +61,7 @@ export function createDomainTools(userId: string) {
         .default("all")
         .describe("Filter by verification status"),
     }),
-    execute: async ({ subdomain, status }) => {
+    execute: async ({ subdomain, status }: { subdomain?: string; status?: "verified" | "pending" | "all" }) => {
       if (!userId) {
         return { error: "User not authenticated" }
       }
@@ -164,7 +164,7 @@ export function createDomainTools(userId: string) {
     parameters: z.object({
       domain: z.string().describe("The custom domain to check"),
     }),
-    execute: async ({ domain }) => {
+    execute: async ({ domain }: { domain: string }) => {
       if (!userId) {
         return { error: "User not authenticated" }
       }
@@ -230,7 +230,7 @@ export function createDomainTools(userId: string) {
     parameters: z.object({
       domain: z.string().describe("The domain to troubleshoot"),
     }),
-    execute: async ({ domain }) => {
+    execute: async ({ domain }: { domain: string }) => {
       if (!userId) {
         return { error: "User not authenticated" }
       }
@@ -359,7 +359,7 @@ export function createDomainTools(userId: string) {
         .optional()
         .describe("DNS provider name (e.g., 'cloudflare', 'namecheap', 'godaddy')"),
     }),
-    execute: async ({ domain, provider }) => {
+    execute: async ({ domain, provider }: { domain: string; provider?: string }) => {
       const subdomain = "your-subdomain"
       const dnsRecords = getDnsRecordsForDomain(domain, subdomain)
 

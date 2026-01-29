@@ -24,7 +24,7 @@ export function createSubdomainTools(userId: string) {
         .optional()
         .describe("Include additional stats like domain count"),
     }),
-    execute: async ({ includeStats }) => {
+    execute: async ({ includeStats }: { includeStats?: boolean }) => {
       if (!userId) {
         return { error: "User not authenticated" }
       }
@@ -82,7 +82,7 @@ export function createSubdomainTools(userId: string) {
     parameters: z.object({
       subdomain: z.string().describe("The subdomain name to get details for"),
     }),
-    execute: async ({ subdomain }) => {
+    execute: async ({ subdomain }: { subdomain: string }) => {
       if (!userId) {
         return { error: "User not authenticated" }
       }
@@ -159,7 +159,7 @@ export function createSubdomainTools(userId: string) {
     parameters: z.object({
       query: z.string().describe("Search query to match against subdomain names and settings"),
     }),
-    execute: async ({ query }) => {
+    execute: async ({ query }: { query: string }) => {
       if (!userId) {
         return { error: "User not authenticated" }
       }

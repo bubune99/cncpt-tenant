@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { useChat } from "@ai-sdk/react"
+import { useChat, type Message } from "@ai-sdk/react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   MessageCircle,
@@ -223,7 +223,7 @@ export function ChatPanel({ className }: ChatPanelProps) {
           </div>
         ) : (
           <div className="space-y-4">
-            {messages.map((message) => (
+            {messages.map((message: Message) => (
               <div
                 key={message.id}
                 className={cn(
