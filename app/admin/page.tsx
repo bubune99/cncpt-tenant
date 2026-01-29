@@ -13,7 +13,14 @@ export default async function AdminPage() {
   // This will redirect to /dashboard if not a super admin
   const { user, permissions } = await requireSuperAdmin()
 
-  const tenants = await getAllSubdomains()
+  // Fetch tenants with error handling
+  let tenants: Awaited<ReturnType<typeof getAllSubdomains>> = []
+  try {
+    tenants = await getAllSubdomains()
+  } catch (error) {
+    console.error("[Admin] Failed to fetch subdomains:", error)
+    // Continue with empty list - dashboard will show empty state
+  }
 
   return (
     <AdminDashboard
