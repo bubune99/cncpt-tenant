@@ -14,7 +14,7 @@ import {
   Loader2,
   Mail,
 } from "lucide-react"
-import { getRoleLabel } from "@/lib/team-auth"
+import { getRoleLabel } from "@/lib/team-utils"
 
 type Team = {
   id: string

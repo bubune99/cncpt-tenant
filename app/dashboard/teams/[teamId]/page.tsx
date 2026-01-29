@@ -46,8 +46,8 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { getRoleLabel, getRoleDescription } from "@/lib/team-auth"
-import type { TeamRole } from "@/lib/team-auth"
+import { getRoleLabel, getRoleDescription } from "@/lib/team-utils"
+import type { TeamRole } from "@/lib/team-utils"
 
 type Team = {
   id: string
