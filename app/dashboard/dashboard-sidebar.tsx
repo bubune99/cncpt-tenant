@@ -22,6 +22,7 @@ import {
   Shield,
   Eye,
   HelpCircle,
+  Building2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
@@ -69,6 +70,12 @@ export function DashboardSidebar({
       ],
     },
     {
+      title: "Collaboration",
+      items: [
+        { id: "teams", label: "Teams", icon: Building2, helpKey: "dashboard.sidebar.teams", isRoute: true, route: "/dashboard/teams" },
+      ],
+    },
+    {
       title: "Account",
       items: [
         { id: "billing", label: "Billing", icon: CreditCard, helpKey: "dashboard.sidebar.billing" },
@@ -76,9 +83,13 @@ export function DashboardSidebar({
     },
   ]
 
-  const handleSectionClick = (sectionId: string) => {
+  const handleSectionClick = (sectionId: string, route?: string) => {
     console.log("[v0] Sidebar button clicked:", sectionId)
-    setActiveSection(sectionId)
+    if (route) {
+      router.push(route)
+    } else {
+      setActiveSection(sectionId)
+    }
   }
 
   const handleCreateNew = () => {
@@ -131,11 +142,12 @@ export function DashboardSidebar({
             <div className="space-y-1">
               {section.items.map((item) => {
                 const Icon = item.icon
+                const itemWithRoute = item as typeof item & { isRoute?: boolean; route?: string }
                 return (
                   <Button
                     key={item.id}
                     variant="ghost"
-                    onClick={() => handleSectionClick(item.id)}
+                    onClick={() => handleSectionClick(item.id, itemWithRoute.route)}
                     data-help-key={item.helpKey}
                     className={cn(
                       "w-full justify-start space-x-3 px-3 py-2 h-auto text-sm font-medium transition-colors",

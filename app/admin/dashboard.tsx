@@ -1,10 +1,36 @@
 "use client"
 
 import { useFormState } from "react-dom"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Trash2,
   Loader2,
@@ -23,6 +49,18 @@ import {
   Server,
   CreditCard,
   AlertCircle,
+  MoreHorizontal,
+  Search,
+  ArrowRight,
+  Building2,
+  Mail,
+  Calendar,
+  Crown,
+  Eye,
+  RefreshCw,
+  History,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
 import { deleteSubdomainAction } from "@/app/actions"
 import { rootDomain, protocol } from "@/lib/utils"
@@ -42,7 +80,13 @@ type DeleteState = {
   success?: string
 }
 
-type AdminSection = "overview" | "clients" | "tiers" | "subdomains" | "users" | "analytics" | "settings"
+type SuperAdminInfo = {
+  userId: string
+  email: string
+  permissions: string[]
+}
+
+type AdminSection = "overview" | "clients" | "tiers" | "subdomains" | "users" | "teams" | "analytics" | "activity" | "settings"
 
 function AdminSidebar({
   activeSection,
@@ -55,10 +99,13 @@ function AdminSidebar({
 }) {
   const sidebarItems = [
     { id: "overview" as AdminSection, label: "Overview", icon: Home },
-    { id: "clients" as AdminSection, label: "Clients", icon: Users, badge: pendingClientsCount },
+    { id: "users" as AdminSection, label: "Users", icon: Users },
+    { id: "teams" as AdminSection, label: "Teams", icon: Building2 },
+    { id: "clients" as AdminSection, label: "Clients", icon: UserCheck, badge: pendingClientsCount },
     { id: "tiers" as AdminSection, label: "Subscription Tiers", icon: CreditCard },
     { id: "subdomains" as AdminSection, label: "Subdomains", icon: Globe },
     { id: "analytics" as AdminSection, label: "Analytics", icon: BarChart3 },
+    { id: "activity" as AdminSection, label: "Activity Log", icon: History },
     { id: "settings" as AdminSection, label: "Settings", icon: Settings },
   ]
 
@@ -115,15 +162,16 @@ function AdminHeader() {
     <div className="bg-white border-b border-gray-200 px-6 py-4">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Super Admin Dashboard</h1>
+          <p className="text-sm text-gray-500">Platform-wide administration</p>
         </div>
         <div className="flex items-center gap-4">
           {user && (
-            <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-lg">
-              <User className="h-4 w-4 text-gray-500" />
+            <div className="flex items-center gap-3 bg-purple-50 px-4 py-2 rounded-lg border border-purple-100">
+              <Crown className="h-4 w-4 text-purple-600" />
               <div className="text-sm">
-                <div className="font-medium">{user.displayName || user.primaryEmail}</div>
-                <div className="text-gray-500">Administrator</div>
+                <div className="font-medium text-purple-900">{user.displayName || user.primaryEmail}</div>
+                <div className="text-purple-600">Super Admin</div>
               </div>
             </div>
           )}
@@ -326,68 +374,692 @@ function TiersSection({
   return <TiersPageContent initialTiers={tiers} />
 }
 
+type PlatformUser = {
+  id: string
+  email: string
+  displayName: string | null
+  createdAt: string
+  isAdmin: boolean
+  isSuperAdmin: boolean
+  subdomainCount: number
+}
+
 function UsersSection() {
+  const [users, setUsers] = useState<PlatformUser[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState("")
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
+  const [selectedUser, setSelectedUser] = useState<PlatformUser | null>(null)
+  const [userDetails, setUserDetails] = useState<{
+    subdomains: Array<{ subdomain: string; emoji: string; createdAt: string }>
+    teams: Array<{ id: string; name: string; slug: string; role: string }>
+  } | null>(null)
+  const [actionLoading, setActionLoading] = useState(false)
+
+  const fetchUsers = useCallback(async () => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: "20",
+        ...(search && { search }),
+      })
+      const res = await fetch(`/api/super-admin/users?${params}`)
+      if (res.ok) {
+        const data = await res.json()
+        setUsers(data.users)
+        setTotalPages(data.totalPages)
+        setTotal(data.total)
+      }
+    } catch (error) {
+      console.error("Failed to fetch users:", error)
+    } finally {
+      setLoading(false)
+    }
+  }, [page, search])
+
+  useEffect(() => {
+    fetchUsers()
+  }, [fetchUsers])
+
+  const fetchUserDetails = async (userId: string) => {
+    try {
+      const res = await fetch(`/api/super-admin/users/${userId}`)
+      if (res.ok) {
+        const data = await res.json()
+        setUserDetails({ subdomains: data.subdomains, teams: data.teams })
+      }
+    } catch (error) {
+      console.error("Failed to fetch user details:", error)
+    }
+  }
+
+  const handleViewUser = (user: PlatformUser) => {
+    setSelectedUser(user)
+    setUserDetails(null)
+    fetchUserDetails(user.id)
+  }
+
+  const handleToggleAdmin = async (user: PlatformUser, makeAdmin: boolean) => {
+    setActionLoading(true)
+    try {
+      const res = await fetch(`/api/super-admin/users/${user.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isAdmin: makeAdmin }),
+      })
+      if (res.ok) {
+        fetchUsers()
+      }
+    } catch (error) {
+      console.error("Failed to update user:", error)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleToggleSuperAdmin = async (user: PlatformUser, makeSuperAdmin: boolean) => {
+    setActionLoading(true)
+    try {
+      const res = await fetch(`/api/super-admin/users/${user.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isSuperAdmin: makeSuperAdmin }),
+      })
+      if (res.ok) {
+        fetchUsers()
+      }
+    } catch (error) {
+      console.error("Failed to update user:", error)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-gray-900">User Management</h2>
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">User Management</h2>
+          <p className="text-sm text-gray-500">{total} total users</p>
+        </div>
+        <Button onClick={fetchUsers} variant="outline" size="sm">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
+      </div>
+
+      <div className="flex gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Search by email or name..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setPage(1)
+            }}
+            className="pl-10"
+          />
+        </div>
+      </div>
+
       <Card>
-        <CardContent className="py-12 text-center">
-          <UserCheck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500 mb-2">User management coming soon</p>
-          <p className="text-sm text-gray-400">View and manage platform users</p>
-        </CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>User</TableHead>
+              <TableHead>Joined</TableHead>
+              <TableHead>Subdomains</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead className="w-12"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                </TableCell>
+              </TableRow>
+            ) : users.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-12 text-gray-500">
+                  No users found
+                </TableCell>
+              </TableRow>
+            ) : (
+              users.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center">
+                        <User className="h-4 w-4 text-gray-500" />
+                      </div>
+                      <div>
+                        <div className="font-medium">{user.displayName || user.email}</div>
+                        <div className="text-sm text-gray-500">{user.email}</div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-500">
+                    {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}
+                  </TableCell>
+                  <TableCell>{user.subdomainCount}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      {user.isSuperAdmin && (
+                        <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">
+                          <Crown className="h-3 w-3 mr-1" />
+                          Super Admin
+                        </Badge>
+                      )}
+                      {user.isAdmin && !user.isSuperAdmin && (
+                        <Badge variant="secondary">Admin</Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleViewUser(user)}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        {user.isAdmin ? (
+                          <DropdownMenuItem
+                            onClick={() => handleToggleAdmin(user, false)}
+                            disabled={actionLoading}
+                          >
+                            Remove Admin
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem
+                            onClick={() => handleToggleAdmin(user, true)}
+                            disabled={actionLoading}
+                          >
+                            Make Admin
+                          </DropdownMenuItem>
+                        )}
+                        {user.isSuperAdmin ? (
+                          <DropdownMenuItem
+                            onClick={() => handleToggleSuperAdmin(user, false)}
+                            disabled={actionLoading}
+                            className="text-red-600"
+                          >
+                            Remove Super Admin
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem
+                            onClick={() => handleToggleSuperAdmin(user, true)}
+                            disabled={actionLoading}
+                          >
+                            <Crown className="h-4 w-4 mr-2" />
+                            Make Super Admin
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </Card>
+
+      {totalPages > 1 && (
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-gray-500">
+            Page {page} of {totalPages}
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>User Details</DialogTitle>
+            <DialogDescription>
+              {selectedUser?.email}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-gray-500">Display Name</Label>
+                  <p className="font-medium">{selectedUser.displayName || "Not set"}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">User ID</Label>
+                  <p className="font-mono text-sm">{selectedUser.id}</p>
+                </div>
+              </div>
+
+              {userDetails ? (
+                <>
+                  <div>
+                    <Label className="text-gray-500 mb-2 block">
+                      Subdomains ({userDetails.subdomains.length})
+                    </Label>
+                    {userDetails.subdomains.length > 0 ? (
+                      <div className="space-y-2">
+                        {userDetails.subdomains.map((s) => (
+                          <div
+                            key={s.subdomain}
+                            className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="text-xl">{s.emoji}</span>
+                              <span className="font-medium">{s.subdomain}</span>
+                            </div>
+                            <a
+                              href={`${protocol}://${s.subdomain}.${rootDomain}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-500 text-sm hover:underline"
+                            >
+                              Visit
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-sm">No subdomains</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label className="text-gray-500 mb-2 block">
+                      Teams ({userDetails.teams.length})
+                    </Label>
+                    {userDetails.teams.length > 0 ? (
+                      <div className="space-y-2">
+                        {userDetails.teams.map((t) => (
+                          <div
+                            key={t.id}
+                            className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Building2 className="h-4 w-4 text-gray-400" />
+                              <span className="font-medium">{t.name}</span>
+                            </div>
+                            <Badge variant="outline">{t.role}</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-sm">Not a member of any teams</p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="py-8 text-center">
+                  <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
+}
+
+type PlatformTeam = {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  ownerId: string
+  memberCount: number
+  createdAt: string
+}
+
+function TeamsSection() {
+  const [teams, setTeams] = useState<PlatformTeam[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState("")
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
+
+  const fetchTeams = useCallback(async () => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: "20",
+        ...(search && { search }),
+      })
+      const res = await fetch(`/api/super-admin/teams?${params}`)
+      if (res.ok) {
+        const data = await res.json()
+        setTeams(data.teams)
+        setTotalPages(data.totalPages)
+        setTotal(data.total)
+      }
+    } catch (error) {
+      console.error("Failed to fetch teams:", error)
+    } finally {
+      setLoading(false)
+    }
+  }, [page, search])
+
+  useEffect(() => {
+    fetchTeams()
+  }, [fetchTeams])
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">Team Management</h2>
+          <p className="text-sm text-gray-500">{total} total teams</p>
+        </div>
+        <Button onClick={fetchTeams} variant="outline" size="sm">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
+      </div>
+
+      <div className="flex gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Search by team name..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setPage(1)
+            }}
+            className="pl-10"
+          />
+        </div>
+      </div>
+
+      <Card>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Team</TableHead>
+              <TableHead>Slug</TableHead>
+              <TableHead>Members</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead className="w-12"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                </TableCell>
+              </TableRow>
+            ) : teams.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-12 text-gray-500">
+                  No teams found
+                </TableCell>
+              </TableRow>
+            ) : (
+              teams.map((team) => (
+                <TableRow key={team.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 bg-blue-100 rounded flex items-center justify-center">
+                        <Building2 className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <div className="font-medium">{team.name}</div>
+                        {team.description && (
+                          <div className="text-sm text-gray-500 truncate max-w-xs">
+                            {team.description}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="font-mono text-sm text-gray-500">
+                    {team.slug}
+                  </TableCell>
+                  <TableCell>{team.memberCount}</TableCell>
+                  <TableCell className="text-sm text-gray-500">
+                    {new Date(team.createdAt).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-red-600">
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Team
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </Card>
+
+      {totalPages > 1 && (
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-gray-500">
+            Page {page} of {totalPages}
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+type AnalyticsData = {
+  users: { total: number; newLast30Days: number; dailySignups: { date: string; count: number }[] }
+  subdomains: { total: number; last30Days: number; last7Days: number }
+  teams: { total: number; last30Days: number; avgSize: number; totalMembers: number }
+  invitations: { totalSent: number; accepted: number; declined: number; pending: number }
+  topUsers: { userId: string; email: string; subdomainCount: number }[]
 }
 
 function AnalyticsSection() {
-  return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-gray-900">Analytics & Reports</h2>
-      <Card>
-        <CardContent className="py-12 text-center">
-          <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500 mb-2">Analytics dashboard coming soon</p>
-          <p className="text-sm text-gray-400">Track usage, performance, and growth metrics</p>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
+  const [loading, setLoading] = useState(true)
 
-function SettingsSection() {
+  useEffect(() => {
+    fetch("/api/super-admin/analytics")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) setAnalytics(data)
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-xl font-semibold text-gray-900">Platform Analytics</h2>
+        <div className="py-12 text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+        </div>
+      </div>
+    )
+  }
+
+  if (!analytics) {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-xl font-semibold text-gray-900">Platform Analytics</h2>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">Failed to load analytics</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-gray-900">Platform Settings</h2>
-      <div className="grid gap-4 md:grid-cols-2">
+      <h2 className="text-xl font-semibold text-gray-900">Platform Analytics</h2>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Security Settings
-            </CardTitle>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-gray-600">Total Users</CardTitle>
+              <Users className="h-4 w-4 text-blue-500" />
+            </div>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-500 mb-4">Configure authentication and security policies</p>
-            <Button variant="outline" size="sm">
-              Configure
-            </Button>
+            <div className="text-2xl font-bold">{analytics.users.total}</div>
+            <p className="text-xs text-green-600 mt-1">+{analytics.users.newLast30Days} last 30 days</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-gray-600">Subdomains</CardTitle>
+              <Globe className="h-4 w-4 text-green-500" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.subdomains.total}</div>
+            <p className="text-xs text-green-600 mt-1">+{analytics.subdomains.last7Days} this week</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-gray-600">Teams</CardTitle>
+              <Building2 className="h-4 w-4 text-purple-500" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.teams.total}</div>
+            <p className="text-xs text-gray-500 mt-1">Avg {analytics.teams.avgSize.toFixed(1)} members</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-gray-600">Pending Invites</CardTitle>
+              <Mail className="h-4 w-4 text-orange-500" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.invitations.pending}</div>
+            <p className="text-xs text-gray-500 mt-1">{analytics.invitations.accepted} accepted</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>User Signups (Last 14 Days)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[200px] flex items-end gap-1">
+              {analytics.users.dailySignups.map((day) => {
+                const maxCount = Math.max(...analytics.users.dailySignups.map((d) => d.count), 1)
+                const height = (day.count / maxCount) * 100
+                return (
+                  <div key={day.date} className="flex-1 flex flex-col items-center">
+                    <div
+                      className="w-full bg-blue-500 rounded-t"
+                      style={{ height: `${Math.max(height, 2)}%` }}
+                      title={`${day.date}: ${day.count}`}
+                    />
+                    <div className="text-[10px] text-gray-400 mt-1 -rotate-45 origin-top-left">
+                      {day.date.slice(5)}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5" />
-              Database Settings
-            </CardTitle>
+            <CardTitle>Top Users by Subdomains</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-500 mb-4">Manage database connections and backups</p>
-            <Button variant="outline" size="sm">
-              Manage
-            </Button>
+            <div className="space-y-3">
+              {analytics.topUsers.map((user, index) => (
+                <div key={user.userId} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-6 w-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium">
+                      {index + 1}
+                    </div>
+                    <span className="text-sm truncate max-w-[200px]">{user.email}</span>
+                  </div>
+                  <Badge variant="secondary">{user.subdomainCount}</Badge>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -395,7 +1067,409 @@ function SettingsSection() {
   )
 }
 
-export function AdminDashboard({ tenants }: { tenants: Tenant[] }) {
+type ActivityLogEntry = {
+  id: string
+  actorId: string | null
+  actorEmail: string | null
+  action: string
+  targetType: string | null
+  targetId: string | null
+  details: Record<string, unknown>
+  ipAddress: string | null
+  createdAt: string
+}
+
+function ActivitySection() {
+  const [logs, setLogs] = useState<ActivityLogEntry[]>([])
+  const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [actionFilter, setActionFilter] = useState("")
+
+  const fetchLogs = useCallback(async () => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: "25",
+        ...(actionFilter && { action: actionFilter }),
+      })
+      const res = await fetch(`/api/super-admin/activity-log?${params}`)
+      if (res.ok) {
+        const data = await res.json()
+        setLogs(data.logs)
+        setTotalPages(data.totalPages)
+      }
+    } catch (error) {
+      console.error("Failed to fetch activity logs:", error)
+    } finally {
+      setLoading(false)
+    }
+  }, [page, actionFilter])
+
+  useEffect(() => {
+    fetchLogs()
+  }, [fetchLogs])
+
+  const formatAction = (action: string) => {
+    return action.replace(/\./g, " ").replace(/_/g, " ")
+  }
+
+  const getActionColor = (action: string) => {
+    if (action.includes("delete") || action.includes("revoke")) return "text-red-600 bg-red-50"
+    if (action.includes("create") || action.includes("grant")) return "text-green-600 bg-green-50"
+    if (action.includes("update") || action.includes("edit")) return "text-blue-600 bg-blue-50"
+    return "text-gray-600 bg-gray-50"
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">Activity Log</h2>
+          <p className="text-sm text-gray-500">Platform-wide activity history</p>
+        </div>
+        <Button onClick={fetchLogs} variant="outline" size="sm">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
+      </div>
+
+      <Card>
+        <div className="divide-y">
+          {loading ? (
+            <div className="py-12 text-center">
+              <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+            </div>
+          ) : logs.length === 0 ? (
+            <div className="py-12 text-center text-gray-500">
+              <History className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <p>No activity logged yet</p>
+            </div>
+          ) : (
+            logs.map((log) => (
+              <div key={log.id} className="p-4 hover:bg-gray-50">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-1">
+                      <Activity className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Badge className={getActionColor(log.action)} variant="secondary">
+                          {formatAction(log.action)}
+                        </Badge>
+                        {log.targetType && (
+                          <span className="text-sm text-gray-500">
+                            on {log.targetType}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-sm text-gray-500 mt-1">
+                        {log.actorEmail || "System"}
+                        {log.ipAddress && <span className="ml-2 text-gray-400">({log.ipAddress})</span>}
+                      </div>
+                      {Object.keys(log.details).length > 0 && (
+                        <details className="mt-2">
+                          <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600">
+                            View details
+                          </summary>
+                          <pre className="mt-1 text-xs bg-gray-50 p-2 rounded overflow-x-auto">
+                            {JSON.stringify(log.details, null, 2)}
+                          </pre>
+                        </details>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    {new Date(log.createdAt).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </Card>
+
+      {totalPages > 1 && (
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-gray-500">Page {page} of {totalPages}</p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+type PlatformSettings = {
+  platformName: string
+  supportEmail: string
+  maintenanceMode: boolean
+  registrationEnabled: boolean
+  inviteOnlyMode: boolean
+  maxSubdomainsPerUser: number
+  maxTeamsPerUser: number
+  maxMembersPerTeam: number
+  defaultTrialDays: number
+  requireEmailVerification: boolean
+  allowCustomDomains: boolean
+}
+
+function SettingsSection() {
+  const [settings, setSettings] = useState<PlatformSettings | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    fetch("/api/super-admin/settings")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.settings) setSettings(data.settings)
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [])
+
+  const handleSave = async () => {
+    if (!settings) return
+    setSaving(true)
+    try {
+      const res = await fetch("/api/super-admin/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setSettings(data.settings)
+      }
+    } catch (error) {
+      console.error("Failed to save settings:", error)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const updateSetting = <K extends keyof PlatformSettings>(key: K, value: PlatformSettings[K]) => {
+    setSettings((prev) => (prev ? { ...prev, [key]: value } : null))
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-xl font-semibold text-gray-900">Platform Settings</h2>
+        <div className="py-12 text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+        </div>
+      </div>
+    )
+  }
+
+  if (!settings) {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-xl font-semibold text-gray-900">Platform Settings</h2>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">Failed to load settings</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold text-gray-900">Platform Settings</h2>
+        <Button onClick={handleSave} disabled={saving}>
+          {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+          Save Changes
+        </Button>
+      </div>
+
+      <div className="grid gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              General Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="platformName">Platform Name</Label>
+                <Input
+                  id="platformName"
+                  value={settings.platformName}
+                  onChange={(e) => updateSetting("platformName", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="supportEmail">Support Email</Label>
+                <Input
+                  id="supportEmail"
+                  type="email"
+                  value={settings.supportEmail}
+                  onChange={(e) => updateSetting("supportEmail", e.target.value)}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              Access Control
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Registration Enabled</Label>
+                <p className="text-sm text-gray-500">Allow new users to sign up</p>
+              </div>
+              <Switch
+                checked={settings.registrationEnabled}
+                onCheckedChange={(v) => updateSetting("registrationEnabled", v)}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Invite Only Mode</Label>
+                <p className="text-sm text-gray-500">Require invitation to sign up</p>
+              </div>
+              <Switch
+                checked={settings.inviteOnlyMode}
+                onCheckedChange={(v) => updateSetting("inviteOnlyMode", v)}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Maintenance Mode</Label>
+                <p className="text-sm text-gray-500">Temporarily disable access for non-admins</p>
+              </div>
+              <Switch
+                checked={settings.maintenanceMode}
+                onCheckedChange={(v) => updateSetting("maintenanceMode", v)}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Require Email Verification</Label>
+                <p className="text-sm text-gray-500">Users must verify email before access</p>
+              </div>
+              <Switch
+                checked={settings.requireEmailVerification}
+                onCheckedChange={(v) => updateSetting("requireEmailVerification", v)}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Database className="h-5 w-5" />
+              Limits
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="maxSubdomains">Max Subdomains per User</Label>
+                <Input
+                  id="maxSubdomains"
+                  type="number"
+                  value={settings.maxSubdomainsPerUser}
+                  onChange={(e) => updateSetting("maxSubdomainsPerUser", parseInt(e.target.value) || 0)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="maxTeams">Max Teams per User</Label>
+                <Input
+                  id="maxTeams"
+                  type="number"
+                  value={settings.maxTeamsPerUser}
+                  onChange={(e) => updateSetting("maxTeamsPerUser", parseInt(e.target.value) || 0)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="maxMembers">Max Members per Team</Label>
+                <Input
+                  id="maxMembers"
+                  type="number"
+                  value={settings.maxMembersPerTeam}
+                  onChange={(e) => updateSetting("maxMembersPerTeam", parseInt(e.target.value) || 0)}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="h-5 w-5" />
+              Features
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Allow Custom Domains</Label>
+                <p className="text-sm text-gray-500">Let users connect their own domains</p>
+              </div>
+              <Switch
+                checked={settings.allowCustomDomains}
+                onCheckedChange={(v) => updateSetting("allowCustomDomains", v)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="trialDays">Default Trial Days</Label>
+              <Input
+                id="trialDays"
+                type="number"
+                className="w-32"
+                value={settings.defaultTrialDays}
+                onChange={(e) => updateSetting("defaultTrialDays", parseInt(e.target.value) || 0)}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}
+
+export function AdminDashboard({
+  tenants,
+  superAdmin,
+}: {
+  tenants: Tenant[]
+  superAdmin: SuperAdminInfo
+}) {
   const [state, action] = useFormState<DeleteState, FormData>(deleteSubdomainAction, {})
   const [isPending, setIsPending] = useState(false)
   const [activeSection, setActiveSection] = useState<AdminSection>("overview")
@@ -404,7 +1478,7 @@ export function AdminDashboard({ tenants }: { tenants: Tenant[] }) {
   const [tiersLoaded, setTiersLoaded] = useState(false)
 
   const user = useUser()
-  const adminUserId = user?.id || "admin"
+  const adminUserId = superAdmin.userId
 
   // Load tiers when switching to tiers section
   useEffect(() => {
@@ -443,6 +1517,10 @@ export function AdminDashboard({ tenants }: { tenants: Tenant[] }) {
     switch (activeSection) {
       case "overview":
         return <OverviewSection tenants={tenants} />
+      case "users":
+        return <UsersSection />
+      case "teams":
+        return <TeamsSection />
       case "clients":
         return <ClientsSection adminUserId={adminUserId} />
       case "tiers":
@@ -451,6 +1529,8 @@ export function AdminDashboard({ tenants }: { tenants: Tenant[] }) {
         return <SubdomainsSection tenants={tenants} action={handleAction} isPending={isPending} />
       case "analytics":
         return <AnalyticsSection />
+      case "activity":
+        return <ActivitySection />
       case "settings":
         return <SettingsSection />
       default:

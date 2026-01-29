@@ -2,34 +2,23 @@ import { getAllSubdomains } from "@/lib/subdomains"
 import type { Metadata } from "next"
 import { AdminDashboard } from "./dashboard"
 import { rootDomain } from "@/lib/utils"
-import { stackServerApp } from "@/stack"
-import { getUserWithRole } from "@/lib/auth-utils"
-import { redirect } from "next/navigation"
+import { requireSuperAdmin } from "@/lib/super-admin"
 
 export const metadata: Metadata = {
-  title: `Admin Dashboard | ${rootDomain}`,
-  description: `Manage subdomains for ${rootDomain}`,
+  title: `Super Admin Dashboard | ${rootDomain}`,
+  description: `Platform administration for ${rootDomain}`,
 }
 
 export default async function AdminPage() {
-  try {
-    const user = await stackServerApp.getUser()
+  // This will redirect to /dashboard if not a super admin
+  const { user, permissions } = await requireSuperAdmin()
 
-    if (!user) {
-      redirect("/login")
-    }
+  const tenants = await getAllSubdomains()
 
-    const userWithRole = await getUserWithRole(user.id)
-
-    if (!userWithRole || !userWithRole.isAdmin) {
-      redirect("/dashboard")
-    }
-
-    const tenants = await getAllSubdomains()
-
-    return <AdminDashboard tenants={tenants} />
-  } catch (error) {
-    console.error("[v0] Admin page auth error:", error)
-    redirect("/dashboard")
-  }
+  return (
+    <AdminDashboard
+      tenants={tenants}
+      superAdmin={{ userId: user.id, email: user.email, permissions }}
+    />
+  )
 }
