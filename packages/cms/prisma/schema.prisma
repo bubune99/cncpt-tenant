@@ -15,15 +15,15 @@ datasource db {
 
 model User {
   id            String    @id @default(cuid())
-  stackAuthId   String?   @unique // Stack Auth UUID - synced from auth provider
+  stackAuthId   String?   @unique @map("stack_auth_id") // Stack Auth UUID - synced from auth provider
   email         String    @unique
   name          String?
   avatar        String?
   phone         String?
   role          UserRole  @default(VIEWER)
-  emailVerified DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now()) @updatedAt
+  emailVerified DateTime? @map("email_verified")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
 
   // Relations
   addresses     Address[]
@@ -52,7 +52,7 @@ model User {
   // Puck templates created by this user
   puckTemplates PuckTemplate[]
 
-  @@index([stackAuthId])
+  @@index([stackAuthId], map: "users_stack_auth_id_idx")
   @@map("users")
 }
 
@@ -3771,7 +3771,9 @@ model Subdomain {
   id        Int      @id @default(autoincrement())
   subdomain String   @unique
   emoji     String
+  userId    String?  @map("user_id")
   createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
 
   // Relations to tenant tables
   tenantPosts    TenantPost[]
@@ -3779,6 +3781,7 @@ model Subdomain {
   tenantSettings TenantSetting?
 
   @@index([subdomain])
+  @@index([userId], map: "idx_subdomains_user_id")
   @@map("subdomains")
 }
 
