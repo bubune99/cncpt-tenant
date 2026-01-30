@@ -51,7 +51,13 @@
       "types": "./dist/mcp/index.d.ts",
       "import": "./dist/mcp/index.mjs",
       "require": "./dist/mcp/index.js"
-    }
+    },
+    "./storefront": {
+      "types": "./src/components/storefront/index.ts",
+      "import": "./src/components/storefront/index.ts",
+      "require": "./src/components/storefront/index.ts"
+    },
+    "./src/*": "./src/*"
   },
   "files": [
     "dist"
