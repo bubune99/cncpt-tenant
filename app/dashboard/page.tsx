@@ -27,32 +27,13 @@ export default function DashboardPage({ user: initialUser, subdomains: initialSu
 
   const stackUser = useUser()
 
+  // Sync Stack Auth user to local state
   useEffect(() => {
-    let mounted = true
-
-    const loadUser = async () => {
-      try {
-        if (mounted) {
-          setUser(stackUser)
-          setStackAuthError(null)
-        }
-      } catch (err: any) {
-        console.error("[v0] Stack Auth error:", err)
-        if (mounted) {
-          if (err.message?.includes("Too Many")) {
-            setStackAuthError("Rate limit exceeded. Please wait a moment and refresh the page.")
-          } else {
-            setStackAuthError("Authentication service temporarily unavailable.")
-          }
-        }
-      }
+    if (stackUser) {
+      setUser(stackUser)
+      setStackAuthError(null)
     }
-
-    loadUser()
-    return () => {
-      mounted = false
-    }
-  }, [])
+  }, [stackUser])
 
   useEffect(() => {
     setIsClient(true)
