@@ -1,9 +1,7 @@
 import { MediaManager } from '../../../components/admin/media'
 
-export const metadata = {
-  title: 'Media Manager | Admin',
-  description: 'Manage your files, images, videos, and documents',
-}
+// Note: metadata export removed as this page is dynamically imported by admin-pages
+// which is a client component. Metadata should be set at the route level instead.
 
 export default function MediaPage() {
   return (
