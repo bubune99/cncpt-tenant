@@ -18,7 +18,7 @@ export function createTeamTools(userId: string) {
   const listTeams = tool({
     description:
       "List all teams the user owns or is a member of. Returns team names, member counts, and user's role.",
-    parameters: z.object({
+    inputSchema: z.object({
       role: z
         .enum(["owner", "member", "all"])
         .optional()
@@ -115,7 +115,7 @@ export function createTeamTools(userId: string) {
   const getTeamDetails = tool({
     description:
       "Get detailed information about a specific team including members and shared subdomains.",
-    parameters: z.object({
+    inputSchema: z.object({
       teamId: z.string().describe("The team ID to get details for"),
     }),
     execute: async ({ teamId }: { teamId: string }) => {
@@ -198,7 +198,7 @@ export function createTeamTools(userId: string) {
    */
   const listTeamMembers = tool({
     description: "List all members of a specific team with their roles.",
-    parameters: z.object({
+    inputSchema: z.object({
       teamId: z.string().describe("The team ID to list members for"),
     }),
     execute: async ({ teamId }: { teamId: string }) => {
@@ -263,7 +263,7 @@ export function createTeamTools(userId: string) {
    */
   const getTeamInvitations = tool({
     description: "Get pending team invitations (sent or received).",
-    parameters: z.object({
+    inputSchema: z.object({
       type: z
         .enum(["sent", "received", "all"])
         .optional()
@@ -318,7 +318,7 @@ export function createTeamTools(userId: string) {
    */
   const checkTeamAccess = tool({
     description: "Check what access a team has to subdomains, or what subdomains a team can access.",
-    parameters: z.object({
+    inputSchema: z.object({
       teamId: z.string().describe("The team ID to check access for"),
     }),
     execute: async ({ teamId }: { teamId: string }) => {

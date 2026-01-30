@@ -140,7 +140,7 @@ const FEATURE_EXPLANATIONS = {
 export const navigateTo = tool({
   description:
     "Provide a link or instruction to navigate to a specific dashboard page.",
-  parameters: z.object({
+  inputSchema: z.object({
     page: z
       .string()
       .describe(
@@ -211,7 +211,7 @@ export const navigateTo = tool({
 export const explainFeature = tool({
   description:
     "Explain how a dashboard feature works and how to use it.",
-  parameters: z.object({
+  inputSchema: z.object({
     feature: z
       .string()
       .describe(
@@ -246,7 +246,7 @@ export const explainFeature = tool({
 export const suggestActions = tool({
   description:
     "Suggest helpful next actions based on the user's current context or goals.",
-  parameters: z.object({
+  inputSchema: z.object({
     currentPage: z
       .string()
       .optional()
@@ -386,7 +386,7 @@ export const suggestActions = tool({
  */
 export const getHelp = tool({
   description: "Get help with common dashboard tasks and troubleshooting.",
-  parameters: z.object({
+  inputSchema: z.object({
     topic: z.string().describe("What the user needs help with"),
   }),
   execute: async ({ topic }: { topic: string }) => {

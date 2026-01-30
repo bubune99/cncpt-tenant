@@ -50,7 +50,7 @@ export function createDomainTools(userId: string) {
   const listDomains = tool({
     description:
       "List all custom domains across user's subdomains. Can filter by subdomain or verification status.",
-    parameters: z.object({
+    inputSchema: z.object({
       subdomain: z
         .string()
         .optional()
@@ -161,7 +161,7 @@ export function createDomainTools(userId: string) {
   const getDomainStatus = tool({
     description:
       "Get detailed status for a specific domain including verification status and DNS configuration needed.",
-    parameters: z.object({
+    inputSchema: z.object({
       domain: z.string().describe("The custom domain to check"),
     }),
     execute: async ({ domain }: { domain: string }) => {
@@ -227,7 +227,7 @@ export function createDomainTools(userId: string) {
   const troubleshootDomain = tool({
     description:
       "Diagnose common domain configuration issues and provide suggested fixes.",
-    parameters: z.object({
+    inputSchema: z.object({
       domain: z.string().describe("The domain to troubleshoot"),
     }),
     execute: async ({ domain }: { domain: string }) => {
@@ -352,7 +352,7 @@ export function createDomainTools(userId: string) {
   const getDnsInstructions = tool({
     description:
       "Get step-by-step DNS setup instructions for a domain, optionally customized for a specific provider.",
-    parameters: z.object({
+    inputSchema: z.object({
       domain: z.string().describe("The domain to get instructions for"),
       provider: z
         .string()

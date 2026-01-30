@@ -18,7 +18,7 @@ export function createSubdomainTools(userId: string) {
   const listSubdomains = tool({
     description:
       "List all subdomains owned by the current user. Returns subdomain names, emojis, and creation dates.",
-    parameters: z.object({
+    inputSchema: z.object({
       includeStats: z
         .boolean()
         .optional()
@@ -79,7 +79,7 @@ export function createSubdomainTools(userId: string) {
   const getSubdomainDetails = tool({
     description:
       "Get detailed information about a specific subdomain including settings, domains, and team access.",
-    parameters: z.object({
+    inputSchema: z.object({
       subdomain: z.string().describe("The subdomain name to get details for"),
     }),
     execute: async ({ subdomain }: { subdomain: string }) => {
@@ -156,7 +156,7 @@ export function createSubdomainTools(userId: string) {
    */
   const searchSubdomains = tool({
     description: "Search for subdomains by name, title, or description.",
-    parameters: z.object({
+    inputSchema: z.object({
       query: z.string().describe("Search query to match against subdomain names and settings"),
     }),
     execute: async ({ query }: { query: string }) => {
@@ -213,7 +213,7 @@ export function createSubdomainTools(userId: string) {
    */
   const getSubdomainStats = tool({
     description: "Get usage statistics for user's subdomains.",
-    parameters: z.object({}),
+    inputSchema: z.object({}),
     execute: async () => {
       if (!userId) {
         return { error: "User not authenticated" }

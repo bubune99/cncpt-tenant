@@ -68,7 +68,7 @@ export function createBillingTools(userId: string) {
   const getBillingStatus = tool({
     description:
       "Get the user's current subscription plan, usage statistics, and billing information.",
-    parameters: z.object({}),
+    inputSchema: z.object({}),
     execute: async () => {
       if (!userId) {
         return { error: "User not authenticated" }
@@ -153,7 +153,7 @@ export function createBillingTools(userId: string) {
    */
   const getUsageStats = tool({
     description: "Get detailed resource usage statistics.",
-    parameters: z.object({}),
+    inputSchema: z.object({}),
     execute: async () => {
       if (!userId) {
         return { error: "User not authenticated" }
@@ -237,7 +237,7 @@ export function createBillingTools(userId: string) {
    */
   const comparePlans = tool({
     description: "Get a comparison of all available subscription plans with features and pricing.",
-    parameters: z.object({}),
+    inputSchema: z.object({}),
     execute: async () => {
       return {
         plans: Object.entries(PLANS).map(([id, plan]) => ({
@@ -269,7 +269,7 @@ export function createBillingTools(userId: string) {
    */
   const explainBilling = tool({
     description: "Explain billing concepts, upgrade process, or answer billing-related questions.",
-    parameters: z.object({
+    inputSchema: z.object({
       topic: z
         .string()
         .describe(

@@ -1,8 +1,9 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { useChat, type Message } from "@ai-sdk/react"
-import { motion, AnimatePresence } from "framer-motion"
+import { useChat, type UIMessage } from "@ai-sdk/react"
+import { DefaultChatTransport } from "ai"
+import { motion } from "framer-motion"
 import {
   MessageCircle,
   X,
@@ -21,7 +22,17 @@ import {
   useDashboardChatPanel,
   useDashboardChatContext,
   useDashboardChatStore,
+  type DashboardChatContext,
 } from "./store"
+
+// Helper to extract text content from UIMessage parts
+function getMessageText(message: UIMessage): string {
+  if (!message.parts) return ""
+  return message.parts
+    .filter((p): p is { type: "text"; text: string } => p.type === "text")
+    .map((p) => p.text)
+    .join("")
+}
 
 interface ChatPanelProps {
   className?: string
@@ -34,25 +45,35 @@ export function ChatPanel({ className }: ChatPanelProps) {
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const [inputValue, setInputValue] = useState("")
+
+  // Store context in ref to access in transport without causing re-renders
+  const contextRef = useRef<DashboardChatContext>(context)
+  useEffect(() => {
+    contextRef.current = context
+  }, [context])
 
   const {
     messages,
-    input,
-    handleInputChange,
-    handleSubmit,
-    isLoading,
+    sendMessage,
+    status,
     error,
     setMessages,
   } = useChat({
-    api: "/api/dashboard-chat",
-    body: {
-      context,
-    },
-    onFinish: () => {
-      // Scroll to bottom when message completes
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-    },
+    transport: new DefaultChatTransport({
+      api: "/api/dashboard-chat",
+      prepareSendMessagesRequest(request) {
+        return {
+          body: {
+            ...request.body,
+            context: contextRef.current,
+          },
+        }
+      },
+    }),
   })
+
+  const isLoading = status === "streaming" || status === "submitted"
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -68,7 +89,25 @@ export function ChatPanel({ className }: ChatPanelProps) {
 
   const handleNewChat = () => {
     setMessages([])
+    setInputValue("")
     startNewConversation()
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!inputValue.trim() || isLoading) return
+
+    const message = inputValue
+    setInputValue("")
+    await sendMessage({ text: message })
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value)
+  }
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setInputValue(suggestion)
   }
 
   // Collapsed state - floating button
@@ -209,11 +248,7 @@ export function ChatPanel({ className }: ChatPanelProps) {
                   key={suggestion}
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    handleInputChange({
-                      target: { value: suggestion },
-                    } as React.ChangeEvent<HTMLInputElement>)
-                  }}
+                  onClick={() => handleSuggestionClick(suggestion)}
                   className="text-xs"
                 >
                   {suggestion}
@@ -223,7 +258,7 @@ export function ChatPanel({ className }: ChatPanelProps) {
           </div>
         ) : (
           <div className="space-y-4">
-            {messages.map((message: Message) => (
+            {messages.map((message: UIMessage) => (
               <div
                 key={message.id}
                 className={cn(
@@ -245,7 +280,7 @@ export function ChatPanel({ className }: ChatPanelProps) {
                   )}
                 >
                   <div className="text-sm whitespace-pre-wrap prose prose-sm dark:prose-invert">
-                    {message.content}
+                    {getMessageText(message)}
                   </div>
                 </div>
                 {message.role === "user" && (
@@ -282,13 +317,13 @@ export function ChatPanel({ className }: ChatPanelProps) {
         <div className="flex gap-2">
           <Input
             ref={inputRef}
-            value={input}
+            value={inputValue}
             onChange={handleInputChange}
             placeholder="Ask me anything..."
             disabled={isLoading}
             className="flex-1"
           />
-          <Button type="submit" disabled={isLoading || !input.trim()}>
+          <Button type="submit" disabled={isLoading || !inputValue.trim()}>
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (

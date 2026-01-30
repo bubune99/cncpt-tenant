@@ -8,6 +8,9 @@ import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import type { DashboardChatContext } from "@/lib/ai/core/types"
 
+// Re-export DashboardChatContext type
+export type { DashboardChatContext }
+
 export type ChatPanelMode = "collapsed" | "minimized" | "side" | "full"
 
 interface ChatMessage {
