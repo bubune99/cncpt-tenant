@@ -1,7 +1,7 @@
 "use server"
 
 import { redis } from "@/lib/redis"
-import { sql } from "@/lib/neon"
+import { prisma } from "@cncpt/cms/lib"
 import { isValidIcon } from "@/lib/subdomains"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
@@ -84,12 +84,13 @@ export async function createSubdomainAction(prevState: any, formData: FormData) 
   }
 
   try {
-    // Check if subdomain exists in database
-    const existingDb = await sql`
-      SELECT id FROM subdomains WHERE subdomain = ${sanitizedSubdomain}
-    `
+    // Check if subdomain exists in database using Prisma
+    const existingDb = await prisma.subdomain.findUnique({
+      where: { subdomain: sanitizedSubdomain },
+      select: { id: true },
+    })
 
-    if (existingDb.length > 0) {
+    if (existingDb) {
       return {
         subdomain,
         icon,
@@ -109,11 +110,14 @@ export async function createSubdomainAction(prevState: any, formData: FormData) 
       }
     }
 
-    // Create subdomain in database with configuration
-    await sql`
-      INSERT INTO subdomains (user_id, subdomain, emoji, site_name, contact_email, onboarding_completed)
-      VALUES (${user.id}, ${sanitizedSubdomain}, ${emoji}, ${siteName}, ${contactEmail}, false)
-    `
+    // Create subdomain in database using Prisma
+    const newSubdomain = await prisma.subdomain.create({
+      data: {
+        userId: user.id,
+        subdomain: sanitizedSubdomain,
+        emoji,
+      },
+    })
 
     // Also store in Redis for backwards compatibility during migration
     await redis.set(`subdomain:${sanitizedSubdomain}`, {
@@ -123,13 +127,17 @@ export async function createSubdomainAction(prevState: any, formData: FormData) 
       userId: user.id,
     })
 
-    // Create default tenant settings
+    // Create default tenant settings using Prisma
     try {
-      await sql`
-        INSERT INTO tenant_settings (subdomain, site_name, site_description, contact_email)
-        VALUES (${sanitizedSubdomain}, ${siteName}, 'Welcome to my site', ${contactEmail})
-        ON CONFLICT (subdomain) DO NOTHING
-      `
+      await prisma.tenantSetting.upsert({
+        where: { tenantId: newSubdomain.id },
+        update: {},
+        create: {
+          tenantId: newSubdomain.id,
+          siteTitle: siteName,
+          siteDescription: "Welcome to my site",
+        },
+      })
     } catch (settingsError) {
       console.warn("[actions] Failed to create tenant settings:", settingsError)
     }
@@ -162,26 +170,20 @@ export async function deleteSubdomainAction(prevState: any, formData: FormData) 
   }
 
   try {
-    // Delete from database (only if owned by user)
-    const result = await sql`
-      DELETE FROM subdomains
-      WHERE subdomain = ${subdomain} AND user_id = ${user.id}
-      RETURNING id
-    `
+    // Delete from database using Prisma (only if owned by user)
+    const deleted = await prisma.subdomain.deleteMany({
+      where: {
+        subdomain,
+        userId: user.id,
+      },
+    })
 
-    if (result.length === 0) {
+    if (deleted.count === 0) {
       return { success: false, error: "Subdomain not found or access denied" }
     }
 
     // Also delete from Redis for backwards compatibility
     await redis.del(`subdomain:${subdomain}`)
-
-    // Clean up tenant settings
-    try {
-      await sql`DELETE FROM tenant_settings WHERE subdomain = ${subdomain}`
-    } catch (settingsError) {
-      console.warn("[actions] Failed to delete tenant settings:", settingsError)
-    }
 
     revalidatePath("/dashboard")
     return { success: true, message: "Subdomain deleted successfully" }
@@ -198,45 +200,53 @@ export async function getUserSubdomains() {
   }
 
   try {
-    // Get subdomains from database first
-    const dbSubdomains = await sql`
-      SELECT subdomain, emoji, created_at
-      FROM subdomains
-      WHERE user_id = ${user.id}
-      ORDER BY created_at DESC
-    `
+    // Get subdomains from database using Prisma
+    const dbSubdomains = await prisma.subdomain.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      select: {
+        subdomain: true,
+        emoji: true,
+        createdAt: true,
+      },
+    })
 
     if (dbSubdomains.length > 0) {
       return dbSubdomains.map((row) => ({
-        subdomain: row.subdomain as string,
-        emoji: (row.emoji as string) || "❓",
-        created_at: new Date(row.created_at as string),
+        subdomain: row.subdomain,
+        emoji: row.emoji || "❓",
+        created_at: row.createdAt,
       }))
     }
 
     // Fallback to Redis for legacy subdomains
-    const keys = await redis.keys("subdomain:*")
-    if (!keys.length) {
+    try {
+      const keys = await redis.keys("subdomain:*")
+      if (!keys.length) {
+        return []
+      }
+
+      const values = await redis.mget(...keys)
+      const userSubdomains = keys
+        .map((key, index) => {
+          const subdomain = key.replace("subdomain:", "")
+          const data = values[index] as any
+          if (data?.userId === user.id) {
+            return {
+              subdomain,
+              emoji: data.emoji || "❓",
+              created_at: new Date(data.createdAt || Date.now()),
+            }
+          }
+          return null
+        })
+        .filter(Boolean)
+
+      return userSubdomains
+    } catch (redisError) {
+      console.warn("[actions] Redis fallback failed:", redisError)
       return []
     }
-
-    const values = await redis.mget(...keys)
-    const userSubdomains = keys
-      .map((key, index) => {
-        const subdomain = key.replace("subdomain:", "")
-        const data = values[index] as any
-        if (data?.userId === user.id) {
-          return {
-            subdomain,
-            emoji: data.emoji || "❓",
-            created_at: new Date(data.createdAt || Date.now()),
-          }
-        }
-        return null
-      })
-      .filter(Boolean)
-
-    return userSubdomains
   } catch (error) {
     console.error("[actions] Error fetching subdomains:", error)
     return []
