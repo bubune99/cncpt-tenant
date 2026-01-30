@@ -3,52 +3,15 @@ import { type NextRequest, NextResponse } from "next/server"
 // Define rootDomain inline for Edge runtime compatibility
 const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "localhost:3000"
 
-// Edge Config is optional - only used for custom domain mapping
-// If EDGE_CONFIG env var is not set, skip Edge Config lookups
-const edgeConfigEnabled = !!process.env.EDGE_CONFIG
-
 /**
- * Look up which tenant a custom domain belongs to using Edge Config
- * Ultra-low latency: <15ms P99 (often <1ms) vs 50-200ms for DB lookup
- *
- * Edge Config data structure:
- * - Key: `domain:{hostname}` (e.g., "domain:acme.com")
- * - Value: subdomain/tenant identifier (e.g., "acme-store")
+ * Look up which tenant a custom domain belongs to
+ * Currently disabled - requires Edge Config to be set up
+ * TODO: Enable when Edge Config is configured
  */
-async function lookupCustomDomain(hostname: string): Promise<string | null> {
-  // Skip if Edge Config is not configured
-  if (!edgeConfigEnabled) {
-    return null
-  }
-
-  try {
-    // Dynamic import to avoid errors when Edge Config is not configured
-    const { get } = await import("@vercel/edge-config")
-
-    const normalizedHost = hostname.toLowerCase().replace(/\.$/, "")
-
-    // Try exact match first
-    const tenant = await get<string>(`domain:${normalizedHost}`)
-    if (tenant) return tenant
-
-    // Try without www prefix
-    if (normalizedHost.startsWith("www.")) {
-      const withoutWww = normalizedHost.replace(/^www\./, "")
-      const tenantWithoutWww = await get<string>(`domain:${withoutWww}`)
-      if (tenantWithoutWww) return tenantWithoutWww
-    }
-
-    // Try with www prefix
-    const withWww = `www.${normalizedHost}`
-    const tenantWithWww = await get<string>(`domain:${withWww}`)
-    if (tenantWithWww) return tenantWithWww
-
-    return null
-  } catch (error) {
-    // Edge Config might not be configured - fail gracefully
-    console.error("Edge Config lookup failed:", error)
-    return null
-  }
+async function lookupCustomDomain(_hostname: string): Promise<string | null> {
+  // Custom domain lookup is disabled until Edge Config is set up
+  // This prevents middleware crashes on Vercel
+  return null
 }
 
 function extractSubdomain(request: NextRequest): string | null {
