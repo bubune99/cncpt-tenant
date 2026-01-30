@@ -116,8 +116,8 @@ export async function POST(request: NextRequest) {
     const code = body.code.toUpperCase().trim();
 
     // Check for duplicate code
-    const existing = await prisma.discountCode.findUnique({
-      where: { code },
+    const existing = await prisma.discountCode.findFirst({
+      where: { code, tenantId: null },
     });
 
     if (existing) {

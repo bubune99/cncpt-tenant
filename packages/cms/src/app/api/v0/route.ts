@@ -83,8 +83,8 @@ export async function POST(request: NextRequest) {
       }
 
       // Check if slug is taken
-      const existingPage = await prisma.page.findUnique({
-        where: { slug },
+      const existingPage = await prisma.page.findFirst({
+        where: { slug, tenantId: null },
       });
 
       if (existingPage) {

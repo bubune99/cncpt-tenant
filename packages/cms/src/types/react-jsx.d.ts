@@ -2,20 +2,20 @@
 // React 19 has stricter JSX element type requirements that cause issues with
 // ForwardRefExoticComponent used by many libraries (lucide-react, next/link, etc.)
 
-import type { ReactElement, JSXElementConstructor } from 'react';
-
-// Override the JSX.Element type to be more permissive
+// The core fix: make JSX.Element accept ReactElement return types
 declare global {
   namespace JSX {
-    interface Element extends ReactElement<any, any> {}
+    // eslint-disable-next-line @typescript-eslint/no-empty-interface
+    interface Element extends React.ReactElement<any, any> {}
   }
 }
 
 // Fix for ForwardRefExoticComponent not being assignable to JSX element type
-// This is a known issue with React 19's stricter types
 declare module 'react' {
-  interface FunctionComponent<P = {}> {
-    (props: P): ReactElement<any, any> | null;
+  // Augment the JSX namespace within React module
+  namespace JSX {
+    // eslint-disable-next-line @typescript-eslint/no-empty-interface
+    interface Element extends React.ReactElement<any, any> {}
   }
 }
 

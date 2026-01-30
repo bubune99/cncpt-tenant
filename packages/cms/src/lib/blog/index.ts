@@ -19,17 +19,25 @@ function generateSlug(title: string): string {
 async function ensureUniqueSlug(
   slug: string,
   type: 'post' | 'category' | 'tag',
-  excludeId?: string
+  excludeId?: string,
+  tenantId?: number | null
 ): Promise<string> {
   let uniqueSlug = slug
   let counter = 1
 
   while (true) {
+    // For multi-tenant support, use tenant-scoped unique constraint
     const existing = await (type === 'post'
-      ? prisma.blogPost.findUnique({ where: { slug: uniqueSlug } })
+      ? prisma.blogPost.findFirst({
+          where: { slug: uniqueSlug, tenantId: tenantId ?? null },
+        })
       : type === 'category'
-      ? prisma.blogCategory.findUnique({ where: { slug: uniqueSlug } })
-      : prisma.blogTag.findUnique({ where: { slug: uniqueSlug } }))
+      ? prisma.blogCategory.findFirst({
+          where: { slug: uniqueSlug, tenantId: tenantId ?? null },
+        })
+      : prisma.blogTag.findFirst({
+          where: { slug: uniqueSlug, tenantId: tenantId ?? null },
+        }))
 
     if (!existing || existing.id === excludeId) {
       return uniqueSlug
@@ -66,6 +74,7 @@ export interface CreatePostInput {
   pinned?: boolean
   categoryIds?: string[]
   tagIds?: string[]
+  tenantId?: number  // Multi-tenant scoping
 }
 
 export interface UpdatePostInput extends Partial<CreatePostInput> {}
@@ -82,11 +91,12 @@ export interface ListPostsOptions {
   offset?: number
   orderBy?: 'createdAt' | 'publishedAt' | 'title' | 'viewCount'
   orderDir?: 'asc' | 'desc'
+  tenantId?: number  // Multi-tenant scoping
 }
 
 export async function createPost(input: CreatePostInput) {
   const slug = input.slug || generateSlug(input.title)
-  const uniqueSlug = await ensureUniqueSlug(slug, 'post')
+  const uniqueSlug = await ensureUniqueSlug(slug, 'post', undefined, input.tenantId)
 
   // Calculate word count from HTML content
   const wordCount = input.contentHtml
@@ -121,6 +131,7 @@ export async function createPost(input: CreatePostInput) {
       allowComments: input.allowComments ?? true,
       featured: input.featured ?? false,
       pinned: input.pinned ?? false,
+      tenantId: input.tenantId,  // Multi-tenant scoping
       categories: input.categoryIds?.length
         ? {
             create: input.categoryIds.map((categoryId) => ({
@@ -153,9 +164,12 @@ export async function createPost(input: CreatePostInput) {
   return post
 }
 
-export async function getPost(id: string) {
-  return prisma.blogPost.findUnique({
-    where: { id },
+export async function getPost(id: string, tenantId?: number) {
+  return prisma.blogPost.findFirst({
+    where: {
+      id,
+      ...(tenantId !== undefined && { tenantId }),
+    },
     include: {
       author: {
         select: { id: true, name: true, email: true },
@@ -175,9 +189,12 @@ export async function getPost(id: string) {
   })
 }
 
-export async function getPostBySlug(slug: string) {
-  return prisma.blogPost.findUnique({
-    where: { slug },
+export async function getPostBySlug(slug: string, tenantId?: number) {
+  return prisma.blogPost.findFirst({
+    where: {
+      slug,
+      ...(tenantId !== undefined && { tenantId }),
+    },
     include: {
       author: {
         select: { id: true, name: true, email: true },
@@ -210,10 +227,15 @@ export async function listPosts(options: ListPostsOptions = {}) {
     offset = 0,
     orderBy = 'createdAt',
     orderDir = 'desc',
+    tenantId,
   } = options
 
   const where: Prisma.BlogPostWhereInput = {}
 
+  // Multi-tenant filtering
+  if (tenantId !== undefined) {
+    where.tenantId = tenantId
+  }
   if (status) {
     where.status = status as any
   }
@@ -411,13 +433,14 @@ export interface CreateCategoryInput {
   imageId?: string
   metaTitle?: string
   metaDescription?: string
+  tenantId?: number  // Multi-tenant scoping
 }
 
 export interface UpdateCategoryInput extends Partial<CreateCategoryInput> {}
 
 export async function createCategory(input: CreateCategoryInput) {
   const slug = input.slug || generateSlug(input.name)
-  const uniqueSlug = await ensureUniqueSlug(slug, 'category')
+  const uniqueSlug = await ensureUniqueSlug(slug, 'category', undefined, input.tenantId)
 
   return prisma.blogCategory.create({
     data: {
@@ -428,6 +451,7 @@ export async function createCategory(input: CreateCategoryInput) {
       imageId: input.imageId,
       metaTitle: input.metaTitle,
       metaDescription: input.metaDescription,
+      tenantId: input.tenantId,  // Multi-tenant scoping
     },
     include: {
       parent: true,
@@ -454,8 +478,8 @@ export async function getCategory(id: string) {
 }
 
 export async function getCategoryBySlug(slug: string) {
-  return prisma.blogCategory.findUnique({
-    where: { slug },
+  return prisma.blogCategory.findFirst({
+    where: { slug, tenantId: null },
     include: {
       parent: true,
       children: true,
@@ -472,11 +496,16 @@ export async function listCategories(options: {
   search?: string
   limit?: number
   offset?: number
+  tenantId?: number  // Multi-tenant scoping
 } = {}) {
-  const { parentId, search, limit = 100, offset = 0 } = options
+  const { parentId, search, limit = 100, offset = 0, tenantId } = options
 
   const where: Prisma.BlogCategoryWhereInput = {}
 
+  // Multi-tenant filtering
+  if (tenantId !== undefined) {
+    where.tenantId = tenantId
+  }
   if (parentId !== undefined) {
     where.parentId = parentId
   }
@@ -559,19 +588,21 @@ export interface CreateTagInput {
   name: string
   slug?: string
   description?: string
+  tenantId?: number  // Multi-tenant scoping
 }
 
 export interface UpdateTagInput extends Partial<CreateTagInput> {}
 
 export async function createTag(input: CreateTagInput) {
   const slug = input.slug || generateSlug(input.name)
-  const uniqueSlug = await ensureUniqueSlug(slug, 'tag')
+  const uniqueSlug = await ensureUniqueSlug(slug, 'tag', undefined, input.tenantId)
 
   return prisma.blogTag.create({
     data: {
       name: input.name,
       slug: uniqueSlug,
       description: input.description,
+      tenantId: input.tenantId,  // Multi-tenant scoping
     },
     include: {
       _count: {
@@ -593,8 +624,8 @@ export async function getTag(id: string) {
 }
 
 export async function getTagBySlug(slug: string) {
-  return prisma.blogTag.findUnique({
-    where: { slug },
+  return prisma.blogTag.findFirst({
+    where: { slug, tenantId: null },
     include: {
       _count: {
         select: { posts: true },
@@ -607,11 +638,16 @@ export async function listTags(options: {
   search?: string
   limit?: number
   offset?: number
+  tenantId?: number  // Multi-tenant scoping
 } = {}) {
-  const { search, limit = 100, offset = 0 } = options
+  const { search, limit = 100, offset = 0, tenantId } = options
 
   const where: Prisma.BlogTagWhereInput = {}
 
+  // Multi-tenant filtering
+  if (tenantId !== undefined) {
+    where.tenantId = tenantId
+  }
   if (search) {
     where.name = { contains: search, mode: 'insensitive' }
   }

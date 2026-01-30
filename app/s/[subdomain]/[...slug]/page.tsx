@@ -20,5 +20,6 @@ export default async function SubdomainSlugPage({ params }: SubdomainSlugPagePro
   }
 
   // Use the CMS StorefrontRouter to render the appropriate page
-  return <StorefrontRouter subdomain={subdomain} path={slug} />
+  // Pass tenantId to filter content by tenant
+  return <StorefrontRouter subdomain={subdomain} path={slug} tenantId={tenantData.id} />
 }

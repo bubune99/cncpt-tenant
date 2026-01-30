@@ -33,8 +33,8 @@ export const getRouteConfig = cache(async (slug: string): Promise<ResolvedRoute>
   // Normalize slug
   const normalizedSlug = slug.startsWith('/') ? slug : `/${slug}`
 
-  const routeConfig = await prisma.routeConfig.findUnique({
-    where: { slug: normalizedSlug },
+  const routeConfig = await prisma.routeConfig.findFirst({
+    where: { slug: normalizedSlug, tenantId: null },
     include: {
       page: {
         select: {
@@ -103,8 +103,8 @@ export const getRouteConfig = cache(async (slug: string): Promise<ResolvedRoute>
 export async function isSlugReserved(slug: string): Promise<boolean> {
   const normalizedSlug = slug.startsWith('/') ? slug : `/${slug}`
 
-  const existing = await prisma.routeConfig.findUnique({
-    where: { slug: normalizedSlug },
+  const existing = await prisma.routeConfig.findFirst({
+    where: { slug: normalizedSlug, tenantId: null },
     select: { id: true },
   })
 

@@ -93,8 +93,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     // Check slug uniqueness if changing
     if (body.slug && body.slug !== existing.slug) {
-      const slugExists = await prisma.customField.findUnique({
-        where: { slug: body.slug },
+      const slugExists = await prisma.customField.findFirst({
+        where: { slug: body.slug, tenantId: null },
       })
       if (slugExists) {
         return NextResponse.json(

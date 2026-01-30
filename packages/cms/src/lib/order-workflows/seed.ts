@@ -21,8 +21,8 @@ export async function seedDefaultWorkflows(): Promise<{
 
   for (const template of DEFAULT_WORKFLOW_TEMPLATES) {
     // Check if workflow already exists
-    const existing = await prisma.orderWorkflow.findUnique({
-      where: { slug: template.slug },
+    const existing = await prisma.orderWorkflow.findFirst({
+      where: { slug: template.slug, tenantId: null },
     })
 
     if (existing) {
@@ -68,8 +68,8 @@ export async function seedDefaultWorkflows(): Promise<{
  */
 export async function seedWorkflowFromTemplate(template: WorkflowTemplate): Promise<string> {
   // Check if workflow already exists
-  const existing = await prisma.orderWorkflow.findUnique({
-    where: { slug: template.slug },
+  const existing = await prisma.orderWorkflow.findFirst({
+    where: { slug: template.slug, tenantId: null },
   })
 
   if (existing) {

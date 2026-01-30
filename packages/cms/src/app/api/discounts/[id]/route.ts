@@ -87,8 +87,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     // If changing code, check for duplicates
     if (body.code && body.code !== existing.code) {
       const codeNormalized = body.code.toUpperCase().trim();
-      const duplicate = await prisma.discountCode.findUnique({
-        where: { code: codeNormalized },
+      const duplicate = await prisma.discountCode.findFirst({
+        where: { code: codeNormalized, tenantId: null },
       });
 
       if (duplicate) {

@@ -47,7 +47,7 @@ model User {
   notifications Notification[]
 
   // API keys for MCP and external integrations
-  apiKeys       ApiKey[]
+  apiKeys ApiKey[]
 
   // Puck templates created by this user
   puckTemplates PuckTemplate[]
@@ -69,14 +69,18 @@ enum UserRole {
 
 model Customer {
   id        String   @id @default(cuid())
-  email     String   @unique
+  email     String
   firstName String?
   lastName  String?
   phone     String?
   company   String?
-  taxId     String?  // For B2B invoicing
+  taxId     String? // For B2B invoicing
   notes     String?  @db.Text
   tags      String[] // For segmentation
+
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Optional link to CMS User (if customer creates account)
   userId String? @unique
@@ -88,14 +92,14 @@ model Customer {
   stripeSyncError  String?
 
   // Marketing preferences
-  acceptsMarketing   Boolean  @default(false)
-  marketingOptInAt   DateTime?
-  marketingOptOutAt  DateTime?
+  acceptsMarketing  Boolean   @default(false)
+  marketingOptInAt  DateTime?
+  marketingOptOutAt DateTime?
 
   // Stats (denormalized for performance)
-  totalOrders  Int     @default(0)
-  totalSpent   Int     @default(0) // in cents
-  averageOrder Int     @default(0) // in cents
+  totalOrders  Int       @default(0)
+  totalSpent   Int       @default(0) // in cents
+  averageOrder Int       @default(0) // in cents
   lastOrderAt  DateTime?
 
   createdAt DateTime @default(now())
@@ -107,17 +111,19 @@ model Customer {
   wishlists Wishlist[]
   reviews   ProductReview[]
 
+  @@unique([tenantId, email]) // Unique emails per tenant
+  @@index([tenantId])
   @@index([stripeCustomerId])
   @@index([email])
   @@map("customers")
 }
 
 model CustomerAddress {
-  id         String  @id @default(cuid())
+  id         String   @id @default(cuid())
   customerId String
   customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
-  label      String?  // "Home", "Work", "Shipping", etc.
+  label      String? // "Home", "Work", "Shipping", etc.
   firstName  String?
   lastName   String?
   company    String?
@@ -261,31 +267,31 @@ model AuditLog {
 // =============================================================================
 
 model ApiKey {
-  id          String    @id @default(cuid())
+  id          String  @id @default(cuid())
   userId      String
-  name        String    // Human-readable name: "Production MCP", "CI/CD Bot"
+  name        String // Human-readable name: "Production MCP", "CI/CD Bot"
   description String?
 
   // Key hash - never store the raw key
-  keyHash     String    @unique
+  keyHash String @unique
 
   // Key prefix for identification (first 8 chars of key)
-  keyPrefix   String    // "cms_xxxx" - shown in UI for identification
+  keyPrefix String // "cms_xxxx" - shown in UI for identification
 
   // Permissions
-  scopes      String[]  @default(["read", "write"]) // ["read"], ["read", "write"], etc.
+  scopes String[] @default(["read", "write"]) // ["read"], ["read", "write"], etc.
 
   // Lifecycle
-  lastUsedAt  DateTime?
-  expiresAt   DateTime?
-  revokedAt   DateTime?
-  revokedBy   String?
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  revokedAt  DateTime?
+  revokedBy  String?
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([keyHash])
@@ -331,13 +337,19 @@ enum AddressType {
 
 model Setting {
   id        String   @id @default(cuid())
-  key       String   @unique
+  key       String
   value     String   @db.Text // JSON string, encrypted for sensitive values
   group     String // branding, ecommerce, shipping, storage, ai, email
   encrypted Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Multi-tenant scoping (null = global setting)
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation("TenantSettings", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, key]) // Unique keys per tenant (or global if null)
+  @@index([tenantId])
   @@index([group])
   @@map("settings")
 }
@@ -345,17 +357,17 @@ model Setting {
 // MCP Server Configuration
 // Stores MCP server configs that supplement .mcp.json
 model McpServer {
-  id          String   @id @default(cuid())
-  name        String   @unique // Unique identifier, e.g., "my-custom-server"
-  displayName String? // Human-readable name
-  description String? // What this server provides
-  command     String // Command to run, e.g., "npx" or "node"
-  args        Json     @default("[]") // Command arguments as JSON array
-  env         Json? // Environment variables (encrypted values stored separately)
+  id           String   @id @default(cuid())
+  name         String   @unique // Unique identifier, e.g., "my-custom-server"
+  displayName  String? // Human-readable name
+  description  String? // What this server provides
+  command      String // Command to run, e.g., "npx" or "node"
+  args         Json     @default("[]") // Command arguments as JSON array
+  env          Json? // Environment variables (encrypted values stored separately)
   envEncrypted String?  @db.Text // Encrypted env vars JSON
-  enabled     Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  enabled      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([enabled])
   @@map("mcp_servers")
@@ -368,13 +380,17 @@ model McpServer {
 model Product {
   id              String        @id @default(cuid())
   title           String
-  slug            String        @unique
+  slug            String
   description     String?       @db.Text
   descriptionHtml String?       @db.Text
   basePrice       Int           @default(0) // in cents
   compareAtPrice  Int? // for sale display
   status          ProductStatus @default(DRAFT)
   featured        Boolean       @default(false)
+
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Product type
   type    ProductType @default(SIMPLE)
@@ -450,6 +466,8 @@ model Product {
   backInStockSubscriptions BackInStockSubscription[]
   stockReservations        StockReservation[]
 
+  @@unique([tenantId, slug]) // Unique slugs per tenant
+  @@index([tenantId])
   @@index([status])
   @@index([slug])
   @@index([type])
@@ -610,8 +628,12 @@ enum CustomFieldType {
 model CustomField {
   id          String  @id @default(cuid())
   name        String // Display name: "Material", "Country of Origin"
-  slug        String  @unique // Programmatic key: "material", "country_of_origin"
+  slug        String // Programmatic key: "material", "country_of_origin"
   description String?
+
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Field type configuration
   type         CustomFieldType @default(TEXT)
@@ -637,6 +659,8 @@ model CustomField {
   productFields ProductCustomField[]
   variantValues VariantCustomFieldValue[]
 
+  @@unique([tenantId, slug]) // Unique slugs per tenant
+  @@index([tenantId])
   @@index([slug])
   @@index([type])
   @@index([enabled])
@@ -680,11 +704,15 @@ model VariantCustomFieldValue {
 model Category {
   id          String  @id @default(cuid())
   name        String
-  slug        String  @unique
+  slug        String
   description String?
   parentId    String?
   position    Int     @default(0)
   imageId     String?
+
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Order workflow (default for products in this category)
   orderWorkflowId String?
@@ -699,6 +727,8 @@ model Category {
   products      ProductCategory[]
   orderWorkflow OrderWorkflow?    @relation("CategoryWorkflow", fields: [orderWorkflowId], references: [id])
 
+  @@unique([tenantId, slug]) // Unique slugs per tenant
+  @@index([tenantId])
   @@index([slug])
   @@index([orderWorkflowId])
   @@map("categories")
@@ -723,6 +753,10 @@ model DigitalAsset {
   id          String  @id @default(cuid())
   name        String
   description String?
+
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // File storage
   fileUrl  String? // External URL
@@ -751,6 +785,7 @@ model DigitalAsset {
   licenseKeys LicenseKey[]
   downloads   DigitalDownload[]
 
+  @@index([tenantId])
   @@map("digital_assets")
 }
 
@@ -833,6 +868,10 @@ model Order {
   email       String
   status      OrderStatus @default(PENDING)
 
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
   // Totals (in cents)
   subtotal      Int
   shippingTotal Int @default(0)
@@ -882,6 +921,7 @@ model Order {
   // Inventory
   stockReservations StockReservation[]
 
+  @@index([tenantId])
   @@index([orderNumber])
   @@index([customerId])
   @@index([status])
@@ -980,8 +1020,12 @@ enum ShipmentStatus {
 model OrderWorkflow {
   id          String  @id @default(cuid())
   name        String // "Standard Shipping", "Digital Download", "Custom Order"
-  slug        String  @unique
+  slug        String
   description String?
+
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Default workflow is used when no specific workflow is assigned
   isDefault Boolean @default(false)
@@ -999,6 +1043,8 @@ model OrderWorkflow {
   products   Product[]            @relation("ProductWorkflow")
   categories Category[]           @relation("CategoryWorkflow")
 
+  @@unique([tenantId, slug]) // Unique slugs per tenant
+  @@index([tenantId])
   @@index([isDefault])
   @@index([isActive])
   @@map("order_workflows")
@@ -1087,8 +1133,12 @@ model OrderProgress {
 model Page {
   id     String     @id @default(cuid())
   title  String
-  slug   String     @unique
+  slug   String
   status PageStatus @default(DRAFT)
+
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Puck editor content (JSON)
   content Json?
@@ -1108,7 +1158,7 @@ model Page {
   customFooter Json? // Custom footer Puck data (when footerMode=CUSTOM)
 
   // Announcement bar
-  showAnnouncement Boolean @default(true)
+  showAnnouncement   Boolean @default(true)
   customAnnouncement Json? // Custom announcement (null = use global)
 
   createdAt   DateTime  @default(now())
@@ -1122,15 +1172,17 @@ model Page {
   routeConfig   RouteConfig? // If this page is mapped to a root-level route
   bundles       PageBundle[] // Bundles that created this page
 
+  @@unique([tenantId, slug]) // Unique slugs per tenant
+  @@index([tenantId])
   @@index([slug])
   @@index([status])
   @@map("pages")
 }
 
 enum PageLayoutMode {
-  GLOBAL  // Use global site settings
-  CUSTOM  // Use page-specific custom header/footer
-  NONE    // No header/footer
+  GLOBAL // Use global site settings
+  CUSTOM // Use page-specific custom header/footer
+  NONE // No header/footer
 }
 
 enum PageStatus {
@@ -1147,8 +1199,12 @@ enum PageStatus {
 // Allows choosing between Puck pages, custom-coded components, or redirects
 model RouteConfig {
   id   String    @id @default(cuid())
-  slug String    @unique // The root-level path, e.g., "/", "/about", "/demo"
+  slug String // The root-level path, e.g., "/", "/about", "/demo"
   type RouteType
+
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // For PUCK type - which page to render at this route
   pageId String? @unique
@@ -1168,14 +1224,16 @@ model RouteConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([tenantId, slug]) // Unique slugs per tenant
+  @@index([tenantId])
   @@index([slug])
   @@index([type])
   @@map("route_configs")
 }
 
 enum RouteType {
-  PUCK     // Render a Puck page from the database
-  CUSTOM   // Render a custom-coded React component
+  PUCK // Render a Puck page from the database
+  CUSTOM // Render a custom-coded React component
   REDIRECT // Redirect to another URL
 }
 
@@ -1190,6 +1248,10 @@ model Media {
   mimeType     String
   size         Int // in bytes
   url          String
+
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Image dimensions
   width  Int?
@@ -1229,6 +1291,7 @@ model Media {
   blogOgImages       BlogPost[]        @relation("BlogOgImage")
   blogCategories     BlogCategory[]
 
+  @@index([tenantId])
   @@index([folderId])
   @@index([mimeType])
   @@index([deletedAt])
@@ -1254,6 +1317,10 @@ model MediaFolder {
   color       String? // Optional color for visual distinction
   icon        String? // Lucide icon name
 
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
   // Hierarchy
   parentId String?
   path     String // Materialized path: "/root/parent/child"
@@ -1271,7 +1338,8 @@ model MediaFolder {
   children MediaFolder[] @relation("MediaFolderHierarchy")
   media    Media[]
 
-  @@unique([parentId, slug])
+  @@unique([tenantId, parentId, slug]) // Unique folder names per tenant + parent
+  @@index([tenantId])
   @@index([path])
   @@index([parentId])
   @@map("media_folders")
@@ -1355,7 +1423,7 @@ model AiConversation {
   updatedAt DateTime @updatedAt
 
   // Relations
-  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages AiMessage[]
   votes    AiVote[]
   streams  AiStream[]
@@ -1436,10 +1504,10 @@ model AiStream {
 
 // AiDocument - AI-generated artifacts (documents, code, spreadsheets)
 model AiDocument {
-  id      String @id @default(cuid())
+  id      String  @id @default(cuid())
   userId  String
   title   String
-  kind    String @default("text") // "text", "code", "image", "sheet"
+  kind    String  @default("text") // "text", "code", "image", "sheet"
   content String? @db.Text
 
   createdAt DateTime @default(now())
@@ -1724,36 +1792,36 @@ enum WorkflowExecutionStatus {
 
 // WorkflowTemplate - Pre-built workflow templates for common e-commerce scenarios
 model WorkflowTemplate {
-  id          String  @id @default(cuid())
+  id          String                   @id @default(cuid())
   name        String
-  slug        String  @unique
-  description String? @db.Text
+  slug        String                   @unique
+  description String?                  @db.Text
   category    WorkflowTemplateCategory
 
   // Template structure (simplified representation)
-  trigger     WorkflowTrigger
-  triggerConfig Json?  // Default trigger configuration
-  steps       Json    // Simplified step definitions
+  trigger       WorkflowTrigger
+  triggerConfig Json? // Default trigger configuration
+  steps         Json // Simplified step definitions
 
   // Template metadata
-  icon        String?  // Icon name (e.g., "ShoppingCart", "Mail")
-  color       String?  // Theme color for UI
-  tags        String[] @default([])
+  icon  String? // Icon name (e.g., "ShoppingCart", "Mail")
+  color String? // Theme color for UI
+  tags  String[] @default([])
 
   // Documentation
-  documentation String? @db.Text // Markdown documentation
+  documentation  String? @db.Text // Markdown documentation
   exampleUseCase String? @db.Text
 
   // Status
-  isSystem    Boolean @default(false) // Built-in templates (not editable)
-  isActive    Boolean @default(true)
-  version     String  @default("1.0.0")
+  isSystem Boolean @default(false) // Built-in templates (not editable)
+  isActive Boolean @default(true)
+  version  String  @default("1.0.0")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations - Workflows created from this template
-  workflows   Workflow[]
+  workflows Workflow[]
 
   @@index([category])
   @@index([isActive])
@@ -1761,15 +1829,15 @@ model WorkflowTemplate {
 }
 
 enum WorkflowTemplateCategory {
-  ORDER           // Order-related workflows
-  CART            // Cart/checkout workflows
-  INVENTORY       // Stock management
-  CUSTOMER        // Customer lifecycle
-  MARKETING       // Email campaigns, promotions
-  SHIPPING        // Shipping notifications
-  REVIEW          // Review moderation
-  SUBSCRIPTION    // Subscription management
-  CUSTOM          // User-created templates
+  ORDER // Order-related workflows
+  CART // Cart/checkout workflows
+  INVENTORY // Stock management
+  CUSTOMER // Customer lifecycle
+  MARKETING // Email campaigns, promotions
+  SHIPPING // Shipping notifications
+  REVIEW // Review moderation
+  SUBSCRIPTION // Subscription management
+  CUSTOM // User-created templates
 }
 
 // WorkflowStep - Simplified step representation for workflows
@@ -1778,27 +1846,27 @@ model WorkflowStep {
   workflowId String
 
   // Step definition
-  name       String
-  type       WorkflowStepType
-  order      Int           // Execution order
+  name  String
+  type  WorkflowStepType
+  order Int // Execution order
 
   // Configuration
-  config     Json?         // Step-specific configuration
-  conditions Json?         // Conditional execution rules
+  config     Json? // Step-specific configuration
+  conditions Json? // Conditional execution rules
 
   // Retry/error handling
-  retryCount     Int     @default(0)
-  retryDelay     Int     @default(1000) // ms
+  retryCount      Int     @default(0)
+  retryDelay      Int     @default(1000) // ms
   continueOnError Boolean @default(false)
 
   // Status
-  enabled    Boolean @default(true)
+  enabled Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  workflow Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
 
   @@index([workflowId])
   @@index([order])
@@ -1806,43 +1874,43 @@ model WorkflowStep {
 }
 
 enum WorkflowStepType {
-  TRIGGER       // Entry point
-  ACTION        // Execute an action (send email, update order, etc.)
-  CONDITION     // Conditional branch
-  DELAY         // Wait for time period
-  LOOP          // Iterate over items
-  TRANSFORM     // Data transformation
-  HTTP          // External API call
-  DATABASE      // Database operation
-  NOTIFICATION  // Send notification
-  END           // Terminal step
+  TRIGGER // Entry point
+  ACTION // Execute an action (send email, update order, etc.)
+  CONDITION // Conditional branch
+  DELAY // Wait for time period
+  LOOP // Iterate over items
+  TRANSFORM // Data transformation
+  HTTP // External API call
+  DATABASE // Database operation
+  NOTIFICATION // Send notification
+  END // Terminal step
 }
 
 // WorkflowLog - Detailed execution logs for debugging and monitoring
 model WorkflowLog {
-  id                  String @id @default(cuid())
+  id                  String  @id @default(cuid())
   workflowId          String
   workflowExecutionId String?
 
   // Log details
-  level       WorkflowLogLevel
-  message     String @db.Text
-  stepName    String?
-  stepType    WorkflowStepType?
+  level    WorkflowLogLevel
+  message  String            @db.Text
+  stepName String?
+  stepType WorkflowStepType?
 
   // Context
-  context     Json?    // Additional context data
-  input       Json?    // Input to the step
-  output      Json?    // Output from the step
-  error       String?  @db.Text
-  stackTrace  String?  @db.Text
+  context    Json? // Additional context data
+  input      Json? // Input to the step
+  output     Json? // Output from the step
+  error      String? @db.Text
+  stackTrace String? @db.Text
 
   // Timing
-  duration    Int?     // ms
-  timestamp   DateTime @default(now())
+  duration  Int? // ms
+  timestamp DateTime @default(now())
 
   // Relations
-  workflow    Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  workflow Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
 
   @@index([workflowId])
   @@index([workflowExecutionId])
@@ -2106,9 +2174,9 @@ model PuckTemplate {
   slug              String           @unique
   description       String?          @db.Text
   type              PuckTemplateType @default(SECTION)
-  compatibleConfigs String[]         // ["blog", "pages", "email", "ecommerce", "plugin", "layout", "dashboard"]
-  content           Json             // Puck Data: { root, content, zones }
-  category          String?          // "Hero Sections", "Pricing", "CTAs", etc.
+  compatibleConfigs String[] // ["blog", "pages", "email", "ecommerce", "plugin", "layout", "dashboard"]
+  content           Json // Puck Data: { root, content, zones }
+  category          String? // "Hero Sections", "Pricing", "CTAs", etc.
   tags              String[]         @default([])
   isSystem          Boolean          @default(false) // Built-in templates
   isActive          Boolean          @default(true)
@@ -2127,7 +2195,7 @@ model PuckTemplate {
 
 enum PuckTemplateType {
   SECTION // Reusable block or small group of components
-  PAGE    // Full page layout with multiple sections
+  PAGE // Full page layout with multiple sections
 }
 
 // =============================================================================
@@ -2628,8 +2696,12 @@ model FormSubmission {
 model BlogPost {
   id      String  @id @default(cuid())
   title   String
-  slug    String  @unique
+  slug    String
   excerpt String? @db.Text
+
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Content - TipTap JSON for rich text
   content     Json? // TipTap editor JSON
@@ -2685,6 +2757,8 @@ model BlogPost {
   tags          BlogPostTag[]
   comments      BlogComment[]
 
+  @@unique([tenantId, slug]) // Unique slugs per tenant
+  @@index([tenantId])
   @@index([slug])
   @@index([status])
   @@index([authorId])
@@ -2709,8 +2783,12 @@ enum PostVisibility {
 model BlogCategory {
   id          String  @id @default(cuid())
   name        String
-  slug        String  @unique
+  slug        String
   description String? @db.Text
+
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Hierarchy
   parentId String?
@@ -2736,6 +2814,8 @@ model BlogCategory {
   image    Media?             @relation(fields: [imageId], references: [id])
   posts    BlogPostCategory[]
 
+  @@unique([tenantId, slug]) // Unique slugs per tenant
+  @@index([tenantId])
   @@index([slug])
   @@index([parentId])
   @@map("blog_categories")
@@ -2756,8 +2836,12 @@ model BlogPostCategory {
 model BlogTag {
   id          String  @id @default(cuid())
   name        String
-  slug        String  @unique
+  slug        String
   description String?
+
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Stats
   postCount Int @default(0)
@@ -2768,6 +2852,8 @@ model BlogTag {
   // Relations
   posts BlogPostTag[]
 
+  @@unique([tenantId, slug]) // Unique slugs per tenant
+  @@index([tenantId])
   @@index([slug])
   @@map("blog_tags")
 }
@@ -2880,6 +2966,10 @@ model Cart {
   email     String? // Email captured for recovery
   status    CartStatus @default(ACTIVE)
 
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
   // Cart totals (calculated, in cents)
   subtotal      Int @default(0)
   discountTotal Int @default(0)
@@ -2910,7 +3000,8 @@ model Cart {
   discountCode    DiscountCode? @relation(fields: [discountCodeId], references: [id])
   shippingAddress Address?      @relation("CartShippingAddress", fields: [shippingAddressId], references: [id])
 
-  @@unique([sessionId])
+  @@unique([tenantId, sessionId]) // Unique sessions per tenant
+  @@index([tenantId])
   @@index([userId])
   @@index([email])
   @@index([status])
@@ -2957,9 +3048,13 @@ model CartItem {
 
 model DiscountCode {
   id          String       @id @default(cuid())
-  code        String       @unique // e.g., "SUMMER20"
+  code        String // e.g., "SUMMER20"
   description String?
   type        DiscountType @default(PERCENTAGE)
+
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Discount value
   value         Int // Percentage (e.g., 20 = 20%) or fixed amount in cents
@@ -2989,7 +3084,7 @@ model DiscountCode {
   // Stripe sync
   stripeCouponId        String? // Stripe coupon ID
   stripePromotionCodeId String? // Stripe promotion code ID
-  stripeSyncEnabled     Boolean @default(true) // Whether to sync with Stripe
+  stripeSyncEnabled     Boolean   @default(true) // Whether to sync with Stripe
   stripeSyncedAt        DateTime? // When last synced with Stripe
 
   // Tracking
@@ -3004,6 +3099,8 @@ model DiscountCode {
   carts  Cart[]
   orders Order[]         @relation("OrderDiscount")
 
+  @@unique([tenantId, code]) // Unique codes per tenant
+  @@index([tenantId])
   @@index([code])
   @@index([enabled])
   @@index([startsAt, expiresAt])
@@ -3138,6 +3235,10 @@ model Wishlist {
   isPublic   Boolean @default(false)
   shareId    String? @unique // For sharing
 
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -3145,6 +3246,7 @@ model Wishlist {
   customer Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
   items    WishlistItem[]
 
+  @@index([tenantId])
   @@index([customerId])
   @@index([shareId])
   @@map("wishlists")
@@ -3378,26 +3480,26 @@ enum NotificationType {
 // =============================================================================
 
 model EmailQueueItem {
-  id          String   @id
-  message     Json     // Email message content
-  priority    String   @default("normal") // high, normal, low
-  status      String   @default("pending") // pending, processing, sent, failed, cancelled
+  id       String @id
+  message  Json // Email message content
+  priority String @default("normal") // high, normal, low
+  status   String @default("pending") // pending, processing, sent, failed, cancelled
 
   // Retry handling
-  attempts    Int      @default(0)
-  maxAttempts Int      @default(3)
+  attempts      Int       @default(0)
+  maxAttempts   Int       @default(3)
   lastAttemptAt DateTime?
-  lastError   String?  @db.Text
+  lastError     String?   @db.Text
 
   // Scheduling
   scheduledFor DateTime?
 
   // Results
-  sentAt      DateTime?
-  result      Json?
+  sentAt DateTime?
+  result Json?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([status])
   @@index([priority])
@@ -3411,17 +3513,17 @@ model EmailQueueItem {
 // =============================================================================
 
 model SiteSettings {
-  id        String   @id @default("default") // Singleton pattern
+  id String @id @default("default") // Singleton pattern
 
   // Global Header configuration (Puck JSON data)
-  header    Json?
+  header Json?
 
   // Global Footer configuration (Puck JSON data)
-  footer    Json?
+  footer Json?
 
   // Global Announcement Bar configuration
-  announcementBar      Json?
-  showAnnouncementBar  Boolean @default(false)
+  announcementBar     Json?
+  showAnnouncementBar Boolean @default(false)
 
   // Site-wide settings
   siteName    String?
@@ -3439,8 +3541,8 @@ model SiteSettings {
   defaultOgImage         String?
 
   // Contact info
-  contactEmail String?
-  contactPhone String?
+  contactEmail    String?
+  contactPhone    String?
   businessAddress Json? // { street1, street2, city, state, zip, country }
 
   // Tracking & Analytics
@@ -3459,32 +3561,32 @@ model SiteSettings {
 
 model PageBundle {
   id           String       @id @default(cuid())
-  pageId       String?      // Reference to the created page (null if import failed)
-  name         String       // Bundle name from manifest
-  version      String       // Bundle version
-  manifestHash String?      // SHA-256 hash of manifest for integrity
+  pageId       String? // Reference to the created page (null if import failed)
+  name         String // Bundle name from manifest
+  version      String // Bundle version
+  manifestHash String? // SHA-256 hash of manifest for integrity
   status       BundleStatus @default(ACTIVE)
 
   // Metadata from manifest
-  description  String?
-  category     String?
-  tags         String[]     // Array of tags
-  author       String?
+  description String?
+  category    String?
+  tags        String[] // Array of tags
+  author      String?
 
   // Import tracking
-  importedAt   DateTime     @default(now())
-  importedBy   String?      // User ID who imported
+  importedAt DateTime @default(now())
+  importedBy String? // User ID who imported
 
   // Original manifest stored for reference
-  manifest     Json?
+  manifest Json?
 
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  page         Page?        @relation(fields: [pageId], references: [id], onDelete: SetNull)
-  assets       BundleAsset[]
-  animations   CustomAnimation[]
+  page       Page?             @relation(fields: [pageId], references: [id], onDelete: SetNull)
+  assets     BundleAsset[]
+  animations CustomAnimation[]
 
   @@index([pageId])
   @@index([status])
@@ -3493,38 +3595,38 @@ model PageBundle {
 }
 
 enum BundleStatus {
-  PENDING    // Import in progress
-  ACTIVE     // Successfully imported and in use
-  FAILED     // Import failed
-  ARCHIVED   // Archived/disabled
+  PENDING // Import in progress
+  ACTIVE // Successfully imported and in use
+  FAILED // Import failed
+  ARCHIVED // Archived/disabled
 }
 
 // Track bundle assets after import
 model BundleAsset {
-  id           String            @id @default(cuid())
-  bundleId     String
+  id       String @id @default(cuid())
+  bundleId String
 
   // Original asset info from bundle
-  originalPath String            // Path in bundle zip (e.g., "assets/images/hero.jpg")
-  placeholderId String?          // Placeholder ID used in page content (e.g., "hero-image")
-  mimeType     String
-  originalSize Int               // Size in bytes
-  originalHash String?           // SHA-256 hash from manifest
+  originalPath  String // Path in bundle zip (e.g., "assets/images/hero.jpg")
+  placeholderId String? // Placeholder ID used in page content (e.g., "hero-image")
+  mimeType      String
+  originalSize  Int // Size in bytes
+  originalHash  String? // SHA-256 hash from manifest
 
   // Storage info after upload
-  storageUrl   String?           // New public URL after upload
-  storageKey   String?           // Storage provider key
-  storageProvider String?        // Which provider was used (s3, r2, local, etc.)
+  storageUrl      String? // New public URL after upload
+  storageKey      String? // Storage provider key
+  storageProvider String? // Which provider was used (s3, r2, local, etc.)
 
   // Status
   status       AssetUploadStatus @default(PENDING)
-  errorMessage String?           // Error message if upload failed
+  errorMessage String? // Error message if upload failed
 
-  createdAt    DateTime          @default(now())
-  uploadedAt   DateTime?
+  createdAt  DateTime  @default(now())
+  uploadedAt DateTime?
 
   // Relations
-  bundle       PageBundle        @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  bundle PageBundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
 
   @@index([bundleId])
   @@index([status])
@@ -3532,43 +3634,43 @@ model BundleAsset {
 }
 
 enum AssetUploadStatus {
-  PENDING    // Not yet uploaded
-  UPLOADING  // Currently uploading
-  COMPLETED  // Successfully uploaded
-  FAILED     // Upload failed
-  SKIPPED    // Skipped (e.g., asset already exists)
+  PENDING // Not yet uploaded
+  UPLOADING // Currently uploading
+  COMPLETED // Successfully uploaded
+  FAILED // Upload failed
+  SKIPPED // Skipped (e.g., asset already exists)
 }
 
 // Store custom animations (global or per-bundle)
 model CustomAnimation {
-  id          String        @id @default(cuid())
-  bundleId    String?       // Null for global animations
+  id       String  @id @default(cuid())
+  bundleId String? // Null for global animations
 
-  name        String        // Display name
-  type        AnimationType // keyframe, lottie, sequence
+  name String // Display name
+  type AnimationType // keyframe, lottie, sequence
 
   // Animation definition
-  definition  Json          // Full animation config/data
+  definition Json // Full animation config/data
 
   // For Lottie animations
-  lottieData  Json?         // Lottie JSON data
-  lottiePath  String?       // Path to Lottie file (if stored externally)
+  lottieData Json? // Lottie JSON data
+  lottiePath String? // Path to Lottie file (if stored externally)
 
   // Metadata
-  isGlobal    Boolean       @default(false) // Available to all pages
+  isGlobal    Boolean  @default(false) // Available to all pages
   description String?
   tags        String[]
 
   // Dimensions (for Lottie)
-  width       Int?
-  height      Int?
-  duration    Float?        // Duration in seconds
+  width    Int?
+  height   Int?
+  duration Float? // Duration in seconds
 
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  bundle      PageBundle?   @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  bundle PageBundle? @relation(fields: [bundleId], references: [id], onDelete: Cascade)
 
   @@index([bundleId])
   @@index([type])
@@ -3577,10 +3679,10 @@ model CustomAnimation {
 }
 
 enum AnimationType {
-  KEYFRAME   // CSS keyframe animation
-  LOTTIE     // Lottie animation
-  SEQUENCE   // Timeline sequence
-  PRESET     // Predefined animation preset
+  KEYFRAME // CSS keyframe animation
+  LOTTIE // Lottie animation
+  SEQUENCE // Timeline sequence
+  PRESET // Predefined animation preset
 }
 
 // =============================================================================
@@ -3588,40 +3690,40 @@ enum AnimationType {
 // =============================================================================
 
 model CustomComponent {
-  id          String              @id @default(cuid())
+  id String @id @default(cuid())
 
   // Component identity
-  name        String              @unique // PascalCase component name
-  displayName String              // Human-readable name
-  description String?             @db.Text
+  name        String  @unique // PascalCase component name
+  displayName String // Human-readable name
+  description String? @db.Text
 
   // Organization
-  category    String              @default("Custom") // Category for grouping
-  tags        String[]            // Tags for filtering
+  category String   @default("Custom") // Category for grouping
+  tags     String[] // Tags for filtering
 
   // Source code
-  sourceCode  String              @db.Text // Original React/TSX code
-  sourceUrl   String?             // Original v0.dev URL if imported
+  sourceCode String  @db.Text // Original React/TSX code
+  sourceUrl  String? // Original v0.dev URL if imported
 
   // Puck configuration (stored as JSON)
-  puckConfig  Json                // Complete PuckComponentConfig
+  puckConfig Json // Complete PuckComponentConfig
 
   // Status and versioning
-  version     Int                 @default(1)
-  status      ComponentStatus     @default(DRAFT)
-  isPublished Boolean             @default(false)
+  version     Int             @default(1)
+  status      ComponentStatus @default(DRAFT)
+  isPublished Boolean         @default(false)
 
   // Metadata
-  language    String              @default("typescript") // typescript or javascript
-  dependencies String[]           // npm dependencies needed
-  complexity  String              @default("simple") // simple, moderate, complex
+  language     String   @default("typescript") // typescript or javascript
+  dependencies String[] // npm dependencies needed
+  complexity   String   @default("simple") // simple, moderate, complex
 
   // Audit
-  createdBy   String?             // User ID
-  updatedBy   String?             // User ID
+  createdBy String? // User ID
+  updatedBy String? // User ID
 
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([category])
   @@index([status])
@@ -3630,10 +3732,10 @@ model CustomComponent {
 }
 
 enum ComponentStatus {
-  DRAFT      // Not ready for use
-  ACTIVE     // Ready to use
+  DRAFT // Not ready for use
+  ACTIVE // Ready to use
   DEPRECATED // Marked for removal
-  ARCHIVED   // Hidden from component list
+  ARCHIVED // Hidden from component list
 }
 
 // =============================================================================
@@ -3642,46 +3744,46 @@ enum ComponentStatus {
 
 // Help content for individual UI elements
 model HelpContent {
-  id          String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // Element identification
-  elementKey  String   // Unique key for the UI element (e.g., "admin.sidebar.products")
+  elementKey String // Unique key for the UI element (e.g., "admin.sidebar.products")
 
   // Content
-  title       String   // Short title for the element
-  summary     String   @db.Text // Quick one-liner description
-  details     String?  @db.Text // Fuller explanation (markdown supported)
+  title   String // Short title for the element
+  summary String  @db.Text // Quick one-liner description
+  details String? @db.Text // Fuller explanation (markdown supported)
 
   // Media (optional)
-  mediaUrl    String?  // URL to video/image
-  mediaType   HelpMediaType?
+  mediaUrl  String? // URL to video/image
+  mediaType HelpMediaType?
 
   // Related content
   relatedKeys String[] // Related elementKeys for cross-referencing
-  tourId      String?  // Optional linked walkthrough tour
+  tourId      String? // Optional linked walkthrough tour
 
   // Multi-tenant support
-  storeId     String?  // NULL = global default, otherwise store-specific override
+  storeId String? // NULL = global default, otherwise store-specific override
 
   // Source tracking
-  createdBy   HelpContentSource @default(MANUAL)
-  authorId    String?  // User ID if manually created
+  createdBy HelpContentSource @default(MANUAL)
+  authorId  String? // User ID if manually created
 
   // Lifecycle management
-  status      HelpContentStatus @default(ACTIVE)
-  lastVerifiedAt DateTime?      // When content was last confirmed to be relevant
-  orphanedAt     DateTime?      // When the source element was detected as removed
-  archiveReason  String?        // Reason for archival (if archived)
+  status         HelpContentStatus @default(ACTIVE)
+  lastVerifiedAt DateTime? // When content was last confirmed to be relevant
+  orphanedAt     DateTime? // When the source element was detected as removed
+  archiveReason  String? // Reason for archival (if archived)
 
   // Dynamic entity linking (for help on specific records)
-  entityType  String?  // e.g., "Product", "Order", "Page"
-  entityId    String?  // ID of the linked entity
+  entityType String? // e.g., "Product", "Order", "Page"
+  entityId   String? // ID of the linked entity
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  tour        HelpTour? @relation(fields: [tourId], references: [id], onDelete: SetNull)
+  tour HelpTour? @relation(fields: [tourId], references: [id], onDelete: SetNull)
 
   @@unique([elementKey, storeId]) // One entry per element per store (or global)
   @@index([elementKey])
@@ -3698,49 +3800,49 @@ enum HelpMediaType {
 }
 
 enum HelpContentSource {
-  SYSTEM  // Default content shipped with app
-  MANUAL  // Created by admin/store owner
-  AI      // Generated by AI
+  SYSTEM // Default content shipped with app
+  MANUAL // Created by admin/store owner
+  AI // Generated by AI
 }
 
 enum HelpContentStatus {
-  ACTIVE    // Currently in use
-  DRAFT     // Being edited, not shown to users
-  ORPHANED  // Source element no longer exists, pending review
-  ARCHIVED  // Intentionally removed, kept for history
-  DELETED   // Soft deleted, can be purged
+  ACTIVE // Currently in use
+  DRAFT // Being edited, not shown to users
+  ORPHANED // Source element no longer exists, pending review
+  ARCHIVED // Intentionally removed, kept for history
+  DELETED // Soft deleted, can be purged
 }
 
 // Walkthrough tours (Joyride integration)
 model HelpTour {
-  id          String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // Tour identification
-  slug        String   @unique // URL-friendly identifier
-  title       String   // Display name
-  description String?  @db.Text // What this tour covers
+  slug        String  @unique // URL-friendly identifier
+  title       String // Display name
+  description String? @db.Text // What this tour covers
 
   // Tour configuration
-  steps       Json     // Array of Joyride step configurations
-  options     Json?    // Joyride options (continuous, scrollToFirstStep, etc.)
+  steps   Json // Array of Joyride step configurations
+  options Json? // Joyride options (continuous, scrollToFirstStep, etc.)
 
   // Targeting
-  route       String?  // Optional: only show on specific route pattern
-  roles       String[] // Optional: restrict to specific user roles
+  route String? // Optional: only show on specific route pattern
+  roles String[] // Optional: restrict to specific user roles
 
   // Multi-tenant support
-  storeId     String?  // NULL = global, otherwise store-specific
+  storeId String? // NULL = global, otherwise store-specific
 
   // Status
-  isActive    Boolean  @default(true)
-  priority    Int      @default(0) // For ordering when multiple tours available
+  isActive Boolean @default(true)
+  priority Int     @default(0) // For ordering when multiple tours available
 
   // Metrics
-  timesStarted   Int   @default(0)
-  timesCompleted Int   @default(0)
+  timesStarted   Int @default(0)
+  timesCompleted Int @default(0)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   helpContent HelpContent[]
@@ -3775,10 +3877,30 @@ model Subdomain {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @default(now()) @map("updated_at")
 
-  // Relations to tenant tables
+  // Relations to tenant tables (legacy)
   tenantPosts    TenantPost[]
   tenantPages    TenantPage[]
   tenantSettings TenantSetting?
+
+  // Relations to CMS content (new multi-tenant scoping)
+  blogPosts      BlogPost[]
+  blogCategories BlogCategory[]
+  blogTags       BlogTag[]
+  pages          Page[]
+  products       Product[]
+  categories     Category[]
+  media          Media[]
+  orders         Order[]
+  customers      Customer[]
+  carts          Cart[]
+  wishlists      Wishlist[]
+  discountCodes  DiscountCode[]
+  settings       Setting[]       @relation("TenantSettings")
+  routeConfigs   RouteConfig[]
+  mediaFolders   MediaFolder[]
+  customFields   CustomField[]
+  digitalAssets  DigitalAsset[]
+  workflows      OrderWorkflow[]
 
   @@index([subdomain])
   @@index([userId], map: "idx_subdomains_user_id")
@@ -3787,23 +3909,23 @@ model Subdomain {
 
 // Subscription tiers table (main app managed)
 model SubscriptionTier {
-  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name                 String    @unique @db.VarChar(100)
-  displayName          String    @map("display_name") @db.VarChar(255)
-  description          String?   @db.Text
-  priceMonthly         Decimal   @default(0) @map("price_monthly") @db.Decimal(10, 2)
-  priceYearly          Decimal?  @map("price_yearly") @db.Decimal(10, 2)
-  currency             String    @default("USD") @db.VarChar(3)
-  features             Json      @default("[]")
-  limits               Json      @default("{}")
-  trialDays            Int?      @default(14) @map("trial_days")
-  sortOrder            Int       @default(0) @map("sort_order")
-  isActive             Boolean   @default(true) @map("is_active")
-  stripePriceIdMonthly String?   @map("stripe_price_id_monthly") @db.VarChar(255)
-  stripePriceIdYearly  String?   @map("stripe_price_id_yearly") @db.VarChar(255)
-  stripeProductId      String?   @map("stripe_product_id") @db.VarChar(255)
-  createdAt            DateTime  @default(now()) @map("created_at")
-  updatedAt            DateTime  @default(now()) @map("updated_at")
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                 String   @unique @db.VarChar(100)
+  displayName          String   @map("display_name") @db.VarChar(255)
+  description          String?  @db.Text
+  priceMonthly         Decimal  @default(0) @map("price_monthly") @db.Decimal(10, 2)
+  priceYearly          Decimal? @map("price_yearly") @db.Decimal(10, 2)
+  currency             String   @default("USD") @db.VarChar(3)
+  features             Json     @default("[]")
+  limits               Json     @default("{}")
+  trialDays            Int?     @default(14) @map("trial_days")
+  sortOrder            Int      @default(0) @map("sort_order")
+  isActive             Boolean  @default(true) @map("is_active")
+  stripePriceIdMonthly String?  @map("stripe_price_id_monthly") @db.VarChar(255)
+  stripePriceIdYearly  String?  @map("stripe_price_id_yearly") @db.VarChar(255)
+  stripeProductId      String?  @map("stripe_product_id") @db.VarChar(255)
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @default(now()) @map("updated_at")
 
   // Relations
   teams Team[]

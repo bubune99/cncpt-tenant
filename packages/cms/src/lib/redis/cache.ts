@@ -118,7 +118,7 @@ export async function cacheClear(pattern: string): Promise<number> {
     let cursor: number | string = 0
 
     do {
-      const scanResult = await redis.scan(cursor, { match: pattern, count: 100 })
+      const scanResult: [string | number, string[]] = await redis.scan(cursor, { match: pattern, count: 100 })
       cursor = scanResult[0]
       keys.push(...scanResult[1])
     } while (cursor !== 0 && cursor !== '0')

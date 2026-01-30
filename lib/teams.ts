@@ -1,7 +1,8 @@
-import { sql } from "@/lib/neon"
+import { prisma } from "@cncpt/cms/lib"
 import { stackServerApp } from "@/stack"
 import { randomBytes } from "crypto"
 import type { TeamRole, TeamMembership } from "./team-auth"
+import { Prisma } from "@prisma/client"
 
 // Generate a secure random token
 function generateToken(length: number = 32): string {
@@ -100,10 +101,11 @@ export async function createTeam(
     let isUnique = false
 
     while (!isUnique) {
-      const existing = await sql`
-        SELECT id FROM teams WHERE slug = ${slug}
-      `
-      if (existing.length === 0) {
+      const existing = await prisma.team.findUnique({
+        where: { slug },
+        select: { id: true },
+      })
+      if (!existing) {
         isUnique = true
       } else {
         suffix++
@@ -111,23 +113,29 @@ export async function createTeam(
       }
     }
 
-    const result = await sql`
-      INSERT INTO teams (name, slug, description, logo_url, owner_id, billing_email)
-      VALUES (${name}, ${slug}, ${options.description || null}, ${options.logoUrl || null}, ${ownerId}, ${options.billingEmail || null})
-      RETURNING id, name, slug, description, logo_url, owner_id, stripe_customer_id, stripe_subscription_id, billing_email, tier_id, settings, created_at, updated_at, deleted_at
-    `
-
-    if (result.length === 0) return null
-
-    const team = mapRowToTeam(result[0])
+    const team = await prisma.team.create({
+      data: {
+        name,
+        slug,
+        description: options.description || null,
+        logoUrl: options.logoUrl || null,
+        ownerId,
+        billingEmail: options.billingEmail || null,
+        settings: {},
+      },
+    })
 
     // Add owner as team member
-    await sql`
-      INSERT INTO team_members (team_id, user_id, role, accepted_at)
-      VALUES (${team.id}, ${ownerId}, 'owner', NOW())
-    `
+    await prisma.teamMember.create({
+      data: {
+        teamId: team.id,
+        userId: ownerId,
+        role: 'owner',
+        acceptedAt: new Date(),
+      },
+    })
 
-    return team
+    return mapTeamToInterface(team)
   } catch (error) {
     console.error("[teams] Error creating team:", error)
     return null
@@ -139,15 +147,16 @@ export async function createTeam(
  */
 export async function getTeam(teamId: string): Promise<Team | null> {
   try {
-    const result = await sql`
-      SELECT id, name, slug, description, logo_url, owner_id, stripe_customer_id, stripe_subscription_id, billing_email, tier_id, settings, created_at, updated_at, deleted_at
-      FROM teams
-      WHERE id = ${teamId} AND deleted_at IS NULL
-    `
+    const team = await prisma.team.findFirst({
+      where: {
+        id: teamId,
+        deletedAt: null,
+      },
+    })
 
-    if (result.length === 0) return null
+    if (!team) return null
 
-    return mapRowToTeam(result[0])
+    return mapTeamToInterface(team)
   } catch (error) {
     console.error("[teams] Error getting team:", error)
     return null
@@ -159,15 +168,16 @@ export async function getTeam(teamId: string): Promise<Team | null> {
  */
 export async function getTeamBySlug(slug: string): Promise<Team | null> {
   try {
-    const result = await sql`
-      SELECT id, name, slug, description, logo_url, owner_id, stripe_customer_id, stripe_subscription_id, billing_email, tier_id, settings, created_at, updated_at, deleted_at
-      FROM teams
-      WHERE slug = ${slug} AND deleted_at IS NULL
-    `
+    const team = await prisma.team.findFirst({
+      where: {
+        slug,
+        deletedAt: null,
+      },
+    })
 
-    if (result.length === 0) return null
+    if (!team) return null
 
-    return mapRowToTeam(result[0])
+    return mapTeamToInterface(team)
   } catch (error) {
     console.error("[teams] Error getting team by slug:", error)
     return null
@@ -179,21 +189,26 @@ export async function getTeamBySlug(slug: string): Promise<Team | null> {
  */
 export async function getUserTeams(userId: string): Promise<TeamWithMembers[]> {
   try {
-    const result = await sql`
-      SELECT t.id, t.name, t.slug, t.description, t.logo_url, t.owner_id, t.stripe_customer_id, t.stripe_subscription_id, t.billing_email, t.tier_id, t.settings, t.created_at, t.updated_at, t.deleted_at,
-             tm.role as user_role,
-             (SELECT COUNT(*) FROM team_members WHERE team_id = t.id) as member_count
-      FROM teams t
-      JOIN team_members tm ON t.id = tm.team_id
-      WHERE tm.user_id = ${userId} AND t.deleted_at IS NULL
-      ORDER BY t.created_at DESC
-    `
+    const memberships = await prisma.teamMember.findMany({
+      where: { userId },
+      include: {
+        team: {
+          include: {
+            _count: {
+              select: { members: true },
+            },
+          },
+        },
+      },
+    })
 
-    return result.map((row) => ({
-      ...mapRowToTeam(row),
-      members: [],
-      memberCount: parseInt(row.member_count as string) || 0,
-    }))
+    return memberships
+      .filter((m) => m.team.deletedAt === null)
+      .map((m) => ({
+        ...mapTeamToInterface(m.team),
+        members: [],
+        memberCount: m.team._count.members,
+      }))
   } catch (error) {
     console.error("[teams] Error getting user teams:", error)
     return []
@@ -214,54 +229,18 @@ export async function updateTeam(
   }
 ): Promise<Team | null> {
   try {
-    const setClauses: string[] = []
-    const values: unknown[] = []
-    let paramIndex = 1
+    const team = await prisma.team.update({
+      where: { id: teamId },
+      data: {
+        ...(updates.name !== undefined && { name: updates.name }),
+        ...(updates.description !== undefined && { description: updates.description }),
+        ...(updates.logoUrl !== undefined && { logoUrl: updates.logoUrl }),
+        ...(updates.billingEmail !== undefined && { billingEmail: updates.billingEmail }),
+        ...(updates.settings !== undefined && { settings: updates.settings as Prisma.InputJsonValue }),
+      },
+    })
 
-    if (updates.name !== undefined) {
-      setClauses.push(`name = $${paramIndex}`)
-      values.push(updates.name)
-      paramIndex++
-    }
-
-    if (updates.description !== undefined) {
-      setClauses.push(`description = $${paramIndex}`)
-      values.push(updates.description)
-      paramIndex++
-    }
-
-    if (updates.logoUrl !== undefined) {
-      setClauses.push(`logo_url = $${paramIndex}`)
-      values.push(updates.logoUrl)
-      paramIndex++
-    }
-
-    if (updates.billingEmail !== undefined) {
-      setClauses.push(`billing_email = $${paramIndex}`)
-      values.push(updates.billingEmail)
-      paramIndex++
-    }
-
-    if (updates.settings !== undefined) {
-      setClauses.push(`settings = $${paramIndex}`)
-      values.push(JSON.stringify(updates.settings))
-      paramIndex++
-    }
-
-    if (setClauses.length === 0) {
-      return await getTeam(teamId)
-    }
-
-    const result = await sql`
-      UPDATE teams
-      SET ${sql.unsafe(setClauses.join(", "))}, updated_at = NOW()
-      WHERE id = ${teamId} AND deleted_at IS NULL
-      RETURNING id, name, slug, description, logo_url, owner_id, stripe_customer_id, stripe_subscription_id, billing_email, tier_id, settings, created_at, updated_at, deleted_at
-    `
-
-    if (result.length === 0) return null
-
-    return mapRowToTeam(result[0])
+    return mapTeamToInterface(team)
   } catch (error) {
     console.error("[teams] Error updating team:", error)
     return null
@@ -273,14 +252,12 @@ export async function updateTeam(
  */
 export async function deleteTeam(teamId: string): Promise<boolean> {
   try {
-    const result = await sql`
-      UPDATE teams
-      SET deleted_at = NOW()
-      WHERE id = ${teamId} AND deleted_at IS NULL
-      RETURNING id
-    `
+    await prisma.team.update({
+      where: { id: teamId },
+      data: { deletedAt: new Date() },
+    })
 
-    return result.length > 0
+    return true
   } catch (error) {
     console.error("[teams] Error deleting team:", error)
     return false
@@ -296,29 +273,22 @@ export async function deleteTeam(teamId: string): Promise<boolean> {
  */
 export async function getTeamMembers(teamId: string): Promise<TeamMember[]> {
   try {
-    const result = await sql`
-      SELECT tm.id, tm.team_id, tm.user_id, tm.role, tm.custom_permissions,
-             tm.invited_by, tm.invited_at, tm.accepted_at, tm.created_at
-      FROM team_members tm
-      WHERE tm.team_id = ${teamId}
-      ORDER BY
-        CASE tm.role
-          WHEN 'owner' THEN 0
-          WHEN 'admin' THEN 1
-          WHEN 'member' THEN 2
-          WHEN 'viewer' THEN 3
-        END,
-        tm.created_at ASC
-    `
+    const members = await prisma.teamMember.findMany({
+      where: { teamId },
+      orderBy: [
+        { role: 'asc' }, // owner first, then admin, member, viewer
+        { createdAt: 'asc' },
+      ],
+    })
 
     // Fetch user details from Stack Auth for each member
-    const members = await Promise.all(
-      result.map(async (row) => {
+    const membersWithDetails = await Promise.all(
+      members.map(async (m) => {
         let email = ""
         let displayName: string | null = null
 
         try {
-          const user = await stackServerApp.getUser({ userId: row.user_id as string })
+          const user = await stackServerApp.getUser({ userId: m.userId })
           if (user) {
             email = user.primaryEmail || ""
             displayName = user.displayName
@@ -327,25 +297,27 @@ export async function getTeamMembers(teamId: string): Promise<TeamMember[]> {
           // User may have been deleted
         }
 
+        const customPermissions = Array.isArray(m.customPermissions)
+          ? (m.customPermissions as string[])
+          : []
+
         return {
-          id: row.id as string,
-          teamId: row.team_id as string,
-          userId: row.user_id as string,
+          id: m.id,
+          teamId: m.teamId,
+          userId: m.userId,
           email,
           displayName,
-          role: row.role as TeamRole,
-          customPermissions: Array.isArray(row.custom_permissions)
-            ? (row.custom_permissions as string[])
-            : JSON.parse((row.custom_permissions as string) || "[]"),
-          invitedBy: row.invited_by as string | null,
-          invitedAt: new Date(row.invited_at as string),
-          acceptedAt: row.accepted_at ? new Date(row.accepted_at as string) : null,
-          createdAt: new Date(row.created_at as string),
+          role: m.role as TeamRole,
+          customPermissions,
+          invitedBy: m.invitedBy,
+          invitedAt: m.invitedAt,
+          acceptedAt: m.acceptedAt,
+          createdAt: m.createdAt,
         }
       })
     )
 
-    return members
+    return membersWithDetails
   } catch (error) {
     console.error("[teams] Error getting team members:", error)
     return []
@@ -362,29 +334,36 @@ export async function addTeamMember(
   invitedBy?: string
 ): Promise<TeamMembership | null> {
   try {
-    const result = await sql`
-      INSERT INTO team_members (team_id, user_id, role, invited_by, accepted_at)
-      VALUES (${teamId}, ${userId}, ${role}, ${invitedBy || null}, NOW())
-      ON CONFLICT (team_id, user_id) DO UPDATE SET
-        role = EXCLUDED.role
-      RETURNING id, team_id, user_id, role, custom_permissions, invited_by, invited_at, accepted_at, created_at
-    `
+    const member = await prisma.teamMember.upsert({
+      where: {
+        teamId_userId: { teamId, userId },
+      },
+      update: {
+        role: role,
+      },
+      create: {
+        teamId,
+        userId,
+        role: role,
+        invitedBy: invitedBy || null,
+        acceptedAt: new Date(),
+      },
+    })
 
-    if (result.length === 0) return null
+    const customPermissions = Array.isArray(member.customPermissions)
+      ? (member.customPermissions as string[])
+      : []
 
-    const row = result[0]
     return {
-      id: row.id as string,
-      teamId: row.team_id as string,
-      userId: row.user_id as string,
-      role: row.role as TeamRole,
-      customPermissions: Array.isArray(row.custom_permissions)
-        ? (row.custom_permissions as string[])
-        : JSON.parse((row.custom_permissions as string) || "[]"),
-      invitedBy: row.invited_by as string | null,
-      invitedAt: new Date(row.invited_at as string),
-      acceptedAt: row.accepted_at ? new Date(row.accepted_at as string) : null,
-      createdAt: new Date(row.created_at as string),
+      id: member.id,
+      teamId: member.teamId,
+      userId: member.userId,
+      role: member.role as TeamRole,
+      customPermissions,
+      invitedBy: member.invitedBy,
+      invitedAt: member.invitedAt,
+      acceptedAt: member.acceptedAt,
+      createdAt: member.createdAt,
     }
   } catch (error) {
     console.error("[teams] Error adding team member:", error)
@@ -400,14 +379,12 @@ export async function updateTeamMemberRole(
   role: TeamRole
 ): Promise<boolean> {
   try {
-    const result = await sql`
-      UPDATE team_members
-      SET role = ${role}
-      WHERE id = ${memberId}
-      RETURNING id
-    `
+    await prisma.teamMember.update({
+      where: { id: memberId },
+      data: { role: role },
+    })
 
-    return result.length > 0
+    return true
   } catch (error) {
     console.error("[teams] Error updating team member role:", error)
     return false
@@ -419,13 +396,11 @@ export async function updateTeamMemberRole(
  */
 export async function removeTeamMember(memberId: string): Promise<boolean> {
   try {
-    const result = await sql`
-      DELETE FROM team_members
-      WHERE id = ${memberId}
-      RETURNING id
-    `
+    await prisma.teamMember.delete({
+      where: { id: memberId },
+    })
 
-    return result.length > 0
+    return true
   } catch (error) {
     console.error("[teams] Error removing team member:", error)
     return false
@@ -450,22 +425,29 @@ export async function createInvitation(
     const expiresAt = new Date()
     expiresAt.setDate(expiresAt.getDate() + 7) // 7 days expiry
 
-    const result = await sql`
-      INSERT INTO team_invitations (team_id, email, role, token, expires_at, invited_by)
-      VALUES (${teamId}, ${email.toLowerCase()}, ${role}, ${token}, ${expiresAt.toISOString()}, ${invitedBy})
-      ON CONFLICT (team_id, email) DO UPDATE SET
-        role = EXCLUDED.role,
-        token = EXCLUDED.token,
-        expires_at = EXCLUDED.expires_at,
-        invited_by = EXCLUDED.invited_by,
-        accepted_at = NULL,
-        declined_at = NULL
-      RETURNING id, team_id, email, role, token, expires_at, invited_by, accepted_at, declined_at, created_at
-    `
+    const invitation = await prisma.teamInvitation.upsert({
+      where: {
+        teamId_email: { teamId, email: email.toLowerCase() },
+      },
+      update: {
+        role: role,
+        token,
+        expiresAt,
+        invitedBy,
+        acceptedAt: null,
+        declinedAt: null,
+      },
+      create: {
+        teamId,
+        email: email.toLowerCase(),
+        role: role,
+        token,
+        expiresAt,
+        invitedBy,
+      },
+    })
 
-    if (result.length === 0) return null
-
-    return mapRowToInvitation(result[0])
+    return mapInvitationToInterface(invitation)
   } catch (error) {
     console.error("[teams] Error creating invitation:", error)
     return null
@@ -479,37 +461,19 @@ export async function getInvitationByToken(
   token: string
 ): Promise<TeamInvitation | null> {
   try {
-    const result = await sql`
-      SELECT ti.id, ti.team_id, ti.email, ti.role, ti.token, ti.expires_at, ti.invited_by, ti.accepted_at, ti.declined_at, ti.created_at,
-             t.id as t_id, t.name as t_name, t.slug as t_slug, t.description as t_description, t.logo_url as t_logo_url
-      FROM team_invitations ti
-      JOIN teams t ON ti.team_id = t.id
-      WHERE ti.token = ${token} AND t.deleted_at IS NULL
-    `
+    const invitation = await prisma.teamInvitation.findUnique({
+      where: { token },
+      include: {
+        team: true,
+      },
+    })
 
-    if (result.length === 0) return null
+    if (!invitation || invitation.team.deletedAt !== null) return null
 
-    const row = result[0]
-    const invitation = mapRowToInvitation(row)
+    const result = mapInvitationToInterface(invitation)
+    result.team = mapTeamToInterface(invitation.team)
 
-    invitation.team = {
-      id: row.t_id as string,
-      name: row.t_name as string,
-      slug: row.t_slug as string,
-      description: row.t_description as string | null,
-      logoUrl: row.t_logo_url as string | null,
-      ownerId: "",
-      stripeCustomerId: null,
-      stripeSubscriptionId: null,
-      billingEmail: null,
-      tierId: null,
-      settings: {},
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      deletedAt: null,
-    }
-
-    return invitation
+    return result
   } catch (error) {
     console.error("[teams] Error getting invitation by token:", error)
     return null
@@ -523,14 +487,16 @@ export async function getTeamInvitations(
   teamId: string
 ): Promise<TeamInvitation[]> {
   try {
-    const result = await sql`
-      SELECT id, team_id, email, role, token, expires_at, invited_by, accepted_at, declined_at, created_at
-      FROM team_invitations
-      WHERE team_id = ${teamId} AND accepted_at IS NULL AND declined_at IS NULL
-      ORDER BY created_at DESC
-    `
+    const invitations = await prisma.teamInvitation.findMany({
+      where: {
+        teamId,
+        acceptedAt: null,
+        declinedAt: null,
+      },
+      orderBy: { createdAt: 'desc' },
+    })
 
-    return result.map(mapRowToInvitation)
+    return invitations.map(mapInvitationToInterface)
   } catch (error) {
     console.error("[teams] Error getting team invitations:", error)
     return []
@@ -544,38 +510,22 @@ export async function getPendingInvitationsForEmail(
   email: string
 ): Promise<TeamInvitation[]> {
   try {
-    const result = await sql`
-      SELECT ti.id, ti.team_id, ti.email, ti.role, ti.token, ti.expires_at, ti.invited_by, ti.accepted_at, ti.declined_at, ti.created_at,
-             t.id as t_id, t.name as t_name, t.slug as t_slug, t.description as t_description, t.logo_url as t_logo_url
-      FROM team_invitations ti
-      JOIN teams t ON ti.team_id = t.id
-      WHERE ti.email = ${email.toLowerCase()}
-        AND ti.accepted_at IS NULL
-        AND ti.declined_at IS NULL
-        AND ti.expires_at > NOW()
-        AND t.deleted_at IS NULL
-      ORDER BY ti.created_at DESC
-    `
+    const invitations = await prisma.teamInvitation.findMany({
+      where: {
+        email: email.toLowerCase(),
+        acceptedAt: null,
+        declinedAt: null,
+        expiresAt: { gt: new Date() },
+        team: { deletedAt: null },
+      },
+      include: { team: true },
+      orderBy: { createdAt: 'desc' },
+    })
 
-    return result.map((row) => {
-      const invitation = mapRowToInvitation(row)
-      invitation.team = {
-        id: row.t_id as string,
-        name: row.t_name as string,
-        slug: row.t_slug as string,
-        description: row.t_description as string | null,
-        logoUrl: row.t_logo_url as string | null,
-        ownerId: "",
-        stripeCustomerId: null,
-        stripeSubscriptionId: null,
-        billingEmail: null,
-        tierId: null,
-        settings: {},
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-      }
-      return invitation
+    return invitations.map((inv) => {
+      const result = mapInvitationToInterface(inv)
+      result.team = mapTeamToInterface(inv.team)
+      return result
     })
   } catch (error) {
     console.error("[teams] Error getting pending invitations:", error)
@@ -623,11 +573,10 @@ export async function acceptInvitation(
     }
 
     // Mark invitation as accepted
-    await sql`
-      UPDATE team_invitations
-      SET accepted_at = NOW()
-      WHERE token = ${token}
-    `
+    await prisma.teamInvitation.update({
+      where: { token },
+      data: { acceptedAt: new Date() },
+    })
 
     return { success: true, teamId: invitation.teamId }
   } catch (error) {
@@ -641,14 +590,12 @@ export async function acceptInvitation(
  */
 export async function declineInvitation(token: string): Promise<boolean> {
   try {
-    const result = await sql`
-      UPDATE team_invitations
-      SET declined_at = NOW()
-      WHERE token = ${token}
-      RETURNING id
-    `
+    await prisma.teamInvitation.update({
+      where: { token },
+      data: { declinedAt: new Date() },
+    })
 
-    return result.length > 0
+    return true
   } catch (error) {
     console.error("[teams] Error declining invitation:", error)
     return false
@@ -660,13 +607,11 @@ export async function declineInvitation(token: string): Promise<boolean> {
  */
 export async function cancelInvitation(invitationId: string): Promise<boolean> {
   try {
-    const result = await sql`
-      DELETE FROM team_invitations
-      WHERE id = ${invitationId}
-      RETURNING id
-    `
+    await prisma.teamInvitation.delete({
+      where: { id: invitationId },
+    })
 
-    return result.length > 0
+    return true
   } catch (error) {
     console.error("[teams] Error canceling invitation:", error)
     return false
@@ -687,24 +632,28 @@ export async function shareSubdomainWithTeam(
   addedBy?: string
 ): Promise<TeamSubdomain | null> {
   try {
-    const result = await sql`
-      INSERT INTO team_subdomains (team_id, subdomain, access_level, added_by)
-      VALUES (${teamId}, ${subdomain}, ${accessLevel}, ${addedBy || null})
-      ON CONFLICT (team_id, subdomain) DO UPDATE SET
-        access_level = EXCLUDED.access_level
-      RETURNING id, team_id, subdomain, access_level, added_by, added_at
-    `
+    const teamSubdomain = await prisma.teamSubdomain.upsert({
+      where: {
+        teamId_subdomain: { teamId, subdomain },
+      },
+      update: {
+        accessLevel,
+      },
+      create: {
+        teamId,
+        subdomain,
+        accessLevel,
+        addedBy: addedBy || null,
+      },
+    })
 
-    if (result.length === 0) return null
-
-    const row = result[0]
     return {
-      id: row.id as string,
-      teamId: row.team_id as string,
-      subdomain: row.subdomain as string,
-      accessLevel: row.access_level as string,
-      addedBy: row.added_by as string | null,
-      addedAt: new Date(row.added_at as string),
+      id: teamSubdomain.id,
+      teamId: teamSubdomain.teamId,
+      subdomain: teamSubdomain.subdomain,
+      accessLevel: teamSubdomain.accessLevel,
+      addedBy: teamSubdomain.addedBy,
+      addedAt: teamSubdomain.addedAt,
     }
   } catch (error) {
     console.error("[teams] Error sharing subdomain with team:", error)
@@ -719,20 +668,18 @@ export async function getTeamSubdomains(
   teamId: string
 ): Promise<TeamSubdomain[]> {
   try {
-    const result = await sql`
-      SELECT id, team_id, subdomain, access_level, added_by, added_at
-      FROM team_subdomains
-      WHERE team_id = ${teamId}
-      ORDER BY added_at DESC
-    `
+    const subdomains = await prisma.teamSubdomain.findMany({
+      where: { teamId },
+      orderBy: { addedAt: 'desc' },
+    })
 
-    return result.map((row) => ({
-      id: row.id as string,
-      teamId: row.team_id as string,
-      subdomain: row.subdomain as string,
-      accessLevel: row.access_level as string,
-      addedBy: row.added_by as string | null,
-      addedAt: new Date(row.added_at as string),
+    return subdomains.map((s) => ({
+      id: s.id,
+      teamId: s.teamId,
+      subdomain: s.subdomain,
+      accessLevel: s.accessLevel,
+      addedBy: s.addedBy,
+      addedAt: s.addedAt,
     }))
   } catch (error) {
     console.error("[teams] Error getting team subdomains:", error)
@@ -748,13 +695,13 @@ export async function removeSubdomainFromTeam(
   subdomain: string
 ): Promise<boolean> {
   try {
-    const result = await sql`
-      DELETE FROM team_subdomains
-      WHERE team_id = ${teamId} AND subdomain = ${subdomain}
-      RETURNING id
-    `
+    await prisma.teamSubdomain.delete({
+      where: {
+        teamId_subdomain: { teamId, subdomain },
+      },
+    })
 
-    return result.length > 0
+    return true
   } catch (error) {
     console.error("[teams] Error removing subdomain from team:", error)
     return false
@@ -765,40 +712,69 @@ export async function removeSubdomainFromTeam(
 // HELPER FUNCTIONS
 // =============================================================================
 
-function mapRowToTeam(row: Record<string, unknown>): Team {
+// Type for Prisma Team result
+type PrismaTeam = {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  logoUrl: string | null
+  ownerId: string
+  stripeCustomerId: string | null
+  stripeSubscriptionId: string | null
+  billingEmail: string | null
+  tierId: string | null
+  settings: Prisma.JsonValue
+  createdAt: Date
+  updatedAt: Date
+  deletedAt: Date | null
+}
+
+function mapTeamToInterface(team: PrismaTeam): Team {
   return {
-    id: row.id as string,
-    name: row.name as string,
-    slug: row.slug as string,
-    description: row.description as string | null,
-    logoUrl: row.logo_url as string | null,
-    ownerId: row.owner_id as string,
-    stripeCustomerId: row.stripe_customer_id as string | null,
-    stripeSubscriptionId: row.stripe_subscription_id as string | null,
-    billingEmail: row.billing_email as string | null,
-    tierId: row.tier_id as string | null,
-    settings:
-      typeof row.settings === "string"
-        ? JSON.parse(row.settings)
-        : (row.settings as Record<string, unknown>) || {},
-    createdAt: new Date(row.created_at as string),
-    updatedAt: new Date(row.updated_at as string),
-    deletedAt: row.deleted_at ? new Date(row.deleted_at as string) : null,
+    id: team.id,
+    name: team.name,
+    slug: team.slug,
+    description: team.description,
+    logoUrl: team.logoUrl,
+    ownerId: team.ownerId,
+    stripeCustomerId: team.stripeCustomerId,
+    stripeSubscriptionId: team.stripeSubscriptionId,
+    billingEmail: team.billingEmail,
+    tierId: team.tierId,
+    settings: (team.settings as Record<string, unknown>) || {},
+    createdAt: team.createdAt,
+    updatedAt: team.updatedAt,
+    deletedAt: team.deletedAt,
   }
 }
 
-function mapRowToInvitation(row: Record<string, unknown>): TeamInvitation {
+// Type for Prisma TeamInvitation result
+type PrismaInvitation = {
+  id: string
+  teamId: string
+  email: string
+  role: string
+  token: string
+  expiresAt: Date
+  invitedBy: string
+  acceptedAt: Date | null
+  declinedAt: Date | null
+  createdAt: Date
+}
+
+function mapInvitationToInterface(invitation: PrismaInvitation): TeamInvitation {
   return {
-    id: row.id as string,
-    teamId: row.team_id as string,
-    email: row.email as string,
-    role: row.role as TeamRole,
-    token: row.token as string,
-    expiresAt: new Date(row.expires_at as string),
-    invitedBy: row.invited_by as string,
-    acceptedAt: row.accepted_at ? new Date(row.accepted_at as string) : null,
-    declinedAt: row.declined_at ? new Date(row.declined_at as string) : null,
-    createdAt: new Date(row.created_at as string),
+    id: invitation.id,
+    teamId: invitation.teamId,
+    email: invitation.email,
+    role: invitation.role as TeamRole,
+    token: invitation.token,
+    expiresAt: invitation.expiresAt,
+    invitedBy: invitation.invitedBy,
+    acceptedAt: invitation.acceptedAt,
+    declinedAt: invitation.declinedAt,
+    createdAt: invitation.createdAt,
   }
 }
 
@@ -815,19 +791,20 @@ export async function getTeamStats(teamId: string): Promise<{
   pendingInvitations: number
 }> {
   try {
-    const result = await sql`
-      SELECT
-        (SELECT COUNT(*) FROM team_members WHERE team_id = ${teamId}) as member_count,
-        (SELECT COUNT(*) FROM team_subdomains WHERE team_id = ${teamId}) as subdomain_count,
-        (SELECT COUNT(*) FROM team_invitations WHERE team_id = ${teamId} AND accepted_at IS NULL AND declined_at IS NULL AND expires_at > NOW()) as pending_invitations
-    `
+    const [memberCount, subdomainCount, pendingInvitations] = await Promise.all([
+      prisma.teamMember.count({ where: { teamId } }),
+      prisma.teamSubdomain.count({ where: { teamId } }),
+      prisma.teamInvitation.count({
+        where: {
+          teamId,
+          acceptedAt: null,
+          declinedAt: null,
+          expiresAt: { gt: new Date() },
+        },
+      }),
+    ])
 
-    const row = result[0]
-    return {
-      memberCount: parseInt(row.member_count as string) || 0,
-      subdomainCount: parseInt(row.subdomain_count as string) || 0,
-      pendingInvitations: parseInt(row.pending_invitations as string) || 0,
-    }
+    return { memberCount, subdomainCount, pendingInvitations }
   } catch (error) {
     console.error("[teams] Error getting team stats:", error)
     return { memberCount: 0, subdomainCount: 0, pendingInvitations: 0 }
@@ -843,36 +820,39 @@ export async function getAllTeams(options: {
   search?: string
 }): Promise<{ teams: TeamWithMembers[]; total: number }> {
   const { page = 1, limit = 50, search } = options
-  const offset = (page - 1) * limit
+  const skip = (page - 1) * limit
 
   try {
-    let whereClause = "WHERE deleted_at IS NULL"
-    if (search) {
-      whereClause += ` AND (name ILIKE '%${search.replace(/'/g, "''")}%' OR slug ILIKE '%${search.replace(/'/g, "''")}%')`
+    const where: Prisma.TeamWhereInput = {
+      deletedAt: null,
+      ...(search && {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { slug: { contains: search, mode: 'insensitive' } },
+        ],
+      }),
     }
 
-    const teamsResult = await sql`
-      SELECT id, name, slug, description, logo_url, owner_id, stripe_customer_id, stripe_subscription_id, billing_email, tier_id, settings, created_at, updated_at, deleted_at,
-             (SELECT COUNT(*) FROM team_members WHERE team_id = teams.id) as member_count
-      FROM teams
-      ${sql.unsafe(whereClause)}
-      ORDER BY created_at DESC
-      LIMIT ${limit} OFFSET ${offset}
-    `
-
-    const countResult = await sql`
-      SELECT COUNT(*) as total FROM teams ${sql.unsafe(whereClause)}
-    `
-
-    const teams = teamsResult.map((row) => ({
-      ...mapRowToTeam(row),
-      members: [],
-      memberCount: parseInt(row.member_count as string) || 0,
-    }))
+    const [teams, total] = await Promise.all([
+      prisma.team.findMany({
+        where,
+        include: {
+          _count: { select: { members: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip,
+      }),
+      prisma.team.count({ where }),
+    ])
 
     return {
-      teams,
-      total: parseInt(countResult[0]?.total as string) || 0,
+      teams: teams.map((team) => ({
+        ...mapTeamToInterface(team),
+        members: [],
+        memberCount: team._count.members,
+      })),
+      total,
     }
   } catch (error) {
     console.error("[teams] Error getting all teams:", error)

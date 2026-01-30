@@ -2,6 +2,12 @@
   "name": "my-v0-project",
   "version": "0.1.0",
   "private": true,
+  "pnpm": {
+    "overrides": {
+      "@types/react": "^19",
+      "@types/react-dom": "^19"
+    }
+  },
   "scripts": {
     "build": "pnpm --filter @cncpt/cms build && next build",
     "dev": "next dev",
@@ -89,8 +95,8 @@
     "@tailwindcss/postcss": "^4.1.9",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
     "pg": "^8.16.3",
     "postcss": "^8.5",
     "tailwindcss": "^4.1.9",

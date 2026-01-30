@@ -87,8 +87,8 @@ export async function POST(request: NextRequest) {
     const slug = body.slug?.trim() || generateSlug(body.name)
 
     // Check for duplicate slug
-    const existing = await prisma.customField.findUnique({
-      where: { slug },
+    const existing = await prisma.customField.findFirst({
+      where: { slug, tenantId: null },
     })
 
     if (existing) {

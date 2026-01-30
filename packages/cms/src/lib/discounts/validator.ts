@@ -50,8 +50,8 @@ export async function validateDiscountCode(
   const { code, subtotal, userId, email, isFirstOrder, items } = context;
 
   // 1. Find the discount code
-  const discount = await prisma.discountCode.findUnique({
-    where: { code: code.toUpperCase().trim() },
+  const discount = await prisma.discountCode.findFirst({
+    where: { code: code.toUpperCase().trim(), tenantId: null },
   });
 
   if (!discount) {

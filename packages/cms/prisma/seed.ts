@@ -186,11 +186,21 @@ async function main() {
   ]
 
   for (const setting of settings) {
-    await prisma.setting.upsert({
-      where: { key: setting.key },
-      update: { value: setting.value, group: setting.group, encrypted: setting.encrypted },
-      create: setting,
+    // Use findFirst + create/update pattern for compound unique constraint
+    const existing = await prisma.setting.findFirst({
+      where: { key: setting.key, tenantId: null },
     })
+
+    if (existing) {
+      await prisma.setting.update({
+        where: { id: existing.id },
+        data: { value: setting.value, group: setting.group, encrypted: setting.encrypted },
+      })
+    } else {
+      await prisma.setting.create({
+        data: { ...setting, tenantId: null },
+      })
+    }
   }
   console.log(`   ✅ Created ${settings.length} default settings`)
 
@@ -206,11 +216,21 @@ async function main() {
   ]
 
   for (const category of categories) {
-    await prisma.blogCategory.upsert({
-      where: { slug: category.slug },
-      update: category,
-      create: category,
+    // Use findFirst + create/update pattern for compound unique constraint
+    const existing = await prisma.blogCategory.findFirst({
+      where: { slug: category.slug, tenantId: null },
     })
+
+    if (existing) {
+      await prisma.blogCategory.update({
+        where: { id: existing.id },
+        data: category,
+      })
+    } else {
+      await prisma.blogCategory.create({
+        data: { ...category, tenantId: null },
+      })
+    }
     console.log(`   ✅ Category: ${category.name}`)
   }
 
@@ -227,11 +247,21 @@ async function main() {
   ]
 
   for (const tag of tags) {
-    await prisma.blogTag.upsert({
-      where: { slug: tag.slug },
-      update: tag,
-      create: tag,
+    // Use findFirst + create/update pattern for compound unique constraint
+    const existing = await prisma.blogTag.findFirst({
+      where: { slug: tag.slug, tenantId: null },
     })
+
+    if (existing) {
+      await prisma.blogTag.update({
+        where: { id: existing.id },
+        data: tag,
+      })
+    } else {
+      await prisma.blogTag.create({
+        data: { ...tag, tenantId: null },
+      })
+    }
     console.log(`   ✅ Tag: ${tag.name}`)
   }
 
@@ -240,19 +270,28 @@ async function main() {
   // ============================================================================
   console.log('\n📄 Creating homepage...')
 
-  const homepage = await prisma.page.upsert({
-    where: { slug: 'home' },
-    update: {},
-    create: {
-      title: 'Home',
-      slug: 'home',
-      status: 'PUBLISHED',
-      content: {
-        content: [],
-        root: { props: { title: 'Home' } },
-      },
-    },
+  // Use findFirst + create/update pattern for compound unique constraint
+  const existingHomepage = await prisma.page.findFirst({
+    where: { slug: 'home', tenantId: null },
   })
+
+  let homepage
+  if (existingHomepage) {
+    homepage = existingHomepage
+  } else {
+    homepage = await prisma.page.create({
+      data: {
+        title: 'Home',
+        slug: 'home',
+        status: 'PUBLISHED',
+        content: {
+          content: [],
+          root: { props: { title: 'Home' } },
+        },
+        tenantId: null,
+      },
+    })
+  }
   console.log(`   ✅ Homepage created (${homepage.id})`)
 
   // ============================================================================

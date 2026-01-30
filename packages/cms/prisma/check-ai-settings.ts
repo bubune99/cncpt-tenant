@@ -72,49 +72,26 @@ async function main() {
   if (process.argv.includes('--fix')) {
     console.log('\n--- Applying Fixes ---');
 
+    // Helper to upsert settings (handles compound unique constraint)
+    async function upsertSetting(key: string, value: string, group: string, encrypted: boolean) {
+      const existing = await prisma.setting.findFirst({ where: { key, tenantId: null } });
+      if (existing) {
+        await prisma.setting.update({ where: { id: existing.id }, data: { value } });
+      } else {
+        await prisma.setting.create({ data: { key, value, group, encrypted, tenantId: null } });
+      }
+    }
+
     // Enable AI if disabled
-    await prisma.setting.upsert({
-      where: { key: 'ai.enabled' },
-      create: {
-        key: 'ai.enabled',
-        value: 'true',
-        group: 'ai',
-        encrypted: false,
-      },
-      update: {
-        value: 'true',
-      },
-    });
+    await upsertSetting('ai.enabled', 'true', 'ai', false);
     console.log('Set ai.enabled = true');
 
     // Set provider
-    await prisma.setting.upsert({
-      where: { key: 'ai.provider' },
-      create: {
-        key: 'ai.provider',
-        value: 'anthropic',
-        group: 'ai',
-        encrypted: false,
-      },
-      update: {
-        value: 'anthropic',
-      },
-    });
+    await upsertSetting('ai.provider', 'anthropic', 'ai', false);
     console.log('Set ai.provider = anthropic');
 
     // Set default model
-    await prisma.setting.upsert({
-      where: { key: 'ai.model' },
-      create: {
-        key: 'ai.model',
-        value: 'claude-sonnet-4-5-20250514',
-        group: 'ai',
-        encrypted: false,
-      },
-      update: {
-        value: 'claude-sonnet-4-5-20250514',
-      },
-    });
+    await upsertSetting('ai.model', 'claude-sonnet-4-5-20250514', 'ai', false);
     console.log('Set ai.model = claude-sonnet-4-5-20250514');
 
     console.log('\n AI settings have been fixed!');

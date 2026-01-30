@@ -12,8 +12,9 @@ interface PageProps {
 }
 
 async function getPost(slug: string) {
-  const post = await prisma.blogPost.findUnique({
-    where: { slug },
+  // Use findFirst due to compound unique constraint (tenantId, slug)
+  const post = await prisma.blogPost.findFirst({
+    where: { slug, tenantId: null },
     include: {
       author: {
         select: { id: true, name: true, email: true },

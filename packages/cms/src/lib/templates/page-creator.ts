@@ -36,8 +36,8 @@ export async function createPageFromTemplate(
     }
 
     // Check if slug is already taken
-    const existingPage = await prisma.page.findUnique({
-      where: { slug: request.slug },
+    const existingPage = await prisma.page.findFirst({
+      where: { slug: request.slug, tenantId: null },
     });
 
     if (existingPage) {
@@ -86,8 +86,8 @@ export async function importV0AsPage(
 ): Promise<V0PageImportResult> {
   try {
     // Check if slug is already taken
-    const existingPage = await prisma.page.findUnique({
-      where: { slug: request.slug },
+    const existingPage = await prisma.page.findFirst({
+      where: { slug: request.slug, tenantId: null },
     });
 
     if (existingPage) {

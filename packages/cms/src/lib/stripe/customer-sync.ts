@@ -283,8 +283,8 @@ export async function importStripeCustomer(
   }
 
   // Check if already linked
-  let customer = await prisma.customer.findUnique({
-    where: { stripeCustomerId },
+  let customer = await prisma.customer.findFirst({
+    where: { stripeCustomerId, tenantId: null },
   })
 
   if (customer) {
@@ -292,8 +292,8 @@ export async function importStripeCustomer(
   }
 
   // Find by email
-  customer = await prisma.customer.findUnique({
-    where: { email: stripeCustomer.email },
+  customer = await prisma.customer.findFirst({
+    where: { email: stripeCustomer.email, tenantId: null },
   })
 
   if (customer) {
@@ -420,8 +420,8 @@ export async function getOrCreateCustomerByEmail(
     phone?: string
   }
 ): Promise<Customer> {
-  let customer = await prisma.customer.findUnique({
-    where: { email },
+  let customer = await prisma.customer.findFirst({
+    where: { email, tenantId: null },
   })
 
   if (customer) {

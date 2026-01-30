@@ -23,8 +23,8 @@ export const DEFAULT_VMCP_SETTINGS: VmcpSettings = {
  */
 export async function getVmcpSettings(): Promise<VmcpSettings> {
   try {
-    const setting = await prisma.setting.findUnique({
-      where: { key: 'vmcp_settings' },
+    const setting = await prisma.setting.findFirst({
+      where: { key: 'vmcp_settings', tenantId: null },
     });
 
     if (setting?.value) {
@@ -54,15 +54,24 @@ export async function updateVmcpSettings(
   const current = await getVmcpSettings();
   const updated = { ...current, ...settings };
 
-  await prisma.setting.upsert({
-    where: { key: 'vmcp_settings' },
-    update: { value: JSON.stringify(updated) },
-    create: {
-      key: 'vmcp_settings',
-      value: JSON.stringify(updated),
-      group: 'ai',
-    },
+  const existingVmcpSetting = await prisma.setting.findFirst({
+    where: { key: 'vmcp_settings', tenantId: null },
   });
+  if (existingVmcpSetting) {
+    await prisma.setting.update({
+      where: { id: existingVmcpSetting.id },
+      data: { value: JSON.stringify(updated) },
+    });
+  } else {
+    await prisma.setting.create({
+      data: {
+        key: 'vmcp_settings',
+        value: JSON.stringify(updated),
+        group: 'ai',
+        tenantId: null,
+      },
+    });
+  }
 
   return updated;
 }

@@ -113,19 +113,28 @@ export async function updateSettings(
       stringValue = encrypt(stringValue)
     }
 
-    await prisma.setting.upsert({
-      where: { key: fullKey },
-      create: {
-        key: fullKey,
-        value: stringValue,
-        group,
-        encrypted: isSensitive,
-      },
-      update: {
-        value: stringValue,
-        encrypted: isSensitive,
-      },
+    const existingSetting = await prisma.setting.findFirst({
+      where: { key: fullKey, tenantId: null },
     })
+    if (existingSetting) {
+      await prisma.setting.update({
+        where: { id: existingSetting.id },
+        data: {
+          value: stringValue,
+          encrypted: isSensitive,
+        },
+      })
+    } else {
+      await prisma.setting.create({
+        data: {
+          key: fullKey,
+          value: stringValue,
+          group,
+          encrypted: isSensitive,
+          tenantId: null,
+        },
+      })
+    }
   }
 
   // Clear cache for this group

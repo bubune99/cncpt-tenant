@@ -25,8 +25,8 @@ const DASHBOARD_SETTINGS_KEY = 'dashboard.config';
  */
 export async function getDashboardConfig(): Promise<DashboardConfig> {
   try {
-    const setting = await prisma.setting.findUnique({
-      where: { key: DASHBOARD_SETTINGS_KEY },
+    const setting = await prisma.setting.findFirst({
+      where: { key: DASHBOARD_SETTINGS_KEY, tenantId: null },
     });
 
     if (setting?.value) {
@@ -55,18 +55,25 @@ export async function saveDashboardConfig(config: Partial<DashboardConfig>): Pro
     ...config,
   };
 
-  await prisma.setting.upsert({
-    where: { key: DASHBOARD_SETTINGS_KEY },
-    create: {
-      key: DASHBOARD_SETTINGS_KEY,
-      value: JSON.stringify(newConfig),
-      group: 'dashboard',
-      encrypted: false,
-    },
-    update: {
-      value: JSON.stringify(newConfig),
-    },
+  const existingSetting = await prisma.setting.findFirst({
+    where: { key: DASHBOARD_SETTINGS_KEY, tenantId: null },
   });
+  if (existingSetting) {
+    await prisma.setting.update({
+      where: { id: existingSetting.id },
+      data: { value: JSON.stringify(newConfig) },
+    });
+  } else {
+    await prisma.setting.create({
+      data: {
+        key: DASHBOARD_SETTINGS_KEY,
+        value: JSON.stringify(newConfig),
+        group: 'dashboard',
+        encrypted: false,
+        tenantId: null,
+      },
+    });
+  }
 
   return newConfig;
 }

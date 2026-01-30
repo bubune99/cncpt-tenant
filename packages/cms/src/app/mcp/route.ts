@@ -474,7 +474,7 @@ const handler = createMcpHandler(
         try {
           requireMcpScope("write")
 
-          const existing = await prisma.setting.findUnique({ where: { key } })
+          const existing = await prisma.setting.findFirst({ where: { key, tenantId: null } })
           if (!existing) {
             return mcpError(`Setting '${key}' not found`)
           }
@@ -484,7 +484,7 @@ const handler = createMcpHandler(
           }
 
           await prisma.setting.update({
-            where: { key },
+            where: { id: existing.id },
             data: { value }
           })
 

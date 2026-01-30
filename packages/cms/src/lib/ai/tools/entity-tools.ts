@@ -173,8 +173,8 @@ Returns relevant fields based on entity type.`,
 
         setting: async () => {
           // Settings are key-value, entityId is the key
-          const setting = await db.setting.findUnique({
-            where: { key: entityId },
+          const setting = await db.setting.findFirst({
+            where: { key: entityId, tenantId: null },
           })
           return setting ? { key: setting.key, value: setting.value } : null
         },

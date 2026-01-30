@@ -138,8 +138,8 @@ async function findExistingCart(
 
   // Fall back to session cart
   if (sessionId) {
-    const cart = await prisma.cart.findUnique({
-      where: { sessionId },
+    const cart = await prisma.cart.findFirst({
+      where: { sessionId, tenantId: null },
       include: {
         items: {
           orderBy: { createdAt: 'asc' },
@@ -279,8 +279,8 @@ export async function applyDiscount(
   code: string
 ): Promise<{ cart: CartWithItems; error?: string }> {
   // Find discount code
-  const discount = await prisma.discountCode.findUnique({
-    where: { code: code.toUpperCase() },
+  const discount = await prisma.discountCode.findFirst({
+    where: { code: code.toUpperCase(), tenantId: null },
   });
 
   if (!discount) {
@@ -381,8 +381,8 @@ export async function mergeCartsOnLogin(
   userId: string
 ): Promise<CartWithItems | null> {
   // Find guest cart
-  const guestCart = await prisma.cart.findUnique({
-    where: { sessionId },
+  const guestCart = await prisma.cart.findFirst({
+    where: { sessionId, tenantId: null },
     include: { items: true },
   });
 

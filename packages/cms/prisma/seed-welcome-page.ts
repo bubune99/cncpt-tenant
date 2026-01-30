@@ -141,40 +141,51 @@ const welcomePageContent = {
 async function main() {
   console.log('🌱 Seeding welcome page...\n');
 
-  // 1. Create or update the welcome page
+  // 1. Create or update the welcome page (using findFirst for compound unique constraint)
   console.log('📄 Creating welcome page...');
-  const welcomePage = await prisma.page.upsert({
-    where: { slug: 'welcome' },
-    update: {
-      title: 'Welcome',
-      status: 'PUBLISHED',
-      content: welcomePageContent,
-      metaTitle: 'Welcome | CMS Platform',
-      metaDescription: 'Welcome to our content management platform. Sign in to get started.',
-    },
-    create: {
-      title: 'Welcome',
-      slug: 'welcome',
-      status: 'PUBLISHED',
-      content: welcomePageContent,
-      metaTitle: 'Welcome | CMS Platform',
-      metaDescription: 'Welcome to our content management platform. Sign in to get started.',
-    },
+  const existingPage = await prisma.page.findFirst({
+    where: { slug: 'welcome', tenantId: null },
   });
+
+  let welcomePage;
+  if (existingPage) {
+    welcomePage = await prisma.page.update({
+      where: { id: existingPage.id },
+      data: {
+        title: 'Welcome',
+        status: 'PUBLISHED',
+        content: welcomePageContent,
+        metaTitle: 'Welcome | CMS Platform',
+        metaDescription: 'Welcome to our content management platform. Sign in to get started.',
+      },
+    });
+  } else {
+    welcomePage = await prisma.page.create({
+      data: {
+        title: 'Welcome',
+        slug: 'welcome',
+        status: 'PUBLISHED',
+        content: welcomePageContent,
+        metaTitle: 'Welcome | CMS Platform',
+        metaDescription: 'Welcome to our content management platform. Sign in to get started.',
+        tenantId: null,
+      },
+    });
+  }
   console.log(`   ✅ Welcome page created/updated (${welcomePage.id})`);
 
   // 2. Create or update the route config for "/"
   console.log('\n🔗 Configuring root route...');
 
-  // First check if a route config already exists for "/"
-  const existingRoute = await prisma.routeConfig.findUnique({
-    where: { slug: '/' },
+  // First check if a route config already exists for "/" (using findFirst for compound unique constraint)
+  const existingRoute = await prisma.routeConfig.findFirst({
+    where: { slug: '/', tenantId: null },
   });
 
   if (existingRoute) {
     // Update existing route to point to welcome page
     await prisma.routeConfig.update({
-      where: { slug: '/' },
+      where: { id: existingRoute.id },
       data: {
         type: 'PUCK',
         pageId: welcomePage.id,
@@ -194,6 +205,7 @@ async function main() {
         pageId: welcomePage.id,
         isActive: true,
         description: 'Welcome page for first-time visitors',
+        tenantId: null,
       },
     });
     console.log(`   ✅ Created new route config for "/" pointing to welcome page`);

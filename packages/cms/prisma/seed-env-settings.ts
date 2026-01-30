@@ -268,15 +268,28 @@ async function main() {
   console.log(`\n📝 Saving ${settings.length} settings to database...`)
 
   for (const setting of settings) {
-    await prisma.setting.upsert({
-      where: { key: setting.key },
-      update: {
-        value: setting.value,
-        group: setting.group,
-        encrypted: setting.encrypted,
-      },
-      create: setting,
+    // Use findFirst + create/update pattern for compound unique constraint
+    const existing = await prisma.setting.findFirst({
+      where: { key: setting.key, tenantId: null },
     })
+
+    if (existing) {
+      await prisma.setting.update({
+        where: { id: existing.id },
+        data: {
+          value: setting.value,
+          group: setting.group,
+          encrypted: setting.encrypted,
+        },
+      })
+    } else {
+      await prisma.setting.create({
+        data: {
+          ...setting,
+          tenantId: null,
+        },
+      })
+    }
   }
 
   console.log('\n✨ Environment settings seeded successfully!')

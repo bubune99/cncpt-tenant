@@ -177,8 +177,8 @@ export async function POST(request: NextRequest) {
     const finalSlug = slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 
     // Check for existing slug
-    const existing = await prisma.product.findUnique({
-      where: { slug: finalSlug },
+    const existing = await prisma.product.findFirst({
+      where: { slug: finalSlug, tenantId: null },
     })
 
     if (existing) {

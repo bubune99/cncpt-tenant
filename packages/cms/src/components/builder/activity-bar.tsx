@@ -1,4 +1,5 @@
 "use client"
+import React from "react"
 import {
   Blocks,
   ImageIcon,
@@ -41,7 +42,7 @@ interface ActivityBarProps {
   onViewChange: (view: ActivityView) => void
 }
 
-const topActivities: { id: ActivityView; icon: typeof Blocks; label: string }[] = [
+const topActivities: { id: ActivityView; icon: React.ComponentType<{ className?: string }>; label: string }[] = [
   { id: "blocks", icon: Blocks, label: "Blocks & Elements" },
   { id: "images", icon: ImageIcon, label: "Images" },
   { id: "typography", icon: Type, label: "Typography" },
@@ -50,14 +51,14 @@ const topActivities: { id: ActivityView; icon: typeof Blocks; label: string }[] 
   { id: "layers", icon: Layers, label: "Layers" },
 ]
 
-const middleActivities: { id: ActivityView; icon: typeof Blocks; label: string }[] = [
+const middleActivities: { id: ActivityView; icon: React.ComponentType<{ className?: string }>; label: string }[] = [
   { id: "styles", icon: Palette, label: "Global Styles" },
   { id: "code", icon: Code, label: "Custom Code" },
   { id: "global", icon: Globe, label: "Global Blocks" },
   { id: "ai", icon: Sparkles, label: "AI Assistant" },
 ]
 
-const bottomActivities: { id: ActivityView; icon: typeof Blocks; label: string }[] = [
+const bottomActivities: { id: ActivityView; icon: React.ComponentType<{ className?: string }>; label: string }[] = [
   { id: "assets", icon: FolderOpen, label: "Assets" },
   { id: "history", icon: History, label: "History" },
   { id: "users", icon: Users, label: "Users & Roles" },

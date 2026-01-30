@@ -16,10 +16,40 @@ export interface StorefrontRouterProps {
   subdomain: string
   path?: string[]
   siteId?: string
+  tenantId?: number  // Tenant ID for filtering content
 }
 
-// Get site settings (future: filter by subdomain/siteId)
-async function getSiteSettings(subdomain: string) {
+// Get site settings (filtered by tenant)
+async function getSiteSettings(subdomain: string, tenantId?: number) {
+  if (tenantId) {
+    try {
+      // Try to get tenant-specific settings from the database
+      const settings = await prisma.setting.findMany({
+        where: {
+          tenantId: tenantId,
+          group: 'branding',
+        },
+      })
+
+      const settingsMap = settings.reduce((acc, s) => {
+        try {
+          acc[s.key] = JSON.parse(s.value)
+        } catch {
+          acc[s.key] = s.value
+        }
+        return acc
+      }, {} as Record<string, unknown>)
+
+      return {
+        siteName: (settingsMap['site_name'] as string) || subdomain,
+        siteDescription: (settingsMap['site_description'] as string) || `Welcome to ${subdomain}`,
+        logo: settingsMap['logo'] as string | null || null,
+      }
+    } catch (e) {
+      console.error('Error fetching site settings:', e)
+    }
+  }
+
   return {
     siteName: subdomain,
     siteDescription: `Welcome to ${subdomain}`,
@@ -27,13 +57,14 @@ async function getSiteSettings(subdomain: string) {
   }
 }
 
-// Get published blog posts
-async function getPosts(limit = 10) {
+// Get published blog posts (filtered by tenant)
+async function getPosts(tenantId?: number, limit = 10) {
   try {
     const posts = await prisma.blogPost.findMany({
       where: {
         status: 'PUBLISHED',
         visibility: 'PUBLIC',
+        ...(tenantId !== undefined && { tenantId }),
       },
       orderBy: {
         publishedAt: 'desc',
@@ -62,13 +93,14 @@ async function getPosts(limit = 10) {
   }
 }
 
-// Get single post by slug
-async function getPost(slug: string) {
+// Get single post by slug (filtered by tenant)
+async function getPost(slug: string, tenantId?: number) {
   try {
     const post = await prisma.blogPost.findFirst({
       where: {
         slug,
         status: 'PUBLISHED',
+        ...(tenantId !== undefined && { tenantId }),
       },
       include: {
         author: {
@@ -96,12 +128,13 @@ async function getPost(slug: string) {
   }
 }
 
-// Get published pages
-async function getPages() {
+// Get published pages (filtered by tenant)
+async function getPages(tenantId?: number) {
   try {
     const pages = await prisma.page.findMany({
       where: {
         status: 'PUBLISHED',
+        ...(tenantId !== undefined && { tenantId }),
       },
       orderBy: {
         title: 'asc',
@@ -119,13 +152,14 @@ async function getPages() {
   }
 }
 
-// Get single page by slug
-async function getPage(slug: string) {
+// Get single page by slug (filtered by tenant)
+async function getPage(slug: string, tenantId?: number) {
   try {
     const page = await prisma.page.findFirst({
       where: {
         slug: slug.startsWith('/') ? slug : `/${slug}`,
         status: 'PUBLISHED',
+        ...(tenantId !== undefined && { tenantId }),
       },
       include: {
         featuredImage: true,
@@ -139,10 +173,10 @@ async function getPage(slug: string) {
 }
 
 // Home page component
-async function HomePage({ subdomain }: { subdomain: string }) {
-  const settings = await getSiteSettings(subdomain)
-  const posts = await getPosts(6)
-  const pages = await getPages()
+async function HomePage({ subdomain, tenantId }: { subdomain: string; tenantId?: number }) {
+  const settings = await getSiteSettings(subdomain, tenantId)
+  const posts = await getPosts(tenantId, 6)
+  const pages = await getPages(tenantId)
 
   return (
     <div className="min-h-screen bg-background">
@@ -230,9 +264,9 @@ async function HomePage({ subdomain }: { subdomain: string }) {
 }
 
 // Posts list page
-async function PostsPage({ subdomain }: { subdomain: string }) {
-  const settings = await getSiteSettings(subdomain)
-  const posts = await getPosts(20)
+async function PostsPage({ subdomain, tenantId }: { subdomain: string; tenantId?: number }) {
+  const settings = await getSiteSettings(subdomain, tenantId)
+  const posts = await getPosts(tenantId, 20)
 
   return (
     <div className="min-h-screen bg-background">
@@ -290,9 +324,9 @@ async function PostsPage({ subdomain }: { subdomain: string }) {
 }
 
 // Single post page
-async function PostPage({ subdomain, slug }: { subdomain: string; slug: string }) {
-  const settings = await getSiteSettings(subdomain)
-  const post = await getPost(slug)
+async function PostPage({ subdomain, slug, tenantId }: { subdomain: string; slug: string; tenantId?: number }) {
+  const settings = await getSiteSettings(subdomain, tenantId)
+  const post = await getPost(slug, tenantId)
 
   if (!post) {
     notFound()
@@ -367,9 +401,9 @@ async function PostPage({ subdomain, slug }: { subdomain: string; slug: string }
 }
 
 // CMS Page renderer
-async function CMSPage({ subdomain, slug }: { subdomain: string; slug: string }) {
-  const settings = await getSiteSettings(subdomain)
-  const page = await getPage(slug)
+async function CMSPage({ subdomain, slug, tenantId }: { subdomain: string; slug: string; tenantId?: number }) {
+  const settings = await getSiteSettings(subdomain, tenantId)
+  const page = await getPage(slug, tenantId)
 
   if (!page) {
     notFound()
@@ -413,29 +447,29 @@ async function CMSPage({ subdomain, slug }: { subdomain: string; slug: string })
  * Main StorefrontRouter component
  * Routes to appropriate page based on path
  */
-export async function StorefrontRouter({ subdomain, path = [] }: StorefrontRouterProps) {
+export async function StorefrontRouter({ subdomain, path = [], tenantId }: StorefrontRouterProps) {
   if (path.length === 0) {
-    return <HomePage subdomain={subdomain} />
+    return <HomePage subdomain={subdomain} tenantId={tenantId} />
   }
 
   const [firstSegment, ...rest] = path
 
   if (firstSegment === 'posts' || firstSegment === 'blog') {
     if (rest.length === 0) {
-      return <PostsPage subdomain={subdomain} />
+      return <PostsPage subdomain={subdomain} tenantId={tenantId} />
     } else {
-      return <PostPage subdomain={subdomain} slug={rest[0]} />
+      return <PostPage subdomain={subdomain} slug={rest[0]} tenantId={tenantId} />
     }
   }
 
   if (firstSegment === 'p' || firstSegment === 'pages') {
-    return <CMSPage subdomain={subdomain} slug={rest.join('/')} />
+    return <CMSPage subdomain={subdomain} slug={rest.join('/')} tenantId={tenantId} />
   }
 
   // Try to find a page with this slug
-  const page = await getPage(firstSegment)
+  const page = await getPage(firstSegment, tenantId)
   if (page) {
-    return <CMSPage subdomain={subdomain} slug={firstSegment} />
+    return <CMSPage subdomain={subdomain} slug={firstSegment} tenantId={tenantId} />
   }
 
   notFound()

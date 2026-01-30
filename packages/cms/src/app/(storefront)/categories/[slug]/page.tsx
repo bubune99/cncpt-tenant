@@ -12,8 +12,9 @@ interface PageProps {
 }
 
 async function getCategory(slug: string) {
-  const category = await prisma.blogCategory.findUnique({
-    where: { slug },
+  // Use findFirst due to compound unique constraint (tenantId, slug)
+  const category = await prisma.blogCategory.findFirst({
+    where: { slug, tenantId: null },
     include: {
       posts: {
         where: {

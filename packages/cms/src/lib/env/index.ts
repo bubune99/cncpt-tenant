@@ -30,8 +30,8 @@ export async function getEnvVar(key: string): Promise<string | undefined> {
   }
 
   // Check database
-  const dbVar = await prisma.setting.findUnique({
-    where: { key: `env.${key}` },
+  const dbVar = await prisma.setting.findFirst({
+    where: { key: `env.${key}`, tenantId: null },
   })
 
   if (dbVar) {
@@ -76,19 +76,28 @@ export async function setEnvVar(
   // Encrypt if sensitive
   const storedValue = isSensitive ? encrypt(value) : value
 
-  await prisma.setting.upsert({
-    where: { key: `env.${key}` },
-    create: {
-      key: `env.${key}`,
-      value: storedValue,
-      group: 'env',
-      encrypted: isSensitive,
-    },
-    update: {
-      value: storedValue,
-      encrypted: isSensitive,
-    },
+  const existingEnvSetting = await prisma.setting.findFirst({
+    where: { key: `env.${key}`, tenantId: null },
   })
+  if (existingEnvSetting) {
+    await prisma.setting.update({
+      where: { id: existingEnvSetting.id },
+      data: {
+        value: storedValue,
+        encrypted: isSensitive,
+      },
+    })
+  } else {
+    await prisma.setting.create({
+      data: {
+        key: `env.${key}`,
+        value: storedValue,
+        group: 'env',
+        encrypted: isSensitive,
+        tenantId: null,
+      },
+    })
+  }
 
   // Update cache with decrypted value
   envCache.set(key, { value, timestamp: Date.now() })
@@ -98,11 +107,16 @@ export async function setEnvVar(
  * Delete an environment variable from the database
  */
 export async function deleteEnvVar(key: string): Promise<void> {
-  await prisma.setting.delete({
-    where: { key: `env.${key}` },
-  }).catch(() => {
-    // Ignore if not found
+  const existingEnvVar = await prisma.setting.findFirst({
+    where: { key: `env.${key}`, tenantId: null },
   })
+  if (existingEnvVar) {
+    await prisma.setting.delete({
+      where: { id: existingEnvVar.id },
+    }).catch(() => {
+      // Ignore if not found
+    })
+  }
 
   // Clear from cache
   envCache.delete(key)

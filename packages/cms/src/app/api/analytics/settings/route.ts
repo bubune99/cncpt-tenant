@@ -79,18 +79,25 @@ export async function PUT(request: NextRequest) {
 
     // Upsert each setting
     for (const update of updates) {
-      await prisma.setting.upsert({
-        where: { key: update.key },
-        create: {
-          key: update.key,
-          value: update.value,
-          group: 'analytics',
-          encrypted: false,
-        },
-        update: {
-          value: update.value,
-        },
+      const existing = await prisma.setting.findFirst({
+        where: { key: update.key, tenantId: null },
       })
+      if (existing) {
+        await prisma.setting.update({
+          where: { id: existing.id },
+          data: { value: update.value },
+        })
+      } else {
+        await prisma.setting.create({
+          data: {
+            key: update.key,
+            value: update.value,
+            group: 'analytics',
+            encrypted: false,
+            tenantId: null,
+          },
+        })
+      }
     }
 
     // Clear cache

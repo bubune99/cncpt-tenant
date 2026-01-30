@@ -97,8 +97,8 @@ export const POST = withPermission(
       }
 
       // Check for duplicate slug
-      const existing = await prisma.routeConfig.findUnique({
-        where: { slug },
+      const existing = await prisma.routeConfig.findFirst({
+        where: { slug, tenantId: null },
       })
       if (existing) {
         return NextResponse.json(

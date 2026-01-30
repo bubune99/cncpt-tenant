@@ -1,12 +1,12 @@
-import { sql } from "@/lib/neon"
+import { prisma } from "@cncpt/cms/lib"
 import { notFound } from "next/navigation"
 
 export interface TenantData {
   id: number
   subdomain: string
   emoji: string
-  user_id: number
-  created_at: string
+  user_id: string | null
+  created_at: Date
 }
 
 export interface TenantSettings {
@@ -19,162 +19,242 @@ export interface TenantSettings {
 export interface TenantPost {
   id: number
   title: string
-  content: string
+  content: string | null
   slug: string
   published: boolean
-  created_at: string
-  updated_at: string
+  created_at: Date
+  updated_at: Date
 }
 
 export interface TenantPage {
   id: number
   title: string
-  content: string
+  content: string | null
   slug: string
   published: boolean
-  created_at: string
-  updated_at: string
+  created_at: Date
+  updated_at: Date
 }
 
-// Get tenant data by subdomain
+// Get tenant data by subdomain using Prisma
 export async function getTenantData(subdomain: string): Promise<TenantData | null> {
-  const result = await sql`
-    SELECT id, subdomain, emoji, user_id, created_at
-    FROM subdomains 
-    WHERE subdomain = ${subdomain}
-  `
+  const result = await prisma.subdomain.findUnique({
+    where: { subdomain },
+    select: {
+      id: true,
+      subdomain: true,
+      emoji: true,
+      userId: true,
+      createdAt: true,
+    },
+  })
 
-  return (result[0] as TenantData) || null
+  if (!result) return null
+
+  return {
+    id: result.id,
+    subdomain: result.subdomain,
+    emoji: result.emoji,
+    user_id: result.userId,
+    created_at: result.createdAt,
+  }
 }
 
-// Get tenant settings
+// Get tenant settings using Prisma
 export async function getTenantSettings(tenantId: number): Promise<TenantSettings | null> {
-  const result = await sql`
-    SELECT site_title, site_description, theme_color, custom_css
-    FROM tenant_settings 
-    WHERE tenant_id = ${tenantId}
-  `
+  const result = await prisma.tenantSetting.findUnique({
+    where: { tenantId },
+    select: {
+      siteTitle: true,
+      siteDescription: true,
+      themeColor: true,
+      customCss: true,
+    },
+  })
 
-  return (result[0] as TenantSettings) || null
+  if (!result) return null
+
+  return {
+    site_title: result.siteTitle || '',
+    site_description: result.siteDescription || '',
+    theme_color: result.themeColor,
+    custom_css: result.customCss || undefined,
+  }
 }
 
-// Get single tenant post by slug
+// Get single tenant post by slug using Prisma
 export async function getTenantPost(tenantId: number, slug: string): Promise<TenantPost | null> {
-  const result = await sql`
-    SELECT id, title, content, slug, published, created_at, updated_at
-    FROM tenant_posts 
-    WHERE tenant_id = ${tenantId} AND slug = ${slug} AND published = true
-  `
+  const result = await prisma.tenantPost.findFirst({
+    where: {
+      tenantId,
+      slug,
+      published: true,
+    },
+  })
 
-  return (result[0] as TenantPost) || null
+  if (!result) return null
+
+  return {
+    id: result.id,
+    title: result.title,
+    content: result.content,
+    slug: result.slug,
+    published: result.published,
+    created_at: result.createdAt,
+    updated_at: result.updatedAt,
+  }
 }
 
-// Get single tenant page by slug
+// Get single tenant page by slug using Prisma
 export async function getTenantPage(tenantId: number, slug: string): Promise<TenantPage | null> {
-  const result = await sql`
-    SELECT id, title, content, slug, published, created_at, updated_at
-    FROM tenant_pages 
-    WHERE tenant_id = ${tenantId} AND slug = ${slug} AND published = true
-  `
+  const result = await prisma.tenantPage.findFirst({
+    where: {
+      tenantId,
+      slug,
+      published: true,
+    },
+  })
 
-  return (result[0] as TenantPage) || null
+  if (!result) return null
+
+  return {
+    id: result.id,
+    title: result.title,
+    content: result.content,
+    slug: result.slug,
+    published: result.published,
+    created_at: result.createdAt,
+    updated_at: result.updatedAt,
+  }
 }
 
-// Create default content for new tenant
+// Create default content for new tenant using Prisma
 export async function createDefaultTenantContent(tenantId: number, subdomain: string): Promise<void> {
-  // Create default settings
-  await sql`
-    INSERT INTO tenant_settings (tenant_id, site_title, site_description)
-    VALUES (${tenantId}, ${`${subdomain} Site`}, ${`Welcome to ${subdomain}`})
-    ON CONFLICT (tenant_id) DO NOTHING
-  `
+  // Create default settings (upsert to avoid conflicts)
+  await prisma.tenantSetting.upsert({
+    where: { tenantId },
+    update: {},
+    create: {
+      tenantId,
+      siteTitle: `${subdomain} Site`,
+      siteDescription: `Welcome to ${subdomain}`,
+    },
+  })
 
-  // Create default home page
-  await sql`
-    INSERT INTO tenant_pages (tenant_id, title, content, slug)
-    VALUES (
-      ${tenantId}, 
-      'Home', 
-      ${`<h1>Welcome to ${subdomain}</h1><p>This is your custom subdomain site. You can customize this content from your dashboard.</p>`},
-      'home'
-    )
-    ON CONFLICT (tenant_id, slug) DO NOTHING
-  `
+  // Create default home page (upsert to avoid conflicts)
+  await prisma.tenantPage.upsert({
+    where: {
+      tenantId_slug: { tenantId, slug: 'home' },
+    },
+    update: {},
+    create: {
+      tenantId,
+      title: 'Home',
+      content: `<h1>Welcome to ${subdomain}</h1><p>This is your custom subdomain site. You can customize this content from your dashboard.</p>`,
+      slug: 'home',
+      published: true,
+    },
+  })
 
-  // Create default about page
-  await sql`
-    INSERT INTO tenant_pages (tenant_id, title, content, slug)
-    VALUES (
-      ${tenantId}, 
-      'About', 
-      ${`<h1>About ${subdomain}</h1><p>Tell your visitors about your site and what makes it special.</p>`},
-      'about'
-    )
-    ON CONFLICT (tenant_id, slug) DO NOTHING
-  `
+  // Create default about page (upsert to avoid conflicts)
+  await prisma.tenantPage.upsert({
+    where: {
+      tenantId_slug: { tenantId, slug: 'about' },
+    },
+    update: {},
+    create: {
+      tenantId,
+      title: 'About',
+      content: `<h1>About ${subdomain}</h1><p>Tell your visitors about your site and what makes it special.</p>`,
+      slug: 'about',
+      published: true,
+    },
+  })
 }
 
-// Get tenant posts
+// Get tenant posts using Prisma
 export async function getTenantPosts(tenantId: number, publishedOnly = true): Promise<TenantPost[]> {
-  const result = publishedOnly
-    ? await sql`
-        SELECT id, title, content, slug, published, created_at, updated_at
-        FROM tenant_posts 
-        WHERE tenant_id = ${tenantId} AND published = true
-        ORDER BY created_at DESC
-      `
-    : await sql`
-        SELECT id, title, content, slug, published, created_at, updated_at
-        FROM tenant_posts 
-        WHERE tenant_id = ${tenantId}
-        ORDER BY created_at DESC
-      `
+  const results = await prisma.tenantPost.findMany({
+    where: {
+      tenantId,
+      ...(publishedOnly && { published: true }),
+    },
+    orderBy: { createdAt: 'desc' },
+  })
 
-  return result as TenantPost[]
+  return results.map((r) => ({
+    id: r.id,
+    title: r.title,
+    content: r.content,
+    slug: r.slug,
+    published: r.published,
+    created_at: r.createdAt,
+    updated_at: r.updatedAt,
+  }))
 }
 
-// Get tenant pages
+// Get tenant pages using Prisma
 export async function getTenantPages(tenantId: number, publishedOnly = true): Promise<TenantPage[]> {
-  const result = publishedOnly
-    ? await sql`
-        SELECT id, title, content, slug, published, created_at, updated_at
-        FROM tenant_pages 
-        WHERE tenant_id = ${tenantId} AND published = true
-        ORDER BY title ASC
-      `
-    : await sql`
-        SELECT id, title, content, slug, published, created_at, updated_at
-        FROM tenant_pages 
-        WHERE tenant_id = ${tenantId}
-        ORDER BY title ASC
-      `
+  const results = await prisma.tenantPage.findMany({
+    where: {
+      tenantId,
+      ...(publishedOnly && { published: true }),
+    },
+    orderBy: { title: 'asc' },
+  })
 
-  return result as TenantPage[]
+  return results.map((r) => ({
+    id: r.id,
+    title: r.title,
+    content: r.content,
+    slug: r.slug,
+    published: r.published,
+    created_at: r.createdAt,
+    updated_at: r.updatedAt,
+  }))
 }
 
-// Get tenant by subdomain with settings
+// Get tenant by subdomain with settings using Prisma
 export async function getTenantBySubdomain(subdomain: string) {
-  const result = await sql`
-    SELECT s.*, ts.site_title, ts.site_description, ts.theme_color
-    FROM subdomains s
-    LEFT JOIN tenant_settings ts ON s.id = ts.tenant_id
-    WHERE s.subdomain = ${subdomain}
-  `
+  const result = await prisma.subdomain.findUnique({
+    where: { subdomain },
+    include: {
+      tenantSettings: true,
+    },
+  })
 
-  return result[0] || null
+  if (!result) return null
+
+  return {
+    id: result.id,
+    subdomain: result.subdomain,
+    emoji: result.emoji,
+    user_id: result.userId,
+    created_at: result.createdAt,
+    site_title: result.tenantSettings?.siteTitle || null,
+    site_description: result.tenantSettings?.siteDescription || null,
+    theme_color: result.tenantSettings?.themeColor || '#0891b2',
+  }
 }
 
 // Require tenant ownership (for authenticated operations)
-export async function requireTenantOwnership(subdomain: string, userId: number): Promise<TenantData> {
-  const result = await sql`
-    SELECT id, subdomain, emoji, user_id, created_at
-    FROM subdomains 
-    WHERE subdomain = ${subdomain} AND user_id = ${userId}
-  `
+export async function requireTenantOwnership(subdomain: string, userId: string): Promise<TenantData> {
+  const result = await prisma.subdomain.findFirst({
+    where: {
+      subdomain,
+      userId,
+    },
+  })
 
-  if (!result[0]) {
+  if (!result) {
     notFound()
   }
 
-  return result[0] as TenantData
+  return {
+    id: result.id,
+    subdomain: result.subdomain,
+    emoji: result.emoji,
+    user_id: result.userId,
+    created_at: result.createdAt,
+  }
 }

@@ -20,5 +20,6 @@ export default async function SubdomainPage({ params }: SubdomainPageProps) {
   }
 
   // Use the CMS StorefrontRouter to render the home page
-  return <StorefrontRouter subdomain={subdomain} path={[]} />
+  // Pass tenantId to filter content by tenant
+  return <StorefrontRouter subdomain={subdomain} path={[]} tenantId={tenantData.id} />
 }
