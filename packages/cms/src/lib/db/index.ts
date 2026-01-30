@@ -7,10 +7,40 @@ const globalForPrisma = globalThis as unknown as {
   pool: Pool | undefined
 }
 
+// Check if DATABASE_URL is available
+const DATABASE_URL = process.env.DATABASE_URL
+
 function createPrismaClient(): PrismaClient {
-  const pool = globalForPrisma.pool ?? new Pool({
-    connectionString: process.env.DATABASE_URL,
-  })
+  if (!DATABASE_URL) {
+    console.warn("[prisma] DATABASE_URL not set - database queries will fail")
+    // Return a proxy that throws helpful errors on any database operation
+    return new Proxy({} as PrismaClient, {
+      get(target, prop) {
+        if (prop === "then" || prop === "$connect" || prop === "$disconnect") {
+          return undefined
+        }
+        // For any model access, return a proxy that throws on method calls
+        return new Proxy(
+          {},
+          {
+            get(_, method) {
+              return () => {
+                throw new Error(
+                  `[prisma] Cannot execute ${String(prop)}.${String(method)}() - DATABASE_URL is not configured. Please set DATABASE_URL in your environment variables.`
+                )
+              }
+            },
+          }
+        )
+      },
+    })
+  }
+
+  const pool =
+    globalForPrisma.pool ??
+    new Pool({
+      connectionString: DATABASE_URL,
+    })
 
   if (process.env.NODE_ENV !== "production") {
     globalForPrisma.pool = pool
