@@ -112,27 +112,27 @@ export async function cacheGetOrSet<T>(
  * Note: Upstash has limitations on SCAN/KEYS in free tier
  */
 export async function cacheClear(pattern: string): Promise<number> {
-  const result = await withRedis(async (redis) => {
+  const deleted = await withRedis(async (redis) => {
     // Use scan for pattern matching (more efficient than keys)
     const keys: string[] = []
     let cursor: number | string = 0
 
     do {
-      const result = await redis.scan(cursor, { match: pattern, count: 100 })
-      cursor = result[0]
-      keys.push(...result[1])
+      const scanResult = await redis.scan(cursor, { match: pattern, count: 100 })
+      cursor = scanResult[0]
+      keys.push(...scanResult[1])
     } while (cursor !== 0 && cursor !== '0')
 
     if (keys.length === 0) return 0
 
     // Delete in batches to avoid hitting limits
-    let deleted = 0
+    let deletedCount = 0
     for (let i = 0; i < keys.length; i += 100) {
       const batch = keys.slice(i, i + 100)
       const count = await redis.del(...batch)
-      deleted += count
+      deletedCount += count
     }
-    return deleted
+    return deletedCount
   })
-  return result ?? 0
+  return deleted ?? 0
 }
