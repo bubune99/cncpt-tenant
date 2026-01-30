@@ -68,7 +68,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     // If slug is being changed, ensure it's unique
     if (slug && slug !== existingForm.slug) {
-      const slugExists = await prisma.form.findUnique({ where: { slug } })
+      const slugExists = await prisma.form.findFirst({ where: { slug, tenantId: null } })
       if (slugExists) {
         return NextResponse.json(
           { error: 'A form with this slug already exists' },

@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for duplicate slug
-    const existing = await db.helpTour.findUnique({ where: { slug } })
+    const existing = await db.helpTour.findFirst({ where: { slug, tenantId: null } })
     if (existing) {
       return NextResponse.json(
         { error: 'A tour with this slug already exists' },
@@ -163,7 +163,7 @@ export async function PUT(request: NextRequest) {
     if (id) {
       existing = await db.helpTour.findUnique({ where: { id } })
     } else if (slug) {
-      existing = await db.helpTour.findUnique({ where: { slug } })
+      existing = await db.helpTour.findFirst({ where: { slug, tenantId: null } })
     }
 
     if (!existing) {

@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
     // Ensure slug is unique
-    const existing = await prisma.emailTemplate.findUnique({ where: { slug } })
+    const existing = await prisma.emailTemplate.findFirst({ where: { slug, tenantId: null } })
     const finalSlug = existing ? `${slug}-${Date.now()}` : slug
 
     const template = await prisma.emailTemplate.create({

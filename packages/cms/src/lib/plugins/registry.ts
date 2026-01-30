@@ -101,7 +101,7 @@ export class PluginRegistry {
     }
 
     // Check for duplicate name
-    const existing = await prisma.primitive.findUnique({ where: { name: request.name } });
+    const existing = await prisma.primitive.findFirst({ where: { name: request.name, tenantId: null } });
     if (existing) {
       return { success: false, error: `Primitive with name "${request.name}" already exists` };
     }

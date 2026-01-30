@@ -223,7 +223,7 @@ export async function installWorkflowTemplate(
     let slug = baseSlug
     let counter = 1
 
-    while (await prisma.workflow.findUnique({ where: { slug } })) {
+    while (await prisma.workflow.findFirst({ where: { slug, tenantId: null } })) {
       slug = `${baseSlug}-${counter++}`
     }
 

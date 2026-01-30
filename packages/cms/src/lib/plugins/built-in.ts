@@ -465,8 +465,8 @@ export async function loadBuiltInPrimitives(): Promise<{
   for (const primitive of BUILT_IN_PRIMITIVES) {
     try {
       // Check if already exists
-      const existing = await prisma.primitive.findUnique({
-        where: { name: primitive.name },
+      const existing = await prisma.primitive.findFirst({
+        where: { name: primitive.name, tenantId: null },
       });
 
       if (existing) {
@@ -475,33 +475,37 @@ export async function loadBuiltInPrimitives(): Promise<{
           skipped++;
           continue;
         }
+        // Update existing primitive
+        await prisma.primitive.update({
+          where: { id: existing.id },
+          data: {
+            description: primitive.description,
+            inputSchema: primitive.inputSchema as object,
+            handler: primitive.handler,
+            category: primitive.category,
+            tags: primitive.tags || [],
+            icon: primitive.icon,
+            timeout: primitive.timeout || 30000,
+          },
+        });
+      } else {
+        // Create new primitive
+        await prisma.primitive.create({
+          data: {
+            name: primitive.name,
+            description: primitive.description,
+            inputSchema: primitive.inputSchema as object,
+            handler: primitive.handler,
+            category: primitive.category,
+            tags: primitive.tags || [],
+            icon: primitive.icon,
+            timeout: primitive.timeout || 30000,
+            enabled: true,
+            builtIn: true,
+            tenantId: null,
+          },
+        });
       }
-
-      // Create or update
-      await prisma.primitive.upsert({
-        where: { name: primitive.name },
-        create: {
-          name: primitive.name,
-          description: primitive.description,
-          inputSchema: primitive.inputSchema as object,
-          handler: primitive.handler,
-          category: primitive.category,
-          tags: primitive.tags || [],
-          icon: primitive.icon,
-          timeout: primitive.timeout || 30000,
-          enabled: true,
-          builtIn: true,
-        },
-        update: {
-          description: primitive.description,
-          inputSchema: primitive.inputSchema as object,
-          handler: primitive.handler,
-          category: primitive.category,
-          tags: primitive.tags || [],
-          icon: primitive.icon,
-          timeout: primitive.timeout || 30000,
-        },
-      });
 
       loaded++;
     } catch (e) {

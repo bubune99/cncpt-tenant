@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     // Check for existing slug and make unique if necessary
     let slug = baseSlug
     let counter = 1
-    while (await prisma.form.findUnique({ where: { slug } })) {
+    while (await prisma.form.findFirst({ where: { slug, tenantId: null } })) {
       slug = `${baseSlug}-${counter}`
       counter++
     }
