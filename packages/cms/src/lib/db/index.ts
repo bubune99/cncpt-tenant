@@ -34,17 +34,12 @@ function createPrismaClient(): PrismaClient {
   }
 
   // Use standard Prisma client without adapter
-  // Prisma 7.x has native support for connection pooling
+  // Prisma 7.x uses DATABASE_URL from environment automatically
   const client = new PrismaClient({
     log:
       process.env.NODE_ENV === "development"
         ? ["query", "error", "warn"]
         : ["error"],
-    datasources: {
-      db: {
-        url: DATABASE_URL,
-      },
-    },
   })
 
   // Cache client in all environments
