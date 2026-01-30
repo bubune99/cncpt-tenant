@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { rootDomain } from "@/lib/utils"
 import { get } from "@vercel/edge-config"
+
+// Define rootDomain inline for Edge runtime compatibility
+const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "localhost:3000"
 
 /**
  * Look up which tenant a custom domain belongs to using Edge Config
