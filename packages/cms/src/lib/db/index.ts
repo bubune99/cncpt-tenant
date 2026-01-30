@@ -37,10 +37,12 @@ function createPrismaClient(): PrismaClient {
   }
 
   // Create pg Pool - reuse if already exists
+  // SSL is required for Neon serverless PostgreSQL
   const pool =
     globalForPrisma.pool ??
     new Pool({
       connectionString: DATABASE_URL,
+      ssl: true, // Neon requires SSL
     })
 
   // Cache pool to prevent connection exhaustion
