@@ -1,8 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { get } from "@vercel/edge-config"
 
 // Define rootDomain inline for Edge runtime compatibility
 const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "localhost:3000"
+
+// Edge Config is optional - only used for custom domain mapping
+// If EDGE_CONFIG env var is not set, skip Edge Config lookups
+const edgeConfigEnabled = !!process.env.EDGE_CONFIG
 
 /**
  * Look up which tenant a custom domain belongs to using Edge Config
@@ -13,7 +16,15 @@ const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "localhost:3000"
  * - Value: subdomain/tenant identifier (e.g., "acme-store")
  */
 async function lookupCustomDomain(hostname: string): Promise<string | null> {
+  // Skip if Edge Config is not configured
+  if (!edgeConfigEnabled) {
+    return null
+  }
+
   try {
+    // Dynamic import to avoid errors when Edge Config is not configured
+    const { get } = await import("@vercel/edge-config")
+
     const normalizedHost = hostname.toLowerCase().replace(/\.$/, "")
 
     // Try exact match first
