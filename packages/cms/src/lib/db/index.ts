@@ -36,29 +36,38 @@ function createPrismaClient(): PrismaClient {
     })
   }
 
+  // Create pool with SSL enabled for Neon/serverless Postgres
   const pool =
     globalForPrisma.pool ??
     new Pool({
       connectionString: DATABASE_URL,
+      ssl: {
+        rejectUnauthorized: false, // Required for Neon serverless
+      },
+      max: 10, // Limit connections for serverless
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
     })
 
-  if (process.env.NODE_ENV !== "production") {
-    globalForPrisma.pool = pool
-  }
+  // Cache pool in all environments to prevent connection exhaustion
+  globalForPrisma.pool = pool
 
   const adapter = new PrismaPg(pool)
 
-  return new PrismaClient({
+  const client = new PrismaClient({
     adapter,
     log:
       process.env.NODE_ENV === "development"
         ? ["query", "error", "warn"]
         : ["error"],
   })
+
+  // Cache client in all environments
+  globalForPrisma.prisma = client
+
+  return client
 }
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient()
-
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
 
 export default prisma
