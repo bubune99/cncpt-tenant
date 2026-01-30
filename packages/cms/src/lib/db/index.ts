@@ -1,10 +1,7 @@
 import { PrismaClient } from "@prisma/client"
-import { PrismaPg } from "@prisma/adapter-pg"
-import { Pool } from "pg"
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
-  pool: Pool | undefined
 }
 
 // Check if DATABASE_URL is available
@@ -36,30 +33,18 @@ function createPrismaClient(): PrismaClient {
     })
   }
 
-  // Create pool with SSL enabled for Neon/serverless Postgres
-  const pool =
-    globalForPrisma.pool ??
-    new Pool({
-      connectionString: DATABASE_URL,
-      ssl: {
-        rejectUnauthorized: false, // Required for Neon serverless
-      },
-      max: 10, // Limit connections for serverless
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 10000,
-    })
-
-  // Cache pool in all environments to prevent connection exhaustion
-  globalForPrisma.pool = pool
-
-  const adapter = new PrismaPg(pool)
-
+  // Use standard Prisma client without adapter
+  // Prisma 7.x has native support for connection pooling
   const client = new PrismaClient({
-    adapter,
     log:
       process.env.NODE_ENV === "development"
         ? ["query", "error", "warn"]
         : ["error"],
+    datasources: {
+      db: {
+        url: DATABASE_URL,
+      },
+    },
   })
 
   // Cache client in all environments

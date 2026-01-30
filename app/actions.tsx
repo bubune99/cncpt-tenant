@@ -196,8 +196,11 @@ export async function deleteSubdomainAction(prevState: any, formData: FormData) 
 export async function getUserSubdomains() {
   const user = await stackServerApp.getUser()
   if (!user) {
+    console.log("[actions] getUserSubdomains: No user found")
     return []
   }
+
+  console.log("[actions] getUserSubdomains: Fetching for user:", user.id)
 
   try {
     // Get subdomains from database using Prisma
@@ -211,6 +214,8 @@ export async function getUserSubdomains() {
       },
     })
 
+    console.log("[actions] getUserSubdomains: Prisma returned:", dbSubdomains.length, "subdomains")
+
     if (dbSubdomains.length > 0) {
       return dbSubdomains.map((row) => ({
         subdomain: row.subdomain,
@@ -220,9 +225,11 @@ export async function getUserSubdomains() {
     }
 
     // Fallback to Redis for legacy subdomains
+    console.log("[actions] getUserSubdomains: Trying Redis fallback")
     try {
       const keys = await redis.keys("subdomain:*")
       if (!keys.length) {
+        console.log("[actions] getUserSubdomains: No Redis keys found")
         return []
       }
 
@@ -242,6 +249,7 @@ export async function getUserSubdomains() {
         })
         .filter(Boolean)
 
+      console.log("[actions] getUserSubdomains: Redis returned:", userSubdomains.length, "subdomains")
       return userSubdomains
     } catch (redisError) {
       console.warn("[actions] Redis fallback failed:", redisError)
