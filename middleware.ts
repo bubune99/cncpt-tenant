@@ -64,30 +64,17 @@ export async function middleware(request: NextRequest) {
   // Stack Auth will handle authentication redirects through its own system
 
   if (subdomain) {
-    // CMS admin routes on subdomains - rewrite to /cms/[subdomain]/...
-    if (pathname.startsWith("/admin")) {
-      const cmsPath = pathname.replace("/admin", "")
-      return NextResponse.rewrite(
-        new URL(`/cms/${subdomain}/admin${cmsPath}`, request.url)
-      )
-    }
+    // All subdomain routes (including /admin, /handler) go to /s/[subdomain]/...
+    // The route structure at app/s/[subdomain]/ handles:
+    // - /admin/* -> CMS admin pages
+    // - /handler/* -> Stack Auth handler
+    // - /* -> Storefront pages
 
-    // For the root path on a subdomain, rewrite to the subdomain storefront
     if (pathname === "/") {
       return NextResponse.rewrite(new URL(`/s/${subdomain}`, request.url))
     }
 
-    // Auth routes - redirect to root domain to use shared authentication
-    if (pathname.startsWith("/login") || pathname.startsWith("/handler")) {
-      const rootDomainFormatted = rootDomain.split(":")[0]
-      const protocol = process.env.NODE_ENV === "production" ? "https" : "http"
-      const redirectUrl = new URL(`${protocol}://${rootDomainFormatted}${pathname}`)
-      // Preserve query params (like ?redirect=)
-      redirectUrl.search = request.nextUrl.search
-      return NextResponse.redirect(redirectUrl)
-    }
-
-    // Other subdomain paths - rewrite to subdomain namespace
+    // Rewrite all non-API paths to the subdomain namespace
     if (!pathname.startsWith("/api") && !pathname.startsWith("/_next")) {
       return NextResponse.rewrite(new URL(`/s/${subdomain}${pathname}`, request.url))
     }

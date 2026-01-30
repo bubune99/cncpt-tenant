@@ -57,6 +57,21 @@
       "import": "./src/components/storefront/index.ts",
       "require": "./src/components/storefront/index.ts"
     },
+    "./admin-pages": {
+      "types": "./src/admin-pages/index.tsx",
+      "import": "./src/admin-pages/index.tsx",
+      "require": "./src/admin-pages/index.tsx"
+    },
+    "./admin-shell": {
+      "types": "./src/admin-pages/shell.tsx",
+      "import": "./src/admin-pages/shell.tsx",
+      "require": "./src/admin-pages/shell.tsx"
+    },
+    "./contexts": {
+      "types": "./src/contexts/index.ts",
+      "import": "./src/contexts/index.ts",
+      "require": "./src/contexts/index.ts"
+    },
     "./src/*": "./src/*"
   },
   "files": [
