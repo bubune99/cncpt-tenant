@@ -13,136 +13,170 @@ function PageLoading() {
 }
 
 // Dynamic imports for admin pages
+// Use ssr: false to avoid metadata export issues with client components
 const AdminDashboard = dynamic(() => import("../app/admin/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const BlogPage = dynamic(() => import("../app/admin/blog/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const BlogNewPage = dynamic(() => import("../app/admin/blog/new/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const BlogEditPage = dynamic(() => import("../app/admin/blog/[id]/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const BlogCategoriesPage = dynamic(() => import("../app/admin/blog/categories/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const BlogTagsPage = dynamic(() => import("../app/admin/blog/tags/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const ProductsPage = dynamic(() => import("../app/admin/products/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const ProductNewPage = dynamic(() => import("../app/admin/products/new/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
-const ProductEditPage = dynamic(() => import("../app/admin/products/[id]/page"), {
+const ProductConfigurePage = dynamic(() => import("../app/admin/products/[id]/configure/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const OrdersPage = dynamic(() => import("../app/admin/orders/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const OrderDetailPage = dynamic(() => import("../app/admin/orders/[id]/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const CustomersPage = dynamic(() => import("../app/admin/customers/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const CustomerDetailPage = dynamic(() => import("../app/admin/customers/[id]/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const PagesPage = dynamic(() => import("../app/admin/pages/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const MediaPage = dynamic(() => import("../app/admin/media/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const AnalyticsPage = dynamic(() => import("../app/admin/analytics/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const SettingsPage = dynamic(() => import("../app/admin/settings/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const DiscountsPage = dynamic(() => import("../app/admin/discounts/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const DiscountCreatePage = dynamic(() => import("../app/admin/discounts/create/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const DiscountEditPage = dynamic(() => import("../app/admin/discounts/[id]/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const ShippingPage = dynamic(() => import("../app/admin/shipping/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const UsersPage = dynamic(() => import("../app/admin/users/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const FormsPage = dynamic(() => import("../app/admin/forms/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const FormNewPage = dynamic(() => import("../app/admin/forms/new/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const FormEditPage = dynamic(() => import("../app/admin/forms/[id]/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const ReviewsPage = dynamic(() => import("../app/admin/reviews/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const PluginsPage = dynamic(() => import("../app/admin/plugins/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const WorkflowsPage = dynamic(() => import("../app/admin/workflows/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const EmailMarketingPage = dynamic(() => import("../app/admin/email-marketing/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const SiteSettingsPage = dynamic(() => import("../app/admin/site-settings/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const RolesPage = dynamic(() => import("../app/admin/roles/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const AdminUsersPage = dynamic(() => import("../app/admin/admin-users/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 const OrderWorkflowsPage = dynamic(() => import("../app/admin/order-workflows/page"), {
   loading: () => <PageLoading />,
+  ssr: false,
 })
 
 // Page registry - maps URL paths to components
@@ -172,8 +206,8 @@ const pageRoutes: PageRoute[] = [
   { pattern: /^products$/, component: ProductsPage },
   { pattern: /^products\/new$/, component: ProductNewPage },
   {
-    pattern: /^products\/([^/]+)$/,
-    component: ProductEditPage,
+    pattern: /^products\/([^/]+)\/configure$/,
+    component: ProductConfigurePage,
     extractParams: (path) => ({ id: path[1] }),
   },
 
@@ -281,7 +315,7 @@ export {
   BlogTagsPage,
   ProductsPage,
   ProductNewPage,
-  ProductEditPage,
+  ProductConfigurePage,
   OrdersPage,
   OrderDetailPage,
   CustomersPage,

@@ -9,7 +9,7 @@
 
 import React from 'react'
 import { BookOpen, Sparkles, ChevronRight, Clock, BarChart } from 'lucide-react'
-import { useWalkthrough } from '@/components/help-system/walkthrough-provider'
+import { useWalkthrough } from '../help-system/walkthrough-provider'
 
 // Types for walkthrough suggestions from AI
 export interface WalkthroughSuggestion {
