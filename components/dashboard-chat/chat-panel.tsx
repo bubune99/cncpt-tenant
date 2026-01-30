@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useMemo, useCallback } from "react"
 import { useChat, type UIMessage } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import {
   MessageCircle,
   X,
@@ -14,9 +14,11 @@ import {
   Bot,
   User,
   Trash2,
+  Sparkles,
+  Square,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import {
   useDashboardChatPanel,
@@ -24,6 +26,12 @@ import {
   useDashboardChatStore,
   type DashboardChatContext,
 } from "./store"
+import ReactMarkdown from "react-markdown"
+
+// Generate unique IDs
+function generateUUID(): string {
+  return crypto.randomUUID()
+}
 
 // Helper to extract text content from UIMessage parts
 function getMessageText(message: UIMessage): string {
@@ -34,6 +42,19 @@ function getMessageText(message: UIMessage): string {
     .join("")
 }
 
+// Check if message has tool invocations
+function hasToolInvocations(message: UIMessage): boolean {
+  if (!message.parts) return false
+  return message.parts.some((p) => {
+    const type = p.type as string
+    return (
+      type === "tool-invocation" ||
+      type === "tool-call" ||
+      type.startsWith("tool-")
+    )
+  })
+}
+
 interface ChatPanelProps {
   className?: string
 }
@@ -41,10 +62,13 @@ interface ChatPanelProps {
 export function ChatPanel({ className }: ChatPanelProps) {
   const { mode, setMode, togglePanel } = useDashboardChatPanel()
   const { context } = useDashboardChatContext()
-  const startNewConversation = useDashboardChatStore((s) => s.startNewConversation)
+  const startNewConversation = useDashboardChatStore(
+    (s) => s.startNewConversation
+  )
+  const conversationId = useDashboardChatStore((s) => s.conversationId)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [inputValue, setInputValue] = useState("")
 
   // Store context in ref to access in transport without causing re-renders
@@ -53,82 +77,133 @@ export function ChatPanel({ className }: ChatPanelProps) {
     contextRef.current = context
   }, [context])
 
+  // Memoize transport to prevent recreation
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: "/api/dashboard-chat",
+        fetch: async (url, options) => {
+          const response = await fetch(url, options)
+          if (!response.ok) {
+            const error = await response.json().catch(() => ({}))
+            throw new Error(error.message || "Chat request failed")
+          }
+          return response
+        },
+        prepareSendMessagesRequest(request) {
+          return {
+            body: {
+              id: request.id,
+              messages: request.messages,
+              context: contextRef.current,
+              ...request.body,
+            },
+          }
+        },
+      }),
+    []
+  )
+
   const {
     messages,
     sendMessage,
     status,
     error,
     setMessages,
+    stop,
   } = useChat({
-    transport: new DefaultChatTransport({
-      api: "/api/dashboard-chat",
-      prepareSendMessagesRequest(request) {
-        return {
-          body: {
-            ...request.body,
-            context: contextRef.current,
-          },
-        }
-      },
-    }),
+    id: conversationId || undefined,
+    transport,
+    experimental_throttle: 100,
+    generateId: generateUUID,
+    onError: (error) => {
+      console.error("[dashboard-chat] Error:", error)
+    },
   })
 
   const isLoading = status === "streaming" || status === "submitted"
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
+    }
+  }, [messages, status])
 
   // Focus input when panel opens
   useEffect(() => {
     if (mode === "side" || mode === "full") {
-      inputRef.current?.focus()
+      textareaRef.current?.focus()
     }
   }, [mode])
 
-  const handleNewChat = () => {
+  // Initialize conversation ID if needed
+  useEffect(() => {
+    if (!conversationId) {
+      startNewConversation()
+    }
+  }, [conversationId, startNewConversation])
+
+  const handleNewChat = useCallback(() => {
     setMessages([])
     setInputValue("")
     startNewConversation()
-  }
+  }, [setMessages, startNewConversation])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!inputValue.trim() || isLoading) return
+  const handleSubmit = useCallback(
+    async (e?: React.FormEvent) => {
+      e?.preventDefault()
+      if (!inputValue.trim() || isLoading) return
 
-    const message = inputValue
-    setInputValue("")
-    await sendMessage({ text: message })
-  }
+      const message = inputValue.trim()
+      setInputValue("")
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value)
-  }
+      await sendMessage({
+        role: "user" as const,
+        parts: [{ type: "text", text: message }],
+      })
+    },
+    [inputValue, isLoading, sendMessage]
+  )
 
-  const handleSuggestionClick = (suggestion: string) => {
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault()
+        handleSubmit()
+      }
+    },
+    [handleSubmit]
+  )
+
+  const handleSuggestionClick = useCallback((suggestion: string) => {
     setInputValue(suggestion)
-  }
+    textareaRef.current?.focus()
+  }, [])
 
   // Collapsed state - floating button
   if (mode === "collapsed") {
     return (
       <motion.button
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        exit={{ scale: 0 }}
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 400, damping: 25 }}
         onClick={togglePanel}
         className={cn(
           "fixed bottom-6 right-6 z-50",
           "h-14 w-14 rounded-full",
-          "bg-primary text-primary-foreground",
-          "shadow-lg hover:shadow-xl",
+          "bg-gradient-to-br from-primary to-primary/80",
+          "text-primary-foreground",
+          "shadow-lg hover:shadow-xl hover:shadow-primary/20",
+          "hover:scale-110 active:scale-95",
           "flex items-center justify-center",
-          "transition-shadow duration-200",
+          "transition-all duration-200",
           className
         )}
       >
-        <MessageCircle className="h-6 w-6" />
+        <Sparkles className="h-6 w-6" />
+        <span className="absolute inset-0 -z-10 rounded-full bg-primary/20 animate-ping" />
       </motion.button>
     )
   }
@@ -137,32 +212,40 @@ export function ChatPanel({ className }: ChatPanelProps) {
   if (mode === "minimized") {
     return (
       <motion.div
-        initial={{ x: 100 }}
-        animate={{ x: 0 }}
-        exit={{ x: 100 }}
+        initial={{ x: 100, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        exit={{ x: 100, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 400, damping: 30 }}
         className={cn(
           "fixed right-0 top-1/2 -translate-y-1/2 z-50",
           "w-12 py-4 px-2",
           "bg-background border-l border-y rounded-l-lg",
           "shadow-lg",
+          "flex flex-col items-center gap-2",
           className
         )}
       >
-        <div className="flex flex-col items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setMode("side")}
-            className="h-8 w-8"
-          >
-            <MessageCircle className="h-4 w-4" />
-          </Button>
-          {messages.length > 0 && (
-            <span className="text-xs text-muted-foreground">
-              {messages.length}
-            </span>
-          )}
-        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setMode("side")}
+          className="h-8 w-8"
+        >
+          <Sparkles className="h-4 w-4 text-primary" />
+        </Button>
+        {messages.length > 0 && (
+          <span className="text-xs text-muted-foreground font-medium">
+            {messages.length}
+          </span>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setMode("collapsed")}
+          className="h-8 w-8 mt-auto"
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </motion.div>
     )
   }
@@ -173,7 +256,7 @@ export function ChatPanel({ className }: ChatPanelProps) {
       initial={{ x: "100%" }}
       animate={{ x: 0 }}
       exit={{ x: "100%" }}
-      transition={{ type: "spring", damping: 20 }}
+      transition={{ type: "spring", damping: 25, stiffness: 300 }}
       className={cn(
         "fixed right-0 top-0 z-50 h-screen",
         "bg-background border-l shadow-xl",
@@ -183,10 +266,17 @@ export function ChatPanel({ className }: ChatPanelProps) {
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b">
-        <div className="flex items-center gap-2">
-          <Bot className="h-5 w-5 text-primary" />
-          <span className="font-medium">Dashboard Assistant</span>
+      <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-primary/20">
+            <Sparkles className="h-4 w-4 text-primary" />
+          </div>
+          <div>
+            <span className="font-medium">Dashboard Assistant</span>
+            <p className="text-xs text-muted-foreground">
+              AI-powered help for your dashboard
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-1">
           <Button
@@ -230,108 +320,172 @@ export function ChatPanel({ className }: ChatPanelProps) {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4">
-        {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center py-8">
-            <Bot className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="font-medium mb-2">How can I help?</h3>
-            <p className="text-sm text-muted-foreground mb-4 max-w-xs">
-              Ask me about your subdomains, teams, custom domains, or billing.
-            </p>
-            <div className="flex flex-wrap gap-2 justify-center">
-              {[
-                "Show my subdomains",
-                "How do custom domains work?",
-                "What plan am I on?",
-              ].map((suggestion) => (
-                <Button
-                  key={suggestion}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleSuggestionClick(suggestion)}
-                  className="text-xs"
-                >
-                  {suggestion}
-                </Button>
-              ))}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="flex flex-col gap-4 p-4">
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-primary/20 mb-4">
+                <Sparkles className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="font-semibold text-lg mb-2">How can I help?</h3>
+              <p className="text-sm text-muted-foreground mb-6 max-w-xs">
+                Ask me about your subdomains, teams, custom domains, or billing.
+              </p>
+              <div className="flex flex-wrap gap-2 justify-center max-w-sm">
+                {[
+                  "Show my subdomains",
+                  "How do custom domains work?",
+                  "What plan am I on?",
+                  "List my teams",
+                ].map((suggestion) => (
+                  <Button
+                    key={suggestion}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSuggestionClick(suggestion)}
+                    className="text-xs"
+                  >
+                    {suggestion}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {messages.map((message: UIMessage) => (
-              <div
-                key={message.id}
-                className={cn(
-                  "flex gap-3",
-                  message.role === "user" ? "justify-end" : "justify-start"
-                )}
-              >
-                {message.role === "assistant" && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Bot className="h-4 w-4 text-primary" />
-                  </div>
-                )}
+          ) : (
+            <>
+              {messages.map((message: UIMessage) => (
                 <div
+                  key={message.id}
                   className={cn(
-                    "max-w-[80%] rounded-lg px-4 py-2",
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                    "flex gap-3",
+                    message.role === "user" ? "justify-end" : "justify-start"
                   )}
                 >
-                  <div className="text-sm whitespace-pre-wrap prose prose-sm dark:prose-invert">
-                    {getMessageText(message)}
+                  {message.role === "assistant" && (
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-primary/20 flex items-center justify-center">
+                      <Bot className="h-4 w-4 text-primary" />
+                    </div>
+                  )}
+                  <div
+                    className={cn(
+                      "max-w-[85%] rounded-2xl px-4 py-2.5",
+                      message.role === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted"
+                    )}
+                  >
+                    {message.role === "assistant" ? (
+                      <div className="text-sm prose prose-sm dark:prose-invert max-w-none [&>p]:mb-2 [&>p:last-child]:mb-0 [&>ul]:my-2 [&>ol]:my-2">
+                        <ReactMarkdown>{getMessageText(message)}</ReactMarkdown>
+                        {hasToolInvocations(message) && (
+                          <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Working on it...
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-sm whitespace-pre-wrap">
+                        {getMessageText(message)}
+                      </div>
+                    )}
                   </div>
+                  {message.role === "user" && (
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                      <User className="h-4 w-4 text-primary-foreground" />
+                    </div>
+                  )}
                 </div>
-                {message.role === "user" && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                    <User className="h-4 w-4 text-primary-foreground" />
-                  </div>
+              ))}
+
+              {/* Thinking indicator */}
+              <AnimatePresence mode="wait">
+                {status === "submitted" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="flex gap-3 justify-start"
+                  >
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-primary/20 flex items-center justify-center">
+                      <Bot className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="bg-muted rounded-2xl px-4 py-3 flex items-center gap-2">
+                      <div className="flex gap-1">
+                        <span
+                          className="w-2 h-2 bg-primary/60 rounded-full animate-bounce"
+                          style={{ animationDelay: "0ms" }}
+                        />
+                        <span
+                          className="w-2 h-2 bg-primary/60 rounded-full animate-bounce"
+                          style={{ animationDelay: "150ms" }}
+                        />
+                        <span
+                          className="w-2 h-2 bg-primary/60 rounded-full animate-bounce"
+                          style={{ animationDelay: "300ms" }}
+                        />
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        Thinking...
+                      </span>
+                    </div>
+                  </motion.div>
                 )}
-              </div>
-            ))}
-            {isLoading && (
-              <div className="flex gap-3 justify-start">
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Bot className="h-4 w-4 text-primary" />
-                </div>
-                <div className="bg-muted rounded-lg px-4 py-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
+              </AnimatePresence>
+
+              <div ref={messagesEndRef} />
+            </>
+          )}
+        </div>
       </div>
 
       {/* Error display */}
-      {error && (
-        <div className="px-4 py-2 bg-destructive/10 text-destructive text-sm">
-          {error.message || "An error occurred"}
-        </div>
-      )}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="px-4 py-2 bg-destructive/10 text-destructive text-sm border-t"
+          >
+            {error.message || "An error occurred"}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Input */}
-      <form onSubmit={handleSubmit} className="p-4 border-t">
-        <div className="flex gap-2">
-          <Input
-            ref={inputRef}
+      <div className="p-4 border-t shrink-0">
+        <form onSubmit={handleSubmit} className="flex gap-2">
+          <Textarea
+            ref={textareaRef}
             value={inputValue}
-            onChange={handleInputChange}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="Ask me anything..."
             disabled={isLoading}
-            className="flex-1"
+            className="flex-1 min-h-[44px] max-h-[120px] resize-none"
+            rows={1}
           />
-          <Button type="submit" disabled={isLoading || !inputValue.trim()}>
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
+          {isLoading ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={stop}
+              className="shrink-0"
+            >
+              <Square className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button
+              type="submit"
+              disabled={!inputValue.trim()}
+              className="shrink-0"
+            >
               <Send className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
-      </form>
+            </Button>
+          )}
+        </form>
+      </div>
     </motion.div>
   )
 }

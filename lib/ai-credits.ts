@@ -163,13 +163,13 @@ export async function getUserCreditBalance(userId: string): Promise<CreditBalanc
 export async function getTeamCreditBalance(subdomainId: string): Promise<CreditBalance> {
   try {
     let rows = await sql`
-      SELECT * FROM ai_credit_balances WHERE subdomain_id = ${subdomainId}::uuid
+      SELECT * FROM ai_credit_balances WHERE subdomain_id = ${subdomainId}::int
     `
 
     if (rows.length === 0) {
       rows = await sql`
         INSERT INTO ai_credit_balances (subdomain_id, monthly_balance, purchased_balance)
-        VALUES (${subdomainId}::uuid, 0, 0)
+        VALUES (${subdomainId}::int, 0, 0)
         RETURNING *
       `
     }
@@ -514,7 +514,7 @@ export async function useCredits(params: UseCreditsParams): Promise<UseCreditsRe
           purchased_balance = ${newTeamPurchased},
           lifetime_used = lifetime_used + ${teamUsed},
           updated_at = NOW()
-        WHERE subdomain_id = ${subdomainId}::uuid
+        WHERE subdomain_id = ${subdomainId}::int
       `
 
       // Log team transaction
@@ -524,7 +524,7 @@ export async function useCredits(params: UseCreditsParams): Promise<UseCreditsRe
           monthly_balance_after, purchased_balance_after,
           feature, model_tier, description, reference_id, metadata
         ) VALUES (
-          ${userId}, ${subdomainId}::uuid, 'usage', 0, ${-teamUsed},
+          ${userId}, ${subdomainId}::int, 'usage', 0, ${-teamUsed},
           0, ${newTeamPurchased},
           ${feature}, ${modelTier || "pro"}, ${"Team pool usage by " + userId}, ${referenceId || null},
           ${JSON.stringify({ ...metadata, sourceUser: userId })}
@@ -653,7 +653,7 @@ export async function addPurchasedCredits(
         purchased_balance = ${newPurchasedBalance},
         lifetime_purchased = lifetime_purchased + ${credits},
         updated_at = NOW()
-      WHERE subdomain_id = ${subdomainId}::uuid
+      WHERE subdomain_id = ${subdomainId}::int
     `
 
     // Log transaction
@@ -663,7 +663,7 @@ export async function addPurchasedCredits(
         monthly_balance_after, purchased_balance_after,
         description, reference_id, metadata
       ) VALUES (
-        ${purchaserId}, ${subdomainId}::uuid, 'purchase', 0, ${credits},
+        ${purchaserId}, ${subdomainId}::int, 'purchase', 0, ${credits},
         ${teamBalance.monthlyBalance}, ${newPurchasedBalance},
         'Credit pack purchase',
         ${stripePaymentId || null},

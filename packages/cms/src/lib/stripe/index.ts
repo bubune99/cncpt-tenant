@@ -6,6 +6,7 @@
 
 import Stripe from 'stripe'
 import { prisma } from '../db'
+import { safeDecrypt } from '../encryption'
 import type {
   StripeSettings,
   CreateCheckoutSessionRequest,
@@ -74,13 +75,13 @@ export async function getStripeSettings(): Promise<StripeSettings> {
         settings.testMode = record.value === 'true'
         break
       case 'secretKey':
-        settings.secretKey = record.value
+        settings.secretKey = safeDecrypt(record.value)
         break
       case 'publishableKey':
-        settings.publishableKey = record.value
+        settings.publishableKey = safeDecrypt(record.value)
         break
       case 'webhookSecret':
-        settings.webhookSecret = record.value
+        settings.webhookSecret = safeDecrypt(record.value)
         break
       case 'currency':
         settings.currency = record.value

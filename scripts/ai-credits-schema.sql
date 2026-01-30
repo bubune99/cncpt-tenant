@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS ai_credit_balances (
 
   -- Owner (either user_id OR subdomain_id for team pool)
   user_id VARCHAR(255),
-  subdomain_id UUID REFERENCES subdomains(id) ON DELETE CASCADE,
+  subdomain_id INTEGER REFERENCES subdomains(id) ON DELETE CASCADE,
 
   -- Split balances
   monthly_balance INTEGER NOT NULL DEFAULT 0,      -- From tier allocation, has rollover cap
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS ai_credit_transactions (
 
   -- Owner
   user_id VARCHAR(255),
-  subdomain_id UUID REFERENCES subdomains(id) ON DELETE SET NULL,
+  subdomain_id INTEGER REFERENCES subdomains(id) ON DELETE SET NULL,
 
   -- Transaction type
   type VARCHAR(50) NOT NULL, -- 'allocation', 'purchase', 'usage', 'refund', 'rollover', 'expired', 'transfer'

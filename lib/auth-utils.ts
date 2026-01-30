@@ -1,6 +1,20 @@
 import { stackServerApp } from "@/stack"
 import { sql } from "@/lib/neon"
 
+/**
+ * Get the currently authenticated user
+ * Returns null if not authenticated
+ */
+export async function getAuthenticatedUser() {
+  try {
+    const user = await stackServerApp.getUser()
+    return user
+  } catch (error) {
+    console.error("[auth-utils] Error getting authenticated user:", error)
+    return null
+  }
+}
+
 export interface UserWithRole {
   id: string
   email: string

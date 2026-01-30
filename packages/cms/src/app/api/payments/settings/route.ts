@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '../../../../lib/db'
 import { getStripeSettings, clearStripeSettingsCache } from '../../../../lib/stripe'
+import { encrypt } from '../../../../lib/encryption'
 import type { StripeSettings } from '../../../../lib/stripe/types'
 
 export async function GET() {
@@ -46,15 +47,15 @@ export async function PUT(request: NextRequest) {
     }
 
     if (body.secretKey && body.secretKey !== '********') {
-      updates.push({ key: 'stripe.secretKey', value: body.secretKey, encrypted: true })
+      updates.push({ key: 'stripe.secretKey', value: encrypt(body.secretKey), encrypted: true })
     }
 
     if (body.publishableKey && body.publishableKey !== '********') {
-      updates.push({ key: 'stripe.publishableKey', value: body.publishableKey, encrypted: true })
+      updates.push({ key: 'stripe.publishableKey', value: encrypt(body.publishableKey), encrypted: true })
     }
 
     if (body.webhookSecret && body.webhookSecret !== '********') {
-      updates.push({ key: 'stripe.webhookSecret', value: body.webhookSecret, encrypted: true })
+      updates.push({ key: 'stripe.webhookSecret', value: encrypt(body.webhookSecret), encrypted: true })
     }
 
     if (body.currency !== undefined) {
