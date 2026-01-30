@@ -77,6 +77,16 @@ export async function middleware(request: NextRequest) {
       return NextResponse.rewrite(new URL(`/s/${subdomain}`, request.url))
     }
 
+    // Auth routes - redirect to root domain to use shared authentication
+    if (pathname.startsWith("/login") || pathname.startsWith("/handler")) {
+      const rootDomainFormatted = rootDomain.split(":")[0]
+      const protocol = process.env.NODE_ENV === "production" ? "https" : "http"
+      const redirectUrl = new URL(`${protocol}://${rootDomainFormatted}${pathname}`)
+      // Preserve query params (like ?redirect=)
+      redirectUrl.search = request.nextUrl.search
+      return NextResponse.redirect(redirectUrl)
+    }
+
     // Other subdomain paths - rewrite to subdomain namespace
     if (!pathname.startsWith("/api") && !pathname.startsWith("/_next")) {
       return NextResponse.rewrite(new URL(`/s/${subdomain}${pathname}`, request.url))
