@@ -1,7 +1,10 @@
 import { PrismaClient } from "@prisma/client"
+import { PrismaPg } from "@prisma/adapter-pg"
+import { Pool } from "pg"
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
+  pool: Pool | undefined
 }
 
 // Check if DATABASE_URL is available
@@ -33,9 +36,20 @@ function createPrismaClient(): PrismaClient {
     })
   }
 
-  // Use standard Prisma client without adapter
-  // Prisma 7.x uses DATABASE_URL from environment automatically
+  // Create pg Pool - reuse if already exists
+  const pool =
+    globalForPrisma.pool ??
+    new Pool({
+      connectionString: DATABASE_URL,
+    })
+
+  // Cache pool to prevent connection exhaustion
+  globalForPrisma.pool = pool
+
+  // Create Prisma client with pg adapter (required for Prisma 7.x)
+  const adapter = new PrismaPg(pool)
   const client = new PrismaClient({
+    adapter,
     log:
       process.env.NODE_ENV === "development"
         ? ["query", "error", "warn"]
