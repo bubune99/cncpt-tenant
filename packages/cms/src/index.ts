@@ -21,3 +21,6 @@ export * from './exports/puck'
 
 // Contexts
 export { WizardProvider, useWizard } from './contexts/WizardContext'
+
+// Storefront Router (for multi-tenant subdomain rendering)
+export { StorefrontRouter } from './components/storefront/StorefrontRouter'

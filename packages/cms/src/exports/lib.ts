@@ -135,3 +135,8 @@ export * from '../lib/routes'
 
 // Utils
 export { cn } from '../lib/utils'
+
+// Page Rendering (Puck)
+export { PageRenderer } from '../components/page-wrapper/page-renderer'
+export { PageWrapper, getPageLayoutSettings } from '../components/page-wrapper'
+export { pagesPuckConfig } from '../puck/pages/config'
