@@ -196,10 +196,13 @@ export async function getSubdomainUsage(userId: string): Promise<SubdomainUsage>
     if (typeof tierLimits.subdomains === "number") {
       limit = tierLimits.subdomains
     } else {
-      // Map tier name to subdomain limits
+      // Map tier name to subdomain limits (fallback if limits.subdomains not set)
       switch (subscription.tierName) {
+        case "starter":
+          limit = 3
+          break
         case "pro":
-          limit = 5
+          limit = 10
           break
         case "enterprise":
           limit = -1 // Unlimited

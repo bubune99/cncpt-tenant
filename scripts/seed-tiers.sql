@@ -50,8 +50,22 @@ CREATE TABLE IF NOT EXISTS subscription_events (
 CREATE INDEX IF NOT EXISTS idx_subscription_events_user_id ON subscription_events(user_id);
 CREATE INDEX IF NOT EXISTS idx_subscription_events_created_at ON subscription_events(created_at DESC);
 
+-- Create webhook_events table for idempotency tracking
+CREATE TABLE IF NOT EXISTS webhook_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_id VARCHAR(255) NOT NULL UNIQUE,
+  event_type VARCHAR(100) NOT NULL,
+  processed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  status VARCHAR(20) DEFAULT 'processed',
+  error_message TEXT
+);
+
+-- Create index for fast lookups
+CREATE INDEX IF NOT EXISTS idx_webhook_events_event_id ON webhook_events(event_id);
+CREATE INDEX IF NOT EXISTS idx_webhook_events_processed_at ON webhook_events(processed_at DESC);
+
 -- Seed subscription tiers
--- Note: Replace the stripe_price_id values with actual Stripe price IDs
+-- Stripe Price IDs from FAR CNCPT account (acct_1SUVC586FlZ1gJyi)
 INSERT INTO subscription_tiers (
   name,
   display_name,
@@ -68,7 +82,7 @@ INSERT INTO subscription_tiers (
   stripe_price_id_monthly,
   stripe_price_id_yearly
 ) VALUES
-  -- Free Tier
+  -- Free Tier (no Stripe product needed)
   (
     'free',
     'Free',
@@ -86,40 +100,58 @@ INSERT INTO subscription_tiers (
     NULL
   ),
 
-  -- Pro Tier
+  -- Starter Tier ($29/mo)
+  (
+    'starter',
+    'Starter',
+    'For individuals and hobbyists',
+    29,
+    290,
+    'USD',
+    '["3 subdomains", "1 custom domain", "Email support", "1GB storage", "Basic analytics"]'::jsonb,
+    '{"subdomains": 3, "custom_domains": 1, "team_members": 0, "storage_gb": 1, "pages": 20, "posts": 50}'::jsonb,
+    7,
+    1,
+    true,
+    'prod_TZOuX1tIJ87uQb',
+    'price_1ScG6x86FlZ1gJyiTBC0dvA4',
+    NULL
+  ),
+
+  -- Pro Tier ($99/mo)
   (
     'pro',
     'Pro',
     'For professionals and small teams',
-    19,
-    190,
+    99,
+    990,
     'USD',
-    '["5 subdomains", "3 custom domains", "Team collaboration (5 members)", "Priority support", "5GB storage", "Advanced analytics", "Custom branding"]'::jsonb,
-    '{"subdomains": 5, "custom_domains": 3, "team_members": 5, "storage_gb": 5, "pages": -1, "posts": -1}'::jsonb,
+    '["10 subdomains", "5 custom domains", "Team collaboration (10 members)", "Priority support", "10GB storage", "Advanced analytics", "Custom branding"]'::jsonb,
+    '{"subdomains": 10, "custom_domains": 5, "team_members": 10, "storage_gb": 10, "pages": -1, "posts": -1}'::jsonb,
     14,
-    1,
+    2,
     true,
-    'prod_XXXXXXXXX',  -- Replace with actual Stripe product ID
-    'price_XXXXXXXXX', -- Replace with actual Stripe monthly price ID
-    'price_YYYYYYYYY'  -- Replace with actual Stripe yearly price ID
+    'prod_TZOu5v0urF9Icz',
+    'price_1ScG7786FlZ1gJyiiiG8htnh',
+    NULL
   ),
 
-  -- Enterprise Tier
+  -- Enterprise Tier ($299/mo)
   (
     'enterprise',
     'Enterprise',
     'For large organizations with advanced needs',
-    99,
-    990,
+    299,
+    2990,
     'USD',
     '["Unlimited subdomains", "Unlimited custom domains", "Unlimited team members", "Dedicated support", "50GB storage", "Enterprise analytics", "White-label options", "SLA guarantee", "Priority feature requests"]'::jsonb,
     '{"subdomains": -1, "custom_domains": -1, "team_members": -1, "storage_gb": 50, "pages": -1, "posts": -1}'::jsonb,
     14,
-    2,
+    3,
     true,
-    'prod_ZZZZZZZZZ',  -- Replace with actual Stripe product ID
-    'price_ZZZZZZZZZ', -- Replace with actual Stripe monthly price ID
-    'price_WWWWWWWWW'  -- Replace with actual Stripe yearly price ID
+    'prod_TZOv3JqBtRkKmA',
+    'price_1ScG7G86FlZ1gJyixljeGvMB',
+    NULL
   )
 ON CONFLICT (name) DO UPDATE SET
   display_name = EXCLUDED.display_name,

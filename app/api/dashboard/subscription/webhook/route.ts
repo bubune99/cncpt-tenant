@@ -15,6 +15,37 @@ import {
 import type Stripe from "stripe"
 
 /**
+ * Check if event has already been processed (idempotency)
+ */
+async function isEventProcessed(eventId: string): Promise<boolean> {
+  try {
+    const rows = await sql`
+      SELECT 1 FROM webhook_events WHERE event_id = ${eventId}
+    `
+    return rows.length > 0
+  } catch {
+    // Table might not exist yet, continue processing
+    return false
+  }
+}
+
+/**
+ * Mark event as processed
+ */
+async function markEventProcessed(eventId: string, eventType: string, error?: string): Promise<void> {
+  try {
+    await sql`
+      INSERT INTO webhook_events (event_id, event_type, status, error_message)
+      VALUES (${eventId}, ${eventType}, ${error ? 'failed' : 'processed'}, ${error || null})
+      ON CONFLICT (event_id) DO NOTHING
+    `
+  } catch (err) {
+    // Log but don't fail - idempotency is best-effort
+    console.warn("[webhook] Failed to mark event as processed:", err)
+  }
+}
+
+/**
  * POST /api/dashboard/subscription/webhook
  * Handle Stripe webhook events
  */
@@ -43,38 +74,57 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(`[webhook] Received event: ${event.type}`)
+    console.log(`[webhook] Received event: ${event.type} (${event.id})`)
+
+    // Idempotency check - skip if already processed
+    if (await isEventProcessed(event.id)) {
+      console.log(`[webhook] Event ${event.id} already processed, skipping`)
+      return NextResponse.json({ received: true, skipped: true })
+    }
 
     // Handle the event
-    switch (event.type) {
-      case "checkout.session.completed":
-        await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session)
-        break
+    let processingError: string | undefined
+    try {
+      switch (event.type) {
+        case "checkout.session.completed":
+          await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session)
+          break
 
-      case "customer.subscription.created":
-      case "customer.subscription.updated":
-        await handleSubscriptionUpdated(event.data.object as Stripe.Subscription)
-        break
+        case "customer.subscription.created":
+        case "customer.subscription.updated":
+          await handleSubscriptionUpdated(event.data.object as Stripe.Subscription)
+          break
 
-      case "customer.subscription.deleted":
-        await handleSubscriptionDeleted(event.data.object as Stripe.Subscription)
-        break
+        case "customer.subscription.deleted":
+          await handleSubscriptionDeleted(event.data.object as Stripe.Subscription)
+          break
 
-      case "invoice.payment_failed":
-        await handlePaymentFailed(event.data.object as Stripe.Invoice)
-        break
+        case "invoice.payment_failed":
+          await handlePaymentFailed(event.data.object as Stripe.Invoice)
+          break
 
-      case "invoice.payment_succeeded":
-        await handlePaymentSucceeded(event.data.object as Stripe.Invoice)
-        break
+        case "invoice.payment_succeeded":
+          await handlePaymentSucceeded(event.data.object as Stripe.Invoice)
+          break
 
-      case "customer.created":
-        await handleCustomerCreated(event.data.object as Stripe.Customer)
-        break
+        case "invoice.paid":
+          await handleInvoicePaid(event.data.object as Stripe.Invoice)
+          break
 
-      default:
-        console.log(`[webhook] Unhandled event type: ${event.type}`)
+        case "customer.created":
+          await handleCustomerCreated(event.data.object as Stripe.Customer)
+          break
+
+        default:
+          console.log(`[webhook] Unhandled event type: ${event.type}`)
+      }
+    } catch (err) {
+      processingError = err instanceof Error ? err.message : "Unknown error"
+      console.error(`[webhook] Error processing ${event.type}:`, err)
     }
+
+    // Mark event as processed (even if it failed, to prevent retries of broken events)
+    await markEventProcessed(event.id, event.type, processingError)
 
     return NextResponse.json({ received: true })
   } catch (error) {
@@ -318,6 +368,91 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   `
 
   console.log(`[webhook] Payment succeeded for user ${userId}`)
+}
+
+/**
+ * Handle invoice.paid
+ * More reliable than payment_succeeded for subscription renewals
+ * Updates subscription status and syncs billing period
+ */
+async function handleInvoicePaid(invoice: Stripe.Invoice) {
+  console.log("[webhook] Processing invoice paid:", invoice.id)
+
+  const subscriptionId = invoice.subscription as string | null
+  if (!subscriptionId) return
+
+  // Find user by subscription ID
+  const userRows = await sql`
+    SELECT id FROM users WHERE stripe_subscription_id = ${subscriptionId}
+    UNION
+    SELECT user_id as id FROM platform_clients WHERE stripe_subscription_id = ${subscriptionId}
+    LIMIT 1
+  `
+
+  if (userRows.length === 0) {
+    console.log("[webhook] No user found for invoice, checking by customer ID")
+
+    // Try to find by customer ID
+    const customerId = invoice.customer as string
+    const customerRows = await sql`
+      SELECT id FROM users WHERE stripe_customer_id = ${customerId}
+      UNION
+      SELECT user_id as id FROM platform_clients WHERE stripe_customer_id = ${customerId}
+      LIMIT 1
+    `
+
+    if (customerRows.length === 0) return
+
+    const userId = customerRows[0].id as string
+
+    // Update user with subscription ID and active status
+    await sql`
+      UPDATE users SET
+        stripe_subscription_id = ${subscriptionId},
+        subscription_status = 'active',
+        updated_at = NOW()
+      WHERE id = ${userId}
+    `
+
+    console.log(`[webhook] Invoice paid - linked subscription ${subscriptionId} to user ${userId}`)
+    return
+  }
+
+  const userId = userRows[0].id as string
+
+  // Update subscription status to active (handles renewals after past_due)
+  await sql`
+    UPDATE users SET
+      subscription_status = 'active',
+      updated_at = NOW()
+    WHERE id = ${userId}
+  `
+
+  // Log successful renewal
+  try {
+    await sql`
+      INSERT INTO subscription_events (
+        user_id,
+        event_type,
+        stripe_event_id,
+        metadata
+      ) VALUES (
+        ${userId},
+        'invoice_paid',
+        ${invoice.id},
+        ${JSON.stringify({
+          amountPaid: invoice.amount_paid,
+          billingReason: invoice.billing_reason,
+          periodStart: invoice.period_start,
+          periodEnd: invoice.period_end,
+        })}
+      )
+    `
+  } catch (logError) {
+    console.warn("[webhook] Failed to log invoice paid event:", logError)
+  }
+
+  console.log(`[webhook] Invoice paid for user ${userId}, billing reason: ${invoice.billing_reason}`)
 }
 
 /**
