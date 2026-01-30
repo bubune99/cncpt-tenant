@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import { getTenantData } from "@/lib/tenant"
-import { StorefrontRouter } from "@cncpt/cms"
+// Import directly from source to avoid bundling client hooks
+import { StorefrontRouter } from "@cncpt/cms/src/components/storefront/StorefrontRouter"
 
 export const dynamic = 'force-dynamic'
 

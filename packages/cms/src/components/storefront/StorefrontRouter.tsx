@@ -1,35 +1,25 @@
 /**
  * StorefrontRouter - Multi-tenant storefront router component
  *
+ * Server Component - No client hooks
+ *
  * This component handles routing for subdomain storefronts.
  * It can be imported and used by external apps to render CMS content.
- *
- * Usage:
- * import { StorefrontRouter } from '@cncpt/cms'
- * <StorefrontRouter subdomain="mysite" path={['posts', 'my-post']} />
  */
 
 import { prisma } from '../../lib/db'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
-import { Calendar, Clock, User, ArrowLeft } from 'lucide-react'
-import { Card, CardContent, CardFooter, CardHeader } from '../ui/card'
-import { Badge } from '../ui/badge'
-import { Button } from '../ui/button'
-import type { Data } from '@puckeditor/core'
 
 export interface StorefrontRouterProps {
   subdomain: string
   path?: string[]
-  // Future: siteId for multi-tenant filtering
   siteId?: string
 }
 
 // Get site settings (future: filter by subdomain/siteId)
 async function getSiteSettings(subdomain: string) {
-  // For now, return default settings
-  // Future: query by subdomain
   return {
     siteName: subdomain,
     siteDescription: `Welcome to ${subdomain}`,
@@ -39,93 +29,113 @@ async function getSiteSettings(subdomain: string) {
 
 // Get published blog posts
 async function getPosts(limit = 10) {
-  const posts = await prisma.blogPost.findMany({
-    where: {
-      status: 'PUBLISHED',
-      visibility: 'PUBLIC',
-    },
-    orderBy: {
-      publishedAt: 'desc',
-    },
-    take: limit,
-    include: {
-      author: {
-        select: { id: true, name: true },
+  try {
+    const posts = await prisma.blogPost.findMany({
+      where: {
+        status: 'PUBLISHED',
+        visibility: 'PUBLIC',
       },
-      featuredImage: {
-        select: { id: true, url: true, alt: true },
+      orderBy: {
+        publishedAt: 'desc',
       },
-      categories: {
-        include: {
-          category: {
-            select: { id: true, name: true, slug: true },
+      take: limit,
+      include: {
+        author: {
+          select: { id: true, name: true },
+        },
+        featuredImage: {
+          select: { id: true, url: true, alt: true },
+        },
+        categories: {
+          include: {
+            category: {
+              select: { id: true, name: true, slug: true },
+            },
           },
         },
       },
-    },
-  })
-  return posts
+    })
+    return posts
+  } catch (e) {
+    console.error('Error fetching posts:', e)
+    return []
+  }
 }
 
 // Get single post by slug
 async function getPost(slug: string) {
-  const post = await prisma.blogPost.findFirst({
-    where: {
-      slug,
-      status: 'PUBLISHED',
-    },
-    include: {
-      author: {
-        select: { id: true, name: true },
+  try {
+    const post = await prisma.blogPost.findFirst({
+      where: {
+        slug,
+        status: 'PUBLISHED',
       },
-      featuredImage: {
-        select: { id: true, url: true, alt: true },
-      },
-      categories: {
-        include: {
-          category: true,
+      include: {
+        author: {
+          select: { id: true, name: true },
+        },
+        featuredImage: {
+          select: { id: true, url: true, alt: true },
+        },
+        categories: {
+          include: {
+            category: true,
+          },
+        },
+        tags: {
+          include: {
+            tag: true,
+          },
         },
       },
-      tags: {
-        include: {
-          tag: true,
-        },
-      },
-    },
-  })
-  return post
+    })
+    return post
+  } catch (e) {
+    console.error('Error fetching post:', e)
+    return null
+  }
 }
 
 // Get published pages
 async function getPages() {
-  const pages = await prisma.page.findMany({
-    where: {
-      status: 'PUBLISHED',
-    },
-    orderBy: {
-      title: 'asc',
-    },
-    select: {
-      id: true,
-      title: true,
-      slug: true,
-    },
-  })
-  return pages
+  try {
+    const pages = await prisma.page.findMany({
+      where: {
+        status: 'PUBLISHED',
+      },
+      orderBy: {
+        title: 'asc',
+      },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+      },
+    })
+    return pages
+  } catch (e) {
+    console.error('Error fetching pages:', e)
+    return []
+  }
 }
 
 // Get single page by slug
 async function getPage(slug: string) {
-  const page = await prisma.page.findFirst({
-    where: {
-      slug: slug.startsWith('/') ? slug : `/${slug}`,
-      status: 'PUBLISHED',
-    },
-    include: {
-      featuredImage: true,
-    },
-  })
-  return page
+  try {
+    const page = await prisma.page.findFirst({
+      where: {
+        slug: slug.startsWith('/') ? slug : `/${slug}`,
+        status: 'PUBLISHED',
+      },
+      include: {
+        featuredImage: true,
+      },
+    })
+    return page
+  } catch (e) {
+    console.error('Error fetching page:', e)
+    return null
+  }
 }
 
 // Home page component
@@ -143,14 +153,14 @@ async function HomePage({ subdomain }: { subdomain: string }) {
             {settings.siteName}
           </Link>
           <nav className="flex items-center gap-6">
-            <Link href="/posts" className="text-muted-foreground hover:text-foreground">
+            <Link href="/posts" className="text-muted-foreground hover:text-foreground transition-colors">
               Blog
             </Link>
             {pages.slice(0, 4).map((page) => (
               <Link
                 key={page.id}
                 href={page.slug}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 {page.title}
               </Link>
@@ -175,14 +185,14 @@ async function HomePage({ subdomain }: { subdomain: string }) {
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-3xl font-bold">Latest Posts</h2>
-              <Button variant="outline" asChild>
-                <Link href="/posts">View All</Link>
-              </Button>
+              <Link href="/posts" className="text-primary hover:underline">
+                View All →
+              </Link>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {posts.map((post) => (
                 <Link key={post.id} href={`/posts/${post.slug}`}>
-                  <Card className="h-full hover:shadow-lg transition-shadow">
+                  <article className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow h-full">
                     {post.featuredImage && (
                       <img
                         src={post.featuredImage.url}
@@ -190,23 +200,18 @@ async function HomePage({ subdomain }: { subdomain: string }) {
                         className="w-full h-48 object-cover"
                       />
                     )}
-                    <CardHeader>
-                      <h3 className="font-semibold text-lg line-clamp-2">{post.title}</h3>
-                    </CardHeader>
-                    <CardContent>
+                    <div className="p-4">
+                      <h3 className="font-semibold text-lg mb-2 line-clamp-2">{post.title}</h3>
                       {post.excerpt && (
-                        <p className="text-muted-foreground line-clamp-3">{post.excerpt}</p>
+                        <p className="text-muted-foreground text-sm line-clamp-3 mb-4">{post.excerpt}</p>
                       )}
-                    </CardContent>
-                    <CardFooter className="text-sm text-muted-foreground">
                       {post.publishedAt && (
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
+                        <p className="text-xs text-muted-foreground">
                           {formatDistanceToNow(new Date(post.publishedAt), { addSuffix: true })}
-                        </span>
+                        </p>
                       )}
-                    </CardFooter>
-                  </Card>
+                    </div>
+                  </article>
                 </Link>
               ))}
             </div>
@@ -215,9 +220,9 @@ async function HomePage({ subdomain }: { subdomain: string }) {
       )}
 
       {/* Footer */}
-      <footer className="border-t py-8">
+      <footer className="border-t py-8 mt-16">
         <div className="container mx-auto px-4 text-center text-muted-foreground">
-          &copy; {new Date().getFullYear()} {settings.siteName}. All rights reserved.
+          © {new Date().getFullYear()} {settings.siteName}. All rights reserved.
         </div>
       </footer>
     </div>
@@ -246,7 +251,7 @@ async function PostsPage({ subdomain }: { subdomain: string }) {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {posts.map((post) => (
               <Link key={post.id} href={`/posts/${post.slug}`}>
-                <Card className="h-full hover:shadow-lg transition-shadow">
+                <article className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow h-full">
                   {post.featuredImage && (
                     <img
                       src={post.featuredImage.url}
@@ -254,28 +259,25 @@ async function PostsPage({ subdomain }: { subdomain: string }) {
                       className="w-full h-48 object-cover"
                     />
                   )}
-                  <CardHeader>
+                  <div className="p-4">
                     <div className="flex flex-wrap gap-2 mb-2">
                       {post.categories.slice(0, 2).map(({ category }) => (
-                        <Badge key={category.id} variant="secondary">{category.name}</Badge>
+                        <span key={category.id} className="text-xs bg-muted px-2 py-1 rounded">
+                          {category.name}
+                        </span>
                       ))}
                     </div>
-                    <h3 className="font-semibold text-lg">{post.title}</h3>
-                  </CardHeader>
-                  <CardContent>
+                    <h3 className="font-semibold text-lg mb-2">{post.title}</h3>
                     {post.excerpt && (
-                      <p className="text-muted-foreground line-clamp-3">{post.excerpt}</p>
+                      <p className="text-muted-foreground text-sm line-clamp-3 mb-4">{post.excerpt}</p>
                     )}
-                  </CardContent>
-                  <CardFooter className="text-sm text-muted-foreground">
                     {post.publishedAt && (
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
+                      <p className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(post.publishedAt), { addSuffix: true })}
-                      </span>
+                      </p>
                     )}
-                  </CardFooter>
-                </Card>
+                  </div>
+                </article>
               </Link>
             ))}
           </div>
@@ -308,12 +310,9 @@ async function PostPage({ subdomain, slug }: { subdomain: string; slug: string }
       </header>
 
       <article className="container mx-auto px-4 py-12 max-w-4xl">
-        <Button variant="ghost" asChild className="mb-8">
-          <Link href="/posts">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Blog
-          </Link>
-        </Button>
+        <Link href="/posts" className="text-muted-foreground hover:text-foreground mb-8 inline-block">
+          ← Back to Blog
+        </Link>
 
         {post.featuredImage && (
           <img
@@ -326,28 +325,21 @@ async function PostPage({ subdomain, slug }: { subdomain: string; slug: string }
         <header className="mb-8">
           <div className="flex flex-wrap gap-2 mb-4">
             {post.categories.map(({ category }) => (
-              <Badge key={category.id}>{category.name}</Badge>
+              <span key={category.id} className="text-sm bg-primary text-primary-foreground px-3 py-1 rounded">
+                {category.name}
+              </span>
             ))}
           </div>
           <h1 className="text-4xl font-bold mb-4">{post.title}</h1>
-          <div className="flex items-center gap-4 text-muted-foreground">
+          <div className="flex items-center gap-4 text-muted-foreground text-sm">
             {post.author?.name && (
-              <span className="flex items-center gap-1">
-                <User className="h-4 w-4" />
-                {post.author.name}
-              </span>
+              <span>By {post.author.name}</span>
             )}
             {post.publishedAt && (
-              <span className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
-                {new Date(post.publishedAt).toLocaleDateString()}
-              </span>
+              <span>{new Date(post.publishedAt).toLocaleDateString()}</span>
             )}
             {post.readingTime && (
-              <span className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                {post.readingTime} min read
-              </span>
+              <span>{post.readingTime} min read</span>
             )}
           </div>
         </header>
@@ -362,7 +354,9 @@ async function PostPage({ subdomain, slug }: { subdomain: string; slug: string }
             <h3 className="font-semibold mb-4">Tags</h3>
             <div className="flex flex-wrap gap-2">
               {post.tags.map(({ tag }) => (
-                <Badge key={tag.id} variant="outline">{tag.name}</Badge>
+                <span key={tag.id} className="text-sm border px-3 py-1 rounded">
+                  {tag.name}
+                </span>
               ))}
             </div>
           </div>
@@ -372,7 +366,7 @@ async function PostPage({ subdomain, slug }: { subdomain: string; slug: string }
   )
 }
 
-// CMS Page renderer (for Puck pages)
+// CMS Page renderer
 async function CMSPage({ subdomain, slug }: { subdomain: string; slug: string }) {
   const settings = await getSiteSettings(subdomain)
   const page = await getPage(slug)
@@ -381,7 +375,6 @@ async function CMSPage({ subdomain, slug }: { subdomain: string; slug: string })
     notFound()
   }
 
-  // Check if page has Puck content
   const hasPuckContent = page.content && typeof page.content === 'object'
 
   return (
@@ -394,11 +387,10 @@ async function CMSPage({ subdomain, slug }: { subdomain: string; slug: string })
 
       <main className="container mx-auto px-4 py-12">
         {hasPuckContent ? (
-          // Render Puck content - would need PageRenderer
           <div>
             <h1 className="text-4xl font-bold mb-8">{page.title}</h1>
             <p className="text-muted-foreground">
-              This page uses the visual editor. Puck rendering coming soon.
+              Visual editor content - Puck rendering integration coming soon.
             </p>
           </div>
         ) : (
@@ -422,26 +414,21 @@ async function CMSPage({ subdomain, slug }: { subdomain: string; slug: string })
  * Routes to appropriate page based on path
  */
 export async function StorefrontRouter({ subdomain, path = [] }: StorefrontRouterProps) {
-  // Determine which page to render based on path
   if (path.length === 0) {
-    // Home page
     return <HomePage subdomain={subdomain} />
   }
 
   const [firstSegment, ...rest] = path
 
-  if (firstSegment === 'posts') {
+  if (firstSegment === 'posts' || firstSegment === 'blog') {
     if (rest.length === 0) {
-      // Posts list
       return <PostsPage subdomain={subdomain} />
     } else {
-      // Single post
       return <PostPage subdomain={subdomain} slug={rest[0]} />
     }
   }
 
   if (firstSegment === 'p' || firstSegment === 'pages') {
-    // CMS page
     return <CMSPage subdomain={subdomain} slug={rest.join('/')} />
   }
 
@@ -451,7 +438,6 @@ export async function StorefrontRouter({ subdomain, path = [] }: StorefrontRoute
     return <CMSPage subdomain={subdomain} slug={firstSegment} />
   }
 
-  // Not found
   notFound()
 }
 
