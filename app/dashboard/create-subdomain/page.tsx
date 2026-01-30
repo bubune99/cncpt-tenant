@@ -19,18 +19,31 @@ import {
   CheckCircle2,
   Sparkles,
   Building2,
+  Zap,
 } from "lucide-react"
 import { PlanCard } from "@/components/dashboard/plan-card"
 import { SiteConfigForm, type SiteConfig } from "@/components/dashboard/site-config-form"
 import { BusinessInsightsForm, type BusinessInsights } from "@/components/dashboard/business-insights-form"
+import { CreditPacks } from "@/components/dashboard/credit-packs"
 import type { SubscriptionTier } from "@/types/admin"
 
 const STEPS = [
   { number: 1, title: "Choose Plan", icon: CreditCard },
   { number: 2, title: "Site Setup", icon: Globe },
   { number: 3, title: "About Your Project", icon: Building2 },
-  { number: 4, title: "Review & Create", icon: Settings },
+  { number: 4, title: "AI Credits", icon: Zap },
+  { number: 5, title: "Review & Create", icon: Settings },
 ]
+
+interface SelectedCreditPack {
+  id: string
+  name: string
+  displayName: string
+  credits: number
+  bonusCredits: number
+  totalCredits: number
+  priceCents: number
+}
 
 interface UsageData {
   used: number
@@ -99,6 +112,10 @@ function CreateSubdomainContent() {
   })
   const [configErrors, setConfigErrors] = useState<Partial<Record<keyof SiteConfig, string>>>({})
 
+  // AI Credits upsell
+  const [selectedCreditPack, setSelectedCreditPack] = useState<SelectedCreditPack | null>(null)
+  const [purchasingCredits, setPurchasingCredits] = useState(false)
+
   // Subdomain availability
   const [checkingAvailability, setCheckingAvailability] = useState(false)
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null)
@@ -115,9 +132,40 @@ function CreateSubdomainContent() {
   useEffect(() => {
     const sessionId = searchParams.get("session_id")
     const canceled = searchParams.get("canceled")
+    const creditStep = searchParams.get("credit_step")
+    const creditPurchase = searchParams.get("credit_purchase")
+
+    // Restore form data from session storage if returning from payment
+    const savedData = sessionStorage.getItem("subdomain_wizard_data")
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData)
+        if (parsed.siteConfig) setSiteConfig(parsed.siteConfig)
+        if (parsed.businessInsights) setBusinessInsights(parsed.businessInsights)
+        if (parsed.selectedTierId) setSelectedTierId(parsed.selectedTierId)
+        if (parsed.selectedCreditPack) setSelectedCreditPack(parsed.selectedCreditPack)
+        sessionStorage.removeItem("subdomain_wizard_data")
+      } catch {
+        // Ignore parse errors
+      }
+    }
 
     if (canceled) {
       setError("Payment was canceled. Please try again or select a different plan.")
+    }
+
+    // Handle credit pack purchase return
+    if (creditStep === "complete" || creditPurchase === "success") {
+      setStep(5) // Go to review step
+      loadInitialData()
+      return
+    }
+
+    if (creditPurchase === "canceled") {
+      setStep(4) // Go back to credit step
+      setError("Credit purchase was canceled. You can try again or skip this step.")
+      loadInitialData()
+      return
     }
 
     if (sessionId) {
@@ -334,6 +382,56 @@ function CreateSubdomainContent() {
 
   function canProceedToStep4(): boolean {
     return businessInsights.useCase !== "" && businessInsights.industry !== ""
+  }
+
+  // Handle credit pack selection
+  function handleCreditPackSelect(pack: SelectedCreditPack | null) {
+    setSelectedCreditPack(pack)
+  }
+
+  // Handle credit pack purchase during onboarding
+  async function handleCreditPackPurchase() {
+    if (!selectedCreditPack) {
+      setStep(5) // Skip to review
+      return
+    }
+
+    setPurchasingCredits(true)
+    setError(null)
+
+    try {
+      const res = await fetch("/api/dashboard/credits/purchase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          packId: selectedCreditPack.id,
+          returnUrl: `/dashboard/create-subdomain?credit_step=complete`,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to start checkout")
+      }
+
+      // Store form data before redirect
+      sessionStorage.setItem("subdomain_wizard_data", JSON.stringify({
+        siteConfig,
+        businessInsights,
+        selectedTierId,
+        selectedCreditPack,
+      }))
+
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch (err) {
+      console.error("Credit purchase error:", err)
+      setError(err instanceof Error ? err.message : "Failed to purchase credits")
+    } finally {
+      setPurchasingCredits(false)
+    }
   }
 
   // Get current tier info
@@ -604,15 +702,59 @@ function CreateSubdomainContent() {
                   Back
                 </Button>
                 <Button onClick={() => setStep(4)} disabled={!canProceedToStep4()}>
-                  Review & Create
+                  Continue
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
             </div>
           )}
 
-          {/* Step 4: Review & Create */}
+          {/* Step 4: AI Credits Upsell */}
           {step === 4 && (
+            <div className="space-y-6">
+              <CreditPacks
+                onboardingMode={true}
+                selectedPackId={selectedCreditPack?.id}
+                onSelect={(pack) => handleCreditPackSelect(pack as SelectedCreditPack | null)}
+                allowSkip={true}
+              />
+
+              <div className="flex justify-between max-w-3xl mx-auto">
+                <Button variant="outline" onClick={() => setStep(3)}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back
+                </Button>
+                <div className="flex gap-3">
+                  {selectedCreditPack ? (
+                    <Button
+                      onClick={handleCreditPackPurchase}
+                      disabled={purchasingCredits}
+                    >
+                      {purchasingCredits ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="h-4 w-4 mr-2" />
+                          Buy {selectedCreditPack.totalCredits.toLocaleString()} Credits - ${(selectedCreditPack.priceCents / 100).toFixed(0)}
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <Button onClick={() => setStep(5)}>
+                      Skip for now
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 5: Review & Create */}
+          {step === 5 && (
             <div className="space-y-6">
               <div className="text-center mb-6">
                 <h2 className="text-2xl font-bold mb-2">Review Your Site</h2>
@@ -737,9 +879,37 @@ function CreateSubdomainContent() {
                   </Card>
                 )}
 
+                {/* AI Credits Summary */}
+                {selectedCreditPack && (
+                  <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950 dark:border-yellow-800">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Zap className="h-4 w-4 text-yellow-600" />
+                        AI Credit Boost
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{selectedCreditPack.displayName}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {selectedCreditPack.credits.toLocaleString()} credits
+                            {selectedCreditPack.bonusCredits > 0 && (
+                              <span className="text-green-600"> + {selectedCreditPack.bonusCredits.toLocaleString()} bonus</span>
+                            )}
+                          </p>
+                        </div>
+                        <p className="text-lg font-bold">
+                          ${(selectedCreditPack.priceCents / 100).toFixed(0)}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Action Buttons */}
                 <div className="flex justify-between pt-4">
-                  <Button variant="outline" onClick={() => setStep(3)} disabled={creating}>
+                  <Button variant="outline" onClick={() => setStep(4)} disabled={creating}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back
                   </Button>

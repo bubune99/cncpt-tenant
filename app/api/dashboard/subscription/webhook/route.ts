@@ -12,6 +12,10 @@ import {
   downgradeToFreeTier,
   updateStripeCustomerId,
 } from "@/lib/subscription"
+import {
+  addPurchasedCredits,
+  addUserPurchasedCredits,
+} from "@/lib/ai-credits"
 import type Stripe from "stripe"
 
 /**
@@ -138,31 +142,37 @@ export async function POST(request: NextRequest) {
 
 /**
  * Handle checkout.session.completed
- * Links the subscription to the user and assigns the tier
+ * Handles both subscription checkouts and one-time credit pack purchases
  */
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  console.log("[webhook] Processing checkout.session.completed:", session.id)
+  console.log("[webhook] Processing checkout.session.completed:", session.id, "mode:", session.mode)
 
   const userId = session.metadata?.userId
-  const tierId = session.metadata?.tierId
 
   if (!userId) {
     console.error("[webhook] No userId in session metadata")
     return
   }
 
-  // Get the subscription ID from the session
+  // Update customer ID if present
+  const customerId = session.customer as string | null
+  if (customerId) {
+    await updateStripeCustomerId(userId, customerId)
+  }
+
+  // Check if this is a credit pack purchase (one-time payment)
+  if (session.mode === "payment" && session.metadata?.type === "credit_pack") {
+    await handleCreditPackPurchase(session)
+    return
+  }
+
+  // Otherwise, handle as subscription checkout
+  const tierId = session.metadata?.tierId
   const subscriptionId = session.subscription as string | null
 
   if (subscriptionId) {
     // Sync the subscription to the database
     await syncStripeSubscription(userId, subscriptionId)
-  }
-
-  // Update customer ID if present
-  const customerId = session.customer as string | null
-  if (customerId) {
-    await updateStripeCustomerId(userId, customerId)
   }
 
   // Update user's tier directly if we have the tier ID
@@ -192,7 +202,77 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     console.warn("[webhook] Failed to log subscription event:", logError)
   }
 
-  console.log(`[webhook] Checkout completed for user ${userId}, tier ${tierId}`)
+  console.log(`[webhook] Subscription checkout completed for user ${userId}, tier ${tierId}`)
+}
+
+/**
+ * Handle credit pack purchase
+ * Adds purchased credits to team pool (or user if no subdomain)
+ */
+async function handleCreditPackPurchase(session: Stripe.Checkout.Session) {
+  const userId = session.metadata?.userId
+  const subdomainId = session.metadata?.subdomainId
+  const packName = session.metadata?.packName
+  const credits = parseInt(session.metadata?.credits || "0", 10)
+
+  if (!userId || credits <= 0) {
+    console.error("[webhook] Invalid credit pack purchase metadata:", session.metadata)
+    return
+  }
+
+  console.log(`[webhook] Processing credit pack purchase: ${packName} (${credits} credits) for user ${userId}`)
+
+  let success = false
+
+  // Add credits to team pool if subdomain specified, otherwise to user
+  if (subdomainId) {
+    success = await addPurchasedCredits(
+      subdomainId,
+      credits,
+      userId,
+      session.payment_intent as string | undefined
+    )
+    console.log(`[webhook] Added ${credits} credits to team pool for subdomain ${subdomainId}`)
+  } else {
+    success = await addUserPurchasedCredits(
+      userId,
+      credits,
+      session.payment_intent as string | undefined
+    )
+    console.log(`[webhook] Added ${credits} credits directly to user ${userId}`)
+  }
+
+  if (!success) {
+    console.error("[webhook] Failed to add credits for purchase:", session.id)
+    return
+  }
+
+  // Log the purchase event
+  try {
+    await sql`
+      INSERT INTO subscription_events (
+        user_id,
+        event_type,
+        stripe_event_id,
+        metadata
+      ) VALUES (
+        ${userId},
+        'credit_pack_purchase',
+        ${session.id},
+        ${JSON.stringify({
+          packName,
+          credits,
+          subdomainId,
+          paymentIntent: session.payment_intent,
+          amountTotal: session.amount_total,
+        })}
+      )
+    `
+  } catch (logError) {
+    console.warn("[webhook] Failed to log credit pack purchase:", logError)
+  }
+
+  console.log(`[webhook] Credit pack ${packName} purchase completed for user ${userId}`)
 }
 
 /**
