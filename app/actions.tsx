@@ -1,12 +1,26 @@
 "use server"
 
 import { redis } from "@/lib/redis"
+import { sql } from "@/lib/neon"
 import { isValidIcon } from "@/lib/subdomains"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { rootDomain, protocol } from "@/lib/utils"
 import { stackServerApp } from "@/stack"
+import { canCreateSubdomain } from "@/lib/subscription"
 
+// Reserved subdomains that cannot be used
+const RESERVED_SUBDOMAINS = [
+  "www", "app", "api", "admin", "dashboard", "mail", "email",
+  "ftp", "blog", "shop", "store", "help", "support", "docs",
+  "dev", "staging", "test", "demo",
+]
+
+/**
+ * Legacy form-based subdomain creation action
+ * Note: The new create-subdomain page uses the API directly
+ * This action is kept for backward compatibility
+ */
 export async function createSubdomainAction(prevState: any, formData: FormData) {
   const user = await stackServerApp.getUser()
   if (!user) {
@@ -15,19 +29,15 @@ export async function createSubdomainAction(prevState: any, formData: FormData) 
 
   const subdomain = formData.get("subdomain") as string
   const icon = formData.get("icon") as string
+  const siteName = formData.get("siteName") as string || subdomain
+  const contactEmail = formData.get("contactEmail") as string || user.primaryEmail || ""
 
-  if (!subdomain || !icon) {
-    return { success: false, error: "Subdomain and icon are required" }
+  if (!subdomain) {
+    return { success: false, error: "Subdomain is required" }
   }
 
-  if (!isValidIcon(icon)) {
-    return {
-      subdomain,
-      icon,
-      success: false,
-      error: "Please enter a valid emoji (maximum 10 characters)",
-    }
-  }
+  // Icon is now optional - use default if not provided
+  const emoji = icon && isValidIcon(icon) ? icon : "🌐"
 
   const sanitizedSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, "")
 
@@ -40,23 +50,89 @@ export async function createSubdomainAction(prevState: any, formData: FormData) 
     }
   }
 
-  const existingSubdomain = await redis.get(`subdomain:${sanitizedSubdomain}`)
-
-  if (existingSubdomain) {
+  // Check minimum length
+  if (sanitizedSubdomain.length < 3) {
     return {
       subdomain,
       icon,
       success: false,
-      error: "This subdomain is already taken",
+      error: "Subdomain must be at least 3 characters long.",
+    }
+  }
+
+  // Check reserved subdomains
+  if (RESERVED_SUBDOMAINS.includes(sanitizedSubdomain)) {
+    return {
+      subdomain,
+      icon,
+      success: false,
+      error: "This subdomain is reserved. Please choose another.",
+    }
+  }
+
+  // Check plan limits
+  const canCreate = await canCreateSubdomain(user.id)
+  if (!canCreate.allowed) {
+    return {
+      subdomain,
+      icon,
+      success: false,
+      error: canCreate.reason || "You have reached your subdomain limit. Please upgrade your plan.",
+      code: "PLAN_LIMIT_REACHED",
+      usage: canCreate.usage,
     }
   }
 
   try {
+    // Check if subdomain exists in database
+    const existingDb = await sql`
+      SELECT id FROM subdomains WHERE subdomain = ${sanitizedSubdomain}
+    `
+
+    if (existingDb.length > 0) {
+      return {
+        subdomain,
+        icon,
+        success: false,
+        error: "This subdomain is already taken",
+      }
+    }
+
+    // Also check Redis for legacy subdomains (backwards compatibility)
+    const existingRedis = await redis.get(`subdomain:${sanitizedSubdomain}`)
+    if (existingRedis) {
+      return {
+        subdomain,
+        icon,
+        success: false,
+        error: "This subdomain is already taken",
+      }
+    }
+
+    // Create subdomain in database with configuration
+    await sql`
+      INSERT INTO subdomains (user_id, subdomain, emoji, site_name, contact_email, onboarding_completed)
+      VALUES (${user.id}, ${sanitizedSubdomain}, ${emoji}, ${siteName}, ${contactEmail}, false)
+    `
+
+    // Also store in Redis for backwards compatibility during migration
     await redis.set(`subdomain:${sanitizedSubdomain}`, {
-      emoji: icon,
+      emoji,
+      siteName,
       createdAt: Date.now(),
       userId: user.id,
     })
+
+    // Create default tenant settings
+    try {
+      await sql`
+        INSERT INTO tenant_settings (subdomain, site_name, site_description, contact_email)
+        VALUES (${sanitizedSubdomain}, ${siteName}, 'Welcome to my site', ${contactEmail})
+        ON CONFLICT (subdomain) DO NOTHING
+      `
+    } catch (settingsError) {
+      console.warn("[actions] Failed to create tenant settings:", settingsError)
+    }
 
     return {
       success: true,
@@ -64,7 +140,7 @@ export async function createSubdomainAction(prevState: any, formData: FormData) 
       subdomain: sanitizedSubdomain,
     }
   } catch (error) {
-    console.error("[v0] Error creating subdomain:", error)
+    console.error("[actions] Error creating subdomain:", error)
     return {
       subdomain,
       icon,
@@ -79,12 +155,40 @@ export async function deleteSubdomainAction(prevState: any, formData: FormData) 
   if (!user) {
     redirect("/login")
   }
-  const subdomain = formData.get("subdomain")
+  const subdomain = formData.get("subdomain") as string
 
-  await redis.del(`subdomain:${subdomain}`)
+  if (!subdomain) {
+    return { success: false, error: "Subdomain is required" }
+  }
 
-  revalidatePath("/dashboard")
-  return { success: "Domain deleted successfully" }
+  try {
+    // Delete from database (only if owned by user)
+    const result = await sql`
+      DELETE FROM subdomains
+      WHERE subdomain = ${subdomain} AND user_id = ${user.id}
+      RETURNING id
+    `
+
+    if (result.length === 0) {
+      return { success: false, error: "Subdomain not found or access denied" }
+    }
+
+    // Also delete from Redis for backwards compatibility
+    await redis.del(`subdomain:${subdomain}`)
+
+    // Clean up tenant settings
+    try {
+      await sql`DELETE FROM tenant_settings WHERE subdomain = ${subdomain}`
+    } catch (settingsError) {
+      console.warn("[actions] Failed to delete tenant settings:", settingsError)
+    }
+
+    revalidatePath("/dashboard")
+    return { success: true, message: "Subdomain deleted successfully" }
+  } catch (error) {
+    console.error("[actions] Error deleting subdomain:", error)
+    return { success: false, error: "Failed to delete subdomain" }
+  }
 }
 
 export async function getUserSubdomains() {
@@ -94,6 +198,23 @@ export async function getUserSubdomains() {
   }
 
   try {
+    // Get subdomains from database first
+    const dbSubdomains = await sql`
+      SELECT subdomain, emoji, created_at
+      FROM subdomains
+      WHERE user_id = ${user.id}
+      ORDER BY created_at DESC
+    `
+
+    if (dbSubdomains.length > 0) {
+      return dbSubdomains.map((row) => ({
+        subdomain: row.subdomain as string,
+        emoji: (row.emoji as string) || "❓",
+        created_at: new Date(row.created_at as string),
+      }))
+    }
+
+    // Fallback to Redis for legacy subdomains
     const keys = await redis.keys("subdomain:*")
     if (!keys.length) {
       return []
@@ -117,7 +238,7 @@ export async function getUserSubdomains() {
 
     return userSubdomains
   } catch (error) {
-    console.error("[v0] Error fetching subdomains:", error)
+    console.error("[actions] Error fetching subdomains:", error)
     return []
   }
 }
