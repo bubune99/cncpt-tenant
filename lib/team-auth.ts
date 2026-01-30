@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { stackServerApp } from "@/stack"
-import { prisma } from "@cncpt/cms/lib"
+import { sql } from "@/lib/neon"
 
 // Re-export client-safe utilities for backward compatibility
 export {
@@ -56,26 +56,29 @@ export async function getTeamMembership(
   teamId: string
 ): Promise<TeamMembership | null> {
   try {
-    const result = await prisma.teamMember.findUnique({
-      where: {
-        teamId_userId: { teamId, userId },
-      },
-    })
+    const result = await sql`
+      SELECT
+        id, team_id, user_id, role, custom_permissions,
+        invited_by, invited_at, accepted_at, created_at
+      FROM team_members
+      WHERE user_id = ${userId} AND team_id = ${teamId}
+    `
 
-    if (!result) return null
+    if (result.length === 0) return null
 
+    const row = result[0]
     return {
-      id: result.id,
-      teamId: result.teamId,
-      userId: result.userId,
-      role: result.role as TeamRole,
-      customPermissions: Array.isArray(result.customPermissions)
-        ? (result.customPermissions as string[])
-        : [],
-      invitedBy: result.invitedBy,
-      invitedAt: result.invitedAt,
-      acceptedAt: result.acceptedAt,
-      createdAt: result.createdAt,
+      id: row.id as string,
+      teamId: row.team_id as string,
+      userId: row.user_id as string,
+      role: row.role as TeamRole,
+      customPermissions: Array.isArray(row.custom_permissions)
+        ? (row.custom_permissions as string[])
+        : JSON.parse((row.custom_permissions as string) || "[]"),
+      invitedBy: row.invited_by as string | null,
+      invitedAt: new Date(row.invited_at as string),
+      acceptedAt: row.accepted_at ? new Date(row.accepted_at as string) : null,
+      createdAt: new Date(row.created_at as string),
     }
   } catch (error) {
     console.error("[team-auth] Error getting team membership:", error)
@@ -169,47 +172,30 @@ export async function canAccessSubdomain(
   accessLevel?: string
 }> {
   try {
-    // First check if user owns the subdomain using Prisma
-    const ownerCheck = await prisma.subdomain.findFirst({
-      where: {
-        subdomain,
-        userId,
-      },
-      select: { id: true },
-    })
+    // First check if user owns the subdomain
+    const ownerCheck = await sql`
+      SELECT user_id FROM subdomains WHERE subdomain = ${subdomain} AND user_id = ${userId}
+    `
 
-    if (ownerCheck) {
-      return { hasAccess: true, accessType: "owner", accessLevel: "admin" }
+    if (ownerCheck.length > 0) {
+      return { hasAccess: true, accessType: "owner" }
     }
 
-    // Check team access using Prisma
-    const teamAccess = await prisma.teamSubdomain.findFirst({
-      where: {
-        subdomain,
-        team: {
-          members: {
-            some: { userId },
-          },
-        },
-      },
-      include: {
-        team: {
-          include: {
-            members: {
-              where: { userId },
-              select: { role: true },
-            },
-          },
-        },
-      },
-    })
+    // Check team access
+    const teamAccess = await sql`
+      SELECT ts.team_id, ts.access_level, tm.role
+      FROM team_subdomains ts
+      JOIN team_members tm ON ts.team_id = tm.team_id
+      WHERE ts.subdomain = ${subdomain} AND tm.user_id = ${userId}
+    `
 
-    if (!teamAccess) {
+    if (teamAccess.length === 0) {
       return { hasAccess: false, accessType: null }
     }
 
-    const teamAccessLevel = teamAccess.accessLevel
-    const userRole = teamAccess.team.members[0]?.role as TeamRole
+    const row = teamAccess[0]
+    const teamAccessLevel = row.access_level as string
+    const userRole = row.role as TeamRole
 
     // Check if user's team membership + subdomain access level permits the action
     const accessLevelHierarchy = { view: 0, edit: 1, admin: 2 }
@@ -224,7 +210,7 @@ export async function canAccessSubdomain(
       return {
         hasAccess: true,
         accessType: "team",
-        teamId: teamAccess.teamId,
+        teamId: row.team_id as string,
         accessLevel: teamAccessLevel,
       }
     }
@@ -249,40 +235,31 @@ export async function getUserAccessibleSubdomains(userId: string): Promise<
   }>
 > {
   try {
-    // Get owned subdomains using Prisma
-    const ownedResult = await prisma.subdomain.findMany({
-      where: { userId },
-      select: { subdomain: true },
-    })
+    // Get owned subdomains
+    const ownedResult = await sql`
+      SELECT subdomain FROM subdomains WHERE user_id = ${userId}
+    `
 
     const owned = ownedResult.map((row) => ({
-      subdomain: row.subdomain,
+      subdomain: row.subdomain as string,
       accessType: "owner" as const,
     }))
 
-    // Get team-shared subdomains using Prisma
-    const teamResult = await prisma.teamSubdomain.findMany({
-      where: {
-        team: {
-          deletedAt: null,
-          members: {
-            some: { userId },
-          },
-        },
-      },
-      include: {
-        team: {
-          select: { id: true, name: true },
-        },
-      },
-    })
+    // Get team-shared subdomains
+    const teamResult = await sql`
+      SELECT ts.subdomain, ts.team_id, ts.access_level, t.name as team_name
+      FROM team_subdomains ts
+      JOIN team_members tm ON ts.team_id = tm.team_id
+      JOIN teams t ON ts.team_id = t.id
+      WHERE tm.user_id = ${userId} AND t.deleted_at IS NULL
+    `
 
     const teamShared = teamResult.map((row) => ({
-      subdomain: row.subdomain,
+      subdomain: row.subdomain as string,
       accessType: "team" as const,
-      teamId: row.team.id,
-      teamName: row.team.name,
-      accessLevel: row.accessLevel,
+      teamId: row.team_id as string,
+      teamName: row.team_name as string,
+      accessLevel: row.access_level as string,
     }))
 
     // Combine and deduplicate (owned takes precedence)
