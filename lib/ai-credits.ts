@@ -10,6 +10,7 @@
  */
 
 import { sql } from "@/lib/neon"
+import { hasUnlimitedAiCredits, getMonthlyCreditAllocation, getPendingCreditGrants, markCreditGrantApplied, markCreditGrantFailed } from "@/lib/user-overrides"
 
 // ============================================
 // TYPES
@@ -363,6 +364,20 @@ export async function checkCredits(params: {
 }): Promise<CheckCreditsResult> {
   const { userId, subdomainId, feature, modelTier } = params
 
+  // Check for unlimited credits override
+  const hasUnlimited = await hasUnlimitedAiCredits(userId)
+  if (hasUnlimited) {
+    return {
+      canUse: true,
+      creditCost: 0, // Free for unlimited users
+      monthlyBalance: 999999,
+      purchasedBalance: 999999,
+      totalBalance: 999999,
+      teamPoolBalance: 0,
+      deficit: 0,
+    }
+  }
+
   // Calculate cost
   const costInfo = await calculateCreditCost(feature, modelTier)
   if (!costInfo) {
@@ -410,6 +425,38 @@ export async function useCredits(params: UseCreditsParams): Promise<UseCreditsRe
     description,
     metadata,
   } = params
+
+  // Check for unlimited credits override - no deduction needed
+  const hasUnlimited = await hasUnlimitedAiCredits(userId)
+  if (hasUnlimited) {
+    // Log usage for tracking but don't deduct
+    try {
+      await sql`
+        INSERT INTO ai_credit_transactions (
+          user_id, type, monthly_amount, purchased_amount,
+          monthly_balance_after, purchased_balance_after,
+          feature, model_tier, description, reference_id, metadata
+        ) VALUES (
+          ${userId}, 'usage', 0, 0,
+          999999, 999999,
+          ${feature}, ${modelTier || "pro"}, ${description || "Unlimited credits override"}, ${referenceId || null},
+          ${JSON.stringify({ ...metadata, unlimitedOverride: true })}
+        )
+      `
+    } catch (error) {
+      console.error("[ai-credits] Error logging unlimited usage:", error)
+    }
+
+    return {
+      success: true,
+      creditsUsed: 0,
+      monthlyUsed: 0,
+      purchasedUsed: 0,
+      remainingMonthly: 999999,
+      remainingPurchased: 999999,
+      remainingTotal: 999999,
+    }
+  }
 
   // Calculate cost if not provided
   let creditCost = amount
@@ -567,7 +614,7 @@ export async function allocateMonthlyCredits(
   userId: string,
   monthlyAmount: number,
   rolloverCap: number
-): Promise<{ allocated: number; rolledOver: number; expired: number }> {
+): Promise<{ allocated: number; rolledOver: number; expired: number; bonusFromOverride: number }> {
   const balance = await getUserCreditBalance(userId)
 
   const currentMonth = new Date().toISOString().slice(0, 7) // "2024-01"
@@ -575,23 +622,27 @@ export async function allocateMonthlyCredits(
 
   // Skip if already allocated this month
   if (lastMonth === currentMonth) {
-    return { allocated: 0, rolledOver: 0, expired: 0 }
+    return { allocated: 0, rolledOver: 0, expired: 0, bonusFromOverride: 0 }
   }
+
+  // Check for extra monthly credits from override
+  const overrideBonus = await getMonthlyCreditAllocation(userId)
+  const totalMonthlyAmount = monthlyAmount + overrideBonus
 
   // Calculate rollover (capped) and expired
   const rolledOver = Math.min(balance.monthlyBalance, rolloverCap)
   const expired = Math.max(0, balance.monthlyBalance - rolloverCap)
 
-  // New monthly balance = rollover + new allocation
-  const newMonthlyBalance = rolledOver + monthlyAmount
+  // New monthly balance = rollover + new allocation + override bonus
+  const newMonthlyBalance = rolledOver + totalMonthlyAmount
 
   try {
     await sql`
       UPDATE ai_credit_balances SET
         monthly_balance = ${newMonthlyBalance},
-        lifetime_allocated = lifetime_allocated + ${monthlyAmount},
+        lifetime_allocated = lifetime_allocated + ${totalMonthlyAmount},
         last_allocation_date = ${new Date().toISOString().slice(0, 10)},
-        monthly_allocation_amount = ${monthlyAmount},
+        monthly_allocation_amount = ${totalMonthlyAmount},
         rollover_cap = ${rolloverCap},
         updated_at = NOW()
       WHERE user_id = ${userId}
@@ -604,10 +655,10 @@ export async function allocateMonthlyCredits(
         monthly_balance_after, purchased_balance_after,
         description, metadata
       ) VALUES (
-        ${userId}, 'allocation', ${monthlyAmount}, 0,
+        ${userId}, 'allocation', ${totalMonthlyAmount}, 0,
         ${newMonthlyBalance}, ${balance.purchasedBalance},
         'Monthly credit allocation',
-        ${JSON.stringify({ rolledOver, expired, month: currentMonth })}
+        ${JSON.stringify({ rolledOver, expired, month: currentMonth, baseAmount: monthlyAmount, overrideBonus })}
       )
     `
 
@@ -626,10 +677,10 @@ export async function allocateMonthlyCredits(
       `
     }
 
-    return { allocated: monthlyAmount, rolledOver, expired }
+    return { allocated: totalMonthlyAmount, rolledOver, expired, bonusFromOverride: overrideBonus }
   } catch (error) {
     console.error("[ai-credits] Error allocating monthly credits:", error)
-    return { allocated: 0, rolledOver: 0, expired: 0 }
+    return { allocated: 0, rolledOver: 0, expired: 0, bonusFromOverride: 0 }
   }
 }
 
@@ -922,5 +973,80 @@ export async function getAllFeatureCosts(): Promise<FeatureCost[]> {
   } catch (error) {
     console.error("[ai-credits] Error getting feature costs:", error)
     return []
+  }
+}
+
+/**
+ * Apply pending credit grants from super admin to user account
+ * Should be called during user login or when accessing credits
+ */
+export async function applyPendingCreditGrants(userId: string): Promise<{
+  applied: number
+  totalCredits: number
+  grants: Array<{ id: string; amount: number; type: string }>
+}> {
+  const pendingGrants = await getPendingCreditGrants(userId)
+
+  if (pendingGrants.length === 0) {
+    return { applied: 0, totalCredits: 0, grants: [] }
+  }
+
+  let totalCredits = 0
+  const appliedGrants: Array<{ id: string; amount: number; type: string }> = []
+
+  for (const grant of pendingGrants) {
+    try {
+      if (grant.creditType === 'monthly') {
+        // Add to monthly balance
+        const balance = await getUserCreditBalance(userId)
+        const newMonthlyBalance = balance.monthlyBalance + grant.creditsAmount
+
+        await sql`
+          UPDATE ai_credit_balances SET
+            monthly_balance = ${newMonthlyBalance},
+            lifetime_allocated = lifetime_allocated + ${grant.creditsAmount},
+            updated_at = NOW()
+          WHERE user_id = ${userId}
+        `
+
+        // Log the grant
+        await sql`
+          INSERT INTO ai_credit_transactions (
+            user_id, type, monthly_amount, purchased_amount,
+            monthly_balance_after, purchased_balance_after,
+            description, metadata
+          ) VALUES (
+            ${userId}, 'grant', ${grant.creditsAmount}, 0,
+            ${newMonthlyBalance}, ${balance.purchasedBalance},
+            ${grant.grantReason || 'Admin credit grant'},
+            ${JSON.stringify({ grantId: grant.id, grantedBy: grant.grantedByUserId })}
+          )
+        `
+      } else {
+        // Add to purchased balance (never expires)
+        const success = await addUserPurchasedCredits(userId, grant.creditsAmount)
+        if (!success) {
+          await markCreditGrantFailed(grant.id, 'Failed to add purchased credits')
+          continue
+        }
+      }
+
+      await markCreditGrantApplied(grant.id)
+      totalCredits += grant.creditsAmount
+      appliedGrants.push({
+        id: grant.id,
+        amount: grant.creditsAmount,
+        type: grant.creditType,
+      })
+    } catch (error) {
+      console.error(`[ai-credits] Error applying grant ${grant.id}:`, error)
+      await markCreditGrantFailed(grant.id, error instanceof Error ? error.message : 'Unknown error')
+    }
+  }
+
+  return {
+    applied: appliedGrants.length,
+    totalCredits,
+    grants: appliedGrants,
   }
 }

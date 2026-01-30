@@ -5,6 +5,7 @@
 
 import { sql } from "@/lib/neon"
 import { stripe, getSubscription } from "@/lib/stripe"
+import { getUserOverride, getSubdomainLimitOverride } from "@/lib/user-overrides"
 import type { SubscriptionTier, TierLimits } from "@/types/admin"
 
 // ============================================
@@ -187,10 +188,16 @@ export async function getSubdomainUsage(userId: string): Promise<SubdomainUsage>
   const subscription = await getUserSubscription(userId)
   const used = await countUserSubdomains(userId)
 
-  // Get subdomain limit from tier
+  // Check for admin override first
+  const overrideLimit = await getSubdomainLimitOverride(userId)
+
+  // Get subdomain limit from tier or override
   let limit = 1 // Free tier default
 
-  if (subscription?.limits) {
+  if (overrideLimit !== null) {
+    // Override takes precedence (-1 means unlimited)
+    limit = overrideLimit
+  } else if (subscription?.limits) {
     // Check if limits has subdomains field, otherwise use a default mapping
     const tierLimits = subscription.limits as TierLimits & { subdomains?: number }
     if (typeof tierLimits.subdomains === "number") {

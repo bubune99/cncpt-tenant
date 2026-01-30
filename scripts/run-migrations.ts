@@ -50,6 +50,7 @@ async function runMigrations() {
   const migrations = [
     "seed-tiers.sql",
     "ai-credits-schema.sql",
+    "create-user-overrides-table.sql",
   ]
 
   console.log("")
@@ -91,6 +92,8 @@ async function runMigrations() {
     "ai_credit_packs",
     "ai_feature_costs",
     "ai_model_tiers",
+    "user_overrides",
+    "credit_grants",
   ]
 
   for (const table of tables) {
