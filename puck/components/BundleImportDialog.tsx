@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { BundleManifest, BundleImportResult, ImportStatus } from '@/lib/cms/bundles/types";
+import { BundleManifest, BundleImportResult, ImportStatus } from "@/lib/cms/bundles/types";
 
 interface BundleImportDialogProps {
   isOpen: boolean;

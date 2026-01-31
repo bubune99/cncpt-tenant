@@ -4,9 +4,9 @@ import { useRef, useEffect, useMemo, useCallback, useState } from "react";
 import { useChat, type UIMessage } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { usePuck } from "@puckeditor/core";
-import { createToolExecutorsWithGetter, type ToolResult } from '@/lib/cms/puck/ai/tools/executors";
-import type { PuckEditorContext, SelectedComponent } from '@/lib/cms/puck/ai/types";
-import { useHelpModeOptional } from '@/lib/cms/puck/help-mode-context";
+import { createToolExecutorsWithGetter, type ToolResult } from "@/lib/cms/puck/ai/tools/executors";
+import type { PuckEditorContext, SelectedComponent } from "@/lib/cms/puck/ai/types";
+import { useHelpModeOptional } from "@/lib/cms/puck/help-mode-context";
 
 // Icons
 const SparklesIcon = () => (

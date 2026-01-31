@@ -1,7 +1,7 @@
 "use client"
 
 import { useParams } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/cms/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/cms/ui/card"
 import { Construction } from "lucide-react"
 
 // Section-specific placeholder content

@@ -5,8 +5,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { stackServerApp } from '@/lib/cms/stack";
-import { prisma } from '@/lib/cms/db";
+import { stackServerApp } from "@/lib/cms/stack";
+import { prisma } from "@/lib/cms/db";
 import type { AssetUploadStatus } from "@prisma/client";
 
 interface RouteParams {

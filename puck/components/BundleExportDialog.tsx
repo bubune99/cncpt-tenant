@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { BundleExportOptions, BundleManifest } from '@/lib/cms/bundles/types";
+import { BundleExportOptions, BundleManifest } from "@/lib/cms/bundles/types";
 
 interface BundleExportDialogProps {
   isOpen: boolean;

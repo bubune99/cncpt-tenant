@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import type { ParsedV0Component, V0ImportResult } from '@/lib/cms/v0/types";
+import type { ParsedV0Component, V0ImportResult } from "@/lib/cms/v0/types";
 
 interface V0ImportDialogProps {
   isOpen: boolean;

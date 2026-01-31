@@ -2,7 +2,7 @@
 
 import { AdminShell } from "@cncpt/cms/admin"
 import type { AdminShellConfig } from "@cncpt/cms/admin"
-import { rootDomain, protocol } from '@/lib/cms/utils"
+import { rootDomain, protocol } from "@/lib/cms/utils"
 import { AccessProvider } from "./access-context"
 
 // Role-based navigation configuration

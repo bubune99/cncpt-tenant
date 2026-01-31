@@ -21,22 +21,22 @@ import {
   Home,
   MoreHorizontal,
 } from "lucide-react"
-import { Tabs, TabsList, TabsTrigger } from '@/components/cms/ui/tabs"
-import { ScrollArea, ScrollBar } from '@/components/cms/ui/scroll-area"
-import { Button } from '@/components/cms/ui/button"
-import { Input } from '@/components/cms/ui/input"
-import { Label } from '@/components/cms/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/cms/ui/select"
-import { Slider } from '@/components/cms/ui/slider"
-import { Switch } from '@/components/cms/ui/switch"
+import { Tabs, TabsList, TabsTrigger } from "@/components/cms/ui/tabs"
+import { ScrollArea, ScrollBar } from "@/components/cms/ui/scroll-area"
+import { Button } from "@/components/cms/ui/button"
+import { Input } from "@/components/cms/ui/input"
+import { Label } from "@/components/cms/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/cms/ui/select"
+import { Slider } from "@/components/cms/ui/slider"
+import { Switch } from "@/components/cms/ui/switch"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from '@/components/cms/ui/dropdown-menu"
-import { cn } from '@/lib/cms/utils"
+} from "@/components/cms/ui/dropdown-menu"
+import { cn } from "@/lib/cms/utils"
 import type { ElementType, PageType, PanelType, PanelPosition } from "./page-builder"
 
 interface StagedElement {

@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { cn } from '@/lib/cms/utils"
+import { cn } from "@/lib/cms/utils"
 import type { ElementType } from "./page-builder"
 import { GripVertical, Plus, Trash2, Copy, Settings } from "lucide-react"
 import { useState } from "react"

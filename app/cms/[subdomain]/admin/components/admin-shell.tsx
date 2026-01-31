@@ -34,7 +34,7 @@ import {
   ClipboardList,
 } from 'lucide-react';
 import { Input } from '@/components/cms/ui/input';
-import { rootDomain, protocol } from '@/lib/cms/utils";
+import { rootDomain, protocol } from "@/lib/cms/utils";
 
 interface NavItem {
   name: string;

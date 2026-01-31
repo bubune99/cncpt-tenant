@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ScrollArea } from '@/components/cms/ui/scroll-area"
+import { ScrollArea } from "@/components/cms/ui/scroll-area"
 import {
   ChevronDown,
   ChevronRight,
@@ -15,7 +15,7 @@ import {
   MousePointer,
   Sparkles,
 } from "lucide-react"
-import { cn } from '@/lib/cms/utils"
+import { cn } from "@/lib/cms/utils"
 import type { ElementType } from "./page-builder"
 
 interface RightPanelProps {

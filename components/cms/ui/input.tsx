@@ -1,6 +1,6 @@
 import * as React from "react"
 
-import { cn } from '@/lib/cms/utils"
+import { cn } from "@/lib/cms/utils"
 
 export type InputProps = React.ComponentProps<"input">
 

@@ -6,9 +6,9 @@ import {
   type ModelMessage,
 } from "ai";
 import type { NextRequest } from "next/server";
-import { puckTools } from '@/lib/cms/puck/ai/tools/definitions";
-import { buildSystemPrompt } from '@/lib/cms/puck/ai/prompts/puck-assistant";
-import type { PuckEditorContext } from '@/lib/cms/puck/ai/types";
+import { puckTools } from "@/lib/cms/puck/ai/tools/definitions";
+import { buildSystemPrompt } from "@/lib/cms/puck/ai/prompts/puck-assistant";
+import type { PuckEditorContext } from "@/lib/cms/puck/ai/types";
 import { nanoid } from "nanoid";
 
 // Type for UI message parts

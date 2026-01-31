@@ -9,8 +9,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from '@/lib/cms/db";
-import { stackServerApp } from '@/lib/cms/stack";
+import { prisma } from "@/lib/cms/db";
+import { stackServerApp } from "@/lib/cms/stack";
 import { Data } from "@puckeditor/core";
 
 const DEFAULT_SITE_SETTINGS_ID = "default";
