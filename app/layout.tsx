@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { StackProvider, StackTheme } from "@stackframe/stack"
+import { ThemeProvider } from "@/components/theme-provider"
 import { stackServerApp } from "../stack"
 import "./globals.css"
 
@@ -23,11 +24,18 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} antialiased`}>
-        <StackProvider app={stackServerApp}>
-          <StackTheme>{children}</StackTheme>
-        </StackProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <StackProvider app={stackServerApp}>
+            <StackTheme>{children}</StackTheme>
+          </StackProvider>
+        </ThemeProvider>
         <SpeedInsights />
       </body>
     </html>

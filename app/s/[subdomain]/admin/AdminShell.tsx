@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { WizardProvider } from '@/contexts/WizardContext';
 import { CMSConfigProvider, type CMSConfig } from '@/contexts/CMSConfigContext';
 import { HelpProvider, useHelpOptional } from '@/components/cms/help-system';
+import { ModeToggle } from '@/components/cms/mode-toggle';
 import { AdminChat } from '@/components/cms/admin-chat';
 import {
   LayoutDashboard,
@@ -65,6 +66,11 @@ function HeaderActions() {
 
   return (
     <div className="flex items-center gap-2 ml-4" data-help-key="admin.header.actions">
+      {/* Theme Toggle */}
+      <div data-help-key="admin.header.theme">
+        <ModeToggle />
+      </div>
+
       {/* Notifications */}
       <button
         className="p-2 rounded-md hover:bg-accent transition-colors"
@@ -78,7 +84,7 @@ function HeaderActions() {
       <button
         className={`p-2 rounded-md transition-colors ${
           help?.helpMode?.isActive
-            ? 'bg-orange-100 text-orange-600 hover:bg-orange-200'
+            ? 'bg-orange-100 text-orange-600 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400'
             : 'hover:bg-accent'
         }`}
         title={help?.helpMode?.isActive ? 'Exit Help Mode (Ctrl+Q)' : 'Enter Help Mode (Ctrl+Q)'}
