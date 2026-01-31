@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
-import { isAdminUser } from '@/lib/cms/admin-config';
+import { useSubdomainAccess } from '@/hooks/use-subdomain-access';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/cms/ui/card';
 import { Button } from '@/components/cms/ui/button';
 import DashboardMetrics from '@/components/cms/admin/DashboardMetrics';
@@ -27,24 +27,34 @@ interface DashboardStats {
 }
 
 export default function AdminDashboard() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const params = useParams();
+  const subdomain = params?.subdomain as string;
+
+  // Use subdomain-based access control - check for admin level access
+  const { hasAccess, accessType, isLoading: accessLoading, error: accessError } = useSubdomainAccess('admin');
+
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
+
+  const isLoading = authLoading || accessLoading;
 
   useEffect(() => {
     if (!isLoading) {
       if (!user) {
-        router.push('/handler/sign-in?redirect=/admin');
-      } else if (!isAdminUser(user.primaryEmail)) {
-        // Not admin, redirect to home
+        router.push(`/handler/sign-in?redirect=/admin`);
+      } else if (accessError === 'Not authenticated') {
+        router.push(`/handler/sign-in?redirect=/admin`);
+      } else if (!hasAccess) {
+        // No admin access to this subdomain, redirect to subdomain home
         router.push('/');
       } else {
-        // Is admin, load stats
+        // Has admin access, load stats
         fetchDashboardStats();
       }
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, hasAccess, accessError, router]);
 
   const fetchDashboardStats = async () => {
     try {
@@ -80,13 +90,15 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!user || !isAdminUser(user.primaryEmail)) {
+  if (!user || !hasAccess) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <Shield className="h-12 w-12 text-destructive mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">Admin Access Only</h2>
-          <p className="text-muted-foreground mb-4">This area is restricted to administrators.</p>
+          <h2 className="text-2xl font-bold mb-2">Admin Access Required</h2>
+          <p className="text-muted-foreground mb-4">
+            You need to be the owner of this subdomain or a team admin to access this area.
+          </p>
           <Button onClick={() => router.push('/')} variant="outline">
             Return to Home
           </Button>
@@ -99,7 +111,14 @@ export default function AdminDashboard() {
     <div className="p-6 lg:p-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Welcome back, {user.displayName || 'Admin'}</p>
+        <p className="text-sm text-muted-foreground">
+          Welcome back, {user.displayName || 'Admin'}
+          {accessType && (
+            <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+              {accessType === 'owner' ? 'Owner' : 'Team Admin'}
+            </span>
+          )}
+        </p>
       </div>
 
       {/* Enhanced Metrics Dashboard */}

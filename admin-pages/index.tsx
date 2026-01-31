@@ -12,169 +12,169 @@ function PageLoading() {
   )
 }
 
-// Dynamic imports for admin pages
+// Dynamic imports for admin pages from subdomain routes
 // Use ssr: false to avoid metadata export issues with client components
-const AdminDashboard = dynamic(() => import("../app/cms/admin/page"), {
+const AdminDashboard = dynamic(() => import("../app/s/[subdomain]/admin/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const BlogPage = dynamic(() => import("../app/cms/admin/blog/page"), {
+const BlogPage = dynamic(() => import("../app/s/[subdomain]/admin/blog/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const BlogNewPage = dynamic(() => import("../app/cms/admin/blog/new/page"), {
+const BlogNewPage = dynamic(() => import("../app/s/[subdomain]/admin/blog/new/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const BlogEditPage = dynamic(() => import("../app/cms/admin/blog/[id]/page"), {
+const BlogEditPage = dynamic(() => import("../app/s/[subdomain]/admin/blog/[id]/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const BlogCategoriesPage = dynamic(() => import("../app/cms/admin/blog/categories/page"), {
+const BlogCategoriesPage = dynamic(() => import("../app/s/[subdomain]/admin/blog/categories/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const BlogTagsPage = dynamic(() => import("../app/cms/admin/blog/tags/page"), {
+const BlogTagsPage = dynamic(() => import("../app/s/[subdomain]/admin/blog/tags/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const ProductsPage = dynamic(() => import("../app/cms/admin/products/page"), {
+const ProductsPage = dynamic(() => import("../app/s/[subdomain]/admin/products/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const ProductNewPage = dynamic(() => import("../app/cms/admin/products/new/page"), {
+const ProductNewPage = dynamic(() => import("../app/s/[subdomain]/admin/products/new/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const ProductConfigurePage = dynamic(() => import("../app/cms/admin/products/[id]/configure/page"), {
+const ProductConfigurePage = dynamic(() => import("../app/s/[subdomain]/admin/products/[id]/configure/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const OrdersPage = dynamic(() => import("../app/cms/admin/orders/page"), {
+const OrdersPage = dynamic(() => import("../app/s/[subdomain]/admin/orders/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const OrderDetailPage = dynamic(() => import("../app/cms/admin/orders/[id]/page"), {
+const OrderDetailPage = dynamic(() => import("../app/s/[subdomain]/admin/orders/[id]/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const CustomersPage = dynamic(() => import("../app/cms/admin/customers/page"), {
+const CustomersPage = dynamic(() => import("../app/s/[subdomain]/admin/customers/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const CustomerDetailPage = dynamic(() => import("../app/cms/admin/customers/[id]/page"), {
+const CustomerDetailPage = dynamic(() => import("../app/s/[subdomain]/admin/customers/[id]/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const PagesPage = dynamic(() => import("../app/cms/admin/pages/page"), {
+const PagesPage = dynamic(() => import("../app/s/[subdomain]/admin/pages/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const MediaPage = dynamic(() => import("../app/cms/admin/media/page"), {
+const MediaPage = dynamic(() => import("../app/s/[subdomain]/admin/media/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const AnalyticsPage = dynamic(() => import("../app/cms/admin/analytics/page"), {
+const AnalyticsPage = dynamic(() => import("../app/s/[subdomain]/admin/analytics/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const SettingsPage = dynamic(() => import("../app/cms/admin/settings/page"), {
+const SettingsPage = dynamic(() => import("../app/s/[subdomain]/admin/settings/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const DiscountsPage = dynamic(() => import("../app/cms/admin/discounts/page"), {
+const DiscountsPage = dynamic(() => import("../app/s/[subdomain]/admin/discounts/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const DiscountCreatePage = dynamic(() => import("../app/cms/admin/discounts/create/page"), {
+const DiscountCreatePage = dynamic(() => import("../app/s/[subdomain]/admin/discounts/create/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const DiscountEditPage = dynamic(() => import("../app/cms/admin/discounts/[id]/page"), {
+const DiscountEditPage = dynamic(() => import("../app/s/[subdomain]/admin/discounts/[id]/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const ShippingPage = dynamic(() => import("../app/cms/admin/shipping/page"), {
+const ShippingPage = dynamic(() => import("../app/s/[subdomain]/admin/shipping/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const UsersPage = dynamic(() => import("../app/cms/admin/users/page"), {
+const UsersPage = dynamic(() => import("../app/s/[subdomain]/admin/users/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const FormsPage = dynamic(() => import("../app/cms/admin/forms/page"), {
+const FormsPage = dynamic(() => import("../app/s/[subdomain]/admin/forms/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const FormNewPage = dynamic(() => import("../app/cms/admin/forms/new/page"), {
+const FormNewPage = dynamic(() => import("../app/s/[subdomain]/admin/forms/new/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const FormEditPage = dynamic(() => import("../app/cms/admin/forms/[id]/page"), {
+const FormEditPage = dynamic(() => import("../app/s/[subdomain]/admin/forms/[id]/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const ReviewsPage = dynamic(() => import("../app/cms/admin/reviews/page"), {
+const ReviewsPage = dynamic(() => import("../app/s/[subdomain]/admin/reviews/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const PluginsPage = dynamic(() => import("../app/cms/admin/plugins/page"), {
+const PluginsPage = dynamic(() => import("../app/s/[subdomain]/admin/plugins/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const WorkflowsPage = dynamic(() => import("../app/cms/admin/workflows/page"), {
+const WorkflowsPage = dynamic(() => import("../app/s/[subdomain]/admin/workflows/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const EmailMarketingPage = dynamic(() => import("../app/cms/admin/email-marketing/page"), {
+const EmailMarketingPage = dynamic(() => import("../app/s/[subdomain]/admin/email-marketing/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const SiteSettingsPage = dynamic(() => import("../app/cms/admin/site-settings/page"), {
+const SiteSettingsPage = dynamic(() => import("../app/s/[subdomain]/admin/site-settings/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const RolesPage = dynamic(() => import("../app/cms/admin/roles/page"), {
+const RolesPage = dynamic(() => import("../app/s/[subdomain]/admin/roles/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const AdminUsersPage = dynamic(() => import("../app/cms/admin/admin-users/page"), {
+const AdminUsersPage = dynamic(() => import("../app/s/[subdomain]/admin/admin-users/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })
 
-const OrderWorkflowsPage = dynamic(() => import("../app/cms/admin/order-workflows/page"), {
+const OrderWorkflowsPage = dynamic(() => import("../app/s/[subdomain]/admin/order-workflows/page"), {
   loading: () => <PageLoading />,
   ssr: false,
 })

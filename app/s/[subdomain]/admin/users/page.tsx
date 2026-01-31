@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
-import { isAdminUser } from '@/lib/cms/admin-config';
+import { useSubdomainAccess } from '@/hooks/use-subdomain-access';
 import {
   Search,
   MoreVertical,
@@ -74,23 +74,26 @@ interface UserStats {
 
 export default function UsersPage() {
   const { user: currentUser, isLoading: authLoading } = useAuth();
+  const { hasAccess, isLoading: accessLoading } = useSubdomainAccess('admin');
   const router = useRouter();
   const [users, setUsers] = useState<PlatformUser[]>([]);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    if (!authLoading && (!currentUser || !isAdminUser(currentUser.primaryEmail))) {
-      router.push('/');
-    }
-  }, [currentUser, authLoading, router]);
+  const isAuthLoading = authLoading || accessLoading;
 
   useEffect(() => {
-    if (currentUser && isAdminUser(currentUser.primaryEmail)) {
+    if (!isAuthLoading && (!currentUser || !hasAccess)) {
+      router.push('/');
+    }
+  }, [currentUser, isAuthLoading, hasAccess, router]);
+
+  useEffect(() => {
+    if (currentUser && hasAccess) {
       fetchUsers();
     }
-  }, [currentUser]);
+  }, [currentUser, hasAccess]);
 
   const fetchUsers = async () => {
     try {
@@ -180,7 +183,7 @@ export default function UsersPage() {
     return currentUser?.primaryEmail === user.email;
   };
 
-  if (authLoading || isLoading) {
+  if (isAuthLoading || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
