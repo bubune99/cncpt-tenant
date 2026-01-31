@@ -7,8 +7,8 @@ import {
   importV0AsPage,
   ensureTemplatesInitialized,
   TemplateCategory,
-} from "@/lib/templates";
-import { getTemplateRegistry } from "@/lib/templates/registry";
+} from '@/lib/cms/templates";
+import { getTemplateRegistry } from '@/lib/cms/templates/registry";
 
 /**
  * GET /api/templates

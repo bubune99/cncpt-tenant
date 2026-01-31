@@ -6,7 +6,7 @@
  */
 
 import { notFound } from 'next/navigation';
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/cms/db';
 import { Render } from '@puckeditor/core';
 import puckConfig from '@/puck/config';
 

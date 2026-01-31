@@ -9,7 +9,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import type { Socket } from 'socket.io-client'
-import type { ClientToServerEvents, ServerToClientEvents } from '@/lib/socket/types'
+import type { ClientToServerEvents, ServerToClientEvents } from '@/lib/cms/socket/types'
 
 type TypedSocket = Socket<ServerToClientEvents, ClientToServerEvents>
 

@@ -10,7 +10,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { X, Play, ExternalLink, Loader2 } from 'lucide-react'
 import { useHelp } from './help-provider'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/cms/utils'
 
 // Burnt orange for accents
 const ACCENT_COLOR = '#C26A3A'

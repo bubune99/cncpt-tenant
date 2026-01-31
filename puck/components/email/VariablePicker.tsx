@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { emailVariables, VariableDefinition } from "@/lib/email-variables";
+import { emailVariables, VariableDefinition } from '@/lib/cms/email-variables";
 
 interface VariablePickerProps {
   onSelect: (variable: string) => void;

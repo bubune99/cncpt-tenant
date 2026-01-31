@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { InvoiceData } from "@/lib/storage";
+import { InvoiceData } from '@/lib/cms/storage";
 
 const CURRENCIES: Record<string, string> = {
   USD: "$",

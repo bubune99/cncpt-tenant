@@ -1,20 +1,20 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from '@/components/cms/ui/button";
+import { Input } from '@/components/cms/ui/input";
+import { Badge } from '@/components/cms/ui/badge";
+import { ScrollArea } from '@/components/cms/ui/scroll-area";
+import { Skeleton } from '@/components/cms/ui/skeleton";
+import { Alert, AlertDescription } from '@/components/cms/ui/alert";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+} from '@/components/cms/ui/dialog";
+import { Label } from '@/components/cms/ui/label";
 import {
   Search,
   Plus,

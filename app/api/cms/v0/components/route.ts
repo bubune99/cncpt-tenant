@@ -6,8 +6,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { stackServerApp } from "@/lib/stack";
-import { prisma } from "@/lib/db";
+import { stackServerApp } from '@/lib/cms/stack";
+import { prisma } from '@/lib/cms/db";
 import { Prisma } from "@prisma/client";
 
 /**

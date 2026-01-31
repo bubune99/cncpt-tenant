@@ -39,7 +39,7 @@ import { aiChatPlugin } from '@/puck/plugins/aiChatPlugin'
 import { EditorContextMenu } from '@/puck/components/EditorContextMenu'
 import { DraggableOutline } from '@/puck/components/DraggableOutline'
 import { HelpModeButton } from '@/puck/components/HelpModeButton'
-import { HelpModeProvider } from '@/lib/puck/help-mode-context'
+import { HelpModeProvider } from '@/lib/cms/puck/help-mode-context'
 
 // Use custom AI chat plugin
 const puckPlugins = [aiChatPlugin]

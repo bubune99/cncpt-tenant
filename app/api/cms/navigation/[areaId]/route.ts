@@ -6,8 +6,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getAreaNavigation, getAreaConfig } from '@/lib/authenticated-routes';
-import { getAuthContext } from '@/lib/permissions/middleware';
+import { getAreaNavigation, getAreaConfig } from '@/lib/cms/authenticated-routes';
+import { getAuthContext } from '@/lib/cms/permissions/middleware';
 
 export async function GET(
   request: NextRequest,

@@ -7,20 +7,20 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+} from '@/components/cms/ui/dialog";
+import { Button } from '@/components/cms/ui/button";
+import { Input } from '@/components/cms/ui/input";
+import { Label } from '@/components/cms/ui/label";
+import { Textarea } from '@/components/cms/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+} from '@/components/cms/ui/select";
+import { Checkbox } from '@/components/cms/ui/checkbox";
+import { Alert, AlertDescription } from '@/components/cms/ui/alert";
 import { Loader2, Download, Code, Link } from "lucide-react";
 
 interface V0ImportDialogProps {

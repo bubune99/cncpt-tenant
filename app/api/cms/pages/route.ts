@@ -8,8 +8,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
-import { stackServerApp } from "@/lib/stack";
+import { prisma } from '@/lib/cms/db";
+import { stackServerApp } from '@/lib/cms/stack";
 import { Data } from "@puckeditor/core";
 
 // Default empty Puck data structure

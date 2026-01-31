@@ -13,8 +13,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X, ChevronRight, Home, LogOut, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { AuthenticatedAreaSidebar } from './Sidebar';
-import type { NavGroup, AuthenticatedAreaConfig } from '@/lib/authenticated-routes/types';
-import { cn } from '@/lib/utils';
+import type { NavGroup, AuthenticatedAreaConfig } from '@/lib/cms/authenticated-routes/types';
+import { cn } from '@/lib/cms/utils';
 
 interface ShellProps {
   areaId: string;

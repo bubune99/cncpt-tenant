@@ -2,7 +2,7 @@
 
 import { ComponentConfig } from "@puckeditor/core";
 import { Text } from "@react-email/components";
-import { replaceWithSampleValues, hasVariables } from "@/lib/email-variables";
+import { replaceWithSampleValues, hasVariables } from '@/lib/cms/email-variables";
 import { TextWithVariablesField } from "./VariablePicker";
 
 export interface EmailTextProps {

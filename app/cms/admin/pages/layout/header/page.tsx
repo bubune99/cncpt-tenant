@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/cms/ui/button';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { Puck, Data, Drawer } from '@puckeditor/core';
@@ -15,7 +15,7 @@ import { aiChatPlugin } from '@/puck/plugins/aiChatPlugin';
 import { EditorContextMenu } from '@/puck/components/EditorContextMenu';
 import { DraggableOutline } from '@/puck/components/DraggableOutline';
 import { HelpModeButton } from '@/puck/components/HelpModeButton';
-import { HelpModeProvider } from '@/lib/puck/help-mode-context';
+import { HelpModeProvider } from '@/lib/cms/puck/help-mode-context';
 
 // Import layout Puck configuration
 import { layoutPuckConfig } from '@/puck/layout/config';

@@ -10,7 +10,7 @@
 import React, { useEffect } from 'react'
 import { X, HelpCircle } from 'lucide-react'
 import { useHelp } from './help-provider'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/cms/utils'
 
 export function HelpMessageBar() {
   const { helpMode, exitHelpMode } = useHelp()

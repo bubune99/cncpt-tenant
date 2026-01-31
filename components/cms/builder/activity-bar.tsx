@@ -17,8 +17,8 @@ import {
   Users,
   ShoppingCart,
 } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { cn } from '@/lib/cms/utils"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/cms/ui/tooltip"
 
 export type ActivityView =
   | "blocks"

@@ -33,8 +33,8 @@ import {
   Workflow,
   ClipboardList,
 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { rootDomain, protocol } from "@/lib/utils";
+import { Input } from '@/components/cms/ui/input';
+import { rootDomain, protocol } from '@/lib/cms/utils";
 
 interface NavItem {
   name: string;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { EmailAttachment } from "@/lib/email-attachments";
+import { EmailAttachment } from '@/lib/cms/email-attachments";
 
 interface AttachmentManagerProps {
   attachments: EmailAttachment[];

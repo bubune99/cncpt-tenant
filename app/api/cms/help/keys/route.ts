@@ -7,15 +7,15 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import db from '@/lib/db'
+import db from '@/lib/cms/db'
 import {
   helpKeyRegistry,
   getAllHelpKeys,
   getHelpKeysByCategory,
   getHelpCategories,
   getHelpKeysSummary,
-} from '@/components/help-system/help-key-registry'
-import { defaultHelpContent } from '@/components/help-system/default-content'
+} from '@/components/cms/help-system/help-key-registry'
+import { defaultHelpContent } from '@/components/cms/help-system/default-content'
 
 /**
  * GET /api/help/keys

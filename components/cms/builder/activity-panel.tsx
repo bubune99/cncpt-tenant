@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollArea } from '@/components/cms/ui/scroll-area"
+import { Input } from '@/components/cms/ui/input"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/cms/ui/tabs"
 import {
   Search,
   Upload,
@@ -25,10 +25,10 @@ import {
   Layers,
   Box,
 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/cms/utils"
 import type { ActivityView } from "./activity-bar"
 import type { ElementType } from "./page-builder"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/cms/ui/collapsible"
 
 interface ActivityPanelProps {
   activeView: ActivityView

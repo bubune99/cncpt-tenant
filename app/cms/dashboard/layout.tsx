@@ -6,7 +6,7 @@
  */
 
 import { Suspense } from 'react';
-import { AuthenticatedAreaShell } from '@/components/authenticated-area';
+import { AuthenticatedAreaShell } from '@/components/cms/authenticated-area';
 
 // Prevent static generation - requires auth context
 export const dynamic = 'force-dynamic';

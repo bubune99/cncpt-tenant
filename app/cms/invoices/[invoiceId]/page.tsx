@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { InvoiceData, InvoiceLineItem } from "@/lib/storage";
+import { InvoiceData, InvoiceLineItem } from '@/lib/cms/storage";
 
 const CURRENCIES = [
   { code: "USD", symbol: "$", name: "US Dollar" },

@@ -4,7 +4,7 @@
  * Creates pages from templates or v0 imports
  */
 
-import { prisma } from "@/lib/db";
+import { prisma } from '@/lib/cms/db";
 import { Prisma } from "@prisma/client";
 import { getTemplateRegistry } from "./registry";
 import {

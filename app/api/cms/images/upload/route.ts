@@ -3,7 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { uploadImage, R2_CONFIG } from "@/lib/r2";
+import { uploadImage, R2_CONFIG } from '@/lib/cms/r2";
 
 export async function POST(request: NextRequest) {
   if (!R2_CONFIG.isConfigured) {

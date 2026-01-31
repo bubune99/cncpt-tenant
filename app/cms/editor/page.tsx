@@ -168,7 +168,7 @@ import {
   getGlobalPermissions,
   createPuckUiState,
   determineUserRole,
-} from "@/lib/puck";
+} from '@/lib/cms/puck";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState, Suspense, useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth";

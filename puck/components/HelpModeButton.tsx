@@ -8,7 +8,7 @@
  * rather than making changes.
  */
 
-import { useHelpMode } from "@/lib/puck/help-mode-context";
+import { useHelpMode } from '@/lib/cms/puck/help-mode-context";
 
 const HelpIcon = () => (
   <svg

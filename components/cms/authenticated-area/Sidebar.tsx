@@ -12,8 +12,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronDown, ChevronRight, Plus, FileText } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
-import type { NavGroup, NavItem } from '@/lib/authenticated-routes/types';
-import { cn } from '@/lib/utils';
+import type { NavGroup, NavItem } from '@/lib/cms/authenticated-routes/types';
+import { cn } from '@/lib/cms/utils';
 
 interface SidebarProps {
   areaId: string;

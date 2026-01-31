@@ -6,10 +6,10 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { importBundle, previewBundle } from "@/lib/bundles/importer";
-import { BundleImportOptions } from "@/lib/bundles/types";
-import { stackServerApp } from "@/lib/stack";
-import { prisma } from "@/lib/db";
+import { importBundle, previewBundle } from '@/lib/cms/bundles/importer";
+import { BundleImportOptions } from '@/lib/cms/bundles/types";
+import { stackServerApp } from '@/lib/cms/stack";
+import { prisma } from '@/lib/cms/db";
 
 /**
  * POST - Import a bundle or preview it

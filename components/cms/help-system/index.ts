@@ -13,7 +13,7 @@
  * @example
  * ```tsx
  * // Wrap your app with the provider
- * import { HelpProvider } from '@/components/help-system'
+ * import { HelpProvider } from '@/components/cms/help-system'
  *
  * function App() {
  *   return (
@@ -24,7 +24,7 @@
  * }
  *
  * // Register elements for help
- * import { useHelpElement } from '@/components/help-system'
+ * import { useHelpElement } from '@/components/cms/help-system'
  *
  * function MyButton() {
  *   const helpRef = useHelpElement({ key: 'admin.myButton' })

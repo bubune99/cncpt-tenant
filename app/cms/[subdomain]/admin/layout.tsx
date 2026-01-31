@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { stackServerApp } from "@/stack"
-import { canAccessSubdomain } from "@/lib/team-auth"
+import { canAccessSubdomain } from '@/lib/cms/team-auth"
 import { CMSAdminShell } from "./cms-admin-shell"
 
 export default async function CMSAdminLayout({

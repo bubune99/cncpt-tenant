@@ -1,9 +1,9 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/cms/ui/button"
 import { Monitor, Tablet, Smartphone, Eye, Undo2, Redo2, Layers, ZoomIn, ZoomOut, Play, ArrowLeft } from "lucide-react"
-import { Slider } from "@/components/ui/slider"
-import { cn } from "@/lib/utils"
+import { Slider } from '@/components/cms/ui/slider"
+import { cn } from '@/lib/cms/utils"
 import type { PageType } from "./page-builder"
 
 interface BuilderHeaderProps {

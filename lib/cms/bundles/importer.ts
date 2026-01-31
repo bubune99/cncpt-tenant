@@ -6,7 +6,7 @@
 
 import JSZip from "jszip";
 import { Data } from "@puckeditor/core";
-import { prisma } from "@/lib/db";
+import { prisma } from '@/lib/cms/db";
 import { getStorageProvider } from "./storage-provider";
 import {
   BundleManifest,

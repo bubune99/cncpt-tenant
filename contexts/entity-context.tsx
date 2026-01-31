@@ -10,8 +10,8 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useSocketOptional } from './socket-context'
-import type { EntityContext } from '@/lib/socket/types'
-import { parseRouteToContext } from '@/lib/socket/types'
+import type { EntityContext } from '@/lib/cms/socket/types'
+import { parseRouteToContext } from '@/lib/cms/socket/types'
 
 interface EntityContextValue {
   context: EntityContext | null
