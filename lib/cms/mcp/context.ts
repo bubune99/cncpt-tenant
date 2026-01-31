@@ -22,6 +22,10 @@ export interface McpContext {
   scopes: string[]
   /** User's email (for logging) */
   email?: string
+  /** Tenant ID for multi-tenant scoping (from subdomain) */
+  tenantId?: number
+  /** Subdomain string for reference */
+  subdomain?: string
 }
 
 // AsyncLocalStorage for request-scoped context
@@ -154,4 +158,52 @@ export function requireMcpScope(scope: string): void {
   if (!hasMcpScope(scope)) {
     throw new Error(`MCP operation requires '${scope}' scope`)
   }
+}
+
+/**
+ * Get the current tenant ID from MCP context
+ *
+ * @throws Error if called outside of MCP context or no tenantId set
+ */
+export function getMcpTenantId(): number {
+  const context = getMcpContext()
+  if (context.tenantId === undefined) {
+    throw new Error("MCP context has no tenantId - subdomain not resolved")
+  }
+  return context.tenantId
+}
+
+/**
+ * Get the current tenant ID from MCP context (nullable version)
+ *
+ * Returns undefined if called outside of MCP context or no tenantId set
+ */
+export function getMcpTenantIdOrNull(): number | undefined {
+  const context = getMcpContextOrNull()
+  return context?.tenantId
+}
+
+/**
+ * Get the current subdomain from MCP context
+ */
+export function getMcpSubdomain(): string | undefined {
+  return getMcpContextOrNull()?.subdomain
+}
+
+/**
+ * Get the current API key ID from MCP context
+ *
+ * @throws Error if called outside of MCP context
+ */
+export function getMcpApiKeyId(): string {
+  return getMcpContext().apiKeyId
+}
+
+/**
+ * Get the scopes for the current MCP context
+ *
+ * @throws Error if called outside of MCP context
+ */
+export function getMcpScopes(): string[] {
+  return getMcpContext().scopes
 }

@@ -58,6 +58,7 @@ import EnvManager from '@/components/cms/admin/EnvManager';
 import BrandingSettings from '@/components/cms/admin/BrandingSettings';
 import EmailProviderSettings from '@/components/cms/admin/EmailProviderSettings';
 import AiSettings from '@/components/cms/admin/AiSettings';
+import McpApiKeysSettings from '@/components/cms/admin/McpApiKeysSettings';
 
 interface StoreSettings {
   general: {
@@ -730,10 +731,13 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="security" className="space-y-4" data-help-key="admin.settings.security-tab">
+          {/* MCP API Keys Management */}
+          <McpApiKeysSettings />
+
           <Card data-help-key="admin.settings.security-config">
             <CardHeader>
-              <CardTitle>Security Settings</CardTitle>
-              <CardDescription>Manage your account security</CardDescription>
+              <CardTitle>Account Security</CardTitle>
+              <CardDescription>Manage your account security settings</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
@@ -754,19 +758,6 @@ export default function SettingsPage() {
                 <Button variant="outline">
                   <Shield className="mr-2 h-4 w-4" />
                   Enable 2FA
-                </Button>
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>API Keys</Label>
-                  <p className="text-sm text-muted-foreground">Manage API access to your store</p>
-                </div>
-                <Button variant="outline">
-                  <Key className="mr-2 h-4 w-4" />
-                  Manage Keys
                 </Button>
               </div>
             </CardContent>

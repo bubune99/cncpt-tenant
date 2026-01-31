@@ -3,6 +3,8 @@
  * Exposes CMS content and e-commerce data to AI agents via Model Context Protocol
  *
  * Authentication: Per-user API keys (cms_*) with strict data isolation
+ * Rate Limiting: Sliding window rate limiter with tiered limits
+ * Scopes: Granular permission scopes (resource:action pattern)
  *
  * Following the pattern from vercel-labs/mcp-for-next.js
  */
@@ -15,49 +17,187 @@ import {
   validateMcpApiKey,
   runWithMcpContext,
   getMcpUserId,
-  requireMcpScope,
+  getMcpTenantId,
+  getMcpApiKeyId,
+  getMcpScopes,
   mcpResponse,
   mcpError,
   truncate,
   normalizePagination,
   type McpContext
 } from "@/lib/cms/mcp"
+import { canAccessSubdomain } from "@/lib/team-auth"
+import {
+  checkRateLimit,
+  getRateLimitHeaders,
+  createRateLimitResponse,
+  type RateLimitTier
+} from "@/lib/cms/mcp/rate-limit"
+import {
+  scopeGrantsPermission,
+  TOOL_SCOPES
+} from "@/lib/cms/mcp/scopes"
+import { trackUsage } from "@/lib/cms/mcp/analytics"
 
 // ==========================================
 // Authentication
 // ==========================================
 
+/**
+ * Resolve subdomain to tenant ID
+ */
+async function resolveTenantId(subdomain: string): Promise<number | null> {
+  try {
+    const tenant = await prisma.subdomain.findUnique({
+      where: { subdomain },
+      select: { id: true }
+    })
+    return tenant?.id ?? null
+  } catch (error) {
+    console.error("[MCP] Error resolving tenant:", error)
+    return null
+  }
+}
+
+/**
+ * Verify user has access to subdomain via ownership or team membership
+ * Returns the access type and level if authorized
+ */
+async function verifySubdomainAccess(
+  userId: string,
+  subdomain: string,
+  scopes: string[]
+): Promise<{ authorized: boolean; accessType?: "owner" | "team"; accessLevel?: string }> {
+  // Determine required access level based on scopes
+  // Write scope requires at least "edit" access, read-only requires "view"
+  const requiredLevel = scopes.includes("write") ? "edit" : "view"
+
+  try {
+    const access = await canAccessSubdomain(userId, subdomain, requiredLevel as "view" | "edit" | "admin")
+
+    if (!access.hasAccess) {
+      console.warn(`[MCP] User ${userId} denied access to subdomain ${subdomain} (required: ${requiredLevel})`)
+      return { authorized: false }
+    }
+
+    return {
+      authorized: true,
+      accessType: access.accessType ?? undefined,
+      accessLevel: access.accessLevel
+    }
+  } catch (error) {
+    console.error("[MCP] Error verifying subdomain access:", error)
+    return { authorized: false }
+  }
+}
+
 async function authenticateRequest(
-  request: NextRequest
-): Promise<McpContext | null> {
+  request: NextRequest,
+  subdomain: string
+): Promise<(McpContext & { rateLimitTier: RateLimitTier }) | null> {
+  // Resolve subdomain to tenantId first
+  const tenantId = await resolveTenantId(subdomain)
+  if (tenantId === null) {
+    console.warn(`[MCP] Unknown subdomain: ${subdomain}`)
+    return null
+  }
+
+  let context: McpContext | null = null
+  let rateLimitTier: RateLimitTier = "free"
+
   // Check Authorization header first (preferred)
   const authHeader = request.headers.get("authorization")
   if (authHeader) {
-    const context = await validateMcpApiKey(authHeader)
-    if (context) return context
+    context = await validateMcpApiKey(authHeader)
   }
 
   // Fall back to X-API-Key header
-  const xApiKey = request.headers.get("x-api-key")
-  if (xApiKey) {
-    const context = await validateMcpApiKey(xApiKey)
-    if (context) return context
+  if (!context) {
+    const xApiKey = request.headers.get("x-api-key")
+    if (xApiKey) {
+      context = await validateMcpApiKey(xApiKey)
+    }
   }
 
   // Dev mode fallback
-  if (process.env.NODE_ENV === "development" && process.env.MCP_API_KEY) {
+  if (!context && process.env.NODE_ENV === "development" && process.env.MCP_API_KEY) {
     const devKey = process.env.MCP_API_KEY
-    if (authHeader === `Bearer ${devKey}` || xApiKey === devKey) {
+    if (authHeader === `Bearer ${devKey}` || request.headers.get("x-api-key") === devKey) {
       console.warn("MCP: Using deprecated MCP_API_KEY env var")
-      return {
+      context = {
         userId: "dev-user",
         apiKeyId: "dev-key",
-        scopes: ["read", "write"]
+        scopes: ["read", "write", "*"] // Full access in dev mode
       }
     }
   }
 
-  return null
+  if (!context) {
+    return null
+  }
+
+  // Fetch rate limit tier from API key record
+  if (context.apiKeyId && context.apiKeyId !== "dev-key") {
+    try {
+      const apiKey = await prisma.apiKey.findUnique({
+        where: { id: context.apiKeyId },
+        select: { rateLimitTier: true }
+      })
+      if (apiKey?.rateLimitTier) {
+        rateLimitTier = apiKey.rateLimitTier as RateLimitTier
+      }
+    } catch (error) {
+      console.warn("[MCP] Error fetching rate limit tier:", error)
+    }
+  }
+
+  // Verify user has access to this subdomain via ownership or team membership
+  const access = await verifySubdomainAccess(context.userId, subdomain, context.scopes)
+  if (!access.authorized) {
+    console.warn(`[MCP] User ${context.userId} not authorized for subdomain ${subdomain}`)
+    return null
+  }
+
+  // Return context enriched with tenant info and access details
+  return {
+    ...context,
+    tenantId,
+    subdomain,
+    rateLimitTier
+  }
+}
+
+/**
+ * Check if the current context has permission for a specific tool
+ */
+function requireToolScope(toolName: string): void {
+  const scopes = getMcpScopes()
+  const requiredScope = TOOL_SCOPES[toolName]
+
+  if (!requiredScope) {
+    // No scope defined for tool = allow (backward compat)
+    return
+  }
+
+  if (!scopeGrantsPermission(scopes, requiredScope)) {
+    throw new Error(`Missing required scope: ${requiredScope}`)
+  }
+}
+
+/**
+ * Track tool usage for analytics
+ */
+function trackToolUsage(toolName: string): void {
+  try {
+    const apiKeyId = getMcpApiKeyId()
+    trackUsage({
+      apiKeyId,
+      eventType: "tool_call",
+      toolName
+    })
+  } catch {
+    // Silently ignore if context not available
+  }
 }
 
 // ==========================================
@@ -80,10 +220,13 @@ const handler = createMcpHandler(
       },
       async ({ status, limit, offset, brief }) => {
         try {
+          requireToolScope("list_products")
+          trackToolUsage("list_products")
+          const tenantId = getMcpTenantId()
           const { limit: l, offset: o } = normalizePagination(limit, offset)
 
           const products = await prisma.product.findMany({
-            where: status ? { status } : undefined,
+            where: { tenantId, ...(status ? { status } : {}) },
             take: l,
             skip: o,
             orderBy: { createdAt: "desc" },
@@ -94,7 +237,7 @@ const handler = createMcpHandler(
           })
 
           const count = await prisma.product.count({
-            where: status ? { status } : undefined
+            where: { tenantId, ...(status ? { status } : {}) }
           })
 
           const data = brief
@@ -124,8 +267,11 @@ const handler = createMcpHandler(
       },
       async ({ id }) => {
         try {
-          const product = await prisma.product.findUnique({
-            where: { id },
+          requireToolScope("get_product")
+          trackToolUsage("get_product")
+          const tenantId = getMcpTenantId()
+          const product = await prisma.product.findFirst({
+            where: { id, tenantId },
             include: {
               variants: true,
               categories: true,
@@ -157,10 +303,13 @@ const handler = createMcpHandler(
       },
       async ({ status, limit, offset, brief }) => {
         try {
+          requireToolScope("list_orders")
+          trackToolUsage("list_orders")
+          const tenantId = getMcpTenantId()
           const { limit: l, offset: o } = normalizePagination(limit, offset)
 
           const orders = await prisma.order.findMany({
-            where: status ? { status } : undefined,
+            where: { tenantId, ...(status ? { status } : {}) },
             take: l,
             skip: o,
             orderBy: { createdAt: "desc" },
@@ -171,7 +320,7 @@ const handler = createMcpHandler(
           })
 
           const count = await prisma.order.count({
-            where: status ? { status } : undefined
+            where: { tenantId, ...(status ? { status } : {}) }
           })
 
           const data = brief
@@ -199,12 +348,15 @@ const handler = createMcpHandler(
       },
       async ({ id, orderNumber }) => {
         try {
+          requireToolScope("get_order")
+          trackToolUsage("get_order")
+          const tenantId = getMcpTenantId()
           if (!id && !orderNumber) {
             return mcpError("Provide either id or orderNumber")
           }
 
           const order = await prisma.order.findFirst({
-            where: id ? { id } : { orderNumber },
+            where: { tenantId, ...(id ? { id } : { orderNumber }) },
             include: {
               items: { include: { variant: true } },
               customer: true,
@@ -238,10 +390,14 @@ const handler = createMcpHandler(
       },
       async ({ status, categoryId, limit, offset, brief }) => {
         try {
+          requireToolScope("list_blog_posts")
+          trackToolUsage("list_blog_posts")
+          const tenantId = getMcpTenantId()
           const { limit: l, offset: o } = normalizePagination(limit, offset)
 
           const posts = await prisma.blogPost.findMany({
             where: {
+              tenantId,
               ...(status ? { status } : {}),
               ...(categoryId ? { categories: { some: { categoryId } } } : {})
             },
@@ -257,6 +413,7 @@ const handler = createMcpHandler(
 
           const count = await prisma.blogPost.count({
             where: {
+              tenantId,
               ...(status ? { status } : {}),
               ...(categoryId ? { categories: { some: { categoryId } } } : {})
             }
@@ -292,12 +449,15 @@ const handler = createMcpHandler(
       },
       async ({ id, slug }) => {
         try {
+          requireToolScope("get_blog_post")
+          trackToolUsage("get_blog_post")
+          const tenantId = getMcpTenantId()
           if (!id && !slug) {
             return mcpError("Provide either id or slug")
           }
 
           const post = await prisma.blogPost.findFirst({
-            where: id ? { id } : { slug },
+            where: { tenantId, ...(id ? { id } : { slug }) },
             include: {
               categories: { include: { category: true } },
               tags: { include: { tag: true } },
@@ -328,8 +488,10 @@ const handler = createMcpHandler(
       },
       async ({ title, slug, content, excerpt, status, categoryId, tagIds }) => {
         try {
-          requireMcpScope("write")
+          requireToolScope("create_blog_post")
+          trackToolUsage("create_blog_post")
           const userId = getMcpUserId()
+          const tenantId = getMcpTenantId()
 
           const post = await prisma.blogPost.create({
             data: {
@@ -339,6 +501,7 @@ const handler = createMcpHandler(
               excerpt,
               status: status || "DRAFT",
               authorId: userId,
+              tenantId,
               publishedAt: status === "PUBLISHED" ? new Date() : null,
               // Many-to-many through join tables
               categories: categoryId ? { create: [{ categoryId }] } : undefined,
@@ -367,17 +530,20 @@ const handler = createMcpHandler(
       },
       async ({ status, limit, offset, brief }) => {
         try {
+          requireToolScope("list_pages")
+          trackToolUsage("list_pages")
+          const tenantId = getMcpTenantId()
           const { limit: l, offset: o } = normalizePagination(limit, offset)
 
           const pages = await prisma.page.findMany({
-            where: status ? { status } : undefined,
+            where: { tenantId, ...(status ? { status } : {}) },
             take: l,
             skip: o,
             orderBy: { updatedAt: "desc" }
           })
 
           const count = await prisma.page.count({
-            where: status ? { status } : undefined
+            where: { tenantId, ...(status ? { status } : {}) }
           })
 
           const data = brief
@@ -410,17 +576,163 @@ const handler = createMcpHandler(
       },
       async ({ id, slug }) => {
         try {
+          requireToolScope("get_page")
+          trackToolUsage("get_page")
+          const tenantId = getMcpTenantId()
           if (!id && !slug) {
             return mcpError("Provide either id or slug")
           }
 
           const page = await prisma.page.findFirst({
-            where: id ? { id } : { slug }
+            where: { tenantId, ...(id ? { id } : { slug }) }
           })
 
           if (!page) return mcpError("Page not found")
 
           return mcpResponse({ page })
+        } catch (error: unknown) {
+          return mcpError(error instanceof Error ? error.message : "Unknown error")
+        }
+      }
+    )
+
+    // ==========================================
+    // Puck Page Editor Tools
+    // ==========================================
+    server.tool(
+      "get_page_puck_data",
+      "Get a page's Puck editor data for visual editing. Returns the page content in Puck-compatible JSON format.",
+      {
+        id: z.string().optional().describe("Page ID"),
+        slug: z.string().optional().describe("Page slug (alternative to ID)")
+      },
+      async ({ id, slug }) => {
+        try {
+          requireToolScope("get_page_puck_data")
+          trackToolUsage("get_page_puck_data")
+          const tenantId = getMcpTenantId()
+          if (!id && !slug) {
+            return mcpError("Provide either id or slug")
+          }
+
+          const page = await prisma.page.findFirst({
+            where: { tenantId, ...(id ? { id } : { slug }) },
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              status: true,
+              content: true,
+              headerMode: true,
+              footerMode: true,
+              customHeader: true,
+              customFooter: true,
+              updatedAt: true
+            }
+          })
+
+          if (!page) return mcpError("Page not found")
+
+          // Parse Puck content if it's a string
+          let puckData = page.content
+          if (typeof puckData === "string") {
+            try {
+              puckData = JSON.parse(puckData)
+            } catch {
+              puckData = null
+            }
+          }
+
+          return mcpResponse({
+            page: {
+              id: page.id,
+              title: page.title,
+              slug: page.slug,
+              status: page.status,
+              updatedAt: page.updatedAt
+            },
+            puckContent: puckData,
+            layoutConfig: {
+              headerMode: page.headerMode,
+              footerMode: page.footerMode,
+              customHeader: page.customHeader,
+              customFooter: page.customFooter
+            },
+            hint: "Use update_page_puck_content to modify the puckContent. The content follows Puck's Data format with 'content' (array of components), 'root' (page-level props), and 'zones' (nested component areas)."
+          })
+        } catch (error: unknown) {
+          return mcpError(error instanceof Error ? error.message : "Unknown error")
+        }
+      }
+    )
+
+    server.tool(
+      "update_page_puck_content",
+      "Update a page's visual content using Puck editor data. Accepts Puck-compatible JSON with components and zones.",
+      {
+        id: z.string().describe("Page ID to update"),
+        content: z.any().describe("Puck Data object with 'content' (component array), 'root' (page props), and optional 'zones' (nested areas)"),
+        status: z.enum(["DRAFT", "PUBLISHED"]).optional().describe("Optionally update page status"),
+        title: z.string().optional().describe("Optionally update page title")
+      },
+      async ({ id, content, status, title }) => {
+        try {
+          requireToolScope("update_page_puck_content")
+          trackToolUsage("update_page_puck_content")
+          const tenantId = getMcpTenantId()
+
+          // Verify page exists and belongs to tenant
+          const existingPage = await prisma.page.findFirst({
+            where: { id, tenantId },
+            select: { id: true, title: true, status: true }
+          })
+
+          if (!existingPage) {
+            return mcpError("Page not found or access denied")
+          }
+
+          // Validate Puck content structure
+          if (!content || typeof content !== "object") {
+            return mcpError("Invalid content: must be a Puck Data object")
+          }
+
+          // Puck Data typically has: content (array), root (object), zones (object)
+          if (!Array.isArray(content.content) && content.content !== undefined) {
+            return mcpError("Invalid content.content: must be an array of components")
+          }
+
+          const updateData: Record<string, unknown> = {
+            content: content // Store as JSON
+          }
+
+          if (title) {
+            updateData.title = title.trim()
+          }
+
+          if (status) {
+            updateData.status = status.toUpperCase()
+            if (status === "PUBLISHED" && existingPage.status !== "PUBLISHED") {
+              updateData.publishedAt = new Date()
+            }
+          }
+
+          const updatedPage = await prisma.page.update({
+            where: { id },
+            data: updateData,
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              status: true,
+              updatedAt: true
+            }
+          })
+
+          return mcpResponse({
+            updated: true,
+            page: updatedPage,
+            message: "Page content updated successfully"
+          })
         } catch (error: unknown) {
           return mcpError(error instanceof Error ? error.message : "Unknown error")
         }
@@ -438,8 +750,11 @@ const handler = createMcpHandler(
       },
       async ({ group }) => {
         try {
+          requireToolScope("get_settings")
+          trackToolUsage("get_settings")
+          const tenantId = getMcpTenantId()
           const settings = await prisma.setting.findMany({
-            where: group ? { group } : undefined,
+            where: { tenantId, ...(group ? { group } : {}) },
             select: {
               key: true,
               value: true,
@@ -472,9 +787,11 @@ const handler = createMcpHandler(
       },
       async ({ key, value }) => {
         try {
-          requireMcpScope("write")
+          requireToolScope("update_setting")
+          trackToolUsage("update_setting")
+          const tenantId = getMcpTenantId()
 
-          const existing = await prisma.setting.findFirst({ where: { key, tenantId: null } })
+          const existing = await prisma.setting.findFirst({ where: { key, tenantId } })
           if (!existing) {
             return mcpError(`Setting '${key}' not found`)
           }
@@ -509,6 +826,9 @@ const handler = createMcpHandler(
       },
       async ({ folderId, type, limit, offset }) => {
         try {
+          requireToolScope("list_media")
+          trackToolUsage("list_media")
+          const tenantId = getMcpTenantId()
           const { limit: l, offset: o } = normalizePagination(limit, offset)
 
           // Convert type filter to mimeType pattern
@@ -518,6 +838,7 @@ const handler = createMcpHandler(
 
           const media = await prisma.media.findMany({
             where: {
+              tenantId,
               ...(folderId ? { folderId } : {}),
               ...mimeTypeFilter
             },
@@ -537,6 +858,7 @@ const handler = createMcpHandler(
 
           const count = await prisma.media.count({
             where: {
+              tenantId,
               ...(folderId ? { folderId } : {}),
               ...mimeTypeFilter
             }
@@ -562,6 +884,8 @@ const handler = createMcpHandler(
       },
       async ({ role, limit, offset }) => {
         try {
+          requireToolScope("list_users")
+          trackToolUsage("list_users")
           const { limit: l, offset: o } = normalizePagination(limit, offset)
 
           const users = await prisma.user.findMany({
@@ -601,18 +925,21 @@ const handler = createMcpHandler(
       },
       async ({ days }) => {
         try {
+          requireToolScope("get_analytics_summary")
+          trackToolUsage("get_analytics_summary")
+          const tenantId = getMcpTenantId()
           const since = new Date()
           since.setDate(since.getDate() - (days || 30))
 
           const [orderCount, orderTotal, productCount, customerCount, postCount] = await Promise.all([
-            prisma.order.count({ where: { createdAt: { gte: since } } }),
+            prisma.order.count({ where: { tenantId, createdAt: { gte: since } } }),
             prisma.order.aggregate({
-              where: { createdAt: { gte: since } },
+              where: { tenantId, createdAt: { gte: since } },
               _sum: { total: true }
             }),
-            prisma.product.count({ where: { status: "ACTIVE" } }),
-            prisma.customer.count(),
-            prisma.blogPost.count({ where: { status: "PUBLISHED" } })
+            prisma.product.count({ where: { tenantId, status: "ACTIVE" } }),
+            prisma.customer.count({ where: { tenantId } }),
+            prisma.blogPost.count({ where: { tenantId, status: "PUBLISHED" } })
           ])
 
           return mcpResponse({
@@ -642,9 +969,13 @@ const handler = createMcpHandler(
       },
       async ({ limit, offset, brief }) => {
         try {
+          requireToolScope("list_customers")
+          trackToolUsage("list_customers")
+          const tenantId = getMcpTenantId()
           const { limit: l, offset: o } = normalizePagination(limit, offset)
 
           const customers = await prisma.customer.findMany({
+            where: { tenantId },
             take: l,
             skip: o,
             orderBy: { createdAt: "desc" },
@@ -669,7 +1000,7 @@ const handler = createMcpHandler(
             }
           })
 
-          const count = await prisma.customer.count()
+          const count = await prisma.customer.count({ where: { tenantId } })
 
           return mcpResponse({ customers, total: count, limit: l, offset: o })
         } catch (error: unknown) {
@@ -687,12 +1018,15 @@ const handler = createMcpHandler(
       },
       async ({ id, email }) => {
         try {
+          requireToolScope("get_customer")
+          trackToolUsage("get_customer")
+          const tenantId = getMcpTenantId()
           if (!id && !email) {
             return mcpError("Provide either id or email")
           }
 
           const customer = await prisma.customer.findFirst({
-            where: id ? { id } : { email },
+            where: { tenantId, ...(id ? { id } : { email }) },
             include: {
               orders: {
                 take: 10,
@@ -731,14 +1065,34 @@ const handler = createMcpHandler(
 // Route Handlers
 // ==========================================
 
-async function handleWithAuth(request: NextRequest) {
-  const context = await authenticateRequest(request)
+interface RouteContext {
+  params: Promise<{ subdomain: string }>
+}
+
+async function handleWithAuth(request: NextRequest, routeContext: RouteContext) {
+  const startTime = Date.now()
+  const { subdomain } = await routeContext.params
+
+  if (!subdomain) {
+    return new Response(
+      JSON.stringify({
+        error: "Bad Request",
+        message: "Missing subdomain parameter"
+      }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" }
+      }
+    )
+  }
+
+  const context = await authenticateRequest(request, subdomain)
 
   if (!context) {
     return new Response(
       JSON.stringify({
         error: "Unauthorized",
-        message: "Invalid or missing API key. Use Authorization: Bearer cms_xxxxx header.",
+        message: "Invalid or missing API key, or unknown subdomain.",
         hint: "Generate an API key from your CMS dashboard settings."
       }),
       {
@@ -748,7 +1102,50 @@ async function handleWithAuth(request: NextRequest) {
     )
   }
 
-  return runWithMcpContext(context, () => handler(request))
+  // Check rate limit
+  const rateLimitResult = await checkRateLimit(context.apiKeyId, context.rateLimitTier)
+  if (!rateLimitResult.allowed) {
+    // Track rate limited request
+    trackUsage({
+      apiKeyId: context.apiKeyId,
+      eventType: "rate_limited",
+      statusCode: 429
+    })
+
+    return createRateLimitResponse(rateLimitResult)
+  }
+
+  // Execute the request with MCP context
+  const response = await runWithMcpContext(context, () => handler(request))
+
+  // Calculate response time
+  const durationMs = Date.now() - startTime
+
+  // Track request usage
+  trackUsage({
+    apiKeyId: context.apiKeyId,
+    eventType: "request",
+    statusCode: response.status,
+    durationMs,
+    metadata: {
+      subdomain,
+      method: request.method,
+      path: request.nextUrl.pathname
+    }
+  })
+
+  // Add rate limit headers to response
+  const rateLimitHeaders: Record<string, string> = getRateLimitHeaders(rateLimitResult)
+  const headers = new Headers(response.headers)
+  for (const [key, value] of Object.entries(rateLimitHeaders)) {
+    headers.set(key, value as string)
+  }
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  })
 }
 
 export const GET = handleWithAuth

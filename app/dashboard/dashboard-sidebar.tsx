@@ -23,6 +23,7 @@ import {
   Eye,
   HelpCircle,
   Building2,
+  Bot,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
@@ -67,6 +68,12 @@ export function DashboardSidebar({
         { id: "appearance", label: "Appearance", icon: Palette, helpKey: "dashboard.sidebar.appearance" },
         { id: "frontend", label: "Hosting", icon: Server, helpKey: "dashboard.sidebar.frontend" },
         { id: "security", label: "Security", icon: Shield, helpKey: "dashboard.sidebar.security" },
+      ],
+    },
+    {
+      title: "Integrations",
+      items: [
+        { id: "mcp", label: "MCP / AI Agents", icon: Bot, helpKey: "dashboard.sidebar.mcp" },
       ],
     },
     {

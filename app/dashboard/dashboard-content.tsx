@@ -7,6 +7,7 @@ import { SiteVisibility } from "./site-visibility"
 import { Analytics } from "./analytics"
 import { Billing } from "./billing"
 import { FrontendDeployment } from "./frontend-deployment"
+import { McpIntegration } from "./mcp-integration"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -76,6 +77,8 @@ export function DashboardContent({
         return <Analytics subdomains={subdomains} selectedSubdomain={selectedSubdomain} />
       case "billing":
         return <Billing />
+      case "mcp":
+        return <McpIntegration selectedSubdomain={selectedSubdomain} />
       default:
         return (
           <div className="flex items-center justify-center h-64">

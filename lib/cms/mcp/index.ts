@@ -28,7 +28,12 @@ export {
   getMcpContextOrNull,
   getMcpUserId,
   hasMcpScope,
-  requireMcpScope
+  requireMcpScope,
+  getMcpTenantId,
+  getMcpTenantIdOrNull,
+  getMcpSubdomain,
+  getMcpApiKeyId,
+  getMcpScopes
 } from "./context"
 
 // Response utilities

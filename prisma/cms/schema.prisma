@@ -290,13 +290,47 @@ model ApiKey {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Rate limiting tier
+  rateLimitTier String @default("free") // "free", "pro", "enterprise"
+
   // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usage ApiKeyUsage[]
 
   @@index([userId])
   @@index([keyHash])
   @@index([expiresAt])
   @@map("api_keys")
+}
+
+// API Key Usage Analytics
+model ApiKeyUsage {
+  id        String   @id @default(cuid())
+  apiKeyId  String
+  date      DateTime @db.Date // Aggregated by day
+
+  // Request counts
+  requestCount   Int @default(0)
+  successCount   Int @default(0)
+  errorCount     Int @default(0)
+  rateLimitCount Int @default(0)
+
+  // Performance
+  avgResponseTimeMs Int @default(0)
+
+  // Tool usage breakdown (JSON: { "list_products": 5, "create_blog_post": 2 })
+  toolUsage Json @default("{}")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  apiKey ApiKey @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+
+  @@unique([apiKeyId, date])
+  @@index([apiKeyId])
+  @@index([date])
+  @@map("api_key_usage")
 }
 
 model Address {
