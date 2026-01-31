@@ -19,6 +19,8 @@ import {
   type CreateOverrideInput,
 } from "@/lib/user-overrides"
 
+export const dynamic = 'force-dynamic'
+
 interface RouteParams {
   params: Promise<{ userId: string }>
 }

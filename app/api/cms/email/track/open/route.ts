@@ -7,6 +7,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { recordEmailOpen } from '@/lib/cms/email/tracking'
 
+export const dynamic = 'force-dynamic'
+
 // 1x1 transparent GIF
 const TRACKING_PIXEL = Buffer.from(
   'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',

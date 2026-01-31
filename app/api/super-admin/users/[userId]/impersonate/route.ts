@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { stackServerApp } from "@/stack"
 import { isSuperAdmin, logPlatformActivity } from "@/lib/super-admin"
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ userId: string }> }

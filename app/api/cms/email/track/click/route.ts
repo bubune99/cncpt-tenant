@@ -7,6 +7,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { recordEmailClick } from '@/lib/cms/email/tracking'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const recipientId = searchParams.get('r')

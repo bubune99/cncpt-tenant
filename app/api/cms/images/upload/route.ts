@@ -5,6 +5,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { uploadImage, R2_CONFIG } from "@/lib/cms/r2";
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   if (!R2_CONFIG.isConfigured) {
     return NextResponse.json(

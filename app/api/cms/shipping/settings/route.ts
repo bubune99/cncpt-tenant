@@ -11,6 +11,8 @@ import { getShippingSettings, clearShippingSettingsCache } from '@/lib/cms/shipp
 import { encrypt } from '@/lib/cms/encryption'
 import type { ShippingSettings } from '@/lib/cms/shippo/types'
 
+export const dynamic = 'force-dynamic'
+
 // Settings keys for the shipping group
 const SHIPPING_SETTINGS_KEYS = [
   'shipping.enabled',

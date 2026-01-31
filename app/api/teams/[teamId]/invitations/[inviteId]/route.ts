@@ -4,6 +4,8 @@ import { cancelInvitation } from "@/lib/teams"
 import { hasTeamAccess } from "@/lib/team-auth"
 import { logPlatformActivity } from "@/lib/super-admin"
 
+export const dynamic = 'force-dynamic'
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ teamId: string; inviteId: string }> }

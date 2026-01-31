@@ -15,6 +15,8 @@ import {
 } from '@/lib/cms/media/tags'
 import type { TagCreateInput } from '@/lib/cms/media/types'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)

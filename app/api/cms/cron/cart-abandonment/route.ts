@@ -23,6 +23,8 @@ import {
   getCartStats,
 } from '@/lib/cms/cart';
 
+export const dynamic = 'force-dynamic'
+
 // Verify cron secret to prevent unauthorized access
 const CRON_SECRET = process.env.CRON_SECRET;
 

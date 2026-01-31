@@ -7,6 +7,8 @@ import { NextResponse } from "next/server"
 import { stackServerApp } from "@/stack"
 import { getUserSubscription, getSubdomainUsage } from "@/lib/subscription"
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/dashboard/subscription/current
  * Get the current user's subscription details

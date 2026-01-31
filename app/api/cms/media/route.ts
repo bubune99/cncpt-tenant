@@ -10,6 +10,8 @@ import { listMedia, createMedia, getMediaStats } from '@/lib/cms/media'
 import { processUpload, generatePresignedUrl, validateFile } from '@/lib/cms/media/upload'
 import type { MediaFilters, MediaType } from '@/lib/cms/media/types'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)

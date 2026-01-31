@@ -14,6 +14,8 @@ import {
 import { PERMISSIONS, logAuditEvent } from '@/lib/cms/permissions'
 import type { PuckTemplateType } from '@prisma/client'
 
+export const dynamic = 'force-dynamic'
+
 // Helper to generate slug from name
 function generateSlug(name: string): string {
   return name

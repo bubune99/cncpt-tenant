@@ -10,7 +10,7 @@ type Session = {
     type: UserType;
   };
 };
-import { saveChatModelAsCookie } from '@/app/cms/(chat)/actions';
+import { saveChatModelAsCookie } from '@/lib/cms/chat/actions';
 import { Button } from '../ui/button';
 import {
   DropdownMenu,

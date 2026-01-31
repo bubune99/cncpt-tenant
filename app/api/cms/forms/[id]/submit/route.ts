@@ -9,6 +9,8 @@ import { prisma } from '@/lib/cms/db'
 import { headers } from 'next/headers'
 import { sendFormNotification } from '@/lib/cms/forms/notifications'
 
+export const dynamic = 'force-dynamic'
+
 interface RouteParams {
   params: Promise<{ id: string }>
 }

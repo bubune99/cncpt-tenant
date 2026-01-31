@@ -9,6 +9,8 @@ import { prisma } from '@/lib/cms/db'
 import { sendEmail } from '@/lib/cms/email'
 import { parseMergeTags } from '@/lib/cms/email/merge-tags'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()

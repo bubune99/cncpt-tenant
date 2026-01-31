@@ -10,6 +10,8 @@ import { getCreditPack, getCreditPacks } from "@/lib/ai-credits"
 import { updateStripeCustomerId } from "@/lib/subscription"
 import { rootDomain, protocol } from "@/lib/utils"
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/dashboard/credits/purchase
  * List available credit packs

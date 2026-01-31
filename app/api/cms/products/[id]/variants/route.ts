@@ -10,6 +10,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
 import { checkAndNotifyBackInStock } from '@/lib/cms/inventory'
 
+export const dynamic = 'force-dynamic'
+
 interface VariantCustomFieldInput {
   customFieldId: string
   value: unknown

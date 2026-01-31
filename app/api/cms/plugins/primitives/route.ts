@@ -8,6 +8,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/cms/db';
 import { loadBuiltInPrimitives } from '@/lib/cms/plugins';
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     // Ensure built-in primitives are loaded

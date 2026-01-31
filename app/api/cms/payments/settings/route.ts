@@ -11,6 +11,8 @@ import { getStripeSettings, clearStripeSettingsCache } from '@/lib/cms/stripe'
 import { encrypt } from '@/lib/cms/encryption'
 import type { StripeSettings } from '@/lib/cms/stripe/types'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const settings = await getStripeSettings()

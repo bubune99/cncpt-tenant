@@ -7,6 +7,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getMediaUsage, getUsageCount, isMediaInUse } from '@/lib/cms/media/usage'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

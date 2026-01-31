@@ -8,6 +8,8 @@ import {
   revokeSuperAdmin,
 } from "@/lib/super-admin"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ userId: string }> }

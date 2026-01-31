@@ -3,6 +3,8 @@ import { stackServerApp } from "@/stack"
 import { acceptInvitation, getInvitationByToken } from "@/lib/teams"
 import { logPlatformActivity } from "@/lib/super-admin"
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }

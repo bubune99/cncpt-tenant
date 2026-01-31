@@ -180,3 +180,5 @@ export async function GET(request: NextRequest) {
 
 // Import Stripe types for type safety
 import type Stripe from "stripe"
+
+export const dynamic = 'force-dynamic'

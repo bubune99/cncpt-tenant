@@ -3,6 +3,8 @@ import { stackServerApp } from "@/stack"
 import { sql } from "@/lib/neon"
 import { isSuperAdmin, logPlatformActivity } from "@/lib/super-admin"
 
+export const dynamic = 'force-dynamic'
+
 // Platform settings are stored in a simple key-value table
 // We'll create this table if it doesn't exist
 

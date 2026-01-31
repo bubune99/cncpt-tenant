@@ -14,6 +14,8 @@ import {
 } from '@/lib/cms/permissions/middleware'
 import { PERMISSIONS, logAuditEvent } from '@/lib/cms/permissions'
 
+export const dynamic = 'force-dynamic'
+
 interface RouteParams {
   params: Promise<{ id: string }>
 }

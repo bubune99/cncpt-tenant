@@ -13,6 +13,8 @@ import {
 } from '@/lib/cms/shippo'
 import type { Parcel, ShippingAddress } from '@/lib/cms/shippo/types'
 
+export const dynamic = 'force-dynamic'
+
 interface RatesRequestBody {
   // Either provide an order ID to get rates for
   orderId?: string

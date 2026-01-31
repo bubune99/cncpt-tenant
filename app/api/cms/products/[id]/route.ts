@@ -11,6 +11,8 @@ import { prisma } from '@/lib/cms/db'
 import { checkAndNotifyBackInStock } from '@/lib/cms/inventory'
 import type { ProductStatus, ProductType } from '@prisma/client'
 
+export const dynamic = 'force-dynamic'
+
 // GET - Get single product
 export async function GET(
   request: NextRequest,

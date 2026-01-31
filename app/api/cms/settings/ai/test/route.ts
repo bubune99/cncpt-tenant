@@ -12,6 +12,8 @@ import { stackServerApp } from '@/lib/cms/stack';
 import { getAiSettings } from '@/lib/cms/settings';
 import { getLanguageModel } from '@/lib/cms/ai/providers';
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: Request) {
   try {
     const user = await stackServerApp.getUser();

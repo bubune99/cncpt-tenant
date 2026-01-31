@@ -14,6 +14,8 @@ import {
   isAutonomousMode,
 } from '@/lib/cms/vmcp';
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/vmcp/permissions
  *

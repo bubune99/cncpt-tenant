@@ -9,6 +9,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getOrCreateSiteSettings, updateSiteSettings } from '@/lib/cms/site-settings';
 import { stackServerApp } from '@/lib/cms/stack';
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET - Fetch site settings
  */

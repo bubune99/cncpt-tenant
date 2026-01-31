@@ -14,6 +14,8 @@ import {
 } from "@/lib/ai-credits"
 import { getUserSubscription } from "@/lib/subscription"
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/dashboard/credits
  * Get user's credit balance, team pool, and usage stats

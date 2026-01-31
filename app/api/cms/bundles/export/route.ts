@@ -9,6 +9,8 @@ import { exportBundle, getBundleFilename, validateExportOptions } from "@/lib/cm
 import { BundleExportOptions } from "@/lib/cms/bundles/types";
 import { stackServerApp } from "@/lib/cms/stack";
 
+export const dynamic = 'force-dynamic'
+
 /**
  * POST /api/bundles/export
  *

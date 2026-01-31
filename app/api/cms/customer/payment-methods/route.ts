@@ -9,6 +9,8 @@ import { stackServerApp } from '@/lib/cms/stack';
 import { prisma } from '@/lib/cms/db';
 import { listPaymentMethods } from '@/lib/cms/stripe';
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     // Get authenticated user from Stack Auth

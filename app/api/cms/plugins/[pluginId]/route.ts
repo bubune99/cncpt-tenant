@@ -7,6 +7,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/cms/db';
 
+export const dynamic = 'force-dynamic'
+
 interface RouteParams {
   params: Promise<{ pluginId: string }>;
 }

@@ -7,6 +7,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSubscriberPreferences, updateSubscriberPreferences } from '@/lib/cms/email/subscriptions'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const subscriberId = searchParams.get('s')

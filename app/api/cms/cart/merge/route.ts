@@ -9,6 +9,8 @@ import { cookies } from 'next/headers';
 import { mergeCartsOnLogin } from '@/lib/cms/cart';
 import { getCurrentUserId } from '@/lib/cms/cart/auth';
 
+export const dynamic = 'force-dynamic'
+
 const CART_SESSION_COOKIE = 'cart_session_id';
 
 // POST - Merge guest cart on login

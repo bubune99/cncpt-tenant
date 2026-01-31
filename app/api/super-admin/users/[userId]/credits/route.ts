@@ -10,6 +10,8 @@ import { isSuperAdmin, logPlatformActivity } from "@/lib/super-admin"
 import { grantCredits, listCreditGrants, type GrantCreditsInput } from "@/lib/user-overrides"
 import { getUserCreditBalance, addUserPurchasedCredits } from "@/lib/ai-credits"
 
+export const dynamic = 'force-dynamic'
+
 interface RouteParams {
   params: Promise<{ userId: string }>
 }

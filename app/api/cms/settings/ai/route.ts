@@ -11,6 +11,8 @@ import { NextResponse } from 'next/server';
 import { stackServerApp } from '@/lib/cms/stack';
 import { getAiSettings, updateSettings } from '@/lib/cms/settings';
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const user = await stackServerApp.getUser();

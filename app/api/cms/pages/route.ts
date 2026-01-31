@@ -12,6 +12,8 @@ import { prisma } from "@/lib/cms/db";
 import { stackServerApp } from "@/lib/cms/stack";
 import { Data } from "@puckeditor/core";
 
+export const dynamic = 'force-dynamic'
+
 // Default empty Puck data structure
 const defaultData: Data = {
   content: [],

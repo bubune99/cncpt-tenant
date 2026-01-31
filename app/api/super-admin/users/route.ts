@@ -3,6 +3,8 @@ import { stackServerApp } from "@/stack"
 import { sql } from "@/lib/neon"
 import { isSuperAdmin, logPlatformActivity } from "@/lib/super-admin"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     // Check super admin access

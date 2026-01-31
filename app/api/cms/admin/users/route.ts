@@ -12,6 +12,8 @@ import { prisma } from '@/lib/cms/db'
 import { stackServerApp } from '@/lib/cms/stack'
 import { isAdminUser } from '@/lib/cms/admin-config'
 
+export const dynamic = 'force-dynamic'
+
 // GET - List all users with their roles
 export async function GET(request: NextRequest) {
   try {

@@ -12,6 +12,8 @@ import { markCartRecovered } from '@/lib/cms/cart';
 import { prisma } from '@/lib/cms/db';
 import { CartStatus } from '@prisma/client';
 
+export const dynamic = 'force-dynamic'
+
 const CART_SESSION_COOKIE = 'cart_session_id';
 
 interface RouteParams {

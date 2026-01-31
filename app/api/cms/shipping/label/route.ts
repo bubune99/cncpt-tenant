@@ -10,6 +10,8 @@ import { prisma } from '@/lib/cms/db'
 import { purchaseLabel, getShippingSettings } from '@/lib/cms/shippo'
 import type { LabelFormat } from '@/lib/cms/shippo/types'
 
+export const dynamic = 'force-dynamic'
+
 interface PurchaseLabelBody {
   rateId: string
   orderId?: string

@@ -9,6 +9,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPost, updatePost, deletePost } from '@/lib/cms/blog'
 
+export const dynamic = 'force-dynamic'
+
 interface RouteParams {
   params: Promise<{ id: string }>
 }

@@ -13,6 +13,8 @@ import {
 } from '@/lib/cms/permissions/middleware'
 import { PERMISSIONS, logAuditEvent } from '@/lib/cms/permissions'
 
+export const dynamic = 'force-dynamic'
+
 // GET - List all pages
 export const GET = withPermission(
   PERMISSIONS.PAGES_VIEW,

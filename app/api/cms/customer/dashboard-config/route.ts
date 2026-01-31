@@ -9,6 +9,8 @@ import { NextResponse } from 'next/server';
 import { stackServerApp } from '@/lib/cms/stack';
 import { getDashboardConfig } from '@/lib/cms/dashboard';
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     // Check authentication (optional - allow anonymous for caching)

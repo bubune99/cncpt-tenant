@@ -22,6 +22,8 @@ import {
   assignWorkflowToOrder,
 } from '@/lib/cms/order-workflows'
 
+export const dynamic = 'force-dynamic'
+
 interface RouteParams {
   params: Promise<{ id: string }>
 }

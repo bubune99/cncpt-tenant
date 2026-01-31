@@ -15,6 +15,8 @@ import { handleShippoTrackingEvent } from '@/lib/cms/order-workflows/progress'
 import { sendShippingNotification, sendDeliveryConfirmation } from '@/lib/cms/notifications'
 import type { ShipmentStatus } from '@prisma/client'
 
+export const dynamic = 'force-dynamic'
+
 interface ShippoTrackingEvent {
   status: string
   statusDetails?: string

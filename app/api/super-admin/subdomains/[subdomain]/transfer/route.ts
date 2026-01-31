@@ -3,6 +3,8 @@ import { stackServerApp } from "@/stack"
 import { sql } from "@/lib/neon"
 import { isSuperAdmin, logPlatformActivity } from "@/lib/super-admin"
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ subdomain: string }> }

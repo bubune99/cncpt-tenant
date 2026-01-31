@@ -19,6 +19,8 @@ import {
   sendReviewRequestEmail,
 } from '@/lib/cms/reviews';
 
+export const dynamic = 'force-dynamic'
+
 // POST - Send review request emails
 export async function POST(request: NextRequest) {
   try {

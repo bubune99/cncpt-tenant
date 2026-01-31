@@ -9,6 +9,8 @@ import {
   type CreateSubdomainAuthConfigInput,
 } from "@/lib/subdomain-stack-auth"
 
+export const dynamic = 'force-dynamic'
+
 // =============================================================================
 // GET - Fetch auth config (excludes secret key for non-owners)
 // =============================================================================

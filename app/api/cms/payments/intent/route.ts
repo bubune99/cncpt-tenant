@@ -22,6 +22,8 @@ import {
 import { createOrderPaymentIntent } from '@/lib/cms/stripe/product-sync'
 import type { CreatePaymentIntentRequest } from '@/lib/cms/stripe/types'
 
+export const dynamic = 'force-dynamic'
+
 interface CreateIntentBody {
   // Mode 1: Direct amount
   amount?: number // in cents

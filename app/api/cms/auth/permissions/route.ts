@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withAuth, type AuthContext } from '@/lib/cms/permissions/middleware'
 
+export const dynamic = 'force-dynamic'
+
 // GET - Get current user's permissions
 export const GET = withAuth(
   async (_request: NextRequest, context: AuthContext) => {

@@ -14,6 +14,8 @@ import {
 import { PERMISSIONS, logAuditEvent } from '@/lib/cms/permissions'
 import { getAvailableCustomComponents } from '@/lib/cms/routes/custom-components'
 
+export const dynamic = 'force-dynamic'
+
 // GET - List all route configurations
 export const GET = withPermission(
   PERMISSIONS.ROUTES_VIEW,

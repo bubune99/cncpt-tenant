@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { sql } from "@/lib/neon"
 import { bulkSyncDomainsToEdgeConfig } from "@/lib/edge-config"
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Admin endpoint to bulk sync all active custom domains to Edge Config
  * Use this for initial setup or recovery after Edge Config issues

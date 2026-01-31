@@ -11,6 +11,8 @@ import { BundleImportOptions } from "@/lib/cms/bundles/types";
 import { stackServerApp } from "@/lib/cms/stack";
 import { prisma } from "@/lib/cms/db";
 
+export const dynamic = 'force-dynamic'
+
 /**
  * POST - Import a bundle or preview it
  */

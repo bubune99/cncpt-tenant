@@ -13,6 +13,8 @@ import {
 } from '@/lib/cms/permissions/middleware'
 import { PERMISSIONS, logAuditEvent, seedBuiltInRoles } from '@/lib/cms/permissions'
 
+export const dynamic = 'force-dynamic'
+
 // GET - List all roles
 export const GET = withPermission(
   PERMISSIONS.ROLES_VIEW,

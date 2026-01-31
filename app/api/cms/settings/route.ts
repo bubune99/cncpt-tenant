@@ -14,6 +14,8 @@ import {
 } from '@/lib/cms/settings'
 import type { SettingGroup } from '@/lib/cms/settings/types'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)

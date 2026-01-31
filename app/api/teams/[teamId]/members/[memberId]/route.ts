@@ -6,6 +6,8 @@ import { getTeamMembership, canManageRole } from "@/lib/team-auth"
 import type { TeamRole } from "@/lib/team-auth"
 import { logPlatformActivity } from "@/lib/super-admin"
 
+export const dynamic = 'force-dynamic'
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ teamId: string; memberId: string }> }

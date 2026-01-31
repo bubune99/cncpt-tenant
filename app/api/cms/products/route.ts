@@ -9,6 +9,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
 import type { ProductStatus, ProductType, Prisma } from '@prisma/client'
 
+export const dynamic = 'force-dynamic'
+
 // GET - List products
 export async function GET(request: NextRequest) {
   try {

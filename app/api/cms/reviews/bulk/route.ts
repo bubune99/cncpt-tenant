@@ -11,6 +11,8 @@ import {
   bulkDeleteReviews,
 } from '@/lib/cms/reviews';
 
+export const dynamic = 'force-dynamic'
+
 // POST - Bulk actions
 export async function POST(request: NextRequest) {
   try {

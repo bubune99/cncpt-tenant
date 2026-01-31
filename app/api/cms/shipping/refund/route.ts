@@ -8,6 +8,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
 import { refundLabel, getShippingSettings } from '@/lib/cms/shippo'
 
+export const dynamic = 'force-dynamic'
+
 interface RefundRequestBody {
   shipmentId: string // Our internal shipment ID
 }

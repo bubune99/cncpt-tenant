@@ -10,6 +10,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/cms/db';
 import { DiscountType, DiscountApplyTo } from '@prisma/client';
 
+export const dynamic = 'force-dynamic'
+
 interface RouteParams {
   params: Promise<{ id: string }>;
 }

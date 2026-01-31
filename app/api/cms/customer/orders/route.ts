@@ -9,6 +9,8 @@ import { stackServerApp } from '@/lib/cms/stack';
 import { prisma } from '@/lib/cms/db';
 import { OrderStatus } from '@prisma/client';
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     // Get authenticated user from Stack Auth

@@ -10,6 +10,8 @@ import {
 } from "@/lib/cms/templates";
 import { getTemplateRegistry } from "@/lib/cms/templates/registry";
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/templates
  *

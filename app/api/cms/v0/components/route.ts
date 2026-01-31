@@ -10,6 +10,8 @@ import { stackServerApp } from "@/lib/cms/stack";
 import { prisma } from "@/lib/cms/db";
 import { Prisma } from "@prisma/client";
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET - List custom components with filtering and pagination
  *

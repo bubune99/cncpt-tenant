@@ -12,6 +12,8 @@ import {
   getCustomerSyncStatus,
 } from '@/lib/cms/stripe/customer-sync'
 
+export const dynamic = 'force-dynamic'
+
 interface RouteParams {
   params: Promise<{ id: string }>
 }

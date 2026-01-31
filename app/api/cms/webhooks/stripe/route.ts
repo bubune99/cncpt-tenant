@@ -13,6 +13,8 @@ import { sendOrderConfirmation, sendRefundNotification } from '@/lib/cms/notific
 import { deductStockForOrder, releaseSessionReservations } from '@/lib/cms/inventory'
 import type Stripe from 'stripe'
 
+export const dynamic = 'force-dynamic'
+
 // Map Stripe payment status to our order status
 function mapPaymentToOrderStatus(
   paymentStatus: string

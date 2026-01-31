@@ -3,6 +3,8 @@ import { stackServerApp } from "@/stack"
 import { createTeam, getUserTeams } from "@/lib/teams"
 import { logPlatformActivity } from "@/lib/super-admin"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const user = await stackServerApp.getUser()

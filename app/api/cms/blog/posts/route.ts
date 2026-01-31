@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { listPosts, createPost } from '@/lib/cms/blog'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)

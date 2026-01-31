@@ -12,6 +12,8 @@ import {
   type ReviewSort,
 } from '@/lib/cms/reviews';
 
+export const dynamic = 'force-dynamic'
+
 interface RouteParams {
   params: Promise<{ productId: string }>;
 }

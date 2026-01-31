@@ -9,6 +9,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { withSuperAdmin, type AuthContext } from '@/lib/cms/permissions/middleware'
 import { seedBuiltInRoles, BUILT_IN_ROLES } from '@/lib/cms/permissions'
 
+export const dynamic = 'force-dynamic'
+
 export const POST = withSuperAdmin(
   async (_request: NextRequest, _context: AuthContext) => {
     try {

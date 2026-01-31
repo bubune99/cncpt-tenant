@@ -18,6 +18,8 @@ import {
 } from "@/lib/ai-credits"
 import type Stripe from "stripe"
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Check if event has already been processed (idempotency)
  */

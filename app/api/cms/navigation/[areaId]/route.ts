@@ -9,6 +9,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAreaNavigation, getAreaConfig } from '@/lib/cms/authenticated-routes';
 import { getAuthContext } from '@/lib/cms/permissions/middleware';
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ areaId: string }> }

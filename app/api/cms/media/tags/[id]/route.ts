@@ -10,6 +10,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getTag, updateTag, deleteTag } from '@/lib/cms/media/tags'
 import type { TagUpdateInput } from '@/lib/cms/media/types'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

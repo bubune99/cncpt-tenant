@@ -11,6 +11,8 @@ import { stackServerApp } from '@/lib/cms/stack';
 import { prisma } from '@/lib/cms/db';
 import { getTracking, type CarrierType } from '@/lib/cms/shippo';
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ orderId: string }> }

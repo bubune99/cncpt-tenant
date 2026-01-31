@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from '@/lib/cms/db';
 
+export const dynamic = 'force-dynamic'
+
 /**
  * POST /api/auth/sync
  * Syncs a Stack Auth user to the local database.

@@ -10,6 +10,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
 import type { CustomFieldType } from '@prisma/client'
 
+export const dynamic = 'force-dynamic'
+
 interface UpdateCustomFieldBody {
   name?: string
   slug?: string

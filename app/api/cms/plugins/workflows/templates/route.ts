@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/cms/db';
 
+export const dynamic = 'force-dynamic'
+
 // GET - List workflow templates
 export async function GET(request: NextRequest) {
   try {

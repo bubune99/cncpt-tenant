@@ -17,6 +17,8 @@ import {
   cleanupExpiredReservations,
 } from '@/lib/cms/inventory';
 
+export const dynamic = 'force-dynamic'
+
 // Verify cron secret for security
 function verifyCronSecret(request: NextRequest): boolean {
   const cronSecret = process.env.CRON_SECRET;

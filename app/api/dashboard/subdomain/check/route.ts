@@ -7,6 +7,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { sql } from "@/lib/neon"
 import { redis } from "@/lib/redis"
 
+export const dynamic = 'force-dynamic'
+
 const RESERVED_SUBDOMAINS = [
   "www", "app", "api", "admin", "dashboard", "mail", "email",
   "ftp", "blog", "shop", "store", "help", "support", "docs",

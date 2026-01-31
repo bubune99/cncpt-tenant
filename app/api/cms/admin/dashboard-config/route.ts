@@ -18,6 +18,8 @@ import {
   type DashboardPreset,
 } from '@/lib/cms/dashboard';
 
+export const dynamic = 'force-dynamic'
+
 // Check if user is admin
 async function isAdmin(): Promise<boolean> {
   try {

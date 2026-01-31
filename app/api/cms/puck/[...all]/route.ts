@@ -1,5 +1,7 @@
 import type { NextRequest } from "next/server";
 
+export const dynamic = 'force-dynamic'
+
 // Catch-all route for Puck API endpoints
 // Forwards requests to the appropriate handler
 

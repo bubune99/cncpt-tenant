@@ -1,5 +1,7 @@
 import type { NextRequest } from "next/server";
 
+export const dynamic = 'force-dynamic'
+
 // Main Puck API endpoint - redirects to appropriate handler
 export async function POST(request: NextRequest) {
   // Forward to chat endpoint

@@ -3,6 +3,8 @@ import { Prisma } from "@prisma/client";
 import { getV0ImportAgent } from "@/lib/cms/v0-agent";
 import { prisma } from "@/lib/cms/db";
 
+export const dynamic = 'force-dynamic'
+
 /**
  * POST /api/v0
  *

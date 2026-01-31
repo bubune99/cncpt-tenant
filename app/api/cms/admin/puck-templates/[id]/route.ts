@@ -15,6 +15,8 @@ import {
 import { PERMISSIONS, logAuditEvent } from '@/lib/cms/permissions'
 import type { PuckTemplateType } from '@prisma/client'
 
+export const dynamic = 'force-dynamic'
+
 type RouteParams = { params: Promise<{ id: string }> }
 
 // GET - Get single template

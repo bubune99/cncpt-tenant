@@ -7,6 +7,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     // Get overall stats

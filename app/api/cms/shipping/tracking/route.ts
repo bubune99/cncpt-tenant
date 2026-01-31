@@ -9,6 +9,8 @@ import { prisma } from '@/lib/cms/db'
 import { getTracking, getShippingSettings } from '@/lib/cms/shippo'
 import type { CarrierType } from '@/lib/cms/shippo/types'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)

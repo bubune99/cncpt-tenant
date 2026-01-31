@@ -11,6 +11,8 @@ import { getMedia, updateMedia, deleteMedia, restoreMedia } from '@/lib/cms/medi
 import { deleteFromStorage } from '@/lib/cms/media/upload'
 import type { MediaUpdateInput } from '@/lib/cms/media/types'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

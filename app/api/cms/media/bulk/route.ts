@@ -14,6 +14,8 @@ import {
 } from '@/lib/cms/media'
 import type { BulkOperationInput } from '@/lib/cms/media/types'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()

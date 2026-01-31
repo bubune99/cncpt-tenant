@@ -9,6 +9,8 @@ import { stackServerApp } from "@/lib/cms/stack";
 import { prisma } from "@/lib/cms/db";
 import type { AssetUploadStatus } from "@prisma/client";
 
+export const dynamic = 'force-dynamic'
+
 interface RouteParams {
   params: Promise<{ id: string }>;
 }

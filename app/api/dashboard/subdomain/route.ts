@@ -9,6 +9,8 @@ import { stackServerApp } from "@/stack"
 import { canCreateSubdomain, getSubdomainUsage } from "@/lib/subscription"
 import { rootDomain, protocol } from "@/lib/utils"
 
+export const dynamic = 'force-dynamic'
+
 // Validation helpers
 const SUBDOMAIN_REGEX = /^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/
 const RESERVED_SUBDOMAINS = [

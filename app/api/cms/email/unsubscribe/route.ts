@@ -7,6 +7,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { unsubscribeById, unsubscribeEmail } from '@/lib/cms/email/subscriptions'
 
+export const dynamic = 'force-dynamic'
+
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
 // One-click unsubscribe (List-Unsubscribe-Post header support)

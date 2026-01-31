@@ -10,6 +10,8 @@ import { prisma } from '@/lib/cms/db'
 import { getAnalyticsSettings, clearAnalyticsSettingsCache } from '@/lib/cms/analytics'
 import type { AnalyticsSettings } from '@/lib/cms/analytics/types'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const settings = await getAnalyticsSettings()

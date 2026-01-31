@@ -30,6 +30,8 @@ import { renderCartAbandonmentEmail } from '@/lib/cms/email/templates/cart-aband
 import { renderTemplate, StoreConfig } from '@/lib/cms/email/templates/renderer'
 import { getEmailSettings } from '@/lib/cms/settings'
 
+export const dynamic = 'force-dynamic'
+
 // Template rendering functions by name
 // Returns { html, text, subject } for templates that provide full rendering
 const templateRenderers: Record<string, (data: Record<string, unknown>, store?: Partial<StoreConfig>) => { html: string; subject?: string } | string> = {

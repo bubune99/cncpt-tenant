@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { stackServerApp } from "@/stack"
 import { isSuperAdmin, getPlatformActivityLogs } from "@/lib/super-admin"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const currentUser = await stackServerApp.getUser()

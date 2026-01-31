@@ -11,6 +11,8 @@ import {
   type SettingGroup,
 } from '@/lib/cms/settings'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const settings = await getAllSettings()

@@ -14,6 +14,8 @@ import {
 } from '@/lib/cms/stripe'
 import type { CreateCheckoutSessionRequest, CheckoutItem } from '@/lib/cms/stripe/types'
 
+export const dynamic = 'force-dynamic'
+
 interface CreateSessionBody {
   orderId?: string
   items?: CheckoutItem[]

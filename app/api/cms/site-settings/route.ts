@@ -13,6 +13,8 @@ import { prisma } from "@/lib/cms/db";
 import { stackServerApp } from "@/lib/cms/stack";
 import { Data } from "@puckeditor/core";
 
+export const dynamic = 'force-dynamic'
+
 const DEFAULT_SITE_SETTINGS_ID = "default";
 
 // Default empty Puck data

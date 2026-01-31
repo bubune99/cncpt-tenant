@@ -9,6 +9,8 @@ import { stackServerApp } from "@/stack"
 import { isSuperAdmin } from "@/lib/super-admin"
 import { listAllOverrides, listCreditGrants } from "@/lib/user-overrides"
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET - List all user overrides
  */

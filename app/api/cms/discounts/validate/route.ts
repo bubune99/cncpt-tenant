@@ -12,6 +12,8 @@ import {
   getDiscountSummary,
 } from '@/lib/cms/discounts';
 
+export const dynamic = 'force-dynamic'
+
 interface ValidateRequest {
   code: string;
   subtotal: number; // In cents

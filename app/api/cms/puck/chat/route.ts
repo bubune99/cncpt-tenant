@@ -11,6 +11,8 @@ import { buildSystemPrompt } from "@/lib/cms/puck/ai/prompts/puck-assistant";
 import type { PuckEditorContext } from "@/lib/cms/puck/ai/types";
 import { nanoid } from "nanoid";
 
+export const dynamic = 'force-dynamic'
+
 // Type for UI message parts
 interface UIPart {
   type: string;

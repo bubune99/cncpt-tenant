@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { listUnimportedStripeCoupons, importFromStripe } from '@/lib/cms/discounts';
 
+export const dynamic = 'force-dynamic'
+
 // GET - List unimported Stripe coupons
 export async function GET() {
   try {

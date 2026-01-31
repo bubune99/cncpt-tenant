@@ -10,6 +10,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getFolder, updateFolder, deleteFolder, reorderFolders } from '@/lib/cms/media/folders'
 import type { FolderUpdateInput } from '@/lib/cms/media/types'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

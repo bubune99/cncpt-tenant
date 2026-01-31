@@ -7,6 +7,8 @@
 import { NextResponse } from 'next/server';
 import { getReviewDashboardStats } from '@/lib/cms/reviews';
 
+export const dynamic = 'force-dynamic'
+
 // GET - Get dashboard stats
 export async function GET() {
   try {

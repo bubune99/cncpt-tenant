@@ -17,6 +17,8 @@ import {
 } from '@/components/cms/help-system/help-key-registry'
 import { defaultHelpContent } from '@/components/cms/help-system/default-content'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/help/keys
  *

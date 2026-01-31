@@ -9,6 +9,8 @@ import { stackServerApp } from "@/lib/cms/stack";
 import { getV0ImportAgent } from "@/lib/cms/v0-agent";
 import type { V0ImportRequest } from "@/lib/cms/v0-agent";
 
+export const dynamic = 'force-dynamic'
+
 /**
  * POST - Import a v0 component
  *

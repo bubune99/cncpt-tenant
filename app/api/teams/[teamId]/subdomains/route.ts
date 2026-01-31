@@ -5,6 +5,8 @@ import { getTeamSubdomains, shareSubdomainWithTeam, removeSubdomainFromTeam } fr
 import { hasTeamAccess } from "@/lib/team-auth"
 import { logPlatformActivity } from "@/lib/super-admin"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ teamId: string }> }

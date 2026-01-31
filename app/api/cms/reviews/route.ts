@@ -14,6 +14,8 @@ import {
 } from '@/lib/cms/reviews';
 import type { ReviewStatus } from '@prisma/client';
 
+export const dynamic = 'force-dynamic'
+
 // GET - List reviews (admin)
 export async function GET(request: NextRequest) {
   try {

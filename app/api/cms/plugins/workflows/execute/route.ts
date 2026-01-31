@@ -7,6 +7,8 @@
 import { NextResponse } from 'next/server';
 import { executeByIdOrName } from '@/lib/cms/plugins';
 
+export const dynamic = 'force-dynamic'
+
 interface WorkflowNode {
   id: string;
   type: string;

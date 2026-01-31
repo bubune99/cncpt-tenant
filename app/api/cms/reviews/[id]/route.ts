@@ -17,6 +17,8 @@ import {
 } from '@/lib/cms/reviews';
 import type { ReviewStatus } from '@prisma/client';
 
+export const dynamic = 'force-dynamic'
+
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
