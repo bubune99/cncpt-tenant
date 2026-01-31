@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { stackServerApp } from "@/stack"
 import { canAccessSubdomain } from "@/lib/team-auth"
-import { CMSAdminShell } from "@cncpt/cms/admin-shell"
+import { CMSAdminShell } from "@/admin-pages/shell"
 import { getTenantData } from "@/lib/tenant"
 
 export const dynamic = "force-dynamic"

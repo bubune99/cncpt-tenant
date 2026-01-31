@@ -1,8 +1,9 @@
 "use client"
 
 import { useParams } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@cncpt/cms/ui"
-import { useAuth, useCMSConfig } from "@cncpt/cms/hooks"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/cms/ui"
+import { useAuth } from "@/hooks/use-auth"
+import { useCMSConfig } from "@/contexts/CMSConfigContext"
 import {
   Package,
   ShoppingCart,

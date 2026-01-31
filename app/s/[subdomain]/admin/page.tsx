@@ -1,6 +1,6 @@
 "use client"
 
-import { AdminDashboard } from "@cncpt/cms/admin-pages"
+import { AdminDashboard } from "@/admin-pages"
 
 export default function SubdomainAdminDashboard() {
   return <AdminDashboard />

@@ -1,4 +1,4 @@
-import { prisma } from "@cncpt/cms/lib"
+import { prisma } from "@/lib/cms/db"
 import { notFound } from "next/navigation"
 
 export interface TenantData {

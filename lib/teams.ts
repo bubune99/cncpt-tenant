@@ -1,4 +1,4 @@
-import { prisma } from "@cncpt/cms/lib"
+import { prisma } from "@/lib/cms/db"
 import { stackServerApp } from "@/stack"
 import { randomBytes } from "crypto"
 import type { TeamRole, TeamMembership } from "./team-auth"

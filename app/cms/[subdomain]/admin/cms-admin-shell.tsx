@@ -1,7 +1,7 @@
 "use client"
 
-import { AdminShell } from "@cncpt/cms/admin"
-import type { AdminShellConfig } from "@cncpt/cms/admin"
+import { AdminShell } from "@/app/cms/admin/AdminShell"
+import type { AdminShellConfig } from "@/app/cms/admin/AdminShell"
 import { rootDomain, protocol } from "@/lib/cms/utils"
 import { AccessProvider } from "./access-context"
 

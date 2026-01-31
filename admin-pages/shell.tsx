@@ -2,7 +2,7 @@
 
 import { ReactNode } from "react"
 import { TenantProvider, TenantProviderProps } from "../contexts/tenant-context"
-import { AdminShell } from "../app/admin/AdminShell"
+import { AdminShell } from "../app/cms/admin/AdminShell"
 
 export interface CMSAdminShellProps extends Omit<TenantProviderProps, "children"> {
   children: ReactNode
