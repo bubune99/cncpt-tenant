@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { stackServerApp } from "@/stack"
+
+export const dynamic = 'force-dynamic'
 import { isSuperAdmin } from "@/lib/super-admin"
 import { getAllTeams } from "@/lib/teams"
 
