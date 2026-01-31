@@ -140,7 +140,7 @@ Content-Type: application/json`
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-help-key="dashboard.mcp.page">
       <div>
         <h1 className="text-3xl font-bold mb-2">MCP Integration</h1>
         <p className="text-muted-foreground">
@@ -149,7 +149,7 @@ Content-Type: application/json`
       </div>
 
       {/* Quick Start */}
-      <Card>
+      <Card data-help-key="dashboard.mcp.quickstart">
         <CardHeader
           className="cursor-pointer hover:bg-muted/50 transition-colors"
           onClick={toggleQuickStart}
@@ -271,7 +271,7 @@ Content-Type: application/json`
       </Card>
 
       {/* Configuration Examples */}
-      <Card>
+      <Card data-help-key="dashboard.mcp.config">
         <CardHeader>
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-500/10 rounded-lg">
@@ -434,7 +434,7 @@ Content-Type: application/json`
       </Card>
 
       {/* Available Tools */}
-      <Card>
+      <Card data-help-key="dashboard.mcp.tools">
         <CardHeader>
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-500/10 rounded-lg">

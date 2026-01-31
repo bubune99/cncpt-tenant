@@ -120,6 +120,11 @@ export const categoryGuidance: Record<string, {
     suggestedFormat: 'detailed',
     difficulty: 'intermediate',
   },
+  mcp: {
+    aiGuidance: 'MCP (Model Context Protocol) enables AI agents to interact with the CMS. Keep explanations simple - focus on practical setup steps and security. Users may be new to AI integration concepts.',
+    suggestedFormat: 'tutorial',
+    difficulty: 'intermediate',
+  },
 }
 
 /**
@@ -1465,6 +1470,171 @@ export const helpKeyRegistry: HelpKeyDefinition[] = [
     category: 'help',
     location: 'AI chat assistant',
     description: 'AI chat assistant panel',
+  },
+
+  // Dashboard Sidebar
+  {
+    key: 'dashboard.sidebar.sites',
+    category: 'sidebar',
+    location: 'Dashboard sidebar - site selector',
+    description: 'Dropdown to select and switch between your sites',
+  },
+  {
+    key: 'dashboard.sidebar.overview',
+    category: 'sidebar',
+    location: 'Dashboard sidebar - overview link',
+    description: 'Navigation to dashboard overview',
+  },
+  {
+    key: 'dashboard.sidebar.analytics',
+    category: 'sidebar',
+    location: 'Dashboard sidebar - analytics link',
+    description: 'Navigation to site analytics',
+  },
+  {
+    key: 'dashboard.sidebar.visibility',
+    category: 'sidebar',
+    location: 'Dashboard sidebar - site visibility link',
+    description: 'Navigation to site visibility settings',
+  },
+  {
+    key: 'dashboard.sidebar.domains',
+    category: 'sidebar',
+    location: 'Dashboard sidebar - custom domains link',
+    description: 'Navigation to custom domain management',
+  },
+  {
+    key: 'dashboard.sidebar.settings',
+    category: 'sidebar',
+    location: 'Dashboard sidebar - site settings link',
+    description: 'Navigation to site settings',
+  },
+  {
+    key: 'dashboard.sidebar.appearance',
+    category: 'sidebar',
+    location: 'Dashboard sidebar - appearance link',
+    description: 'Navigation to theme and appearance settings',
+  },
+  {
+    key: 'dashboard.sidebar.frontend',
+    category: 'sidebar',
+    location: 'Dashboard sidebar - hosting link',
+    description: 'Navigation to frontend hosting settings',
+  },
+  {
+    key: 'dashboard.sidebar.security',
+    category: 'sidebar',
+    location: 'Dashboard sidebar - security link',
+    description: 'Navigation to security settings',
+  },
+  {
+    key: 'dashboard.sidebar.teams',
+    category: 'sidebar',
+    location: 'Dashboard sidebar - teams link',
+    description: 'Navigation to team collaboration settings',
+  },
+  {
+    key: 'dashboard.sidebar.billing',
+    category: 'sidebar',
+    location: 'Dashboard sidebar - billing link',
+    description: 'Navigation to billing and subscription',
+  },
+  {
+    key: 'dashboard.header.help',
+    category: 'header',
+    location: 'Dashboard sidebar - help button',
+    description: 'Toggle help mode on/off',
+  },
+  {
+    key: 'dashboard.header.user',
+    category: 'header',
+    location: 'Dashboard sidebar - user info',
+    description: 'Current user information and sign out',
+  },
+  {
+    key: 'dashboard.sites.list',
+    category: 'dashboard',
+    location: 'Dashboard - sites list',
+    description: 'List of all user sites/subdomains',
+  },
+  {
+    key: 'dashboard.sites.create',
+    category: 'dashboard',
+    location: 'Dashboard - create site button',
+    description: 'Button to create a new site',
+  },
+
+  // MCP Integration (Dashboard)
+  {
+    key: 'dashboard.mcp.page',
+    category: 'mcp',
+    location: 'Dashboard - MCP Integration page',
+    description: 'MCP integration main page for connecting AI agents',
+    aiGuidance: 'MCP (Model Context Protocol) enables AI agents to interact with the CMS. Explain the concept simply - it\'s like giving AI assistants API access to manage content.',
+    commonQuestions: [
+      'What is MCP?',
+      'How do I connect my AI assistant?',
+      'What can AI agents do with my CMS?',
+      'Is MCP secure?',
+    ],
+    relatedKeys: ['dashboard.mcp.quickstart', 'dashboard.mcp.config', 'admin.settings.mcp-api-keys'],
+    difficulty: 'intermediate',
+    suggestedFormat: 'detailed',
+  },
+  {
+    key: 'dashboard.mcp.quickstart',
+    category: 'mcp',
+    location: 'Dashboard - MCP Quick Start guide',
+    description: 'Step-by-step guide to connect AI agents via MCP',
+    aiGuidance: 'Walk users through the 3 simple steps: get an API key, copy configuration, add to their AI client.',
+    difficulty: 'basic',
+    suggestedFormat: 'tutorial',
+  },
+  {
+    key: 'dashboard.mcp.config',
+    category: 'mcp',
+    location: 'Dashboard - MCP Configuration examples',
+    description: 'Copy-paste configurations for Claude Desktop, Claude Code, Cursor, etc.',
+    aiGuidance: 'Configuration examples are ready to copy. Users just need to replace the API key placeholder with their actual key.',
+    difficulty: 'basic',
+    suggestedFormat: 'brief',
+  },
+  {
+    key: 'dashboard.mcp.tools',
+    category: 'mcp',
+    location: 'Dashboard - MCP Available tools',
+    description: 'List of MCP tools AI agents can use',
+    aiGuidance: 'Explain what each tool does and whether it requires read or write permissions. Tools include product management, order viewing, blog posting, and page editing.',
+    difficulty: 'intermediate',
+    suggestedFormat: 'detailed',
+  },
+  {
+    key: 'dashboard.sidebar.mcp',
+    category: 'sidebar',
+    location: 'Dashboard sidebar - MCP navigation',
+    description: 'Navigation to MCP/AI Agents integration page',
+    aiGuidance: 'MCP allows AI assistants to manage CMS content. This takes you to the integration setup page.',
+    difficulty: 'basic',
+    suggestedFormat: 'brief',
+  },
+
+  // MCP API Keys (Admin Settings)
+  {
+    key: 'admin.settings.mcp-api-keys',
+    category: 'settings',
+    location: 'Settings - Security tab - MCP API Keys section',
+    description: 'API key management for MCP authentication',
+    aiGuidance: 'API keys authenticate AI agents. Explain key management: creating with specific scopes, viewing usage, revoking compromised keys. Emphasize security - keys are shown only once at creation.',
+    commonQuestions: [
+      'How do I create an API key?',
+      'What scopes should I give my key?',
+      'How do I revoke a key?',
+      'Can I see my API key again after creating it?',
+    ],
+    relatedKeys: ['dashboard.mcp.page', 'admin.settings.security-tab'],
+    difficulty: 'intermediate',
+    suggestedFormat: 'detailed',
+    includeMedia: true,
   },
 ]
 

@@ -1462,6 +1462,262 @@ Select orders using the checkboxes, then choose an action.`,
 
 Use checkboxes for bulk actions.`,
   },
+
+  // =============================================================================
+  // DASHBOARD
+  // =============================================================================
+
+  'dashboard.sidebar.sites': {
+    title: 'Site Selector',
+    summary: 'Switch between your sites.',
+    details: `Select which site to manage from the dropdown.
+
+Each site has its own:
+- Content and pages
+- Products and orders
+- Settings and domains
+- Team members
+
+Click "Create New" to add another site.`,
+  },
+
+  'dashboard.sidebar.overview': {
+    title: 'Overview',
+    summary: 'Dashboard home with your sites.',
+    details: 'View all your sites and quick access to create new ones.',
+  },
+
+  'dashboard.sidebar.analytics': {
+    title: 'Analytics',
+    summary: 'View site traffic and performance.',
+    details: 'Track visitors, page views, and engagement metrics for your site.',
+  },
+
+  'dashboard.sidebar.visibility': {
+    title: 'Site Visibility',
+    summary: 'Control who can see your site.',
+    details: `Manage your site's visibility:
+
+- **Public:** Anyone can visit
+- **Password Protected:** Requires password
+- **Private:** Only you and team members`,
+  },
+
+  'dashboard.sidebar.domains': {
+    title: 'Custom Domains',
+    summary: 'Connect your own domain.',
+    details: `Use your own domain name (e.g., yoursite.com) instead of the default subdomain.
+
+Steps:
+1. Add your domain
+2. Update DNS records
+3. Wait for verification`,
+  },
+
+  'dashboard.sidebar.settings': {
+    title: 'Site Settings',
+    summary: 'Configure your site basics.',
+    details: 'Set your site name, description, timezone, and other basic settings.',
+  },
+
+  'dashboard.sidebar.appearance': {
+    title: 'Appearance',
+    summary: 'Customize your site\'s look.',
+    details: 'Choose themes, colors, fonts, and branding for your site.',
+  },
+
+  'dashboard.sidebar.frontend': {
+    title: 'Hosting',
+    summary: 'Manage frontend deployment.',
+    details: 'Configure where and how your site is hosted, including edge locations and caching.',
+  },
+
+  'dashboard.sidebar.security': {
+    title: 'Security',
+    summary: 'Protect your site.',
+    details: `Security settings include:
+
+- API keys for integrations
+- Access controls
+- SSL certificates
+- Rate limiting`,
+  },
+
+  'dashboard.sidebar.teams': {
+    title: 'Teams',
+    summary: 'Collaborate with others.',
+    details: `Invite team members to help manage your site:
+
+- **Admin:** Full access
+- **Editor:** Content management
+- **Viewer:** Read-only access`,
+  },
+
+  'dashboard.sidebar.billing': {
+    title: 'Billing',
+    summary: 'Manage your subscription.',
+    details: 'View your plan, payment methods, invoices, and upgrade options.',
+  },
+
+  'dashboard.header.help': {
+    title: 'Help Mode',
+    summary: 'Get contextual help.',
+    details: `Toggle help mode to learn about any feature.
+
+**Keyboard Shortcut:** Ctrl+Q
+
+When active:
+- Hover over elements to see what they do
+- Click for detailed explanations
+- Press Escape to exit`,
+  },
+
+  'dashboard.header.user': {
+    title: 'Your Account',
+    summary: 'Your profile and sign out.',
+    details: 'View your account details and sign out of the dashboard.',
+  },
+
+  'dashboard.sites.list': {
+    title: 'Your Sites',
+    summary: 'All sites you manage.',
+    details: `View all sites in your account. Click any site to:
+
+- Edit content in the CMS
+- View analytics
+- Manage settings
+
+Sites are identified by their subdomain.`,
+  },
+
+  'dashboard.sites.create': {
+    title: 'Create Site',
+    summary: 'Add a new site.',
+    details: `Create a new site with:
+
+- Unique subdomain
+- Fresh content
+- Default settings
+
+You can customize everything after creation.`,
+  },
+
+  // =============================================================================
+  // MCP INTEGRATION
+  // =============================================================================
+
+  'dashboard.mcp.page': {
+    title: 'MCP Integration',
+    summary: 'Connect AI agents to your CMS via Model Context Protocol.',
+    details: `MCP (Model Context Protocol) lets AI assistants like Claude, Cursor, and others directly interact with your CMS.
+
+**What AI agents can do:**
+- Browse and create content (blog posts, pages)
+- View products, orders, and customers
+- Update page layouts with the visual editor
+- Access analytics and settings
+
+**Getting started:**
+1. Create an API key
+2. Copy the configuration for your AI client
+3. Add it to your AI assistant's settings
+
+Your data stays secure with per-key permissions and rate limiting.`,
+  },
+
+  'dashboard.mcp.quickstart': {
+    title: 'Quick Start Guide',
+    summary: 'Get your AI agent connected in 3 simple steps.',
+    details: `**Step 1: Get an API Key**
+Go to Settings → Security to create a new API key. Choose appropriate scopes based on what you want your AI to do.
+
+**Step 2: Copy Configuration**
+Copy the MCP server URL and configuration for your AI client from the examples below.
+
+**Step 3: Configure Your AI Client**
+Paste the configuration into your AI assistant's settings. Replace the placeholder with your actual API key.
+
+That's it! Your AI can now access your CMS.`,
+  },
+
+  'dashboard.mcp.config': {
+    title: 'Configuration Examples',
+    summary: 'Ready-to-use configurations for popular AI clients.',
+    details: `Copy the configuration for your AI client:
+
+**Claude Desktop**
+Add to your \`claude_desktop_config.json\` file.
+
+**Claude Code**
+Run the CLI command to add the MCP server.
+
+**Cursor**
+Add to Cursor's MCP settings.
+
+**Other Clients**
+Use the generic HTTP configuration with:
+- URL: Your MCP endpoint
+- Auth: Bearer token (your API key)
+
+Remember to replace \`cms_YOUR_API_KEY_HERE\` with your actual API key!`,
+  },
+
+  'dashboard.mcp.tools': {
+    title: 'Available MCP Tools',
+    summary: 'What your AI agent can do.',
+    details: `Once connected, your AI agent can use these tools:
+
+**Read Operations** (requires \`read\` scope)
+- \`list_products\` - Browse product catalog
+- \`get_product\` - Get product details
+- \`list_orders\` - View order history
+- \`list_blog_posts\` - Browse blog content
+- \`list_pages\` - View CMS pages
+- \`list_customers\` - View customer list
+- \`get_analytics_summary\` - Access analytics
+
+**Write Operations** (requires \`write\` scope)
+- \`create_blog_post\` - Create blog posts
+- \`update_page_puck_content\` - Edit page layouts
+
+Tools automatically discover what's available. Your AI will only see tools it has permission to use.`,
+  },
+
+  'dashboard.sidebar.mcp': {
+    title: 'MCP / AI Agents',
+    summary: 'Connect AI assistants to your CMS.',
+    details: `Set up Model Context Protocol (MCP) to let AI agents like Claude, Cursor, or other MCP-compatible assistants interact with your CMS.
+
+AI agents can help you:
+- Create and edit content
+- Browse products and orders
+- Update page layouts
+- Generate analytics reports`,
+  },
+
+  'admin.settings.mcp-api-keys': {
+    title: 'MCP API Keys',
+    summary: 'Manage API keys for AI agent authentication.',
+    details: `API keys let AI agents securely access your CMS.
+
+**Creating Keys:**
+- Give each key a descriptive name (e.g., "Claude Desktop", "CI/CD Bot")
+- Choose scopes: \`read\` for viewing, \`write\` for editing
+- Set expiration if needed
+
+**Security Tips:**
+- Use separate keys for different AI clients
+- Give only the scopes needed
+- Revoke compromised keys immediately
+- Keys are shown only once at creation
+
+**Scopes Available:**
+- \`read\` - View products, orders, content
+- \`write\` - Create/edit blog posts, pages
+- \`*\` - Full access (use carefully)
+
+Rate limits apply based on your plan tier.`,
+  },
 }
 
 /**
