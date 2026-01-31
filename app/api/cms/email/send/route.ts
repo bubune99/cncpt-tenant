@@ -19,16 +19,16 @@ import {
   queueEmails,
   EmailMessage,
   EmailAddress,
-} from '../../../../lib/email'
-import { renderOrderConfirmationEmail } from '../../../../lib/email/templates/order-confirmation'
-import { renderShippingNotificationEmail } from '../../../../lib/email/templates/shipping-notification'
-import { renderDeliveryConfirmationEmail } from '../../../../lib/email/templates/delivery-confirmation'
-import { renderRefundNotificationEmail } from '../../../../lib/email/templates/refund-notification'
-import { renderWelcomeEmail } from '../../../../lib/email/templates/welcome'
-import { renderPasswordResetEmail, renderPasswordChangedEmail } from '../../../../lib/email/templates/password-reset'
-import { renderCartAbandonmentEmail } from '../../../../lib/email/templates/cart-abandonment'
-import { renderTemplate, StoreConfig } from '../../../../lib/email/templates/renderer'
-import { getEmailSettings } from '../../../../lib/settings'
+} from '@/lib/cms/email'
+import { renderOrderConfirmationEmail } from '@/lib/cms/email/templates/order-confirmation'
+import { renderShippingNotificationEmail } from '@/lib/cms/email/templates/shipping-notification'
+import { renderDeliveryConfirmationEmail } from '@/lib/cms/email/templates/delivery-confirmation'
+import { renderRefundNotificationEmail } from '@/lib/cms/email/templates/refund-notification'
+import { renderWelcomeEmail } from '@/lib/cms/email/templates/welcome'
+import { renderPasswordResetEmail, renderPasswordChangedEmail } from '@/lib/cms/email/templates/password-reset'
+import { renderCartAbandonmentEmail } from '@/lib/cms/email/templates/cart-abandonment'
+import { renderTemplate, StoreConfig } from '@/lib/cms/email/templates/renderer'
+import { getEmailSettings } from '@/lib/cms/settings'
 
 // Template rendering functions by name
 // Returns { html, text, subject } for templates that provide full rendering
@@ -308,7 +308,7 @@ export async function GET(request: NextRequest) {
 
     if (queueId) {
       // Get specific email status
-      const { checkEmailStatus } = await import('../../../../lib/email')
+      const { checkEmailStatus } = await import('@/lib/cms/email')
       const status = checkEmailStatus(queueId)
 
       if (!status) {
@@ -333,7 +333,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get queue stats
-    const { getQueueStats } = await import('../../../../lib/email')
+    const { getQueueStats } = await import('@/lib/cms/email')
     const stats = getQueueStats()
 
     return NextResponse.json({

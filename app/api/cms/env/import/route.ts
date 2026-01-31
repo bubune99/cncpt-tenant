@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { importEnvVars, clearEnvCache } from '../../../../lib/env'
+import { importEnvVars, clearEnvCache } from '@/lib/cms/env'
 
 export async function POST(request: NextRequest) {
   try {

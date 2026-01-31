@@ -11,7 +11,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '../../ui/dropdown-menu'
-import type { FolderTree, TagWithCount } from '../../../lib/media/types'
+import type { FolderTree, TagWithCount } from '@/lib/cms/media/types'
 import {
   X,
   FolderInput,

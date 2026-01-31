@@ -1,14 +1,14 @@
 import { parse, unparse } from "papaparse";
 import { toast } from "sonner";
-import { Artifact } from '../../../components/chatsdk/create-artifact';
+import { Artifact } from '@/components/cms/chatsdk/create-artifact';
 import {
   CopyIcon,
   LineChartIcon,
   RedoIcon,
   SparklesIcon,
   UndoIcon,
-} from '../../../components/chatsdk/icons';
-import { SpreadsheetEditor } from '../../../components/chatsdk/sheet-editor';
+} from '@/components/cms/chatsdk/icons';
+import { SpreadsheetEditor } from '@/components/cms/chatsdk/sheet-editor';
 
 type Metadata = any;
 

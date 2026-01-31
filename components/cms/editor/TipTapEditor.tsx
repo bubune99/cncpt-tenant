@@ -13,7 +13,7 @@ import TextStyle from '@tiptap/extension-text-style';
 import Youtube from '@tiptap/extension-youtube';
 import CharacterCount from '@tiptap/extension-character-count';
 import { useCallback, useEffect, useState } from 'react';
-import { cn } from '../../lib/utils';
+import { cn } from '@/lib/cms/utils';
 import EditorToolbar from './EditorToolbar';
 import { Button } from '../ui/button';
 import {

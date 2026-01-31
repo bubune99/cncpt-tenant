@@ -8,8 +8,8 @@ import {
 } from '../../ui/dropdown-menu';
 import { Progress } from '../../ui/progress';
 import { Separator } from '../../ui/separator';
-import type { AppUsage } from '../../../lib/chatsdk/usage';
-import { cn } from '../../../lib/utils';
+import type { AppUsage } from '@/lib/cms/chatsdk/usage';
+import { cn } from '@/lib/cms/utils';
 
 export type ContextProps = ComponentProps<"button"> & {
   /** Optional full usage payload to enable breakdown view */

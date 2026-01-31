@@ -9,7 +9,7 @@ import {
   getAllSettings,
   updateSettings,
   type SettingGroup,
-} from '../../../../lib/settings'
+} from '@/lib/cms/settings'
 
 export async function GET() {
   try {

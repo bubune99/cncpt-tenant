@@ -10,7 +10,7 @@ import {
 } from '../../ui/select'
 import { Input } from '../../ui/input'
 import { LayoutGrid, List, Upload, Search, SlidersHorizontal } from 'lucide-react'
-import type { ViewMode, MediaType, MediaFilters } from '../../../lib/media/types'
+import type { ViewMode, MediaType, MediaFilters } from '@/lib/cms/media/types'
 
 interface MediaToolbarProps {
   viewMode: ViewMode

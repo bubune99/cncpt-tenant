@@ -2,12 +2,12 @@
 
 import { forwardRef } from 'react'
 import Image from 'next/image'
-import { cn } from '../../../lib/utils'
+import { cn } from '@/lib/cms/utils'
 import { Checkbox } from '../../ui/checkbox'
 import { Badge } from '../../ui/badge'
 import { TableCell, TableRow } from '../../ui/table'
-import { getMediaType, formatFileSize } from '../../../lib/media/types'
-import type { MediaWithRelations } from '../../../lib/media/types'
+import { getMediaType, formatFileSize } from '@/lib/cms/media/types'
+import type { MediaWithRelations } from '@/lib/cms/media/types'
 import { format } from 'date-fns'
 import {
   FileText,

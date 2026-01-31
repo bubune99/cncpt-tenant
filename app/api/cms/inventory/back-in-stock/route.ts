@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { subscribeToBackInStock, unsubscribeFromBackInStock } from '../../../../lib/inventory';
+import { subscribeToBackInStock, unsubscribeFromBackInStock } from '@/lib/cms/inventory';
 
 export async function POST(request: NextRequest) {
   try {

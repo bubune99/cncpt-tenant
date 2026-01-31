@@ -8,9 +8,9 @@
 
 import { NextResponse } from 'next/server';
 import { generateText } from 'ai';
-import { stackServerApp } from '../../../../../lib/stack';
-import { getAiSettings } from '../../../../../lib/settings';
-import { getLanguageModel } from '../../../../../lib/ai/providers';
+import { stackServerApp } from '@/lib/cms/stack';
+import { getAiSettings } from '@/lib/cms/settings';
+import { getLanguageModel } from '@/lib/cms/ai/providers';
 
 export async function POST(request: Request) {
   try {

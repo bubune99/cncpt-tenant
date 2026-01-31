@@ -8,8 +8,8 @@
  */
 
 import { NextResponse } from 'next/server';
-import { stackServerApp } from '../../../../lib/stack';
-import { getAiSettings, updateSettings } from '../../../../lib/settings';
+import { stackServerApp } from '@/lib/cms/stack';
+import { getAiSettings, updateSettings } from '@/lib/cms/settings';
 
 export async function GET() {
   try {

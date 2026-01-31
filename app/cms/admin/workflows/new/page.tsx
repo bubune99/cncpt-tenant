@@ -10,8 +10,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { WorkflowBuilder } from '../../../../components/workflow';
-import type { WorkflowDefinition, AvailablePrimitive } from '../../../../components/workflow';
+import { WorkflowBuilder } from '@/components/cms/workflow';
+import type { WorkflowDefinition, AvailablePrimitive } from '@/components/cms/workflow';
 
 // Default primitives for when API returns empty
 const defaultPrimitives: AvailablePrimitive[] = [

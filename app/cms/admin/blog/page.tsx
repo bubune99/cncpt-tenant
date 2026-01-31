@@ -12,16 +12,16 @@ import {
   Calendar,
   FileText,
 } from "lucide-react";
-import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
-import { Card, CardContent } from '../../../components/ui/card';
+import { Button } from '@/components/cms/ui/button';
+import { Input } from '@/components/cms/ui/input';
+import { Card, CardContent } from '@/components/cms/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../components/ui/select';
+} from '@/components/cms/ui/select';
 import {
   Table,
   TableBody,
@@ -29,7 +29,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../../../components/ui/table';
+} from '@/components/cms/ui/table';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,9 +37,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '../../../components/ui/dropdown-menu';
-import { Badge } from '../../../components/ui/badge';
-import { Tabs, TabsList, TabsTrigger } from '../../../components/ui/tabs';
+} from '@/components/cms/ui/dropdown-menu';
+import { Badge } from '@/components/cms/ui/badge';
+import { Tabs, TabsList, TabsTrigger } from '@/components/cms/ui/tabs';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,7 +49,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../../../components/ui/alert-dialog';
+} from '@/components/cms/ui/alert-dialog';
 import { toast } from "sonner";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";

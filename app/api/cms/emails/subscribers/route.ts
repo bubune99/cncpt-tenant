@@ -5,8 +5,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '../../../../lib/db'
-import { subscribeEmail } from '../../../../lib/email/subscriptions'
+import { prisma } from '@/lib/cms/db'
+import { subscribeEmail } from '@/lib/cms/email/subscriptions'
 
 export async function GET(request: NextRequest) {
   try {

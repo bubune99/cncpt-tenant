@@ -2,7 +2,7 @@
 
 import { MediaCard } from './MediaCard'
 import { MediaContextMenu } from './MediaContextMenu'
-import type { MediaWithRelations, FolderTree, TagWithCount } from '../../../lib/media/types'
+import type { MediaWithRelations, FolderTree, TagWithCount } from '@/lib/cms/media/types'
 import { Skeleton } from '../../ui/skeleton'
 
 interface MediaGridProps {

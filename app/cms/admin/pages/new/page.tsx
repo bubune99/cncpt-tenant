@@ -3,24 +3,24 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Button } from '../../../../components/ui/button';
-import { Input } from '../../../../components/ui/input';
-import { Label } from '../../../../components/ui/label';
-import { Textarea } from '../../../../components/ui/textarea';
+import { Button } from '@/components/cms/ui/button';
+import { Input } from '@/components/cms/ui/input';
+import { Label } from '@/components/cms/ui/label';
+import { Textarea } from '@/components/cms/ui/textarea';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../../../../components/ui/card';
+} from '@/components/cms/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../../components/ui/select';
+} from '@/components/cms/ui/select';
 import {
   ArrowLeft,
   Save,

@@ -16,25 +16,25 @@ import {
   ChevronDown,
   ChevronRight,
 } from 'lucide-react'
-import { Button } from '../../../../components/ui/button'
-import { Input } from '../../../../components/ui/input'
-import { Label } from '../../../../components/ui/label'
-import { Textarea } from '../../../../components/ui/textarea'
-import { Badge } from '../../../../components/ui/badge'
+import { Button } from '@/components/cms/ui/button'
+import { Input } from '@/components/cms/ui/input'
+import { Label } from '@/components/cms/ui/label'
+import { Textarea } from '@/components/cms/ui/textarea'
+import { Badge } from '@/components/cms/ui/badge'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../../../../components/ui/card'
+} from '@/components/cms/ui/card'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../../components/ui/select'
+} from '@/components/cms/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -42,7 +42,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../../../components/ui/dialog'
+} from '@/components/cms/ui/dialog'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,15 +52,15 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../../../../components/ui/alert-dialog'
+} from '@/components/cms/ui/alert-dialog'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '../../../../components/ui/collapsible'
-import { Avatar, AvatarFallback, AvatarImage } from '../../../../components/ui/avatar'
+} from '@/components/cms/ui/collapsible'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/cms/ui/avatar'
 import { toast } from 'sonner'
-import { PERMISSION_GROUPS } from '../../../../lib/permissions/constants'
+import { PERMISSION_GROUPS } from '@/lib/cms/permissions/constants'
 
 interface Role {
   id: string

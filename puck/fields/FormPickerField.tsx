@@ -7,16 +7,16 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Button } from '../../components/ui/button';
+import { Button } from '@/components/cms/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '../../components/ui/dialog';
-import { Label } from '../../components/ui/label';
-import { ScrollArea } from '../../components/ui/scroll-area';
+} from '@/components/cms/ui/dialog';
+import { Label } from '@/components/cms/ui/label';
+import { ScrollArea } from '@/components/cms/ui/scroll-area';
 import { ClipboardList, Loader2, Check } from 'lucide-react';
 
 interface Form {

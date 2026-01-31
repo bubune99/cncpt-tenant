@@ -7,12 +7,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '../../../../../lib/db'
+import { prisma } from '@/lib/cms/db'
 import {
   withPermission,
   type AuthContext,
-} from '../../../../../lib/permissions/middleware'
-import { PERMISSIONS, logAuditEvent } from '../../../../../lib/permissions'
+} from '@/lib/cms/permissions/middleware'
+import { PERMISSIONS, logAuditEvent } from '@/lib/cms/permissions'
 import type { PuckTemplateType } from '@prisma/client'
 
 type RouteParams = { params: Promise<{ id: string }> }

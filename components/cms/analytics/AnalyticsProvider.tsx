@@ -9,7 +9,7 @@
 import Script from 'next/script'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, Suspense } from 'react'
-import type { AnalyticsSettings } from '../../lib/analytics/types'
+import type { AnalyticsSettings } from '@/lib/cms/analytics/types'
 
 interface AnalyticsProviderProps {
   settings: AnalyticsSettings

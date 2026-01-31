@@ -8,9 +8,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '../../../../lib/db'
-import { stackServerApp } from '../../../../lib/stack'
-import { isAdminUser } from '../../../../lib/admin-config'
+import { prisma } from '@/lib/cms/db'
+import { stackServerApp } from '@/lib/cms/stack'
+import { isAdminUser } from '@/lib/cms/admin-config'
 
 // GET - List all users with their roles
 export async function GET(request: NextRequest) {

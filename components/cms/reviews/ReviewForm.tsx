@@ -15,7 +15,7 @@ import {
 } from '../ui/dialog';
 import { Loader2, X, Upload, CheckCircle } from 'lucide-react';
 import { toast as sonnerToast } from 'sonner';
-import { cn } from '../../lib/utils';
+import { cn } from '@/lib/cms/utils';
 import { StarRating } from './StarRating';
 
 interface ReviewFormProps {

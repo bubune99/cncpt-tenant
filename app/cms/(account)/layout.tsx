@@ -6,8 +6,8 @@
  */
 
 import { redirect } from 'next/navigation';
-import { stackServerApp } from '../../lib/stack';
-import { PageWrapper, getPageLayoutSettings } from '../../components/page-wrapper';
+import { stackServerApp } from '@/lib/cms/stack';
+import { PageWrapper, getPageLayoutSettings } from '@/components/cms/page-wrapper';
 
 export default async function AccountLayout({
   children,

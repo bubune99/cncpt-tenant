@@ -5,9 +5,9 @@
  */
 
 import { NextResponse } from 'next/server';
-import { stackServerApp } from '../../../../lib/stack';
-import { prisma } from '../../../../lib/db';
-import { getMcpServerStatus, loadMcpConfig } from '../../../../lib/mcp';
+import { stackServerApp } from '@/lib/cms/stack';
+import { prisma } from '@/lib/cms/db';
+import { getMcpServerStatus, loadMcpConfig } from '@/lib/cms/mcp';
 
 export const dynamic = 'force-dynamic';
 

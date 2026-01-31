@@ -1,8 +1,8 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
 import type { DataUIPart } from "ai";
 import type { ComponentType, Dispatch, ReactNode, SetStateAction } from "react";
-import type { Suggestion } from '../../lib/chatsdk/db/schema';
-import type { ChatMessage, CustomUIDataTypes } from '../../lib/chatsdk/types';
+import type { Suggestion } from '@/lib/cms/chatsdk/db/schema';
+import type { ChatMessage, CustomUIDataTypes } from '@/lib/cms/chatsdk/types';
 import type { UIArtifact } from "./artifact";
 
 export type ArtifactActionContext<M = any> = {

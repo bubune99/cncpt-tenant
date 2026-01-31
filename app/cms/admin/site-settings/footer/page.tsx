@@ -9,35 +9,35 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, Save, Eye, EyeOff, Plus, Trash2 } from 'lucide-react';
-import { Button } from '../../../../components/ui/button';
+import { Button } from '@/components/cms/ui/button';
 import { toast } from 'sonner';
-import { Footer, type FooterProps } from '../../../../puck/layout/components';
-import { defaultFooterProps } from '../../../../components/page-wrapper/defaults';
-import { Input } from '../../../../components/ui/input';
-import { Label } from '../../../../components/ui/label';
-import { Textarea } from '../../../../components/ui/textarea';
-import { Switch } from '../../../../components/ui/switch';
+import { Footer, type FooterProps } from '@/puck/layout/components';
+import { defaultFooterProps } from '@/components/cms/page-wrapper/defaults';
+import { Input } from '@/components/cms/ui/input';
+import { Label } from '@/components/cms/ui/label';
+import { Textarea } from '@/components/cms/ui/textarea';
+import { Switch } from '@/components/cms/ui/switch';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../../components/ui/select';
+} from '@/components/cms/ui/select';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../../../../components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../components/ui/tabs';
+} from '@/components/cms/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/cms/ui/tabs';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '../../../../components/ui/accordion';
+} from '@/components/cms/ui/accordion';
 
 type SocialPlatform = 'facebook' | 'twitter' | 'instagram' | 'linkedin' | 'youtube' | 'tiktok' | 'github';
 

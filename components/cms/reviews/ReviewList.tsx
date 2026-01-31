@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from '../ui/select';
 import { Loader2, MessageSquarePlus, Filter } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn } from '@/lib/cms/utils';
 import { ReviewCard, type Review } from './ReviewCard';
 import { ReviewStats, type ReviewStatsData } from './ReviewStats';
 

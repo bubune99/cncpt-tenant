@@ -10,7 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '../../../../lib/db'
+import { prisma } from '@/lib/cms/db'
 import {
   createPaymentIntent,
   getPaymentIntent,
@@ -18,9 +18,9 @@ import {
   cancelPaymentIntent,
   getStripeSettings,
   getOrCreateCustomer,
-} from '../../../../lib/stripe'
-import { createOrderPaymentIntent } from '../../../../lib/stripe/product-sync'
-import type { CreatePaymentIntentRequest } from '../../../../lib/stripe/types'
+} from '@/lib/cms/stripe'
+import { createOrderPaymentIntent } from '@/lib/cms/stripe/product-sync'
+import type { CreatePaymentIntentRequest } from '@/lib/cms/stripe/types'
 
 interface CreateIntentBody {
   // Mode 1: Direct amount

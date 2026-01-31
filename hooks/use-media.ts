@@ -8,7 +8,7 @@ import type {
   MediaType,
   FolderTree,
   TagWithCount,
-} from '../lib/media/types'
+} from '@/lib/cms/media/types'
 
 interface UseMediaState {
   media: MediaWithRelations[]

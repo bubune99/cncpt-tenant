@@ -6,10 +6,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '../../../../lib/db'
-import { getShippingSettings, clearShippingSettingsCache } from '../../../../lib/shippo'
-import { encrypt } from '../../../../lib/encryption'
-import type { ShippingSettings } from '../../../../lib/shippo/types'
+import { prisma } from '@/lib/cms/db'
+import { getShippingSettings, clearShippingSettingsCache } from '@/lib/cms/shippo'
+import { encrypt } from '@/lib/cms/encryption'
+import type { ShippingSettings } from '@/lib/cms/shippo/types'
 
 // Settings keys for the shipping group
 const SHIPPING_SETTINGS_KEYS = [

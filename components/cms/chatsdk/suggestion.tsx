@@ -4,8 +4,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { useWindowSize } from "usehooks-ts";
 
-import type { UISuggestion } from '../../lib/chatsdk/editor/suggestions';
-import { cn } from '../../lib/utils';
+import type { UISuggestion } from '@/lib/cms/chatsdk/editor/suggestions';
+import { cn } from '@/lib/cms/utils';
 import type { ArtifactKind } from "./artifact";
 import { CrossIcon, MessageIcon } from "./icons";
 import { Button } from "./ui/button";

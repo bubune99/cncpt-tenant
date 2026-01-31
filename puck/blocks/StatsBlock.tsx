@@ -8,7 +8,7 @@
 
 import React, { ReactNode } from 'react'
 import type { ComponentConfig } from '@puckeditor/core'
-import { cn } from '../../lib/utils'
+import { cn } from '@/lib/cms/utils'
 
 interface Stat {
   value: string | ReactNode

@@ -8,9 +8,9 @@
 
 import React, { ReactNode } from 'react'
 import type { ComponentConfig } from '@puckeditor/core'
-import { Card, CardContent } from '../../components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar'
-import { cn } from '../../lib/utils'
+import { Card, CardContent } from '@/components/cms/ui/card'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/cms/ui/avatar'
+import { cn } from '@/lib/cms/utils'
 import { Quote } from 'lucide-react'
 
 interface Testimonial {

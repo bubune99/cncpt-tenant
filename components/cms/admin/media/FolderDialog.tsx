@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../ui/select'
-import type { FolderTree, FolderWithRelations } from '../../../lib/media/types'
+import type { FolderTree, FolderWithRelations } from '@/lib/cms/media/types'
 import { Folder } from 'lucide-react'
 
 interface FolderDialogProps {

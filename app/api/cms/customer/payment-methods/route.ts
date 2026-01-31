@@ -5,9 +5,9 @@
  */
 
 import { NextResponse } from 'next/server';
-import { stackServerApp } from '../../../../lib/stack';
-import { prisma } from '../../../../lib/db';
-import { listPaymentMethods } from '../../../../lib/stripe';
+import { stackServerApp } from '@/lib/cms/stack';
+import { prisma } from '@/lib/cms/db';
+import { listPaymentMethods } from '@/lib/cms/stripe';
 
 export async function GET() {
   try {

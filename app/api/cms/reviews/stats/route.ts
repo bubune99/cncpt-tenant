@@ -5,7 +5,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { getReviewDashboardStats } from '../../../../lib/reviews';
+import { getReviewDashboardStats } from '@/lib/cms/reviews';
 
 // GET - Get dashboard stats
 export async function GET() {

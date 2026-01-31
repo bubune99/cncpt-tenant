@@ -9,7 +9,7 @@ import {
   oneLight,
 } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Button } from '../../ui/button';
-import { cn } from '../../../lib/utils';
+import { cn } from '@/lib/cms/utils';
 
 type CodeBlockContextType = {
   code: string;

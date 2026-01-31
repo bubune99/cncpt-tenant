@@ -1,11 +1,11 @@
 import { toast } from "sonner";
-import { CodeEditor } from '../../../components/chatsdk/code-editor';
+import { CodeEditor } from '@/components/cms/chatsdk/code-editor';
 import {
   Console,
   type ConsoleOutput,
   type ConsoleOutputContent,
-} from '../../../components/chatsdk/console';
-import { Artifact } from '../../../components/chatsdk/create-artifact';
+} from '@/components/cms/chatsdk/console';
+import { Artifact } from '@/components/cms/chatsdk/create-artifact';
 import {
   CopyIcon,
   LogsIcon,
@@ -13,8 +13,8 @@ import {
   PlayIcon,
   RedoIcon,
   UndoIcon,
-} from '../../../components/chatsdk/icons';
-import { generateUUID } from '../../../lib/utils';
+} from '@/components/cms/chatsdk/icons';
+import { generateUUID } from '@/lib/cms/utils';
 
 const OUTPUT_HANDLERS = {
   matplotlib: `

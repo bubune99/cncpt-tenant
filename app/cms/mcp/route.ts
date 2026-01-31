@@ -10,7 +10,7 @@
 import { createMcpHandler } from "mcp-handler"
 import { z } from "zod"
 import { NextRequest } from "next/server"
-import { prisma } from "../../lib/db"
+import { prisma } from "@/lib/cms/db"
 import {
   validateMcpApiKey,
   runWithMcpContext,
@@ -21,7 +21,7 @@ import {
   truncate,
   normalizePagination,
   type McpContext
-} from "../../lib/mcp"
+} from "@/lib/cms/mcp"
 
 // ==========================================
 // Authentication

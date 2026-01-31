@@ -22,7 +22,7 @@ import {
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
-import { useOrderTracking, type Order, type TrackingEvent } from '../../../../../puck/dashboard/hooks';
+import { useOrderTracking, type Order, type TrackingEvent } from '@/puck/dashboard/hooks';
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);

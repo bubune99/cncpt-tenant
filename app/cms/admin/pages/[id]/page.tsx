@@ -2,25 +2,25 @@
 
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
-import { Button } from '../../../../components/ui/button';
+import { Button } from '@/components/cms/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../../../../components/ui/card';
-import { Input } from '../../../../components/ui/input';
-import { Label } from '../../../../components/ui/label';
-import { Textarea } from '../../../../components/ui/textarea';
+} from '@/components/cms/ui/card';
+import { Input } from '@/components/cms/ui/input';
+import { Label } from '@/components/cms/ui/label';
+import { Textarea } from '@/components/cms/ui/textarea';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../../components/ui/select';
-import { Badge } from '../../../../components/ui/badge';
+} from '@/components/cms/ui/select';
+import { Badge } from '@/components/cms/ui/badge';
 import {
   ArrowLeft,
   Save,

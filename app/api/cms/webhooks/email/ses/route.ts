@@ -14,7 +14,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import {
   parseSesWebhook,
   processEmailWebhookEvent,
-} from '../../../../../lib/email/webhooks'
+} from '@/lib/cms/email/webhooks'
 
 export async function POST(request: NextRequest) {
   try {

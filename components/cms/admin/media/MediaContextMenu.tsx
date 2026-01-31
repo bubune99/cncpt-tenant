@@ -11,7 +11,7 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from '../../ui/context-menu'
-import type { MediaWithRelations, FolderTree, TagWithCount } from '../../../lib/media/types'
+import type { MediaWithRelations, FolderTree, TagWithCount } from '@/lib/cms/media/types'
 import {
   Eye,
   ExternalLink,

@@ -15,7 +15,7 @@ import {
   updateAddress,
   deleteAddress,
   type CustomerAddress,
-} from '../../../../puck/dashboard/hooks';
+} from '@/puck/dashboard/hooks';
 
 export default function AddressesPage() {
   const { addresses, isLoading, mutate } = useCustomerAddresses();

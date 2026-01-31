@@ -21,7 +21,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from '../../ui/hover-card';
-import { cn } from '../../../lib/utils';
+import { cn } from '@/lib/cms/utils';
 
 export type InlineCitationProps = ComponentProps<"span">;
 

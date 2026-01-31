@@ -9,7 +9,7 @@ import {
   parseResendWebhook,
   processEmailWebhookEvent,
   verifyResendWebhook,
-} from '../../../../../lib/email/webhooks'
+} from '@/lib/cms/email/webhooks'
 
 export async function POST(request: NextRequest) {
   try {

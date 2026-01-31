@@ -1,8 +1,8 @@
-import { prisma } from '../../../lib/db';
+import { prisma } from '@/lib/cms/db';
 import Link from "next/link";
 import { FolderOpen } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
-import { Badge } from '../../../components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/cms/ui/card';
+import { Badge } from '@/components/cms/ui/badge';
 
 export const metadata = {
   title: "Categories",

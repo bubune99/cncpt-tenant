@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../lib/db';
+import { prisma } from '@/lib/cms/db';
 import { DiscountType, DiscountApplyTo } from '@prisma/client';
 
 // GET - List discount codes

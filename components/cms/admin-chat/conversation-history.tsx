@@ -18,9 +18,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '../ui/tooltip';
-import { cn } from '../../lib/utils';
-import { useChatStore } from '../../lib/ai/chat-store';
-import { fetcher } from '../../lib/utils';
+import { cn } from '@/lib/cms/utils';
+import { useChatStore } from '@/lib/cms/ai/chat-store';
+import { fetcher } from '@/lib/cms/utils';
 
 interface ConversationHistoryProps {
   onSelectConversation: (id: string) => void;

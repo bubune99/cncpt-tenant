@@ -7,8 +7,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '../../../../lib/db'
-import { checkAndNotifyBackInStock } from '../../../../lib/inventory'
+import { prisma } from '@/lib/cms/db'
+import { checkAndNotifyBackInStock } from '@/lib/cms/inventory'
 import type { ProductStatus, ProductType } from '@prisma/client'
 
 // GET - Get single product

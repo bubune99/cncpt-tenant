@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCMSConfig } from '../../contexts/CMSConfigContext';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 
 export default function QuickActions() {
   const router = useRouter();

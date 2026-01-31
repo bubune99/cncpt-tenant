@@ -5,8 +5,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '../../../../../lib/db'
-import { syncProductToStripe, syncVariantsToStripe } from '../../../../../lib/stripe/product-sync'
+import { prisma } from '@/lib/cms/db'
+import { syncProductToStripe, syncVariantsToStripe } from '@/lib/cms/stripe/product-sync'
 
 export async function POST(
   request: NextRequest,

@@ -10,16 +10,16 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { usePuck, type Config, type Data } from '@puckeditor/core'
 import { TemplateCard, type PuckTemplateData } from './TemplateCard'
-import { Input } from '../../components/ui/input'
-import { Button } from '../../components/ui/button'
-import { ScrollArea } from '../../components/ui/scroll-area'
+import { Input } from '@/components/cms/ui/input'
+import { Button } from '@/components/cms/ui/button'
+import { ScrollArea } from '@/components/cms/ui/scroll-area'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../components/ui/select'
+} from '@/components/cms/ui/select'
 import { Loader2, Search, LayoutTemplate, Layers, FileStack } from 'lucide-react'
 import { toast } from 'sonner'
 

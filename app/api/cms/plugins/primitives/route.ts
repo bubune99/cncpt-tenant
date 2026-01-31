@@ -5,8 +5,8 @@
  */
 
 import { NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/db';
-import { loadBuiltInPrimitives } from '../../../../lib/plugins';
+import { prisma } from '@/lib/cms/db';
+import { loadBuiltInPrimitives } from '@/lib/cms/plugins';
 
 export async function GET() {
   try {

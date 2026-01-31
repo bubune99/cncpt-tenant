@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getAnalyticsSummary, trackServerEvent } from '../../../lib/analytics'
+import { getAnalyticsSummary, trackServerEvent } from '@/lib/cms/analytics'
 
 export async function GET(request: NextRequest) {
   try {

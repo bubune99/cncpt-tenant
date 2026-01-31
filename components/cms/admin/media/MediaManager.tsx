@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import { useMedia } from '../../../hooks/use-media'
-import { useMediaUpload } from '../../../hooks/use-media-upload'
+import { useMedia } from '@/hooks/use-media'
+import { useMediaUpload } from '@/hooks/use-media-upload'
 import { MediaGrid } from './MediaGrid'
 import { MediaList } from './MediaList'
 import { MediaToolbar } from './MediaToolbar'
@@ -37,7 +37,7 @@ import { Input } from '../../ui/input'
 import { Label } from '../../ui/label'
 import { AlertTriangle, Settings } from 'lucide-react'
 import Link from 'next/link'
-import type { MediaWithRelations, FolderWithRelations } from '../../../lib/media/types'
+import type { MediaWithRelations, FolderWithRelations } from '@/lib/cms/media/types'
 
 interface StorageConfigStatus {
   configured: boolean

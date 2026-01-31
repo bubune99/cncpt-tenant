@@ -3,13 +3,13 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../components/ui/card';
-import { Button } from '../../../../components/ui/button';
-import { Input } from '../../../../components/ui/input';
-import { Label } from '../../../../components/ui/label';
-import { Textarea } from '../../../../components/ui/textarea';
-import { Switch } from '../../../../components/ui/switch';
-import { Badge } from '../../../../components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/cms/ui/card';
+import { Button } from '@/components/cms/ui/button';
+import { Input } from '@/components/cms/ui/input';
+import { Label } from '@/components/cms/ui/label';
+import { Textarea } from '@/components/cms/ui/textarea';
+import { Switch } from '@/components/cms/ui/switch';
+import { Badge } from '@/components/cms/ui/badge';
 import { toast as sonnerToast } from 'sonner';
 import {
   Select,
@@ -17,7 +17,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../../components/ui/select';
+} from '@/components/cms/ui/select';
 import {
   ArrowLeft,
   Loader2,
@@ -35,7 +35,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../../../components/ui/dialog';
+} from '@/components/cms/ui/dialog';
 
 interface DiscountCode {
   id: string;

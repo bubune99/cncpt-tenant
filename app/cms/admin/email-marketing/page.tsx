@@ -2,22 +2,22 @@
 
 import { useState, useEffect } from "react";
 import { Search, Plus, Send, Clock, CheckCircle, XCircle, Eye, Copy, Trash2, MoreHorizontal, Mail, Users, TrendingUp, BarChart3, RefreshCw, Settings, Paintbrush } from "lucide-react";
-import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
+import { Button } from '@/components/cms/ui/button';
+import { Input } from '@/components/cms/ui/input';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../../../components/ui/card';
+} from '@/components/cms/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../components/ui/select';
+} from '@/components/cms/ui/select';
 import {
   Table,
   TableBody,
@@ -25,7 +25,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../../../components/ui/table';
+} from '@/components/cms/ui/table';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,12 +33,12 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '../../../components/ui/dropdown-menu';
-import { Badge } from '../../../components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
+} from '@/components/cms/ui/dropdown-menu';
+import { Badge } from '@/components/cms/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/cms/ui/tabs';
 import { toast } from "sonner";
 import Link from "next/link";
-import { useAuth } from '../../../hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth';
 
 interface EmailCampaign {
   id: string;

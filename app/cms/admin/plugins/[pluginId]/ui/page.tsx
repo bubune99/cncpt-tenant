@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 import { Puck, type Data } from '@puckeditor/core';
 import '@puckeditor/core/puck.css';
 import { ArrowLeft, Save, Eye, Layout, Settings, Monitor } from 'lucide-react';
-import { pluginUIPuckConfig, type PluginUIComponents } from '../../../../../puck/plugin';
+import { pluginUIPuckConfig, type PluginUIComponents } from '@/puck/plugin';
 
 interface PageProps {
   params: Promise<{ pluginId: string }>;

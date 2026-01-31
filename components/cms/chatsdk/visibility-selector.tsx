@@ -15,8 +15,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
-import { useChatVisibility } from '../../hooks/use-chat-visibility';
-import { cn } from '../../lib/utils';
+import { useChatVisibility } from '@/hooks/use-chat-visibility';
+import { cn } from '@/lib/cms/utils';
 import { CheckCircle, ChevronDown, Globe, Lock } from 'lucide-react';
 
 export type VisibilityType = 'private' | 'public';

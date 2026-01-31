@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useWizard } from '../../../contexts/WizardContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
-import { Badge } from '../../../components/ui/badge';
-import { Label } from '../../../components/ui/label';
-import { Checkbox } from '../../../components/ui/checkbox';
+import { useWizard } from '@/contexts/WizardContext';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/cms/ui/card';
+import { Button } from '@/components/cms/ui/button';
+import { Input } from '@/components/cms/ui/input';
+import { Badge } from '@/components/cms/ui/badge';
+import { Label } from '@/components/cms/ui/label';
+import { Checkbox } from '@/components/cms/ui/checkbox';
 import { toast as sonnerToast } from 'sonner';
 import {
   Dialog,
@@ -16,7 +16,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../../components/ui/dialog';
+} from '@/components/cms/ui/dialog';
 import { 
   Search, 
   Filter,
@@ -37,14 +37,14 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '../../../components/ui/dropdown-menu';
+} from '@/components/cms/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../components/ui/select';
+} from '@/components/cms/ui/select';
 import Link from 'next/link';
 
 interface Customer {

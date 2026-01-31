@@ -15,8 +15,8 @@ import { Textarea } from '../../ui/textarea'
 import { Badge } from '../../ui/badge'
 import { Separator } from '../../ui/separator'
 import { ScrollArea } from '../../ui/scroll-area'
-import { getMediaType, formatFileSize } from '../../../lib/media/types'
-import type { MediaWithRelations, UsageInfo } from '../../../lib/media/types'
+import { getMediaType, formatFileSize } from '@/lib/cms/media/types'
+import type { MediaWithRelations, UsageInfo } from '@/lib/cms/media/types'
 import { format } from 'date-fns'
 import {
   FileText,

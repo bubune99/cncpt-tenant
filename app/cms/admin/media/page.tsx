@@ -1,4 +1,4 @@
-import { MediaManager } from '../../../components/admin/media'
+import { MediaManager } from '@/components/cms/admin/media'
 
 // Note: metadata export removed as this page is dynamically imported by admin-pages
 // which is a client component. Metadata should be set at the route level instead.

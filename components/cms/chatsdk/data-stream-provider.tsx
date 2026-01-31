@@ -10,7 +10,7 @@
 import type { DataUIPart } from 'ai';
 import type React from 'react';
 import { createContext, useContext, useMemo, useState } from 'react';
-import type { CustomUIDataTypes } from '../../lib/chatsdk/types';
+import type { CustomUIDataTypes } from '@/lib/cms/chatsdk/types';
 
 type DataStreamContextValue = {
   dataStream: DataUIPart<CustomUIDataTypes>[];

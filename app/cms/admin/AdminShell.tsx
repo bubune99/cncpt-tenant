@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '../../hooks/use-auth';
-import { WizardProvider } from '../../contexts/WizardContext';
-import { CMSConfigProvider, type CMSConfig } from '../../contexts/CMSConfigContext';
-import { AdminChat } from '../../components/admin-chat';
+import { useAuth } from '@/hooks/use-auth';
+import { WizardProvider } from '@/contexts/WizardContext';
+import { CMSConfigProvider, type CMSConfig } from '@/contexts/CMSConfigContext';
+import { AdminChat } from '@/components/cms/admin-chat';
 import {
   LayoutDashboard,
   Users,
@@ -34,8 +34,8 @@ import {
   Workflow,
   ClipboardList,
 } from 'lucide-react';
-import { Input } from '../../components/ui/input';
-import { Logo } from '../../components/branding/Logo';
+import { Input } from '@/components/cms/ui/input';
+import { Logo } from '@/components/cms/branding/Logo';
 
 interface NavItem {
   name: string;

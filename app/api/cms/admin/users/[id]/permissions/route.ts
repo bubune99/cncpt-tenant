@@ -7,18 +7,18 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '../../../../../../lib/db'
+import { prisma } from '@/lib/cms/db'
 import {
   withPermission,
   type AuthContext,
-} from '../../../../../../lib/permissions/middleware'
+} from '@/lib/cms/permissions/middleware'
 import {
   PERMISSIONS,
   getUserPermissions,
   grantPermission,
   denyPermission,
   removePermissionOverride,
-} from '../../../../../../lib/permissions'
+} from '@/lib/cms/permissions'
 
 interface RouteParams {
   params: Promise<{ id: string }>

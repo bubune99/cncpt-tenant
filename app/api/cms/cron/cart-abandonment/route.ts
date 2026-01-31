@@ -21,7 +21,7 @@ import {
   markRecoveryEmailSent,
   cleanupExpiredCarts,
   getCartStats,
-} from '../../../../lib/cart';
+} from '@/lib/cms/cart';
 
 // Verify cron secret to prevent unauthorized access
 const CRON_SECRET = process.env.CRON_SECRET;

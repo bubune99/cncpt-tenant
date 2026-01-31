@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { Render } from '@puckeditor/core';
 import '@puckeditor/core/puck.css';
 import { ArrowLeft, Edit } from 'lucide-react';
-import { pluginUIPuckConfig, type PluginUIComponents } from '../../../../../../puck/plugin';
+import { pluginUIPuckConfig, type PluginUIComponents } from '@/puck/plugin';
 import type { Data } from '@puckeditor/core';
 
 interface PageProps {

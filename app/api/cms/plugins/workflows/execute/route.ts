@@ -5,7 +5,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { executeByIdOrName } from '../../../../../lib/plugins';
+import { executeByIdOrName } from '@/lib/cms/plugins';
 
 interface WorkflowNode {
   id: string;

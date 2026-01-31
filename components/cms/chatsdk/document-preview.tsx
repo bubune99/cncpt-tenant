@@ -10,9 +10,9 @@ import {
   useRef,
 } from "react";
 import useSWR from "swr";
-import { useArtifact } from '../../hooks/use-artifact';
-import type { Document } from '../../lib/chatsdk/db/schema';
-import { cn, fetcher } from '../../lib/utils';
+import { useArtifact } from '@/hooks/use-artifact';
+import type { Document } from '@/lib/cms/chatsdk/db/schema';
+import { cn, fetcher } from '@/lib/cms/utils';
 import type { ArtifactKind, UIArtifact } from "./artifact";
 import { CodeEditor } from "./code-editor";
 import { DocumentToolCall, DocumentToolResult } from "./document";

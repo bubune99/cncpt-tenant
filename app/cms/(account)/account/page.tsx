@@ -13,7 +13,7 @@ import {
   AccountOverview,
   QuickActionsGrid,
   SupportWidget,
-} from '../../../puck/dashboard/components';
+} from '@/puck/dashboard/components';
 
 export default function AccountDashboard() {
   return (

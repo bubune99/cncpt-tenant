@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { respondToReview, getReviewById } from '../../../../../lib/reviews';
+import { respondToReview, getReviewById } from '@/lib/cms/reviews';
 
 interface RouteParams {
   params: Promise<{ id: string }>;

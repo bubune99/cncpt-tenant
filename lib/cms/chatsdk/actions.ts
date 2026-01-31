@@ -9,7 +9,7 @@
 
 import { prisma } from '../db';
 import { ChatVisibility } from '@prisma/client';
-import type { VisibilityType } from '../../components/chatsdk/visibility-selector';
+import type { VisibilityType } from '@/components/cms/chatsdk/visibility-selector';
 
 // Map UI visibility type to Prisma enum
 function toDbVisibility(visibility: VisibilityType): ChatVisibility {

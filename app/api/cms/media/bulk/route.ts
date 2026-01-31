@@ -11,8 +11,8 @@ import {
   bulkTagMedia,
   bulkUntagMedia,
   bulkRestoreMedia,
-} from '../../../../lib/media'
-import type { BulkOperationInput } from '../../../../lib/media/types'
+} from '@/lib/cms/media'
+import type { BulkOperationInput } from '@/lib/cms/media/types'
 
 export async function POST(request: NextRequest) {
   try {

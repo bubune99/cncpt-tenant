@@ -13,8 +13,8 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '../../components/ui/accordion'
-import { cn } from '../../lib/utils'
+} from '@/components/cms/ui/accordion'
+import { cn } from '@/lib/cms/utils'
 
 interface FAQItem {
   question: string | ReactNode

@@ -7,7 +7,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '../../ui/collapsible';
-import { cn } from '../../../lib/utils';
+import { cn } from '@/lib/cms/utils';
 
 export type TaskItemFileProps = ComponentProps<"div">;
 

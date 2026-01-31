@@ -68,8 +68,8 @@ Returns all keys organized by category with their content status.`,
   }),
   execute: async ({ category, missingOnly }) => {
     try {
-      const { helpKeyRegistry, getHelpCategories } = await import('../../../components/help-system/help-key-registry')
-      const { defaultHelpContent } = await import('../../../components/help-system/default-content')
+      const { helpKeyRegistry, getHelpCategories } = await import('@/components/cms/help-system/help-key-registry')
+      const { defaultHelpContent } = await import('@/components/cms/help-system/default-content')
       const db = await getDb()
 
       // Filter by category if specified
@@ -183,7 +183,7 @@ Returns a list of element keys that need help content created.`,
       const missingKeys = elementKeys.filter(key => !existingKeys.has(key))
 
       // Check default content as fallback
-      const { defaultHelpContent } = await import('../../../components/help-system/default-content')
+      const { defaultHelpContent } = await import('@/components/cms/help-system/default-content')
       const missingWithNoDefault = missingKeys.filter(key => !defaultHelpContent[key])
 
       return {
@@ -816,7 +816,7 @@ Always read before writing to avoid overwriting good content.`,
       // Get registry info for context
       let keyDefinition = null
       try {
-        const { helpKeyRegistry } = await import('../../../components/help-system/help-key-registry')
+        const { helpKeyRegistry } = await import('@/components/cms/help-system/help-key-registry')
         keyDefinition = helpKeyRegistry.find((k) => k.key === elementKey) || null
       } catch {
         // Registry not available
@@ -825,7 +825,7 @@ Always read before writing to avoid overwriting good content.`,
       // Check default content
       let hasDefaultContent = false
       try {
-        const { defaultHelpContent } = await import('../../../components/help-system/default-content')
+        const { defaultHelpContent } = await import('@/components/cms/help-system/default-content')
         hasDefaultContent = elementKey in defaultHelpContent
       } catch {
         // Defaults not available

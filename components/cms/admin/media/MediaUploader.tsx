@@ -2,12 +2,12 @@
 
 import { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { cn } from '../../../lib/utils'
+import { cn } from '@/lib/cms/utils'
 import { Button } from '../../ui/button'
 import { Progress } from '../../ui/progress'
 import { Upload, X, Check, AlertCircle, FileIcon } from 'lucide-react'
-import type { UploadProgress } from '../../../lib/media/types'
-import { formatFileSize } from '../../../lib/media/types'
+import type { UploadProgress } from '@/lib/cms/media/types'
+import { formatFileSize } from '@/lib/cms/media/types'
 
 interface MediaUploaderProps {
   folderId?: string | null

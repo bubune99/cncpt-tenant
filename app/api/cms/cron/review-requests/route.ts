@@ -17,7 +17,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   getOrdersForReviewRequest,
   sendReviewRequestEmail,
-} from '../../../../lib/reviews';
+} from '@/lib/cms/reviews';
 
 // POST - Send review request emails
 export async function POST(request: NextRequest) {

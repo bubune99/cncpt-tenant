@@ -15,23 +15,23 @@ import {
   Edit,
   Lock,
 } from 'lucide-react'
-import { Button } from '../../../components/ui/button'
-import { Input } from '../../../components/ui/input'
-import { Badge } from '../../../components/ui/badge'
+import { Button } from '@/components/cms/ui/button'
+import { Input } from '@/components/cms/ui/input'
+import { Badge } from '@/components/cms/ui/badge'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../../../components/ui/card'
+} from '@/components/cms/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '../../../components/ui/dropdown-menu'
+} from '@/components/cms/ui/dropdown-menu'
 import {
   Dialog,
   DialogContent,
@@ -39,7 +39,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../../components/ui/dialog'
+} from '@/components/cms/ui/dialog'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,7 +49,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../../../components/ui/alert-dialog'
+} from '@/components/cms/ui/alert-dialog'
 import { toast } from 'sonner'
 
 interface Role {

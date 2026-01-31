@@ -2,7 +2,7 @@
  * Dynamic Sitemap.xml Route Handler
  */
 
-import { prisma } from '../../lib/db'
+import { prisma } from '@/lib/cms/db'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 

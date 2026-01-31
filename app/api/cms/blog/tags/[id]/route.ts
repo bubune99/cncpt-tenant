@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getTag, updateTag, deleteTag } from '../../../../../lib/blog'
+import { getTag, updateTag, deleteTag } from '@/lib/cms/blog'
 
 interface RouteParams {
   params: Promise<{ id: string }>

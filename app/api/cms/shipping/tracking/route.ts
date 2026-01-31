@@ -5,9 +5,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '../../../../lib/db'
-import { getTracking, getShippingSettings } from '../../../../lib/shippo'
-import type { CarrierType } from '../../../../lib/shippo/types'
+import { prisma } from '@/lib/cms/db'
+import { getTracking, getShippingSettings } from '@/lib/cms/shippo'
+import type { CarrierType } from '@/lib/cms/shippo/types'
 
 export async function GET(request: NextRequest) {
   try {

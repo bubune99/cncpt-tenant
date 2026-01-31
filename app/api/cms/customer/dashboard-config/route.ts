@@ -6,8 +6,8 @@
  */
 
 import { NextResponse } from 'next/server';
-import { stackServerApp } from '../../../../lib/stack';
-import { getDashboardConfig } from '../../../../lib/dashboard';
+import { stackServerApp } from '@/lib/cms/stack';
+import { getDashboardConfig } from '@/lib/cms/dashboard';
 
 export async function GET() {
   try {

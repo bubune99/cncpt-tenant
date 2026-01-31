@@ -9,7 +9,7 @@
 import { useState } from 'react';
 import { ArrowLeft, Save, Loader2, Check } from 'lucide-react';
 import Link from 'next/link';
-import { useCustomerProfile, updateProfile } from '../../../../puck/dashboard/hooks';
+import { useCustomerProfile, updateProfile } from '@/puck/dashboard/hooks';
 
 export default function ProfilePage() {
   const { profile, isLoading, mutate } = useCustomerProfile();

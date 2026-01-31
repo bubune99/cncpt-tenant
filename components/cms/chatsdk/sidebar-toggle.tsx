@@ -6,7 +6,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from './ui/tooltip';
-import { cn } from '../../lib/utils';
+import { cn } from '@/lib/cms/utils';
 import { SidebarLeftIcon } from "./icons";
 import { Button } from "./ui/button";
 

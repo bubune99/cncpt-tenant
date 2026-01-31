@@ -31,7 +31,7 @@ import {
   type ButtonProps,
   type ImageProps,
   type SpacerProps,
-} from '../components/content';
+} from '@/puck/components/content';
 
 // Enhanced layout components
 import {
@@ -45,7 +45,7 @@ import {
   type ColumnsProps,
   type FlexProps,
   type GridProps,
-} from '../components/layout';
+} from '@/puck/components/layout';
 
 // Legacy component types (for backwards compatibility)
 export interface HeroSectionProps {

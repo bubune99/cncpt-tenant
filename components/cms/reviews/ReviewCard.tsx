@@ -7,7 +7,7 @@ import { ThumbsUp, ThumbsDown, ShieldCheck, MessageSquare, ChevronDown, ChevronU
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
-import { cn } from '../../lib/utils';
+import { cn } from '@/lib/cms/utils';
 import { StarRating } from './StarRating';
 
 export interface Review {

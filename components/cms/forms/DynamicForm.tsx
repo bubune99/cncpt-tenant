@@ -20,8 +20,8 @@ import {
   SelectValue,
 } from '../ui/select'
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group'
-import { cn } from '../../lib/utils'
-import type { FormField, FormDefinition, FieldCondition } from '../../lib/forms/types'
+import { cn } from '@/lib/cms/utils'
+import type { FormField, FormDefinition, FieldCondition } from '@/lib/cms/forms/types'
 
 interface DynamicFormProps {
   form: FormDefinition

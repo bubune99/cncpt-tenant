@@ -5,9 +5,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '../../../../../lib/db'
+import { prisma } from '@/lib/cms/db'
 import { headers } from 'next/headers'
-import { sendFormNotification } from '../../../../../lib/forms/notifications'
+import { sendFormNotification } from '@/lib/cms/forms/notifications'
 
 interface RouteParams {
   params: Promise<{ id: string }>

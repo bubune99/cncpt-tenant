@@ -6,13 +6,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '../../../../lib/db'
+import { prisma } from '@/lib/cms/db'
 import {
   createCheckoutSession,
   getCheckoutSession,
   getStripeSettings,
-} from '../../../../lib/stripe'
-import type { CreateCheckoutSessionRequest, CheckoutItem } from '../../../../lib/stripe/types'
+} from '@/lib/cms/stripe'
+import type { CreateCheckoutSessionRequest, CheckoutItem } from '@/lib/cms/stripe/types'
 
 interface CreateSessionBody {
   orderId?: string

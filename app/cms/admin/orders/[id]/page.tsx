@@ -19,21 +19,21 @@ import {
   Edit,
   RefreshCw
 } from "lucide-react";
-import { Button } from '../../../../components/ui/button';
+import { Button } from '@/components/cms/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../../../../components/ui/card';
+} from '@/components/cms/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../../components/ui/select';
+} from '@/components/cms/ui/select';
 import {
   Table,
   TableBody,
@@ -41,13 +41,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../../../../components/ui/table';
-import { Badge } from '../../../../components/ui/badge';
-import { Separator } from '../../../../components/ui/separator';
-import { Textarea } from '../../../../components/ui/textarea';
-import { Label } from '../../../../components/ui/label';
+} from '@/components/cms/ui/table';
+import { Badge } from '@/components/cms/ui/badge';
+import { Separator } from '@/components/cms/ui/separator';
+import { Textarea } from '@/components/cms/ui/textarea';
+import { Label } from '@/components/cms/ui/label';
 import { toast } from "sonner";
-import { OrderProgress } from '../../../../components/admin/orders/OrderProgress';
+import { OrderProgress } from '@/components/cms/admin/orders/OrderProgress';
 
 interface OrderItem {
   id: string;

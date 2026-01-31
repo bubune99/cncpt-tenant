@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from '../../../hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth';
 import {
   User,
   Mail,
@@ -32,17 +32,17 @@ import {
   Bot
 } from "lucide-react";
 
-import { Button } from '../../../components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
-import { Label } from '../../../components/ui/label';
-import { Input } from '../../../components/ui/input';
-import { Switch } from '../../../components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
-import { Separator } from '../../../components/ui/separator';
-import { Alert, AlertDescription } from '../../../components/ui/alert';
-import { Badge } from '../../../components/ui/badge';
-import { Textarea } from '../../../components/ui/textarea';
+import { Button } from '@/components/cms/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/cms/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/cms/ui/tabs';
+import { Label } from '@/components/cms/ui/label';
+import { Input } from '@/components/cms/ui/input';
+import { Switch } from '@/components/cms/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/cms/ui/select';
+import { Separator } from '@/components/cms/ui/separator';
+import { Alert, AlertDescription } from '@/components/cms/ui/alert';
+import { Badge } from '@/components/cms/ui/badge';
+import { Textarea } from '@/components/cms/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -50,14 +50,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../../components/ui/dialog';
+} from '@/components/cms/ui/dialog';
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
 import Link from "next/link";
-import EnvManager from '../../../components/admin/EnvManager';
-import BrandingSettings from '../../../components/admin/BrandingSettings';
-import EmailProviderSettings from '../../../components/admin/EmailProviderSettings';
-import AiSettings from '../../../components/admin/AiSettings';
+import EnvManager from '@/components/cms/admin/EnvManager';
+import BrandingSettings from '@/components/cms/admin/BrandingSettings';
+import EmailProviderSettings from '@/components/cms/admin/EmailProviderSettings';
+import AiSettings from '@/components/cms/admin/AiSettings';
 
 interface StoreSettings {
   general: {

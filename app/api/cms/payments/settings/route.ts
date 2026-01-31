@@ -6,10 +6,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '../../../../lib/db'
-import { getStripeSettings, clearStripeSettingsCache } from '../../../../lib/stripe'
-import { encrypt } from '../../../../lib/encryption'
-import type { StripeSettings } from '../../../../lib/stripe/types'
+import { prisma } from '@/lib/cms/db'
+import { getStripeSettings, clearStripeSettingsCache } from '@/lib/cms/stripe'
+import { encrypt } from '@/lib/cms/encryption'
+import type { StripeSettings } from '@/lib/cms/stripe/types'
 
 export async function GET() {
   try {

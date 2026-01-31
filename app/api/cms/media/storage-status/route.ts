@@ -5,8 +5,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { checkStorageConfig } from '../../../../lib/media/upload'
-import { getCorsConfigJson } from '../../../../lib/media/types'
+import { checkStorageConfig } from '@/lib/cms/media/upload'
+import { getCorsConfigJson } from '@/lib/cms/media/types'
 
 export async function GET(request: NextRequest) {
   try {

@@ -12,7 +12,7 @@ import {
   enableAutonomousMode,
   disableAutonomousMode,
   isAutonomousMode,
-} from '../../../../lib/vmcp';
+} from '@/lib/cms/vmcp';
 
 /**
  * GET /api/vmcp/permissions

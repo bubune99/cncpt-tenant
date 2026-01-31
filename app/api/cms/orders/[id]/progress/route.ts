@@ -16,11 +16,11 @@ import {
   skipToStage,
   setOrderTrackingAutoSync,
   syncOrderWithShipment,
-} from '../../../../../lib/order-workflows/progress'
+} from '@/lib/cms/order-workflows/progress'
 import {
   initializeOrderWorkflow,
   assignWorkflowToOrder,
-} from '../../../../../lib/order-workflows'
+} from '@/lib/cms/order-workflows'
 
 interface RouteParams {
   params: Promise<{ id: string }>

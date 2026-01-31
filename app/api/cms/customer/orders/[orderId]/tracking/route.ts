@@ -7,9 +7,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { stackServerApp } from '../../../../../../lib/stack';
-import { prisma } from '../../../../../../lib/db';
-import { getTracking, type CarrierType } from '../../../../../../lib/shippo';
+import { stackServerApp } from '@/lib/cms/stack';
+import { prisma } from '@/lib/cms/db';
+import { getTracking, type CarrierType } from '@/lib/cms/shippo';
 
 export async function GET(
   request: NextRequest,

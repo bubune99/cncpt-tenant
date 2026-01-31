@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
-import { Badge } from '../../../components/ui/badge';
-import { Checkbox } from '../../../components/ui/checkbox';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/cms/ui/card';
+import { Button } from '@/components/cms/ui/button';
+import { Input } from '@/components/cms/ui/input';
+import { Badge } from '@/components/cms/ui/badge';
+import { Checkbox } from '@/components/cms/ui/checkbox';
 import { toast as sonnerToast } from 'sonner';
 import {
   Dialog,
@@ -15,7 +15,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../../components/ui/dialog';
+} from '@/components/cms/ui/dialog';
 import {
   Search,
   MoreVertical,
@@ -40,14 +40,14 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '../../../components/ui/dropdown-menu';
+} from '@/components/cms/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../components/ui/select';
+} from '@/components/cms/ui/select';
 
 interface ProductReview {
   id: string;

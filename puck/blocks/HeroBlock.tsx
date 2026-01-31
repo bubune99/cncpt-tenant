@@ -9,8 +9,8 @@
 
 import React, { ReactNode } from 'react'
 import type { ComponentConfig } from '@puckeditor/core'
-import { Button } from '../../components/ui/button'
-import { cn } from '../../lib/utils'
+import { Button } from '@/components/cms/ui/button'
+import { cn } from '@/lib/cms/utils'
 
 export interface HeroBlockProps {
   variant: 'centered' | 'split' | 'background-image'

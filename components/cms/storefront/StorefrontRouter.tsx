@@ -7,7 +7,7 @@
  * It can be imported and used by external apps to render CMS content.
  */
 
-import { prisma } from '../../lib/db'
+import { prisma } from '@/lib/cms/db'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'

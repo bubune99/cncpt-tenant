@@ -15,22 +15,22 @@ import {
   Lock,
   Loader2,
 } from "lucide-react";
-import { Button } from '../../../../components/ui/button';
-import { Input } from '../../../../components/ui/input';
-import { Label } from '../../../../components/ui/label';
-import { Textarea } from '../../../../components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../../components/ui/card';
+import { Button } from '@/components/cms/ui/button';
+import { Input } from '@/components/cms/ui/input';
+import { Label } from '@/components/cms/ui/label';
+import { Textarea } from '@/components/cms/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/cms/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../../components/ui/select';
-import { Switch } from '../../../../components/ui/switch';
-import { Badge } from '../../../../components/ui/badge';
-import { Separator } from '../../../../components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../components/ui/tabs';
+} from '@/components/cms/ui/select';
+import { Switch } from '@/components/cms/ui/switch';
+import { Badge } from '@/components/cms/ui/badge';
+import { Separator } from '@/components/cms/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/cms/ui/tabs';
 import {
   Sheet,
   SheetContent,
@@ -38,14 +38,14 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '../../../../components/ui/sheet';
-import { Checkbox } from '../../../../components/ui/checkbox';
+} from '@/components/cms/ui/sheet';
+import { Checkbox } from '@/components/cms/ui/checkbox';
 import { toast } from "sonner";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 
 // Dynamically import TipTap to avoid SSR issues
-const TipTapEditor = dynamic(() => import('../../../../components/editor/TipTapEditor'), {
+const TipTapEditor = dynamic(() => import('@/components/cms/editor/TipTapEditor'), {
   ssr: false,
   loading: () => (
     <div className="border rounded-lg p-4 animate-pulse">

@@ -3,27 +3,27 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Button } from '../../../../components/ui/button';
+import { Button } from '@/components/cms/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../../../../components/ui/card';
-import { Input } from '../../../../components/ui/input';
-import { Label } from '../../../../components/ui/label';
-import { Textarea } from '../../../../components/ui/textarea';
-import { Badge } from '../../../../components/ui/badge';
-import { Switch } from '../../../../components/ui/switch';
+} from '@/components/cms/ui/card';
+import { Input } from '@/components/cms/ui/input';
+import { Label } from '@/components/cms/ui/label';
+import { Textarea } from '@/components/cms/ui/textarea';
+import { Badge } from '@/components/cms/ui/badge';
+import { Switch } from '@/components/cms/ui/switch';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../../components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../components/ui/tabs';
+} from '@/components/cms/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/cms/ui/tabs';
 import {
   Table,
   TableBody,
@@ -31,7 +31,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../../../../components/ui/table';
+} from '@/components/cms/ui/table';
 import {
   Dialog,
   DialogContent,
@@ -40,7 +40,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '../../../../components/ui/dialog';
+} from '@/components/cms/ui/dialog';
 import {
   ArrowLeft,
   Loader2,

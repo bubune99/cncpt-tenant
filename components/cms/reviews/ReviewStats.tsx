@@ -1,7 +1,7 @@
 'use client';
 
 import { Progress } from '../ui/progress';
-import { cn } from '../../lib/utils';
+import { cn } from '@/lib/cms/utils';
 import { StarRating } from './StarRating';
 
 export interface ReviewStatsData {

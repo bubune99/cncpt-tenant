@@ -11,7 +11,7 @@ import {
 } from '../../ui/table'
 import { Checkbox } from '../../ui/checkbox'
 import { Skeleton } from '../../ui/skeleton'
-import type { MediaWithRelations, FolderTree, TagWithCount } from '../../../lib/media/types'
+import type { MediaWithRelations, FolderTree, TagWithCount } from '@/lib/cms/media/types'
 
 interface MediaListProps {
   media: MediaWithRelations[]

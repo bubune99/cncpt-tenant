@@ -2,17 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Button } from '../../../../components/ui/button';
+import { Button } from '@/components/cms/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../../../../components/ui/card';
-import { Switch } from '../../../../components/ui/switch';
-import { Label } from '../../../../components/ui/label';
-import { Badge } from '../../../../components/ui/badge';
+} from '@/components/cms/ui/card';
+import { Switch } from '@/components/cms/ui/switch';
+import { Label } from '@/components/cms/ui/label';
+import { Badge } from '@/components/cms/ui/badge';
 import {
   ArrowLeft,
   Layout,

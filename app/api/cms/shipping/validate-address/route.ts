@@ -5,8 +5,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { validateAddress, getShippingSettings } from '../../../../lib/shippo'
-import type { ShippingAddress } from '../../../../lib/shippo/types'
+import { validateAddress, getShippingSettings } from '@/lib/cms/shippo'
+import type { ShippingAddress } from '@/lib/cms/shippo/types'
 
 export async function POST(request: NextRequest) {
   try {

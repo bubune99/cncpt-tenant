@@ -17,14 +17,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from './ui/alert-dialog';
-// import { useArtifactSelector } from '../../hooks/use-artifact'; // Disabled
-import { useAutoResume } from '../../hooks/use-auto-resume';
-import { useChatVisibility } from '../../hooks/use-chat-visibility';
-import type { Vote } from '../../lib/chatsdk/db/schema';
-import { ChatError } from '../../lib/chatsdk/errors';
-import type { Attachment, ChatMessage } from '../../lib/chatsdk/types';
-import type { AppUsage } from '../../lib/chatsdk/usage';
-import { fetcher, fetchWithErrorHandlers, generateUUID } from '../../lib/utils';
+// import { useArtifactSelector } from '@/hooks/use-artifact'; // Disabled
+import { useAutoResume } from '@/hooks/use-auto-resume';
+import { useChatVisibility } from '@/hooks/use-chat-visibility';
+import type { Vote } from '@/lib/cms/chatsdk/db/schema';
+import { ChatError } from '@/lib/cms/chatsdk/errors';
+import type { Attachment, ChatMessage } from '@/lib/cms/chatsdk/types';
+import type { AppUsage } from '@/lib/cms/chatsdk/usage';
+import { fetcher, fetchWithErrorHandlers, generateUUID } from '@/lib/cms/utils';
 // import { Artifact } from "./artifact"; // Disabled - not needed for our use case
 import { useDataStream } from "./data-stream-provider";
 import { Messages } from "./messages";

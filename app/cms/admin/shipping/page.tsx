@@ -14,19 +14,19 @@ import {
   ExternalLink,
   PlusCircle,
 } from 'lucide-react';
-import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
-import { Label } from '../../../components/ui/label';
-import { Switch } from '../../../components/ui/switch';
+import { Button } from '@/components/cms/ui/button';
+import { Input } from '@/components/cms/ui/input';
+import { Label } from '@/components/cms/ui/label';
+import { Switch } from '@/components/cms/ui/switch';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
-import { ShippingElements } from '../../../components/admin/ShippingElements';
+} from '@/components/cms/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/cms/ui/tabs';
+import { ShippingElements } from '@/components/cms/admin/ShippingElements';
 
 interface ShippingSettings {
   enabled: boolean;

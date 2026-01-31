@@ -8,15 +8,15 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { stackServerApp } from '../../../../lib/stack';
-import { prisma } from '../../../../lib/db';
+import { stackServerApp } from '@/lib/cms/stack';
+import { prisma } from '@/lib/cms/db';
 import {
   getDashboardConfig,
   saveDashboardConfig,
   applyDashboardPreset,
   getAvailablePresets,
   type DashboardPreset,
-} from '../../../../lib/dashboard';
+} from '@/lib/cms/dashboard';
 
 // Check if user is admin
 async function isAdmin(): Promise<boolean> {

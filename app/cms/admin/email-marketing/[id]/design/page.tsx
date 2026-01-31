@@ -8,7 +8,7 @@
 
 import { useState, useEffect, use, useMemo } from 'react'
 import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react'
-import { Button } from '../../../../../components/ui/button'
+import { Button } from '@/components/cms/ui/button'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
@@ -45,7 +45,7 @@ import { HelpModeProvider } from '@/lib/cms/puck/help-mode-context'
 const puckPlugins = [aiChatPlugin]
 
 // Import the email Puck configuration
-import { emailPuckConfig } from '../../../../../puck/email/config'
+import { emailPuckConfig } from '@/puck/email/config'
 import type { Data } from '@puckeditor/core'
 
 interface EmailCampaign {

@@ -11,7 +11,7 @@
  * - NONE: Don't render header/footer
  */
 
-import { getSiteSettings, type SiteSettingsData } from '../../lib/site-settings';
+import { getSiteSettings, type SiteSettingsData } from '@/lib/cms/site-settings';
 import {
   Header,
   Footer,
@@ -19,7 +19,7 @@ import {
   type HeaderProps,
   type FooterProps,
   type AnnouncementBarProps,
-} from '../../puck/layout/components';
+} from '@/puck/layout/components';
 
 // Re-export defaults from client-safe module
 export { defaultHeaderProps, defaultFooterProps } from './defaults';

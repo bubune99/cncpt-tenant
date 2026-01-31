@@ -12,7 +12,7 @@ import {
   deleteStage,
   reorderStages,
   getWorkflow,
-} from '../../../../../lib/order-workflows'
+} from '@/lib/cms/order-workflows'
 
 interface RouteParams {
   params: Promise<{ id: string }>

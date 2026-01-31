@@ -6,8 +6,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { listFolders, getFolderTree, createFolder } from '../../../../lib/media/folders'
-import type { FolderCreateInput } from '../../../../lib/media/types'
+import { listFolders, getFolderTree, createFolder } from '@/lib/cms/media/folders'
+import type { FolderCreateInput } from '@/lib/cms/media/types'
 
 export async function GET(request: NextRequest) {
   try {

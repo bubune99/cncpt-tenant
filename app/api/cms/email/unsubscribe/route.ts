@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { unsubscribeById, unsubscribeEmail } from '../../../../lib/email/subscriptions'
+import { unsubscribeById, unsubscribeEmail } from '@/lib/cms/email/subscriptions'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 

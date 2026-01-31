@@ -9,7 +9,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '../../ui/collapsible';
-import { cn } from '../../../lib/utils';
+import { cn } from '@/lib/cms/utils';
 import { Response } from "./response";
 
 type ReasoningContextValue = {

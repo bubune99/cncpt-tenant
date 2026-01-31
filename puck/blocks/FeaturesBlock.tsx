@@ -8,8 +8,8 @@
 
 import React, { ReactNode } from 'react'
 import type { ComponentConfig } from '@puckeditor/core'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
-import { cn } from '../../lib/utils'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/cms/ui/card'
+import { cn } from '@/lib/cms/utils'
 import {
   Zap, Shield, Globe, Rocket, Star, Heart,
   Settings, Users, Clock, CheckCircle, Award, Lightbulb

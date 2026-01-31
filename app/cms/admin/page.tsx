@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../hooks/use-auth';
-import { isAdminUser } from '../../lib/admin-config';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import DashboardMetrics from '../../components/admin/DashboardMetrics';
-import QuickActions from '../../components/admin/QuickActions';
+import { useAuth } from '@/hooks/use-auth';
+import { isAdminUser } from '@/lib/cms/admin-config';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/cms/ui/card';
+import { Button } from '@/components/cms/ui/button';
+import DashboardMetrics from '@/components/cms/admin/DashboardMetrics';
+import QuickActions from '@/components/cms/admin/QuickActions';
 import {
   Users,
   Package,

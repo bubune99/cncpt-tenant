@@ -28,7 +28,7 @@ import {
   CodeSquare,
   RemoveFormatting,
 } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn } from '@/lib/cms/utils';
 import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
 import {

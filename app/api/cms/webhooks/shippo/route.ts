@@ -9,10 +9,10 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createHmac } from 'crypto'
-import { prisma } from '../../../../lib/db'
-import { getShippingSettings } from '../../../../lib/shippo'
-import { handleShippoTrackingEvent } from '../../../../lib/order-workflows/progress'
-import { sendShippingNotification, sendDeliveryConfirmation } from '../../../../lib/notifications'
+import { prisma } from '@/lib/cms/db'
+import { getShippingSettings } from '@/lib/cms/shippo'
+import { handleShippoTrackingEvent } from '@/lib/cms/order-workflows/progress'
+import { sendShippingNotification, sendDeliveryConfirmation } from '@/lib/cms/notifications'
 import type { ShipmentStatus } from '@prisma/client'
 
 interface ShippoTrackingEvent {

@@ -38,9 +38,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '../ui/tooltip';
-import { cn } from '../../lib/utils';
-import { useChatStore, useChatPanel, useChatContext } from '../../lib/ai/chat-store';
-import { useAutoChatContext } from '../../hooks/use-chat-context';
+import { cn } from '@/lib/cms/utils';
+import { useChatStore, useChatPanel, useChatContext } from '@/lib/cms/ai/chat-store';
+import { useAutoChatContext } from '@/hooks/use-chat-context';
 import { DataStreamProvider } from '../chatsdk/data-stream-provider';
 import { SidebarProvider } from '../chatsdk/ui/sidebar';
 import { Chat } from '../chatsdk/chat';

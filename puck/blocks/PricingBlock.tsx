@@ -8,10 +8,10 @@
 
 import React, { ReactNode } from 'react'
 import type { ComponentConfig } from '@puckeditor/core'
-import { Button } from '../../components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/card'
-import { Badge } from '../../components/ui/badge'
-import { cn } from '../../lib/utils'
+import { Button } from '@/components/cms/ui/button'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/cms/ui/card'
+import { Badge } from '@/components/cms/ui/badge'
+import { cn } from '@/lib/cms/utils'
 import { Check } from 'lucide-react'
 
 interface PricingTier {

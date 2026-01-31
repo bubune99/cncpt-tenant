@@ -6,12 +6,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '../../../../lib/db'
+import { prisma } from '@/lib/cms/db'
 import {
   withPermission,
   type AuthContext,
-} from '../../../../lib/permissions/middleware'
-import { PERMISSIONS, logAuditEvent } from '../../../../lib/permissions'
+} from '@/lib/cms/permissions/middleware'
+import { PERMISSIONS, logAuditEvent } from '@/lib/cms/permissions'
 
 // GET - List all pages
 export const GET = withPermission(

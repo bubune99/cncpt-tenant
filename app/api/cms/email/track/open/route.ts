@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { recordEmailOpen } from '../../../../../lib/email/tracking'
+import { recordEmailOpen } from '@/lib/cms/email/tracking'
 
 // 1x1 transparent GIF
 const TRACKING_PIXEL = Buffer.from(

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { User } from '../../lib/chatsdk/db/schema';
+import type { User } from '@/lib/cms/chatsdk/db/schema';
 import { useState } from "react";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";

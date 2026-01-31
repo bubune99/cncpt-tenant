@@ -7,8 +7,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getTag, updateTag, deleteTag } from '../../../../../lib/media/tags'
-import type { TagUpdateInput } from '../../../../../lib/media/types'
+import { getTag, updateTag, deleteTag } from '@/lib/cms/media/tags'
+import type { TagUpdateInput } from '@/lib/cms/media/types'
 
 export async function GET(
   request: NextRequest,

@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { listCategories, createCategory } from '../../../../lib/blog'
+import { listCategories, createCategory } from '@/lib/cms/blog'
 
 export async function GET(request: NextRequest) {
   try {

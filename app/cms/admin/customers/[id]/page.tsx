@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../components/ui/card';
-import { Button } from '../../../../components/ui/button';
-import { Badge } from '../../../../components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/cms/ui/card';
+import { Button } from '@/components/cms/ui/button';
+import { Badge } from '@/components/cms/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/cms/ui/tabs';
 import {
   ArrowLeft,
   Mail,
@@ -31,11 +31,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../../../components/ui/dialog';
-import { Label } from '../../../../components/ui/label';
-import { Input } from '../../../../components/ui/input';
-import { Textarea } from '../../../../components/ui/textarea';
-import { Switch } from '../../../../components/ui/switch';
+} from '@/components/cms/ui/dialog';
+import { Label } from '@/components/cms/ui/label';
+import { Input } from '@/components/cms/ui/input';
+import { Textarea } from '@/components/cms/ui/textarea';
+import { Switch } from '@/components/cms/ui/switch';
 import Link from 'next/link';
 
 interface Address {

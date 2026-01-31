@@ -9,8 +9,8 @@
 import { useState } from 'react';
 import { ArrowLeft, Package, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useCustomerOrders, type Order } from '../../../../puck/dashboard/hooks';
-import { OrderSummaryCard } from '../../../../puck/dashboard/components';
+import { useCustomerOrders, type Order } from '@/puck/dashboard/hooks';
+import { OrderSummaryCard } from '@/puck/dashboard/components';
 
 // Helper to format currency from cents
 function formatCurrency(cents: number): string {

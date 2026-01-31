@@ -8,12 +8,12 @@
  * Examples: /p/about, /p/contact, /p/services/consulting
  */
 
-import { prisma } from '../../../../lib/db';
+import { prisma } from '@/lib/cms/db';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import type { Data } from '@puckeditor/core';
-import { PageWrapper, getPageLayoutSettings } from '../../../../components/page-wrapper';
-import { PageRenderer } from '../../../../components/page-wrapper/page-renderer';
+import { PageWrapper, getPageLayoutSettings } from '@/components/cms/page-wrapper';
+import { PageRenderer } from '@/components/cms/page-wrapper/page-renderer';
 
 // Force dynamic rendering to avoid SSR issues with Puck components
 export const dynamic = 'force-dynamic';

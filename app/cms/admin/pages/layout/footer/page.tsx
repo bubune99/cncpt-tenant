@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
-import { Button } from '../../../../../components/ui/button';
+import { Button } from '@/components/cms/ui/button';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -34,7 +34,7 @@ import { HelpModeProvider } from '@/lib/cms/puck/help-mode-context';
 import { Drawer } from '@puckeditor/core';
 
 // Import layout Puck configuration
-import { layoutPuckConfig } from '../../../../../puck/layout/config';
+import { layoutPuckConfig } from '@/puck/layout/config';
 import type { Data } from '@puckeditor/core';
 
 // Use custom AI chat plugin

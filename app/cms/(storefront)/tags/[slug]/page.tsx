@@ -1,10 +1,10 @@
-import { prisma } from '../../../../lib/db';
+import { prisma } from '@/lib/cms/db';
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { Calendar, Clock, ArrowLeft, Tag as TagIcon } from "lucide-react";
-import { Card, CardContent, CardFooter, CardHeader } from '../../../../components/ui/card';
-import { Badge } from '../../../../components/ui/badge';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/cms/ui/card';
+import { Badge } from '@/components/cms/ui/badge';
 import type { Metadata } from "next";
 
 interface PageProps {
