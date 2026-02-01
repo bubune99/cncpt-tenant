@@ -94,64 +94,8 @@ export default function OrdersPage() {
         const data = await response.json();
         setOrders(data.orders || []);
       } else {
-        // Mock data for development
-        setOrders([
-          {
-            id: '1',
-            orderNumber: 'ORD-001',
-            customer: { name: 'John Doe', email: 'john@example.com' },
-            items: 3,
-            total: 89.97,
-            status: 'processing',
-            paymentStatus: 'paid',
-            createdAt: new Date().toISOString(),
-            shippingAddress: '123 Main St, New York, NY 10001',
-          },
-          {
-            id: '2',
-            orderNumber: 'ORD-002',
-            customer: { name: 'Jane Smith', email: 'jane@example.com' },
-            items: 1,
-            total: 29.99,
-            status: 'shipped',
-            paymentStatus: 'paid',
-            createdAt: new Date(Date.now() - 86400000).toISOString(),
-            shippingAddress: '456 Oak Ave, Los Angeles, CA 90001',
-          },
-          {
-            id: '3',
-            orderNumber: 'ORD-003',
-            customer: { name: 'Bob Wilson', email: 'bob@example.com' },
-            items: 2,
-            total: 59.98,
-            status: 'pending',
-            paymentStatus: 'pending',
-            createdAt: new Date(Date.now() - 172800000).toISOString(),
-            shippingAddress: '789 Pine Rd, Chicago, IL 60601',
-          },
-          {
-            id: '4',
-            orderNumber: 'ORD-004',
-            customer: { name: 'Alice Johnson', email: 'alice@example.com' },
-            items: 5,
-            total: 149.95,
-            status: 'delivered',
-            paymentStatus: 'paid',
-            createdAt: new Date(Date.now() - 259200000).toISOString(),
-            shippingAddress: '321 Elm St, Houston, TX 77001',
-          },
-          {
-            id: '5',
-            orderNumber: 'ORD-005',
-            customer: { name: 'Charlie Brown', email: 'charlie@example.com' },
-            items: 1,
-            total: 24.99,
-            status: 'cancelled',
-            paymentStatus: 'refunded',
-            createdAt: new Date(Date.now() - 345600000).toISOString(),
-            shippingAddress: '654 Maple Dr, Phoenix, AZ 85001',
-          },
-        ]);
+        // No orders found or API error
+        setOrders([]);
       }
     } catch (error) {
       console.error('Error fetching orders:', error);
