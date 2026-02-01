@@ -157,64 +157,7 @@ export default function OrderDetailPage() {
         setOrder(data.order);
         setNotes(data.order.notes || "");
       } else {
-        // Mock data for development
-        const mockOrder: Order = {
-          id: orderId,
-          orderNumber: 'ORD-001',
-          customer: {
-            id: '1',
-            name: 'John Doe',
-            email: 'john@example.com',
-            phone: '+1 (555) 123-4567',
-          },
-          items: [
-            {
-              id: '1',
-              name: 'Premium T-Shirt',
-              sku: 'TSH-001',
-              quantity: 2,
-              price: 29.99,
-              thumbnail: 'https://placehold.co/100x100?text=T-Shirt',
-            },
-            {
-              id: '2',
-              name: 'Custom Mug',
-              sku: 'MUG-001',
-              quantity: 1,
-              price: 14.99,
-              thumbnail: 'https://placehold.co/100x100?text=Mug',
-            },
-          ],
-          subtotal: 74.97,
-          shipping: 5.99,
-          tax: 6.50,
-          total: 87.46,
-          status: 'processing',
-          paymentStatus: 'paid',
-          paymentMethod: 'Credit Card (Visa ending in 4242)',
-          shippingAddress: {
-            name: 'John Doe',
-            street: '123 Main Street',
-            city: 'New York',
-            state: 'NY',
-            zip: '10001',
-            country: 'United States',
-          },
-          billingAddress: {
-            name: 'John Doe',
-            street: '123 Main Street',
-            city: 'New York',
-            state: 'NY',
-            zip: '10001',
-            country: 'United States',
-          },
-          notes: '',
-          trackingNumber: '',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-        setOrder(mockOrder);
-        setNotes(mockOrder.notes);
+        toast.error('Order not found');
       }
     } catch (error) {
       console.error('Error fetching order:', error);
