@@ -197,45 +197,91 @@ function AdminHeader() {
   )
 }
 
-function OverviewSection({ tenants }: { tenants: Tenant[] }) {
-  const totalSubdomains = tenants.length
-  const thisMonth = tenants.filter((t) => new Date(t.createdAt).getMonth() === new Date().getMonth()).length
-  const thisWeek = tenants.filter((t) => {
-    const weekAgo = new Date()
-    weekAgo.setDate(weekAgo.getDate() - 7)
-    return new Date(t.createdAt) > weekAgo
-  }).length
+type OverviewData = {
+  users: { total: number; newLast30Days: number }
+  subdomains: { total: number; last30Days: number; last7Days: number }
+  teams: { total: number; last30Days: number; totalMembers: number }
+  topUsers: Array<{ userId: string; email: string; displayName: string | null; subdomainCount: number }>
+}
+
+function OverviewSection() {
+  const [data, setData] = useState<OverviewData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function fetchOverviewData() {
+      try {
+        setLoading(true)
+        const res = await fetch("/api/super-admin/analytics")
+        if (!res.ok) throw new Error("Failed to fetch analytics")
+        const json = await res.json()
+        setData(json)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load data")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchOverviewData()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    )
+  }
+
+  if (error || !data) {
+    return (
+      <div className="text-center py-12">
+        <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+        <p className="text-gray-600">{error || "Failed to load overview data"}</p>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Platform Overview</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-gray-900">Platform Overview</h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => window.location.reload()}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Refresh
+        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-gray-600">Total Subdomains</CardTitle>
-              <Globe className="h-4 w-4 text-blue-500" />
+              <CardTitle className="text-sm font-medium text-gray-600">Total Users</CardTitle>
+              <Users className="h-4 w-4 text-blue-500" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalSubdomains}</div>
-            <p className="text-xs text-gray-500 mt-1">All time</p>
+            <div className="text-2xl font-bold">{data.users.total}</div>
+            <p className="text-xs text-gray-500 mt-1">+{data.users.newLast30Days} last 30 days</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-gray-600">This Month</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-500" />
+              <CardTitle className="text-sm font-medium text-gray-600">Total Subdomains</CardTitle>
+              <Globe className="h-4 w-4 text-green-500" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{thisMonth}</div>
-            <p className="text-xs text-gray-500 mt-1">New subdomains</p>
+            <div className="text-2xl font-bold">{data.subdomains.total}</div>
+            <p className="text-xs text-gray-500 mt-1">+{data.subdomains.last30Days} last 30 days</p>
           </CardContent>
         </Card>
 
@@ -247,55 +293,54 @@ function OverviewSection({ tenants }: { tenants: Tenant[] }) {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{thisWeek}</div>
-            <p className="text-xs text-gray-500 mt-1">Recent activity</p>
+            <div className="text-2xl font-bold">{data.subdomains.last7Days}</div>
+            <p className="text-xs text-gray-500 mt-1">New subdomains</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-gray-600">System Status</CardTitle>
-              <Server className="h-4 w-4 text-green-500" />
+              <CardTitle className="text-sm font-medium text-gray-600">Teams</CardTitle>
+              <Building2 className="h-4 w-4 text-orange-500" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">Online</div>
-            <p className="text-xs text-gray-500 mt-1">All systems operational</p>
+            <div className="text-2xl font-bold">{data.teams.total}</div>
+            <p className="text-xs text-gray-500 mt-1">{data.teams.totalMembers} total members</p>
           </CardContent>
         </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
+          <CardTitle>Top Users by Subdomains</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {tenants.slice(0, 5).map((tenant) => (
-              <div
-                key={tenant.subdomain}
-                className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="text-2xl">{tenant.emoji}</div>
-                  <div>
-                    <div className="font-medium">{tenant.subdomain}</div>
-                    <div className="text-sm text-gray-500">
-                      Created {new Date(tenant.createdAt).toLocaleDateString()}
+            {data.topUsers.length === 0 ? (
+              <p className="text-sm text-gray-500">No users with subdomains yet</p>
+            ) : (
+              data.topUsers.map((user, index) => (
+                <div
+                  key={user.userId}
+                  className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-sm font-medium">
+                      {index + 1}
+                    </div>
+                    <div>
+                      <div className="font-medium">{user.displayName || user.email}</div>
+                      {user.displayName && (
+                        <div className="text-sm text-gray-500">{user.email}</div>
+                      )}
                     </div>
                   </div>
+                  <Badge variant="secondary">{user.subdomainCount} subdomains</Badge>
                 </div>
-                <a
-                  href={`${protocol}://${tenant.subdomain}.${rootDomain}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-500 hover:underline text-sm"
-                >
-                  Visit →
-                </a>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
@@ -2781,7 +2826,7 @@ export function AdminDashboard({
   const renderActiveSection = () => {
     switch (activeSection) {
       case "overview":
-        return <OverviewSection tenants={tenants} />
+        return <OverviewSection />
       case "users":
         return <UsersSection />
       case "teams":
@@ -2805,7 +2850,7 @@ export function AdminDashboard({
       case "settings":
         return <SettingsSection />
       default:
-        return <OverviewSection tenants={tenants} />
+        return <OverviewSection />
     }
   }
 
