@@ -62,6 +62,9 @@ import {
   ChevronLeft,
   ChevronRight,
   MessageSquare,
+  Sparkles,
+  Wand2,
+  Gift,
 } from "lucide-react"
 import { deleteSubdomainAction } from "@/app/actions"
 import { rootDomain, protocol } from "@/lib/utils"
@@ -87,7 +90,7 @@ type SuperAdminInfo = {
   permissions: string[]
 }
 
-type AdminSection = "overview" | "clients" | "tiers" | "subdomains" | "users" | "teams" | "analytics" | "activity" | "feedback" | "settings"
+type AdminSection = "overview" | "clients" | "tiers" | "subdomains" | "users" | "teams" | "analytics" | "activity" | "feedback" | "settings" | "ai-credits" | "overrides"
 
 function AdminSidebar({
   activeSection,
@@ -105,6 +108,8 @@ function AdminSidebar({
     { id: "clients" as AdminSection, label: "Clients", icon: UserCheck, badge: pendingClientsCount },
     { id: "tiers" as AdminSection, label: "Subscription Tiers", icon: CreditCard },
     { id: "subdomains" as AdminSection, label: "Subdomains", icon: Globe },
+    { id: "ai-credits" as AdminSection, label: "AI Credits", icon: Sparkles },
+    { id: "overrides" as AdminSection, label: "User Overrides", icon: Wand2 },
     { id: "analytics" as AdminSection, label: "Analytics", icon: BarChart3 },
     { id: "activity" as AdminSection, label: "Activity Log", icon: History },
     { id: "feedback" as AdminSection, label: "Feedback", icon: MessageSquare },
@@ -1746,6 +1751,665 @@ function SettingsSection() {
   )
 }
 
+// AI Credits types
+type CreditBalance = {
+  userId: string
+  userEmail: string | null
+  userDisplayName: string | null
+  monthlyBalance: number
+  purchasedBalance: number
+  totalBalance: number
+  lifetimeAllocated: number
+  lifetimePurchased: number
+  lifetimeUsed: number
+  lastAllocationDate: string | null
+  updatedAt: string
+}
+
+type CreditStats = {
+  totalUsers: number
+  totalMonthlyCredits: number
+  totalPurchasedCredits: number
+  totalUsedCredits: number
+  avgBalance: string
+}
+
+function AICreditsSection({ adminUserId }: { adminUserId: string }) {
+  const [balances, setBalances] = useState<CreditBalance[]>([])
+  const [stats, setStats] = useState<CreditStats | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState("")
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [selectedUser, setSelectedUser] = useState<CreditBalance | null>(null)
+  const [grantAmount, setGrantAmount] = useState("")
+  const [grantType, setGrantType] = useState<"monthly" | "purchased">("purchased")
+  const [grantReason, setGrantReason] = useState("")
+  const [granting, setGranting] = useState(false)
+
+  const fetchBalances = useCallback(async () => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: "20",
+        ...(search && { search }),
+      })
+      const res = await fetch(`/api/super-admin/ai-credits?${params}`)
+      if (res.ok) {
+        const data = await res.json()
+        setBalances(data.balances)
+        setStats(data.stats)
+        setTotalPages(data.totalPages)
+      }
+    } catch (error) {
+      console.error("Failed to fetch credit balances:", error)
+    } finally {
+      setLoading(false)
+    }
+  }, [page, search])
+
+  useEffect(() => {
+    fetchBalances()
+  }, [fetchBalances])
+
+  const handleGrantCredits = async () => {
+    if (!selectedUser || !grantAmount) return
+    setGranting(true)
+    try {
+      const res = await fetch("/api/super-admin/ai-credits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: selectedUser.userId,
+          userEmail: selectedUser.userEmail,
+          amount: parseInt(grantAmount),
+          creditType: grantType,
+          reason: grantReason || `Manual grant by admin`,
+        }),
+      })
+      if (res.ok) {
+        setGrantAmount("")
+        setGrantReason("")
+        setSelectedUser(null)
+        fetchBalances()
+      }
+    } catch (error) {
+      console.error("Failed to grant credits:", error)
+    } finally {
+      setGranting(false)
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">AI Credits Management</h2>
+          <p className="text-sm text-gray-500">Monitor and allocate AI credits across all users</p>
+        </div>
+        <Button onClick={fetchBalances} variant="outline" size="sm">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
+      </div>
+
+      {/* Stats Cards */}
+      {stats && (
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Total Users with Credits</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalUsers}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Total Monthly Credits</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{stats.totalMonthlyCredits.toLocaleString()}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Total Purchased Credits</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{stats.totalPurchasedCredits.toLocaleString()}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Total Used Credits</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-600">{stats.totalUsedCredits.toLocaleString()}</div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Search */}
+      <div className="flex gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Search by email or name..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setPage(1)
+            }}
+            className="pl-10"
+          />
+        </div>
+      </div>
+
+      {/* Balances Table */}
+      <Card>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>User</TableHead>
+              <TableHead className="text-right">Monthly</TableHead>
+              <TableHead className="text-right">Purchased</TableHead>
+              <TableHead className="text-right">Total</TableHead>
+              <TableHead className="text-right">Lifetime Used</TableHead>
+              <TableHead className="w-12"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                </TableCell>
+              </TableRow>
+            ) : balances.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-12 text-gray-500">
+                  No credit balances found
+                </TableCell>
+              </TableRow>
+            ) : (
+              balances.map((balance) => (
+                <TableRow key={balance.userId}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 bg-gradient-to-br from-purple-400 to-blue-500 rounded-full flex items-center justify-center">
+                        <Sparkles className="h-4 w-4 text-white" />
+                      </div>
+                      <div>
+                        <div className="font-medium">{balance.userDisplayName || balance.userEmail || "Unknown"}</div>
+                        <div className="text-sm text-gray-500">{balance.userEmail}</div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right font-medium text-blue-600">
+                    {balance.monthlyBalance.toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-right font-medium text-green-600">
+                    {balance.purchasedBalance.toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-right font-bold">
+                    {balance.totalBalance.toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-right text-gray-500">
+                    {balance.lifetimeUsed.toLocaleString()}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSelectedUser(balance)}
+                      title="Grant credits"
+                    >
+                      <Gift className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </Card>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-gray-500">Page {page} of {totalPages}</p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Grant Credits Dialog */}
+      <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Grant AI Credits</DialogTitle>
+            <DialogDescription>
+              Grant credits to {selectedUser?.userDisplayName || selectedUser?.userEmail}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Current Monthly</Label>
+                <p className="text-lg font-medium text-blue-600">
+                  {selectedUser?.monthlyBalance.toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <Label>Current Purchased</Label>
+                <p className="text-lg font-medium text-green-600">
+                  {selectedUser?.purchasedBalance.toLocaleString()}
+                </p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="amount">Credits to Grant</Label>
+              <Input
+                id="amount"
+                type="number"
+                placeholder="100"
+                value={grantAmount}
+                onChange={(e) => setGrantAmount(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Credit Type</Label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="creditType"
+                    checked={grantType === "purchased"}
+                    onChange={() => setGrantType("purchased")}
+                  />
+                  <span className="text-sm">Purchased (never expires)</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="creditType"
+                    checked={grantType === "monthly"}
+                    onChange={() => setGrantType("monthly")}
+                  />
+                  <span className="text-sm">Monthly (can rollover)</span>
+                </label>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reason">Reason (optional)</Label>
+              <Input
+                id="reason"
+                placeholder="Promotional grant, support resolution, etc."
+                value={grantReason}
+                onChange={(e) => setGrantReason(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedUser(null)}>
+              Cancel
+            </Button>
+            <Button onClick={handleGrantCredits} disabled={granting || !grantAmount}>
+              {granting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Gift className="h-4 w-4 mr-2" />}
+              Grant Credits
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
+// User Override types
+type UserOverrideItem = {
+  id: string
+  userId: string
+  userEmail: string | null
+  unlimitedSubdomains: boolean
+  unlimitedAiCredits: boolean
+  bypassPayment: boolean
+  subdomainLimitOverride: number | null
+  monthlyCreditAllocation: number | null
+  grantReason: string | null
+  grantedAt: string
+  expiresAt: string | null
+}
+
+function UserOverridesSection({ adminUserId }: { adminUserId: string }) {
+  const [overrides, setOverrides] = useState<UserOverrideItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [newOverride, setNewOverride] = useState({
+    userId: "",
+    userEmail: "",
+    unlimitedSubdomains: false,
+    unlimitedAiCredits: false,
+    bypassPayment: false,
+    subdomainLimitOverride: "",
+    monthlyCreditAllocation: "",
+    grantReason: "",
+    expiresInDays: "",
+  })
+  const [creating, setCreating] = useState(false)
+
+  const fetchOverrides = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch("/api/super-admin/overrides")
+      if (res.ok) {
+        const data = await res.json()
+        setOverrides(data.overrides || [])
+      }
+    } catch (error) {
+      console.error("Failed to fetch overrides:", error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchOverrides()
+  }, [fetchOverrides])
+
+  const handleCreateOverride = async () => {
+    if (!newOverride.userId) return
+    setCreating(true)
+    try {
+      const res = await fetch("/api/super-admin/overrides", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: newOverride.userId,
+          userEmail: newOverride.userEmail || undefined,
+          unlimitedSubdomains: newOverride.unlimitedSubdomains,
+          unlimitedAiCredits: newOverride.unlimitedAiCredits,
+          bypassPayment: newOverride.bypassPayment,
+          subdomainLimitOverride: newOverride.subdomainLimitOverride ? parseInt(newOverride.subdomainLimitOverride) : undefined,
+          monthlyCreditAllocation: newOverride.monthlyCreditAllocation ? parseInt(newOverride.monthlyCreditAllocation) : undefined,
+          grantReason: newOverride.grantReason || undefined,
+          expiresInDays: newOverride.expiresInDays ? parseInt(newOverride.expiresInDays) : undefined,
+        }),
+      })
+      if (res.ok) {
+        setNewOverride({
+          userId: "",
+          userEmail: "",
+          unlimitedSubdomains: false,
+          unlimitedAiCredits: false,
+          bypassPayment: false,
+          subdomainLimitOverride: "",
+          monthlyCreditAllocation: "",
+          grantReason: "",
+          expiresInDays: "",
+        })
+        setShowCreateDialog(false)
+        fetchOverrides()
+      }
+    } catch (error) {
+      console.error("Failed to create override:", error)
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  const handleRevokeOverride = async (userId: string) => {
+    if (!confirm("Are you sure you want to revoke this override?")) return
+    try {
+      const res = await fetch(`/api/super-admin/overrides?userId=${userId}`, {
+        method: "DELETE",
+      })
+      if (res.ok) {
+        fetchOverrides()
+      }
+    } catch (error) {
+      console.error("Failed to revoke override:", error)
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">User Overrides</h2>
+          <p className="text-sm text-gray-500">Grant special permissions and trial extensions to users</p>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={fetchOverrides} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+          <Button onClick={() => setShowCreateDialog(true)} size="sm">
+            <Wand2 className="h-4 w-4 mr-2" />
+            Create Override
+          </Button>
+        </div>
+      </div>
+
+      <Card>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>User</TableHead>
+              <TableHead>Permissions</TableHead>
+              <TableHead>Limits</TableHead>
+              <TableHead>Reason</TableHead>
+              <TableHead>Expires</TableHead>
+              <TableHead className="w-12"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                </TableCell>
+              </TableRow>
+            ) : overrides.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-12 text-gray-500">
+                  <Wand2 className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <p>No active overrides</p>
+                </TableCell>
+              </TableRow>
+            ) : (
+              overrides.map((override) => (
+                <TableRow key={override.id}>
+                  <TableCell>
+                    <div className="font-medium">{override.userEmail || override.userId}</div>
+                    <div className="text-xs text-gray-500 font-mono">{override.userId.slice(0, 12)}...</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {override.unlimitedSubdomains && (
+                        <Badge className="bg-blue-100 text-blue-700">∞ Subdomains</Badge>
+                      )}
+                      {override.unlimitedAiCredits && (
+                        <Badge className="bg-purple-100 text-purple-700">∞ AI Credits</Badge>
+                      )}
+                      {override.bypassPayment && (
+                        <Badge className="bg-green-100 text-green-700">Free Access</Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      {override.subdomainLimitOverride && (
+                        <div>Subdomains: {override.subdomainLimitOverride}</div>
+                      )}
+                      {override.monthlyCreditAllocation && (
+                        <div>+{override.monthlyCreditAllocation} credits/mo</div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-500 max-w-[150px] truncate">
+                    {override.grantReason || "-"}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {override.expiresAt ? (
+                      <span className={new Date(override.expiresAt) < new Date() ? "text-red-500" : ""}>
+                        {new Date(override.expiresAt).toLocaleDateString()}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">Never</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRevokeOverride(override.userId)}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </Card>
+
+      {/* Create Override Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Create User Override</DialogTitle>
+            <DialogDescription>
+              Grant special permissions or trial extensions to a user
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="userId">User ID *</Label>
+              <Input
+                id="userId"
+                placeholder="User ID from Stack Auth"
+                value={newOverride.userId}
+                onChange={(e) => setNewOverride({ ...newOverride, userId: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="userEmail">User Email (optional)</Label>
+              <Input
+                id="userEmail"
+                type="email"
+                placeholder="user@example.com"
+                value={newOverride.userEmail}
+                onChange={(e) => setNewOverride({ ...newOverride, userEmail: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-3 border rounded-lg p-3">
+              <Label>Permissions</Label>
+              <div className="space-y-2">
+                <label className="flex items-center gap-2">
+                  <Switch
+                    checked={newOverride.unlimitedSubdomains}
+                    onCheckedChange={(v) => setNewOverride({ ...newOverride, unlimitedSubdomains: v })}
+                  />
+                  <span className="text-sm">Unlimited Subdomains</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <Switch
+                    checked={newOverride.unlimitedAiCredits}
+                    onCheckedChange={(v) => setNewOverride({ ...newOverride, unlimitedAiCredits: v })}
+                  />
+                  <span className="text-sm">Unlimited AI Credits</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <Switch
+                    checked={newOverride.bypassPayment}
+                    onCheckedChange={(v) => setNewOverride({ ...newOverride, bypassPayment: v })}
+                  />
+                  <span className="text-sm">Bypass Payment (Free Trial Extension)</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="subdomainLimit">Custom Subdomain Limit</Label>
+                <Input
+                  id="subdomainLimit"
+                  type="number"
+                  placeholder="e.g., 10"
+                  value={newOverride.subdomainLimitOverride}
+                  onChange={(e) => setNewOverride({ ...newOverride, subdomainLimitOverride: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="monthlyCredits">Extra Monthly Credits</Label>
+                <Input
+                  id="monthlyCredits"
+                  type="number"
+                  placeholder="e.g., 500"
+                  value={newOverride.monthlyCreditAllocation}
+                  onChange={(e) => setNewOverride({ ...newOverride, monthlyCreditAllocation: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="expiresInDays">Expires In (days)</Label>
+              <Input
+                id="expiresInDays"
+                type="number"
+                placeholder="Leave blank for permanent"
+                value={newOverride.expiresInDays}
+                onChange={(e) => setNewOverride({ ...newOverride, expiresInDays: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="reason">Reason</Label>
+              <Input
+                id="reason"
+                placeholder="VIP customer, beta tester, support case, etc."
+                value={newOverride.grantReason}
+                onChange={(e) => setNewOverride({ ...newOverride, grantReason: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateOverride} disabled={creating || !newOverride.userId}>
+              {creating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Wand2 className="h-4 w-4 mr-2" />}
+              Create Override
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
 export function AdminDashboard({
   tenants,
   superAdmin,
@@ -1810,6 +2474,10 @@ export function AdminDashboard({
         return <TiersSection tiers={tiers} />
       case "subdomains":
         return <SubdomainsSection tenants={tenants} action={handleAction} isPending={isPending} />
+      case "ai-credits":
+        return <AICreditsSection adminUserId={adminUserId} />
+      case "overrides":
+        return <UserOverridesSection adminUserId={adminUserId} />
       case "analytics":
         return <AnalyticsSection />
       case "activity":
