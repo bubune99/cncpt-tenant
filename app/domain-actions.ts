@@ -9,6 +9,9 @@ import {
   removeDomainFromEdgeConfig,
 } from "@/lib/edge-config"
 
+// Main Vercel project ID for the platform
+const VERCEL_PROJECT_ID = process.env.VERCEL_PROJECT_ID || process.env.VERCEL_PROJECT_NAME || "cncpt-tenant"
+
 export interface DomainInfo {
   id: string
   domain: string
@@ -67,11 +70,12 @@ export async function getDomainsForSubdomain(subdomain: string): Promise<DomainI
 
     for (const domain of domains) {
       let vercelStatus: DomainStatus | undefined
+      const projectId = domain.vercel_project_id || VERCEL_PROJECT_ID
 
-      if (domain.vercel_project_id) {
+      if (projectId) {
         try {
           const vercel = getVercelAPI()
-          vercelStatus = await vercel.getDomainStatus(domain.vercel_project_id, domain.domain)
+          vercelStatus = await vercel.getDomainStatus(projectId, domain.domain)
         } catch (e) {
           console.error(`Failed to get Vercel status for ${domain.domain}:`, e)
         }
@@ -133,10 +137,19 @@ export async function addCustomDomain(
 
     // If no projectId provided, try to get from repository_connections
     if (!projectId) {
-      const repoConnection = await sql`
-        SELECT vercel_project_id FROM repository_connections WHERE subdomain = ${subdomain}
-      `
-      projectId = repoConnection[0]?.vercel_project_id
+      try {
+        const repoConnection = await sql`
+          SELECT vercel_project_id FROM repository_connections WHERE subdomain = ${subdomain}
+        `
+        projectId = repoConnection[0]?.vercel_project_id
+      } catch (e) {
+        // Table might not exist, that's ok
+      }
+    }
+
+    // Use main platform Vercel project as fallback
+    if (!projectId) {
+      projectId = VERCEL_PROJECT_ID
     }
 
     // If we have a Vercel project, add the domain there
@@ -212,10 +225,12 @@ export async function removeCustomDomain(
       SELECT vercel_project_id FROM custom_domains WHERE subdomain = ${subdomain} AND domain = ${domain}
     `
 
-    if (domainRecord[0]?.vercel_project_id) {
+    const projectId = domainRecord[0]?.vercel_project_id || VERCEL_PROJECT_ID
+
+    if (projectId) {
       const vercel = getVercelAPI()
       try {
-        await vercel.removeDomain(domainRecord[0].vercel_project_id, domain)
+        await vercel.removeDomain(projectId, domain)
       } catch (e) {
         console.error("Failed to remove domain from Vercel:", e)
         // Continue anyway to clean up database
@@ -254,12 +269,15 @@ export async function verifyDomainDns(
       SELECT vercel_project_id FROM custom_domains WHERE subdomain = ${subdomain} AND domain = ${domain}
     `
 
-    if (!domainRecord[0]?.vercel_project_id) {
-      return { success: false, error: "Vercel project not configured for this domain" }
+    // Use stored project ID or fall back to main platform project
+    let projectId = domainRecord[0]?.vercel_project_id || VERCEL_PROJECT_ID
+
+    // If still no project ID and we have Vercel token, try to use main project
+    if (!projectId) {
+      return { success: false, error: "Vercel project not configured. Please contact support." }
     }
 
     const vercel = getVercelAPI()
-    const projectId = domainRecord[0].vercel_project_id
 
     // Trigger verification
     try {

@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { AdminShell } from './AdminShell';
+import { AdminShellWrapper } from './AdminShellWrapper';
 
 // Prevent static generation - admin pages require auth context
 export const dynamic = 'force-dynamic';
@@ -22,7 +22,7 @@ export default function AdminLayout({
 }) {
   return (
     <Suspense fallback={<AdminLoadingFallback />}>
-      <AdminShell>{children}</AdminShell>
+      <AdminShellWrapper>{children}</AdminShellWrapper>
     </Suspense>
   );
 }

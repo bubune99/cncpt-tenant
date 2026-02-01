@@ -19,7 +19,6 @@ import {
   CreditCard,
   Plus,
   Server,
-  Shield,
   Eye,
   HelpCircle,
   Building2,
@@ -27,6 +26,7 @@ import {
   Moon,
   Sun,
   MessageSquare,
+  Sliders,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
@@ -68,10 +68,10 @@ export function DashboardSidebar({
       items: [
         { id: "visibility", label: "Site Visibility", icon: Eye, helpKey: "dashboard.sidebar.visibility" },
         { id: "domains", label: "Custom Domains", icon: Link, helpKey: "dashboard.sidebar.domains" },
+        { id: "cms-features", label: "CMS Features", icon: Sliders, helpKey: "dashboard.sidebar.cms-features" },
         { id: "settings", label: "Site Settings", icon: Settings, helpKey: "dashboard.sidebar.settings" },
         { id: "appearance", label: "Appearance", icon: Palette, helpKey: "dashboard.sidebar.appearance" },
         { id: "frontend", label: "Hosting", icon: Server, helpKey: "dashboard.sidebar.frontend" },
-        { id: "security", label: "Security", icon: Shield, helpKey: "dashboard.sidebar.security" },
       ],
     },
     {
