@@ -10,6 +10,7 @@
  */
 
 import { sql } from "@/lib/neon"
+import { isSuperAdmin } from "@/lib/super-admin"
 
 // ============================================
 // TYPES
@@ -105,32 +106,48 @@ export async function getUserOverride(userId: string): Promise<UserOverride | nu
 
 /**
  * Check if user has unlimited subdomains
+ * Super admins automatically have unlimited subdomains
  */
 export async function hasUnlimitedSubdomains(userId: string): Promise<boolean> {
+  // Super admins get unlimited everything
+  if (await isSuperAdmin(userId)) return true
+
   const override = await getUserOverride(userId)
   return override?.unlimitedSubdomains === true
 }
 
 /**
  * Check if user has unlimited AI credits
+ * Super admins automatically have unlimited AI credits
  */
 export async function hasUnlimitedAiCredits(userId: string): Promise<boolean> {
+  // Super admins get unlimited everything
+  if (await isSuperAdmin(userId)) return true
+
   const override = await getUserOverride(userId)
   return override?.unlimitedAiCredits === true
 }
 
 /**
  * Check if user can bypass payment
+ * Super admins automatically bypass payment
  */
 export async function canBypassPayment(userId: string): Promise<boolean> {
+  // Super admins get all privileges
+  if (await isSuperAdmin(userId)) return true
+
   const override = await getUserOverride(userId)
   return override?.bypassPayment === true
 }
 
 /**
  * Get custom subdomain limit if set
+ * Super admins automatically get unlimited (-1)
  */
 export async function getSubdomainLimitOverride(userId: string): Promise<number | null> {
+  // Super admins get unlimited
+  if (await isSuperAdmin(userId)) return -1
+
   const override = await getUserOverride(userId)
 
   if (override?.unlimitedSubdomains) return -1 // Unlimited
