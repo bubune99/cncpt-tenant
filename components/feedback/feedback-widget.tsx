@@ -99,8 +99,8 @@ export function FeedbackWidget({ position = 'bottom-right', tenantId, className 
         <Button
           size="icon"
           className={cn(
-            'fixed z-50 h-12 w-12 rounded-full shadow-lg',
-            position === 'bottom-right' ? 'bottom-6 right-6' : 'bottom-6 left-6',
+            'fixed z-40 h-12 w-12 rounded-full shadow-lg',
+            position === 'bottom-right' ? 'bottom-20 right-6' : 'bottom-20 left-6',
             className
           )}
         >

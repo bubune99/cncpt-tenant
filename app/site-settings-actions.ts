@@ -1,8 +1,14 @@
 "use server"
 
-import { getCurrentUser } from "@/lib/auth"
+import { stackServerApp } from "@/stack"
 import { sql } from "@/lib/neon"
 import { revalidatePath } from "next/cache"
+
+// Helper to get current user from Stack Auth
+async function getCurrentUser() {
+  const user = await stackServerApp.getUser()
+  return user
+}
 
 export interface SiteSettings {
   id: string
