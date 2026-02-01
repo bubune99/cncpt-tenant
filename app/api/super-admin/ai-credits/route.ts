@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { stackServerApp } from "@/lib/stack"
+import { stackServerApp } from "@/stack"
 import { sql } from "@/lib/neon"
 import { grantCredits } from "@/lib/user-overrides"
 
