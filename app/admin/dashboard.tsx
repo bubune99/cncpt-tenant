@@ -303,6 +303,21 @@ function OverviewSection({ tenants }: { tenants: Tenant[] }) {
   )
 }
 
+// Enhanced subdomain type with owner info
+type EnhancedSubdomain = {
+  id: number
+  subdomain: string
+  emoji: string
+  userId: string | null
+  owner: {
+    id: string
+    email: string | null
+    displayName: string | null
+  } | null
+  createdAt: string
+  teamShareCount: number
+}
+
 function SubdomainsSection({
   tenants,
   action,
@@ -312,59 +327,362 @@ function SubdomainsSection({
   action: (formData: FormData) => void
   isPending: boolean
 }) {
+  const [subdomains, setSubdomains] = useState<EnhancedSubdomain[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState("")
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
+  const [selectedSubdomain, setSelectedSubdomain] = useState<EnhancedSubdomain | null>(null)
+  const [newOwnerEmail, setNewOwnerEmail] = useState("")
+  const [newOwnerId, setNewOwnerId] = useState("")
+  const [reassigning, setReassigning] = useState(false)
+  const [searchingUser, setSearchingUser] = useState(false)
+  const [foundUser, setFoundUser] = useState<{ id: string; email: string; displayName: string | null } | null>(null)
+
+  const fetchSubdomains = useCallback(async () => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: "20",
+        ...(search && { search }),
+      })
+      const res = await fetch(`/api/super-admin/subdomains?${params}`)
+      if (res.ok) {
+        const data = await res.json()
+        setSubdomains(data.subdomains)
+        setTotalPages(data.totalPages)
+        setTotal(data.total)
+      }
+    } catch (error) {
+      console.error("Failed to fetch subdomains:", error)
+    } finally {
+      setLoading(false)
+    }
+  }, [page, search])
+
+  useEffect(() => {
+    fetchSubdomains()
+  }, [fetchSubdomains])
+
+  const searchUserByEmail = async () => {
+    if (!newOwnerEmail) return
+    setSearchingUser(true)
+    setFoundUser(null)
+    try {
+      const res = await fetch(`/api/super-admin/users?search=${encodeURIComponent(newOwnerEmail)}&limit=1`)
+      if (res.ok) {
+        const data = await res.json()
+        if (data.users && data.users.length > 0) {
+          const user = data.users[0]
+          setFoundUser({
+            id: user.id,
+            email: user.email,
+            displayName: user.displayName,
+          })
+          setNewOwnerId(user.id)
+        } else {
+          setFoundUser(null)
+          setNewOwnerId("")
+        }
+      }
+    } catch (error) {
+      console.error("Failed to search user:", error)
+    } finally {
+      setSearchingUser(false)
+    }
+  }
+
+  const handleReassign = async () => {
+    if (!selectedSubdomain || !newOwnerId) return
+    setReassigning(true)
+    try {
+      const res = await fetch("/api/super-admin/subdomains", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subdomainId: selectedSubdomain.id,
+          newUserId: newOwnerId,
+          newUserEmail: foundUser?.email || newOwnerEmail,
+        }),
+      })
+      if (res.ok) {
+        setSelectedSubdomain(null)
+        setNewOwnerEmail("")
+        setNewOwnerId("")
+        setFoundUser(null)
+        fetchSubdomains()
+      }
+    } catch (error) {
+      console.error("Failed to reassign subdomain:", error)
+    } finally {
+      setReassigning(false)
+    }
+  }
+
+  const handleRemoveOwner = async () => {
+    if (!selectedSubdomain) return
+    setReassigning(true)
+    try {
+      const res = await fetch("/api/super-admin/subdomains", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subdomainId: selectedSubdomain.id,
+          newUserId: null,
+        }),
+      })
+      if (res.ok) {
+        setSelectedSubdomain(null)
+        fetchSubdomains()
+      }
+    } catch (error) {
+      console.error("Failed to remove owner:", error)
+    } finally {
+      setReassigning(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-900">Subdomain Management</h2>
-        <div className="text-sm text-gray-500">{tenants.length} total subdomains</div>
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">Subdomain Management</h2>
+          <p className="text-sm text-gray-500">{total} total subdomains - Assign ownership to users</p>
+        </div>
+        <Button onClick={fetchSubdomains} variant="outline" size="sm">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
       </div>
 
-      {tenants.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Globe className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500">No subdomains have been created yet.</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {tenants.map((tenant) => (
-            <Card key={tenant.subdomain}>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">{tenant.subdomain}</CardTitle>
-                  <form action={action}>
-                    <input type="hidden" name="subdomain" value={tenant.subdomain} />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      type="submit"
-                      disabled={isPending}
-                      className="text-gray-500 hover:text-red-600 hover:bg-red-50"
-                    >
-                      {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                    </Button>
-                  </form>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="text-3xl">{tenant.emoji}</div>
-                  <div className="text-sm text-gray-500">{new Date(tenant.createdAt).toLocaleDateString()}</div>
-                </div>
-                <a
-                  href={`${protocol}://${tenant.subdomain}.${rootDomain}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center text-blue-500 hover:underline text-sm"
-                >
-                  Visit subdomain →
-                </a>
-              </CardContent>
-            </Card>
-          ))}
+      {/* Search */}
+      <div className="flex gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Search subdomains..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setPage(1)
+            }}
+            className="pl-10"
+          />
+        </div>
+      </div>
+
+      {/* Subdomains Table */}
+      <Card>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Subdomain</TableHead>
+              <TableHead>Owner</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead>Teams</TableHead>
+              <TableHead className="w-24">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                </TableCell>
+              </TableRow>
+            ) : subdomains.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-12 text-gray-500">
+                  <Globe className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <p>No subdomains found</p>
+                </TableCell>
+              </TableRow>
+            ) : (
+              subdomains.map((sub) => (
+                <TableRow key={sub.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{sub.emoji}</span>
+                      <div>
+                        <div className="font-medium">{sub.subdomain}</div>
+                        <a
+                          href={`${protocol}://${sub.subdomain}.${rootDomain}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-blue-500 hover:underline"
+                        >
+                          Visit →
+                        </a>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {sub.owner ? (
+                      <div>
+                        <div className="font-medium text-sm">{sub.owner.displayName || sub.owner.email}</div>
+                        {sub.owner.displayName && (
+                          <div className="text-xs text-gray-500">{sub.owner.email}</div>
+                        )}
+                      </div>
+                    ) : (
+                      <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50">
+                        No Owner
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-500">
+                    {new Date(sub.createdAt).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    {sub.teamShareCount > 0 ? (
+                      <Badge variant="secondary">{sub.teamShareCount} teams</Badge>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedSubdomain(sub)
+                          setNewOwnerEmail("")
+                          setNewOwnerId("")
+                          setFoundUser(null)
+                        }}
+                        className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                      >
+                        <ArrowRight className="h-4 w-4 mr-1" />
+                        Assign
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </Card>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-gray-500">Page {page} of {totalPages}</p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
+
+      {/* Reassign Dialog */}
+      <Dialog open={!!selectedSubdomain} onOpenChange={() => setSelectedSubdomain(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Subdomain Ownership</DialogTitle>
+            <DialogDescription>
+              Transfer <strong>{selectedSubdomain?.subdomain}</strong> to a different user
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {selectedSubdomain?.owner && (
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <Label className="text-xs text-gray-500">Current Owner</Label>
+                <div className="font-medium">
+                  {selectedSubdomain.owner.displayName || selectedSubdomain.owner.email}
+                </div>
+                {selectedSubdomain.owner.displayName && (
+                  <div className="text-sm text-gray-500">{selectedSubdomain.owner.email}</div>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="newOwnerEmail">New Owner Email</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="newOwnerEmail"
+                  type="email"
+                  placeholder="user@example.com"
+                  value={newOwnerEmail}
+                  onChange={(e) => {
+                    setNewOwnerEmail(e.target.value)
+                    setFoundUser(null)
+                    setNewOwnerId("")
+                  }}
+                />
+                <Button
+                  variant="outline"
+                  onClick={searchUserByEmail}
+                  disabled={searchingUser || !newOwnerEmail}
+                >
+                  {searchingUser ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+
+            {foundUser && (
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <UserCheck className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-800">User Found</span>
+                </div>
+                <div className="mt-1 text-sm">
+                  {foundUser.displayName || foundUser.email}
+                  {foundUser.displayName && (
+                    <span className="text-gray-500"> ({foundUser.email})</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {newOwnerEmail && !foundUser && !searchingUser && (
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-yellow-600" />
+                  <span className="text-sm text-yellow-800">Click search to find the user</span>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="flex gap-2">
+            {selectedSubdomain?.owner && (
+              <Button
+                variant="outline"
+                onClick={handleRemoveOwner}
+                disabled={reassigning}
+                className="text-orange-600 hover:text-orange-700 hover:bg-orange-50 mr-auto"
+              >
+                Remove Owner
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setSelectedSubdomain(null)}>
+              Cancel
+            </Button>
+            <Button onClick={handleReassign} disabled={reassigning || !foundUser}>
+              {reassigning ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ArrowRight className="h-4 w-4 mr-2" />}
+              Assign to User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
