@@ -27,6 +27,7 @@ import {
   Sun,
   MessageSquare,
   Sliders,
+  Coins,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
@@ -95,6 +96,7 @@ export function DashboardSidebar({
     {
       title: "Account",
       items: [
+        { id: "credits", label: "AI Credits", icon: Coins, helpKey: "dashboard.sidebar.credits" },
         { id: "billing", label: "Billing", icon: CreditCard, helpKey: "dashboard.sidebar.billing" },
       ],
     },

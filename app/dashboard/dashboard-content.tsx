@@ -6,6 +6,7 @@ import { SiteSettings } from "./site-settings"
 import { SiteVisibility } from "./site-visibility"
 import { Analytics } from "./analytics"
 import { Billing } from "./billing"
+import { Credits } from "./credits"
 import { FrontendDeployment } from "./frontend-deployment"
 import { McpIntegration } from "./mcp-integration"
 import { CMSFeatures } from "./cms-features"
@@ -88,6 +89,8 @@ export function DashboardContent({
         return <FrontendDeployment selectedSubdomain={selectedSubdomain} />
       case "analytics":
         return <Analytics subdomains={subdomains} selectedSubdomain={selectedSubdomain} />
+      case "credits":
+        return <Credits />
       case "billing":
         return <Billing />
       case "mcp":
