@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//mnt/c/Users/bubun/CascadeProjects/be-your-best-clothing/**)",
+      "Bash(tree:*)",
+      "Bash(git init:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote add:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)",
+      "Read(//mnt/c/Users/bubun/Pictures/Screenshots/**)",
+      "mcp__agent-com__register_agent"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "enabledMcpjsonServers": [
+    "postgresql"
+  ],
+  "enableAllProjectMcpServers": true
+}

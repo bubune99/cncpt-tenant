@@ -1,9 +1,123 @@
 import { NextRequest, NextResponse } from "next/server"
 import { stackServerApp } from "@/stack"
 import { sql } from "@/lib/neon"
-import { isSuperAdmin } from "@/lib/super-admin"
+import { isSuperAdmin, logPlatformActivity } from "@/lib/super-admin"
 
 export const dynamic = 'force-dynamic'
+
+// Validation helpers
+const SUBDOMAIN_REGEX = /^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/
+const RESERVED_SUBDOMAINS = [
+  "www", "app", "api", "admin", "dashboard", "mail", "email",
+  "ftp", "blog", "shop", "store", "help", "support", "docs",
+  "dev", "staging", "test", "demo",
+]
+
+function isValidSubdomain(subdomain: string): { valid: boolean; error?: string } {
+  if (!subdomain) return { valid: false, error: "Subdomain is required" }
+  if (subdomain.length < 3) return { valid: false, error: "Subdomain must be at least 3 characters" }
+  if (subdomain.length > 63) return { valid: false, error: "Subdomain must be at most 63 characters" }
+  if (!SUBDOMAIN_REGEX.test(subdomain)) {
+    return { valid: false, error: "Subdomain can only contain lowercase letters, numbers, and hyphens" }
+  }
+  if (RESERVED_SUBDOMAINS.includes(subdomain)) return { valid: false, error: "This subdomain is reserved" }
+  return { valid: true }
+}
+
+// POST: Create a new subdomain (super admin only, bypasses plan limits)
+export async function POST(request: NextRequest) {
+  try {
+    const currentUser = await stackServerApp.getUser()
+    if (!currentUser || !(await isSuperAdmin(currentUser.id))) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
+    }
+
+    const body = await request.json()
+    const { subdomain, emoji, siteName, ownerId, ownerEmail } = body
+
+    // Validate subdomain
+    const sanitizedSubdomain = subdomain?.toLowerCase().trim()
+    const validation = isValidSubdomain(sanitizedSubdomain)
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 })
+    }
+
+    // Check if subdomain is already taken
+    const existing = await sql`
+      SELECT id FROM subdomains WHERE subdomain = ${sanitizedSubdomain}
+    `
+    if (existing.length > 0) {
+      return NextResponse.json({ error: "This subdomain is already taken" }, { status: 409 })
+    }
+
+    // Create the subdomain
+    const result = await sql`
+      INSERT INTO subdomains (
+        user_id,
+        subdomain,
+        emoji,
+        site_name,
+        onboarding_completed,
+        onboarding_completed_at
+      )
+      VALUES (
+        ${ownerId || null},
+        ${sanitizedSubdomain},
+        ${emoji || "🌐"},
+        ${siteName || sanitizedSubdomain},
+        true,
+        NOW()
+      )
+      RETURNING id, subdomain, emoji, site_name, user_id, created_at
+    `
+
+    const newSubdomain = result[0]
+
+    // Create tenant_settings record
+    try {
+      await sql`
+        INSERT INTO tenant_settings (subdomain, site_name, site_description)
+        VALUES (${sanitizedSubdomain}, ${siteName || sanitizedSubdomain}, 'Welcome to my site')
+        ON CONFLICT (subdomain) DO NOTHING
+      `
+    } catch (settingsError) {
+      console.warn("[super-admin/subdomains] Failed to create tenant_settings:", settingsError)
+    }
+
+    // Log the activity
+    await logPlatformActivity(
+      "subdomain.create",
+      {
+        subdomain: sanitizedSubdomain,
+        siteName: siteName || sanitizedSubdomain,
+        ownerId,
+        ownerEmail,
+        createdBy: "super_admin",
+      },
+      {
+        actorId: currentUser.id,
+        actorEmail: currentUser.primaryEmail || undefined,
+        targetType: "subdomain",
+        targetId: sanitizedSubdomain,
+      }
+    )
+
+    return NextResponse.json({
+      success: true,
+      subdomain: {
+        id: newSubdomain.id,
+        subdomain: newSubdomain.subdomain,
+        emoji: newSubdomain.emoji,
+        siteName: newSubdomain.site_name,
+        userId: newSubdomain.user_id,
+        createdAt: newSubdomain.created_at,
+      },
+    })
+  } catch (error) {
+    console.error("[super-admin/subdomains] POST Error:", error)
+    return NextResponse.json({ error: "Failed to create subdomain" }, { status: 500 })
+  }
+}
 
 // PATCH: Update subdomain (reassign to different user)
 export async function PATCH(request: NextRequest) {

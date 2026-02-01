@@ -39,53 +39,67 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get("search") || ""
     const offset = (page - 1) * limit
 
-    // Get all credit balances with user info
-    let balances
+    // Get ALL users from the database, LEFT JOIN with credit balances
+    // This ensures all users appear, even those without credit balances
+    let usersWithBalances
     let total
 
     if (search) {
-      balances = await sql`
+      usersWithBalances = await sql`
         SELECT
-          acb.*,
+          u.id as user_id,
           u.email as user_email,
-          u.display_name as user_display_name
-        FROM ai_credit_balances acb
-        LEFT JOIN users u ON acb.user_id = u.id
-        WHERE acb.user_id IS NOT NULL
-          AND (u.email ILIKE ${`%${search}%`} OR u.display_name ILIKE ${`%${search}%`})
-        ORDER BY acb.updated_at DESC
+          u.display_name as user_display_name,
+          u.created_at as user_created_at,
+          COALESCE(acb.monthly_balance, 0) as monthly_balance,
+          COALESCE(acb.purchased_balance, 0) as purchased_balance,
+          COALESCE(acb.lifetime_allocated, 0) as lifetime_allocated,
+          COALESCE(acb.lifetime_purchased, 0) as lifetime_purchased,
+          COALESCE(acb.lifetime_used, 0) as lifetime_used,
+          acb.last_allocation_date,
+          COALESCE(acb.updated_at, u.created_at) as updated_at,
+          CASE WHEN acb.user_id IS NOT NULL THEN true ELSE false END as has_credits
+        FROM users u
+        LEFT JOIN ai_credit_balances acb ON u.id = acb.user_id
+        WHERE u.email ILIKE ${`%${search}%`} OR u.display_name ILIKE ${`%${search}%`}
+        ORDER BY COALESCE(acb.updated_at, u.created_at) DESC
         LIMIT ${limit} OFFSET ${offset}
       `
       const countResult = await sql`
-        SELECT COUNT(*) as total
-        FROM ai_credit_balances acb
-        LEFT JOIN users u ON acb.user_id = u.id
-        WHERE acb.user_id IS NOT NULL
-          AND (u.email ILIKE ${`%${search}%`} OR u.display_name ILIKE ${`%${search}%`})
+        SELECT COUNT(*) as total FROM users
+        WHERE email ILIKE ${`%${search}%`} OR display_name ILIKE ${`%${search}%`}
       `
       total = parseInt(countResult[0]?.total as string || "0")
     } else {
-      balances = await sql`
+      usersWithBalances = await sql`
         SELECT
-          acb.*,
+          u.id as user_id,
           u.email as user_email,
-          u.display_name as user_display_name
-        FROM ai_credit_balances acb
-        LEFT JOIN users u ON acb.user_id = u.id
-        WHERE acb.user_id IS NOT NULL
-        ORDER BY acb.updated_at DESC
+          u.display_name as user_display_name,
+          u.created_at as user_created_at,
+          COALESCE(acb.monthly_balance, 0) as monthly_balance,
+          COALESCE(acb.purchased_balance, 0) as purchased_balance,
+          COALESCE(acb.lifetime_allocated, 0) as lifetime_allocated,
+          COALESCE(acb.lifetime_purchased, 0) as lifetime_purchased,
+          COALESCE(acb.lifetime_used, 0) as lifetime_used,
+          acb.last_allocation_date,
+          COALESCE(acb.updated_at, u.created_at) as updated_at,
+          CASE WHEN acb.user_id IS NOT NULL THEN true ELSE false END as has_credits
+        FROM users u
+        LEFT JOIN ai_credit_balances acb ON u.id = acb.user_id
+        ORDER BY COALESCE(acb.updated_at, u.created_at) DESC
         LIMIT ${limit} OFFSET ${offset}
       `
       const countResult = await sql`
-        SELECT COUNT(*) as total FROM ai_credit_balances WHERE user_id IS NOT NULL
+        SELECT COUNT(*) as total FROM users
       `
       total = parseInt(countResult[0]?.total as string || "0")
     }
 
-    // Get summary stats
+    // Get summary stats from credit balances
     const stats = await sql`
       SELECT
-        COUNT(*) as total_users,
+        COUNT(*) as users_with_credits,
         SUM(monthly_balance) as total_monthly,
         SUM(purchased_balance) as total_purchased,
         SUM(lifetime_used) as total_used,
@@ -94,11 +108,16 @@ export async function GET(req: NextRequest) {
       WHERE user_id IS NOT NULL
     `
 
+    // Get total user count
+    const totalUsersResult = await sql`SELECT COUNT(*) as total FROM users`
+    const totalPlatformUsers = parseInt(totalUsersResult[0]?.total as string || "0")
+
     return NextResponse.json({
-      balances: balances.map(row => ({
+      balances: usersWithBalances.map(row => ({
         userId: row.user_id,
         userEmail: row.user_email,
         userDisplayName: row.user_display_name,
+        userCreatedAt: row.user_created_at,
         monthlyBalance: row.monthly_balance || 0,
         purchasedBalance: row.purchased_balance || 0,
         totalBalance: (row.monthly_balance || 0) + (row.purchased_balance || 0),
@@ -107,9 +126,11 @@ export async function GET(req: NextRequest) {
         lifetimeUsed: row.lifetime_used || 0,
         lastAllocationDate: row.last_allocation_date,
         updatedAt: row.updated_at,
+        hasCredits: row.has_credits,
       })),
       stats: {
-        totalUsers: parseInt(stats[0]?.total_users as string || "0"),
+        totalUsers: totalPlatformUsers,
+        usersWithCredits: parseInt(stats[0]?.users_with_credits as string || "0"),
         totalMonthlyCredits: parseInt(stats[0]?.total_monthly as string || "0"),
         totalPurchasedCredits: parseInt(stats[0]?.total_purchased as string || "0"),
         totalUsedCredits: parseInt(stats[0]?.total_used as string || "0"),

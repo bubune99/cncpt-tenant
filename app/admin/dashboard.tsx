@@ -65,6 +65,8 @@ import {
   Sparkles,
   Wand2,
   Gift,
+  Pencil,
+  Plus,
 } from "lucide-react"
 import { deleteSubdomainAction } from "@/app/actions"
 import { rootDomain, protocol } from "@/lib/utils"
@@ -385,6 +387,17 @@ function SubdomainsSection({
   const [searchingUser, setSearchingUser] = useState(false)
   const [foundUser, setFoundUser] = useState<{ id: string; email: string; displayName: string | null } | null>(null)
 
+  // Create subdomain state
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [newSubdomain, setNewSubdomain] = useState("")
+  const [newEmoji, setNewEmoji] = useState("🌐")
+  const [newSiteName, setNewSiteName] = useState("")
+  const [assignOwnerEmail, setAssignOwnerEmail] = useState("")
+  const [assignOwnerId, setAssignOwnerId] = useState("")
+  const [assignFoundUser, setAssignFoundUser] = useState<{ id: string; email: string; displayName: string | null } | null>(null)
+  const [creating, setCreating] = useState(false)
+  const [searchingAssignUser, setSearchingAssignUser] = useState(false)
+
   const fetchSubdomains = useCallback(async () => {
     setLoading(true)
     try {
@@ -489,17 +502,87 @@ function SubdomainsSection({
     }
   }
 
+  const searchAssignUserByEmail = async () => {
+    if (!assignOwnerEmail) return
+    setSearchingAssignUser(true)
+    setAssignFoundUser(null)
+    try {
+      const res = await fetch(`/api/super-admin/users?search=${encodeURIComponent(assignOwnerEmail)}&limit=1`)
+      if (res.ok) {
+        const data = await res.json()
+        if (data.users && data.users.length > 0) {
+          const user = data.users[0]
+          setAssignFoundUser({
+            id: user.id,
+            email: user.email,
+            displayName: user.displayName,
+          })
+          setAssignOwnerId(user.id)
+        } else {
+          setAssignFoundUser(null)
+          setAssignOwnerId("")
+        }
+      }
+    } catch (error) {
+      console.error("Failed to search user:", error)
+    } finally {
+      setSearchingAssignUser(false)
+    }
+  }
+
+  const handleCreateSubdomain = async () => {
+    if (!newSubdomain) return
+    setCreating(true)
+    try {
+      const res = await fetch("/api/super-admin/subdomains", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subdomain: newSubdomain.toLowerCase().trim(),
+          emoji: newEmoji || "🌐",
+          siteName: newSiteName || newSubdomain,
+          ownerId: assignOwnerId || null,
+          ownerEmail: assignFoundUser?.email || assignOwnerEmail || null,
+        }),
+      })
+      if (res.ok) {
+        setShowCreateDialog(false)
+        setNewSubdomain("")
+        setNewEmoji("🌐")
+        setNewSiteName("")
+        setAssignOwnerEmail("")
+        setAssignOwnerId("")
+        setAssignFoundUser(null)
+        fetchSubdomains()
+      } else {
+        const data = await res.json()
+        alert(data.error || "Failed to create subdomain")
+      }
+    } catch (error) {
+      console.error("Failed to create subdomain:", error)
+      alert("Failed to create subdomain")
+    } finally {
+      setCreating(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-xl font-semibold text-gray-900">Subdomain Management</h2>
-          <p className="text-sm text-gray-500">{total} total subdomains - Assign ownership to users</p>
+          <p className="text-sm text-gray-500">{total} total subdomains - Create and assign ownership to users</p>
         </div>
-        <Button onClick={fetchSubdomains} variant="outline" size="sm">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setShowCreateDialog(true)} size="sm">
+            <Globe className="h-4 w-4 mr-2" />
+            Create Subdomain
+          </Button>
+          <Button onClick={fetchSubdomains} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
@@ -724,6 +807,105 @@ function SubdomainsSection({
             <Button onClick={handleReassign} disabled={reassigning || !foundUser}>
               {reassigning ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ArrowRight className="h-4 w-4 mr-2" />}
               Assign to User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Subdomain Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Subdomain</DialogTitle>
+            <DialogDescription>
+              Create a new subdomain and optionally assign it to a user
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="newSubdomain">Subdomain *</Label>
+              <div className="flex gap-2 items-center">
+                <Input
+                  id="newSubdomain"
+                  placeholder="my-site"
+                  value={newSubdomain}
+                  onChange={(e) => setNewSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                  className="flex-1"
+                />
+                <span className="text-sm text-gray-500">.{rootDomain}</span>
+              </div>
+              <p className="text-xs text-gray-500">Lowercase letters, numbers, and hyphens only</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="newEmoji">Emoji</Label>
+                <Input
+                  id="newEmoji"
+                  value={newEmoji}
+                  onChange={(e) => setNewEmoji(e.target.value)}
+                  placeholder="🌐"
+                  className="text-center text-2xl"
+                  maxLength={4}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="newSiteName">Site Name</Label>
+                <Input
+                  id="newSiteName"
+                  value={newSiteName}
+                  onChange={(e) => setNewSiteName(e.target.value)}
+                  placeholder={newSubdomain || "My Site"}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="assignOwnerEmail">Assign to User (optional)</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="assignOwnerEmail"
+                  type="email"
+                  placeholder="user@example.com"
+                  value={assignOwnerEmail}
+                  onChange={(e) => {
+                    setAssignOwnerEmail(e.target.value)
+                    setAssignFoundUser(null)
+                    setAssignOwnerId("")
+                  }}
+                />
+                <Button
+                  variant="outline"
+                  onClick={searchAssignUserByEmail}
+                  disabled={searchingAssignUser || !assignOwnerEmail}
+                >
+                  {searchingAssignUser ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+
+            {assignFoundUser && (
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <UserCheck className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-800">User Found</span>
+                </div>
+                <div className="mt-1 text-sm">
+                  {assignFoundUser.displayName || assignFoundUser.email}
+                  {assignFoundUser.displayName && (
+                    <span className="text-gray-500"> ({assignFoundUser.email})</span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateSubdomain} disabled={creating || !newSubdomain}>
+              {creating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Globe className="h-4 w-4 mr-2" />}
+              Create Subdomain
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1121,6 +1303,14 @@ function TeamsSection() {
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
 
+  // Create/Edit dialog state
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [selectedTeam, setSelectedTeam] = useState<PlatformTeam | null>(null)
+  const [formData, setFormData] = useState({ name: "", description: "" })
+  const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState<string | null>(null)
+
   const fetchTeams = useCallback(async () => {
     setLoading(true)
     try {
@@ -1147,6 +1337,96 @@ function TeamsSection() {
     fetchTeams()
   }, [fetchTeams])
 
+  const handleCreateTeam = async () => {
+    if (!formData.name.trim()) return
+    setSaving(true)
+    try {
+      const res = await fetch("/api/super-admin/teams", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          description: formData.description.trim() || undefined,
+        }),
+      })
+      if (res.ok) {
+        setShowCreateDialog(false)
+        setFormData({ name: "", description: "" })
+        fetchTeams()
+      } else {
+        const data = await res.json()
+        alert(data.error || "Failed to create team")
+      }
+    } catch (error) {
+      console.error("Failed to create team:", error)
+      alert("Failed to create team")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleEditTeam = async () => {
+    if (!selectedTeam || !formData.name.trim()) return
+    setSaving(true)
+    try {
+      const res = await fetch("/api/super-admin/teams", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          teamId: selectedTeam.id,
+          name: formData.name.trim(),
+          description: formData.description.trim(),
+        }),
+      })
+      if (res.ok) {
+        setShowEditDialog(false)
+        setSelectedTeam(null)
+        setFormData({ name: "", description: "" })
+        fetchTeams()
+      } else {
+        const data = await res.json()
+        alert(data.error || "Failed to update team")
+      }
+    } catch (error) {
+      console.error("Failed to update team:", error)
+      alert("Failed to update team")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDeleteTeam = async (team: PlatformTeam) => {
+    if (!confirm(`Are you sure you want to delete team "${team.name}"? This action cannot be undone.`)) {
+      return
+    }
+    setDeleting(team.id)
+    try {
+      const res = await fetch(`/api/super-admin/teams?teamId=${team.id}`, {
+        method: "DELETE",
+      })
+      if (res.ok) {
+        fetchTeams()
+      } else {
+        const data = await res.json()
+        alert(data.error || "Failed to delete team")
+      }
+    } catch (error) {
+      console.error("Failed to delete team:", error)
+      alert("Failed to delete team")
+    } finally {
+      setDeleting(null)
+    }
+  }
+
+  const openEditDialog = (team: PlatformTeam) => {
+    setSelectedTeam(team)
+    setFormData({
+      name: team.name,
+      description: team.description || "",
+    })
+    setShowEditDialog(true)
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -1154,10 +1434,22 @@ function TeamsSection() {
           <h2 className="text-xl font-semibold text-gray-900">Team Management</h2>
           <p className="text-sm text-gray-500">{total} total teams</p>
         </div>
-        <Button onClick={fetchTeams} variant="outline" size="sm">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={fetchTeams} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+          <Button
+            onClick={() => {
+              setFormData({ name: "", description: "" })
+              setShowCreateDialog(true)
+            }}
+            size="sm"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Create Team
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-4">
@@ -1227,17 +1519,24 @@ function TeamsSection() {
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" disabled={deleting === team.id}>
+                          {deleting === team.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <MoreHorizontal className="h-4 w-4" />
+                          )}
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Details
+                        <DropdownMenuItem onClick={() => openEditDialog(team)}>
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Edit Team
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-600">
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() => handleDeleteTeam(team)}
+                        >
                           <Trash2 className="h-4 w-4 mr-2" />
                           Delete Team
                         </DropdownMenuItem>
@@ -1276,6 +1575,105 @@ function TeamsSection() {
           </div>
         </div>
       )}
+
+      {/* Create Team Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Team</DialogTitle>
+            <DialogDescription>
+              Create a new team for your clients. Teams can share subdomains and collaborate.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="team-name">Team Name *</Label>
+              <Input
+                id="team-name"
+                placeholder="Enter team name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="team-description">Description</Label>
+              <Input
+                id="team-description"
+                placeholder="Optional description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateTeam} disabled={saving || !formData.name.trim()}>
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                "Create Team"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Team Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Team</DialogTitle>
+            <DialogDescription>
+              Update the team name and description.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-team-name">Team Name *</Label>
+              <Input
+                id="edit-team-name"
+                placeholder="Enter team name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-team-description">Description</Label>
+              <Input
+                id="edit-team-description"
+                placeholder="Optional description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
+            </div>
+            {selectedTeam && (
+              <div className="text-sm text-gray-500">
+                Slug: <code className="bg-gray-100 px-1 rounded">{selectedTeam.slug}</code>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleEditTeam} disabled={saving || !formData.name.trim()}>
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
@@ -2119,6 +2517,7 @@ type CreditBalance = {
   userId: string
   userEmail: string | null
   userDisplayName: string | null
+  userCreatedAt?: string
   monthlyBalance: number
   purchasedBalance: number
   totalBalance: number
@@ -2127,10 +2526,12 @@ type CreditBalance = {
   lifetimeUsed: number
   lastAllocationDate: string | null
   updatedAt: string
+  hasCredits?: boolean
 }
 
 type CreditStats = {
   totalUsers: number
+  usersWithCredits?: number
   totalMonthlyCredits: number
   totalPurchasedCredits: number
   totalUsedCredits: number
@@ -2219,13 +2620,16 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-5">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Total Users with Credits</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">Total Platform Users</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalUsers}</div>
+              {stats.usersWithCredits !== undefined && (
+                <p className="text-xs text-gray-500 mt-1">{stats.usersWithCredits} with credits</p>
+              )}
             </CardContent>
           </Card>
           <Card>
@@ -2277,6 +2681,7 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
           <TableHeader>
             <TableRow>
               <TableHead>User</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead className="text-right">Monthly</TableHead>
               <TableHead className="text-right">Purchased</TableHead>
               <TableHead className="text-right">Total</TableHead>
@@ -2287,29 +2692,44 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-12">
+                <TableCell colSpan={7} className="text-center py-12">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                 </TableCell>
               </TableRow>
             ) : balances.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-12 text-gray-500">
-                  No credit balances found
+                <TableCell colSpan={7} className="text-center py-12 text-gray-500">
+                  No users found
                 </TableCell>
               </TableRow>
             ) : (
               balances.map((balance) => (
-                <TableRow key={balance.userId}>
+                <TableRow key={balance.userId} className={balance.hasCredits === false ? "bg-gray-50/50" : ""}>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 bg-gradient-to-br from-purple-400 to-blue-500 rounded-full flex items-center justify-center">
-                        <Sparkles className="h-4 w-4 text-white" />
+                      <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                        balance.hasCredits !== false
+                          ? "bg-gradient-to-br from-purple-400 to-blue-500"
+                          : "bg-gray-200"
+                      }`}>
+                        <Sparkles className={`h-4 w-4 ${balance.hasCredits !== false ? "text-white" : "text-gray-400"}`} />
                       </div>
                       <div>
                         <div className="font-medium">{balance.userDisplayName || balance.userEmail || "Unknown"}</div>
                         <div className="text-sm text-gray-500">{balance.userEmail}</div>
                       </div>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    {balance.hasCredits !== false ? (
+                      <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">
+                        Has Credits
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-gray-500">
+                        No Credits
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell className="text-right font-medium text-blue-600">
                     {balance.monthlyBalance.toLocaleString()}

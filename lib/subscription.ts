@@ -6,6 +6,7 @@
 import { sql } from "@/lib/neon"
 import { stripe, getSubscription } from "@/lib/stripe"
 import { getUserOverride, getSubdomainLimitOverride } from "@/lib/user-overrides"
+import { isSuperAdmin } from "@/lib/super-admin"
 import type { SubscriptionTier, TierLimits } from "@/types/admin"
 
 // ============================================
@@ -188,6 +189,17 @@ export async function countUserSubdomains(userId: string): Promise<number> {
 export async function getSubdomainUsage(userId: string): Promise<SubdomainUsage> {
   const subscription = await getUserSubscription(userId)
   const used = await countUserSubdomains(userId)
+
+  // Super admins always get unlimited subdomains
+  const superAdmin = await isSuperAdmin(userId)
+  if (superAdmin) {
+    return {
+      used,
+      limit: -1, // Unlimited
+      remaining: 999,
+      canCreate: true,
+    }
+  }
 
   // Check for admin override first
   const overrideLimit = await getSubdomainLimitOverride(userId)

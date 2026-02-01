@@ -11,6 +11,8 @@ import {
   BarChart,
   Bot,
   Settings,
+  Server,
+  Rocket,
   Check,
   Loader2,
   AlertCircle,
@@ -56,12 +58,14 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '..
 type EnvCategory =
   | 'database'
   | 'auth'
+  | 'redis'
   | 'payments'
   | 'shipping'
   | 'storage'
   | 'email'
   | 'analytics'
   | 'ai'
+  | 'deployment'
   | 'general';
 
 interface DisplayEnvVar {
@@ -91,24 +95,28 @@ interface EnvHealth {
 const CATEGORY_ICONS: Record<EnvCategory, React.ElementType> = {
   database: Database,
   auth: Shield,
+  redis: Server,
   payments: CreditCard,
   shipping: Truck,
   storage: HardDrive,
   email: Mail,
   analytics: BarChart,
   ai: Bot,
+  deployment: Rocket,
   general: Settings,
 };
 
 const CATEGORY_LABELS: Record<EnvCategory, string> = {
   database: 'Database',
   auth: 'Authentication',
+  redis: 'Redis',
   payments: 'Payments',
   shipping: 'Shipping',
   storage: 'Storage',
   email: 'Email',
   analytics: 'Analytics',
   ai: 'AI',
+  deployment: 'Deployment',
   general: 'General',
 };
 
