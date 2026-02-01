@@ -18,7 +18,7 @@ export default function HomePage() {
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center">
               <Globe className="h-8 w-8 text-primary" />
-              <span className="ml-2 text-xl font-bold text-foreground">SubdomainPro</span>
+              <span className="ml-2 text-xl font-bold text-foreground">CNCPT Web</span>
             </div>
 
             <nav className="hidden md:flex items-center space-x-8">
@@ -181,7 +181,7 @@ export default function HomePage() {
             <div>
               <div className="flex items-center mb-4">
                 <Globe className="h-6 w-6 text-primary" />
-                <span className="ml-2 text-lg font-bold">SubdomainPro</span>
+                <span className="ml-2 text-lg font-bold">CNCPT Web</span>
               </div>
               <p className="text-muted-foreground">
                 The easiest way to create and manage professional subdomains for your business.
@@ -253,7 +253,7 @@ export default function HomePage() {
           </div>
 
           <div className="border-t border-border mt-8 pt-8 text-center text-muted-foreground">
-            <p>&copy; 2024 SubdomainPro. All rights reserved.</p>
+            <p>&copy; 2026 CNCPT Web. All rights reserved.</p>
           </div>
         </div>
       </footer>
