@@ -35,9 +35,23 @@ const db = prisma as PrismaWithMediaFolder
 // LIST FOLDERS
 // =============================================================================
 
-export async function listFolders(parentId?: string | null): Promise<FolderWithRelations[]> {
+export async function listFolders(
+  parentId?: string | null,
+  tenantId?: number
+): Promise<FolderWithRelations[]> {
+  const where: any = {}
+
+  // Multi-tenant filter - CRITICAL for data isolation
+  if (tenantId !== undefined) {
+    where.tenantId = tenantId
+  }
+
+  if (parentId !== undefined) {
+    where.parentId = parentId
+  }
+
   const folders = await db.mediaFolder.findMany({
-    where: parentId === undefined ? {} : { parentId },
+    where,
     include: {
       parent: true,
       _count: {
@@ -57,8 +71,16 @@ export async function listFolders(parentId?: string | null): Promise<FolderWithR
 // GET FOLDER TREE
 // =============================================================================
 
-export async function getFolderTree(): Promise<FolderTree[]> {
+export async function getFolderTree(tenantId?: number): Promise<FolderTree[]> {
+  const where: any = {}
+
+  // Multi-tenant filter
+  if (tenantId !== undefined) {
+    where.tenantId = tenantId
+  }
+
   const folders = await db.mediaFolder.findMany({
+    where,
     include: {
       _count: {
         select: {

@@ -382,6 +382,28 @@ export {
 } from './entity-tools';
 
 /**
+ * Task Completion Tool (Termination Pattern)
+ *
+ * This tool has NO execute function, which signals the AI SDK to stop the agent loop.
+ * The agent MUST call this tool when it has completed all requested steps.
+ * This prevents the agent from stopping after just one tool call.
+ *
+ * @see https://ai-sdk.dev/docs/agents/loop-control#forced-tool-calling-pattern
+ */
+export const taskComplete = tool({
+  description: `Signal that you have completed ALL steps of the user's request.
+You MUST call this tool when finished with multi-step tasks.
+DO NOT call this until you have actually executed all the tools needed to complete the request.
+If the user asked you to list AND update something, you must do BOTH before calling this.`,
+  inputSchema: z.object({
+    summary: z.string().describe('Brief summary of all actions taken and their results'),
+    stepsCompleted: z.number().describe('Total number of tool calls/steps you executed'),
+    toolsUsed: z.array(z.string()).describe('Names of all tools you called to complete this task'),
+  }),
+  // NO execute function - this stops the agent loop per AI SDK documentation
+});
+
+/**
  * All admin tools combined
  */
 export const adminTools = {
@@ -390,4 +412,11 @@ export const adminTools = {
   searchOrders,
   getDashboardStats,
   getRecentActivity,
+};
+
+/**
+ * Workflow control tools for multi-step task completion
+ */
+export const workflowTools = {
+  taskComplete,
 };

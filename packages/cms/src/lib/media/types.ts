@@ -22,6 +22,7 @@ export interface MediaBase {
   mimeType: string
   size: number
   url: string
+  tenantId: number | null // Multi-tenant scoping
   width: number | null
   height: number | null
   title: string | null
@@ -45,6 +46,7 @@ export interface MediaFolderBase {
   description: string | null
   color: string | null
   icon: string | null
+  tenantId: number | null // Multi-tenant scoping
   parentId: string | null
   path: string
   depth: number
@@ -83,6 +85,7 @@ export type SortField = 'name' | 'createdAt' | 'size' | 'type'
 export type SortOrder = 'asc' | 'desc'
 
 export interface MediaFilters {
+  tenantId?: number // Multi-tenant filter
   folderId?: string | null
   type?: MediaType
   search?: string
@@ -118,6 +121,7 @@ export interface MediaCreateInput {
   mimeType: string
   size: number
   url: string
+  tenantId?: number // Multi-tenant scoping
   width?: number
   height?: number
   title?: string
@@ -166,6 +170,7 @@ export interface FolderCreateInput {
   description?: string
   color?: string
   icon?: string
+  tenantId?: number // Multi-tenant scoping
   parentId?: string | null
   isPublic?: boolean
 }

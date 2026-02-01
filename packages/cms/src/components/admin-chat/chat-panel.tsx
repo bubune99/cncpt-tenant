@@ -112,8 +112,8 @@ export function ChatPanel() {
     }
   }, [showDemoMenu]);
 
-  // Demo prompts for testing multi-step tool execution
-  // These prompts are designed to be explicit about tools and expected behavior
+  // Demo prompts for testing multi-step tool execution with taskComplete
+  // These prompts are designed to test the termination pattern
   const demoPrompts = [
     {
       label: 'Demo: Help Workflow',
@@ -122,40 +122,45 @@ export function ChatPanel() {
 STEP 1: Call \`listHelpKeys\` with category "sidebar" to find available help keys.
 STEP 2: Pick one key from the results and call \`getHelpContent\` to read its current content.
 STEP 3: Call \`updateHelpContent\` to update that key with improved content.
+STEP 4: Call \`taskComplete\` with summary, stepsCompleted=3, and toolsUsed array.
 
-You MUST complete all 3 steps and report what you did at each step. Do not stop after step 1.`,
+You MUST complete all 4 steps. Do NOT stop until you call taskComplete.`,
     },
     {
       label: 'Demo: Create Help',
       prompt: `Create new help content using these exact parameters:
 
-Call \`updateHelpContent\` with:
+STEP 1: Call \`updateHelpContent\` with:
 - elementKey: "sidebar.dashboard"
 - title: "Dashboard Overview"
 - summary: "Your central hub for store metrics and quick actions"
-- details: "The dashboard shows real-time sales data, recent orders, and inventory alerts. Use the quick action cards to navigate to common tasks."
+- details: "The dashboard shows real-time sales data, recent orders, and inventory alerts."
 
-Report the result including the contentId if successful.`,
+STEP 2: Call \`taskComplete\` with summary of what was created, stepsCompleted=1, toolsUsed=['updateHelpContent'].
+
+You MUST call taskComplete when done.`,
     },
     {
       label: 'Demo: Help Audit',
       prompt: `Audit help coverage for the products section:
 
 STEP 1: Call \`listHelpKeys\` with category "products" to see all registered keys.
-STEP 2: Report how many have default vs custom content (check hasDefaultContent and hasCustomContent).
-STEP 3: If any keys are missing content entirely, call \`batchGenerateHelp\` to create help for up to 3 missing keys.
+STEP 2: Report coverage stats (hasDefaultContent vs hasCustomContent).
+STEP 3: If missing keys exist, call \`batchGenerateHelp\` for up to 3 keys.
+STEP 4: Call \`taskComplete\` with audit summary, stepsCompleted count, and toolsUsed array.
 
-Complete all steps and provide a coverage summary.`,
+You MUST call taskComplete to signal completion.`,
     },
     {
       label: 'Demo: Entity Stats',
       prompt: `Demonstrate entity tools by gathering statistics:
 
-STEP 1: Call \`getEntityStats\` for entityType "products" to get product statistics.
-STEP 2: Call \`searchEntities\` with entityType "products" and query "" (empty) to list some products.
-STEP 3: Pick one product from the search results and call \`getEntityDetails\` with its ID.
+STEP 1: Call \`getEntityStats\` for entityType "products".
+STEP 2: Call \`searchEntities\` with entityType "products" and query "" (empty).
+STEP 3: Pick one product and call \`getEntityDetails\` with its ID.
+STEP 4: Call \`taskComplete\` with summary of findings, stepsCompleted=3, and toolsUsed array.
 
-Report the stats from step 1, the count from step 2, and the details from step 3.`,
+Do NOT stop until you call taskComplete.`,
     },
   ];
 

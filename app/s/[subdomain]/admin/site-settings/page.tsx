@@ -11,10 +11,11 @@
  * - SEO defaults
  * - Contact information
  * - Analytics tracking codes
+ * - Maintenance mode
  */
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -26,6 +27,8 @@ import {
   Settings2,
   Globe,
   BarChart,
+  Construction,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/cms/ui/button';
 import { Input } from '@/components/cms/ui/input';
@@ -66,6 +69,8 @@ interface SiteSettings {
 
 export default function SiteSettingsPage() {
   const router = useRouter();
+  const params = useParams();
+  const subdomain = params.subdomain as string;
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -85,16 +90,20 @@ export default function SiteSettingsPage() {
     googleAnalyticsId: '',
     facebookPixelId: '',
     showAnnouncementBar: false,
+    maintenanceMode: false,
+    maintenanceMessage: '',
   });
 
   useEffect(() => {
-    fetchSettings();
-  }, []);
+    if (subdomain) {
+      fetchSettings();
+    }
+  }, [subdomain]);
 
   const fetchSettings = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/admin/site-settings');
+      const response = await fetch(`/api/admin/site-settings?subdomain=${encodeURIComponent(subdomain)}`);
       if (response.ok) {
         const data = await response.json();
         setSettings(data);
@@ -112,6 +121,8 @@ export default function SiteSettingsPage() {
           googleAnalyticsId: data.googleAnalyticsId || '',
           facebookPixelId: data.facebookPixelId || '',
           showAnnouncementBar: data.showAnnouncementBar || false,
+          maintenanceMode: data.maintenanceMode || false,
+          maintenanceMessage: data.maintenanceMessage || '',
         });
       }
     } catch (error) {
@@ -125,10 +136,10 @@ export default function SiteSettingsPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const response = await fetch('/api/admin/site-settings', {
+      const response = await fetch(`/api/admin/site-settings?subdomain=${encodeURIComponent(subdomain)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, subdomain }),
       });
 
       if (response.ok) {
@@ -305,6 +316,78 @@ export default function SiteSettingsPage() {
                       Edit Announcement
                     </Link>
                   </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Maintenance Mode */}
+          <Card className={formData.maintenanceMode ? 'border-amber-500' : ''}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Construction className="h-5 w-5" />
+                Maintenance Mode
+                {formData.maintenanceMode && (
+                  <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-normal">
+                    Active
+                  </span>
+                )}
+              </CardTitle>
+              <CardDescription>
+                Temporarily hide your site from visitors while you make updates
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="maintenanceMode">
+                      Enable Maintenance Mode
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Visitors will see a maintenance page instead of your site
+                    </p>
+                  </div>
+                  <Switch
+                    id="maintenanceMode"
+                    checked={formData.maintenanceMode}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, maintenanceMode: checked })
+                    }
+                  />
+                </div>
+                {formData.maintenanceMode && (
+                  <>
+                    <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                      <div className="flex gap-2">
+                        <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                        <div className="text-sm text-amber-800 dark:text-amber-200">
+                          <p className="font-medium">Site is in maintenance mode</p>
+                          <p className="text-xs opacity-80">
+                            Only you (the site owner) can view the live site. Add
+                            ?bypass=maintenance to any URL to preview as a visitor.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="maintenanceMessage">
+                        Custom Message (Optional)
+                      </Label>
+                      <Textarea
+                        id="maintenanceMessage"
+                        value={formData.maintenanceMessage}
+                        onChange={(e) =>
+                          setFormData({ ...formData, maintenanceMessage: e.target.value })
+                        }
+                        placeholder="We're making some improvements to bring you a better experience. Please check back soon!"
+                        rows={3}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        This message will be shown on the maintenance page
+                      </p>
+                    </div>
+                  </>
                 )}
               </div>
             </CardContent>

@@ -3870,12 +3870,16 @@ model AdminUser {
 
 // Subdomains table (main app managed)
 model Subdomain {
-  id        Int      @id @default(autoincrement())
-  subdomain String   @unique
-  emoji     String
-  userId    String?  @map("user_id")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @default(now()) @map("updated_at")
+  id              Int      @id @default(autoincrement())
+  subdomain       String   @unique
+  emoji           String
+  userId          String?  @map("user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @map("updated_at")
+
+  // Site status controls
+  maintenanceMode Boolean  @default(false) @map("maintenance_mode")
+  maintenanceMsg  String?  @map("maintenance_message") @db.Text
 
   // Relations to tenant tables (legacy)
   tenantPosts    TenantPost[]
@@ -4131,4 +4135,49 @@ model PlatformActivityLog {
   @@index([targetType, targetId], map: "idx_activity_log_target")
   @@index([createdAt(sort: Desc)], map: "idx_activity_log_created")
   @@map("platform_activity_log")
+}
+
+// Feedback type enum
+enum FeedbackType {
+  BUG
+  FEATURE
+  GENERAL
+  OTHER
+}
+
+// Feedback status enum
+enum FeedbackStatus {
+  NEW
+  REVIEWED
+  IN_PROGRESS
+  RESOLVED
+  ARCHIVED
+}
+
+// User feedback table (main app managed)
+model Feedback {
+  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String         @map("user_id") @db.VarChar(255)
+  userEmail   String         @map("user_email") @db.VarChar(255)
+  userName    String?        @map("user_name") @db.VarChar(255)
+  tenantId    Int?           @map("tenant_id")
+  type        FeedbackType   @default(GENERAL)
+  subject     String?        @db.VarChar(255)
+  message     String         @db.Text
+  pageUrl     String?        @map("page_url") @db.VarChar(500)
+  userAgent   String?        @map("user_agent") @db.Text
+  status      FeedbackStatus @default(NEW)
+  priority    Int            @default(0)
+  adminNotes  String?        @map("admin_notes") @db.Text
+  resolvedBy  String?        @map("resolved_by") @db.VarChar(255)
+  resolvedAt  DateTime?      @map("resolved_at")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @default(now()) @updatedAt @map("updated_at")
+
+  @@index([userId], map: "idx_feedback_user")
+  @@index([tenantId], map: "idx_feedback_tenant")
+  @@index([status], map: "idx_feedback_status")
+  @@index([type], map: "idx_feedback_type")
+  @@index([createdAt(sort: Desc)], map: "idx_feedback_created")
+  @@map("feedback")
 }

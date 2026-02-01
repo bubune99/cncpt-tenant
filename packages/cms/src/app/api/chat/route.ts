@@ -23,7 +23,7 @@ import { isAiAvailable } from '../../../lib/ai';
 import { getAiSettings } from '../../../lib/settings';
 import { myProvider } from '../../../lib/ai/providers';
 import { ChatSDKError } from '../../../lib/ai/errors';
-import { adminTools, walkthroughTools, helpManagementTools, entityTools } from '../../../lib/ai/tools';
+import { adminTools, walkthroughTools, helpManagementTools, entityTools, workflowTools } from '../../../lib/ai/tools';
 import { getMcpTools } from '../../../lib/mcp';
 import { getAllVmcpTools } from '../../../lib/vmcp';
 import type { ChatContext } from '../../../lib/ai/chat-store';
@@ -178,11 +178,20 @@ ${capabilities}
 
 You MUST use multiple tools in sequence to complete tasks. NEVER stop after a single tool call when the task requires multiple steps.
 
+**MANDATORY: taskComplete Tool**
+When you finish a multi-step task, you MUST call \`taskComplete\` with:
+- summary: What you accomplished
+- stepsCompleted: Number of tools you called
+- toolsUsed: Array of tool names you used
+
+**DO NOT generate a final text response until you call taskComplete.**
+The taskComplete tool signals that you are done. Without it, you haven't finished.
+
 **Key behaviors:**
 - After each tool call, check if more steps are needed to complete the user's request
-- Always report your progress after completing each step
+- Keep calling tools until the task is FULLY complete
 - If a user's request implies multiple steps (list → read → update), execute ALL steps
-- Provide a summary at the end showing what was accomplished
+- Only call \`taskComplete\` after ALL steps are done - never after just one tool
 
 ### Help Content Workflows
 
@@ -192,14 +201,14 @@ When users ask to "demonstrate", "show how to", or "update help content":
 Step 1: listHelpKeys({ category: "..." }) → Get available keys
 Step 2: getHelpContent({ elementKey: "..." }) → Read current content
 Step 3: updateHelpContent({ elementKey, title, summary, details }) → Update it
-Step 4: Report all actions taken
+Step 4: taskComplete({ summary, stepsCompleted: 3, toolsUsed: [...] }) → REQUIRED
 \`\`\`
 
 **Pattern B - Direct Creation:**
 When users say "create help for X" with specific content:
 \`\`\`
 Step 1: updateHelpContent({ elementKey, title, summary, details }) → Create/update
-Step 2: Confirm the contentId and success
+Step 2: taskComplete({ summary, stepsCompleted: 1, toolsUsed: ['updateHelpContent'] }) → REQUIRED
 \`\`\`
 
 **Pattern C - Coverage Audit:**
@@ -207,7 +216,7 @@ When users ask about "help coverage" or "missing help":
 \`\`\`
 Step 1: listHelpKeys({ category, missingOnly: true }) → Find gaps
 Step 2: batchGenerateHelp({ entries: [...] }) → Fill gaps (max 20 at a time)
-Step 3: Report coverage improvement
+Step 3: taskComplete({ summary, stepsCompleted: 2, toolsUsed: [...] }) → REQUIRED
 \`\`\`
 
 ### Entity Workflows
@@ -215,21 +224,20 @@ Step 3: Report coverage improvement
 **Pattern A - Stats Overview:**
 \`\`\`
 Step 1: getEntityStats({ entityType }) → Get aggregate stats
-Step 2: Report insights from the data
+Step 2: taskComplete({ summary: "Retrieved stats...", stepsCompleted: 1, toolsUsed: ['getEntityStats'] })
 \`\`\`
 
 **Pattern B - Search and Detail:**
 \`\`\`
 Step 1: searchEntities({ entityType, query }) → Find matching records
 Step 2: getEntityDetails({ entityType, entityId }) → Get full details for one
-Step 3: Provide analysis or recommendations
+Step 3: taskComplete({ summary, stepsCompleted: 2, toolsUsed: ['searchEntities', 'getEntityDetails'] })
 \`\`\`
 
 **Pattern C - Context-Aware (when user is viewing something):**
 \`\`\`
 Step 1: getEntityDetails({ entityType, entityId }) → Fetch what they're viewing
-Step 2: Answer their question using the data
-Step 3: Suggest relevant actions
+Step 2: taskComplete({ summary: "Analyzed entity...", stepsCompleted: 1, toolsUsed: ['getEntityDetails'] })
 \`\`\`
 
 ## Dynamic Tool Creation
@@ -539,8 +547,8 @@ export async function POST(request: Request) {
     // Apply conversation compaction if needed
     modelMessages = await compactConversation(modelMessages, model);
 
-    // Get all tools: admin + walkthrough + help management + entity + VMCP + MCP
-    let allTools = { ...adminTools, ...walkthroughTools, ...helpManagementTools, ...entityTools };
+    // Get all tools: admin + walkthrough + help management + entity + workflow + VMCP + MCP
+    let allTools = { ...adminTools, ...walkthroughTools, ...helpManagementTools, ...entityTools, ...workflowTools };
     let vmcpToolCount = 0;
     let mcpToolCount = 0;
 

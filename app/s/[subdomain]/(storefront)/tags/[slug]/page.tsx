@@ -6,15 +6,16 @@ import { Calendar, Clock, ArrowLeft, Tag as TagIcon } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/cms/ui/card';
 import { Badge } from '@/components/cms/ui/badge';
 import type { Metadata } from "next";
+import { getTenantContext } from '../../../lib/tenant-context';
 
 interface PageProps {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ subdomain: string; slug: string }>;
 }
 
-async function getTag(slug: string) {
+async function getTag(slug: string, tenantId: number) {
   // Use findFirst due to compound unique constraint (tenantId, slug)
   const tag = await prisma.blogTag.findFirst({
-    where: { slug, tenantId: null },
+    where: { slug, tenantId },
     include: {
       posts: {
         where: {
@@ -55,8 +56,12 @@ async function getTag(slug: string) {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const tag = await getTag(slug);
+  const { subdomain, slug } = await params;
+  const tenantContext = await getTenantContext(subdomain);
+  if (!tenantContext) {
+    return { title: 'Site Not Found' };
+  }
+  const tag = await getTag(slug, tenantContext.id);
 
   if (!tag) {
     return {
@@ -71,8 +76,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function TagPage({ params }: PageProps) {
-  const { slug } = await params;
-  const tag = await getTag(slug);
+  const { subdomain, slug } = await params;
+  const tenantContext = await getTenantContext(subdomain);
+
+  if (!tenantContext) {
+    notFound();
+  }
+
+  const tag = await getTag(slug, tenantContext.id);
 
   if (!tag) {
     notFound();

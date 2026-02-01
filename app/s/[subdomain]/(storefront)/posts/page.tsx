@@ -4,6 +4,8 @@ import { formatDistanceToNow } from "date-fns";
 import { Calendar, Clock, User, Tag as TagIcon } from "lucide-react";
 import { Badge } from '@/components/cms/ui/badge';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/cms/ui/card';
+import { getTenantContext } from '../../lib/tenant-context';
+import { notFound } from 'next/navigation';
 
 export const metadata = {
   title: "Blog",
@@ -12,11 +14,12 @@ export const metadata = {
 
 export const revalidate = 60; // Revalidate every minute
 
-async function getPosts() {
+async function getPosts(tenantId: number) {
   const posts = await prisma.blogPost.findMany({
     where: {
       status: "PUBLISHED",
       visibility: "PUBLIC",
+      tenantId: tenantId,
     },
     orderBy: {
       publishedAt: "desc",
@@ -49,12 +52,13 @@ async function getPosts() {
   return posts;
 }
 
-async function getFeaturedPost() {
+async function getFeaturedPost(tenantId: number) {
   const featured = await prisma.blogPost.findFirst({
     where: {
       status: "PUBLISHED",
       visibility: "PUBLIC",
       featured: true,
+      tenantId: tenantId,
     },
     orderBy: {
       publishedAt: "desc",
@@ -79,8 +83,11 @@ async function getFeaturedPost() {
   return featured;
 }
 
-async function getCategories() {
+async function getCategories(tenantId: number) {
   const categories = await prisma.blogCategory.findMany({
+    where: {
+      tenantId: tenantId,
+    },
     include: {
       _count: {
         select: { posts: true },
@@ -95,11 +102,22 @@ async function getCategories() {
   return categories;
 }
 
-export default async function BlogPage() {
+interface BlogPageProps {
+  params: Promise<{ subdomain: string }>;
+}
+
+export default async function BlogPage({ params }: BlogPageProps) {
+  const { subdomain } = await params;
+  const tenantContext = await getTenantContext(subdomain);
+
+  if (!tenantContext) {
+    notFound();
+  }
+
   const [posts, featuredPost, categories] = await Promise.all([
-    getPosts(),
-    getFeaturedPost(),
-    getCategories(),
+    getPosts(tenantContext.id),
+    getFeaturedPost(tenantContext.id),
+    getCategories(tenantContext.id),
   ]);
 
   // Filter out the featured post from the list

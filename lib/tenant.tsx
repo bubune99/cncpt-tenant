@@ -5,8 +5,10 @@ export interface TenantData {
   id: number
   subdomain: string
   emoji: string
-  user_id: string | null
-  created_at: Date
+  userId: string | null
+  createdAt: Date
+  maintenanceMode: boolean
+  maintenanceMsg: string | null
 }
 
 export interface TenantSettings {
@@ -46,6 +48,8 @@ export async function getTenantData(subdomain: string): Promise<TenantData | nul
       emoji: true,
       userId: true,
       createdAt: true,
+      maintenanceMode: true,
+      maintenanceMsg: true,
     },
   })
 
@@ -55,8 +59,10 @@ export async function getTenantData(subdomain: string): Promise<TenantData | nul
     id: result.id,
     subdomain: result.subdomain,
     emoji: result.emoji,
-    user_id: result.userId,
-    created_at: result.createdAt,
+    userId: result.userId,
+    createdAt: result.createdAt,
+    maintenanceMode: result.maintenanceMode,
+    maintenanceMsg: result.maintenanceMsg,
   }
 }
 
@@ -244,6 +250,15 @@ export async function requireTenantOwnership(subdomain: string, userId: string):
       subdomain,
       userId,
     },
+    select: {
+      id: true,
+      subdomain: true,
+      emoji: true,
+      userId: true,
+      createdAt: true,
+      maintenanceMode: true,
+      maintenanceMsg: true,
+    },
   })
 
   if (!result) {
@@ -254,7 +269,9 @@ export async function requireTenantOwnership(subdomain: string, userId: string):
     id: result.id,
     subdomain: result.subdomain,
     emoji: result.emoji,
-    user_id: result.userId,
-    created_at: result.createdAt,
+    userId: result.userId,
+    createdAt: result.createdAt,
+    maintenanceMode: result.maintenanceMode,
+    maintenanceMsg: result.maintenanceMsg,
   }
 }

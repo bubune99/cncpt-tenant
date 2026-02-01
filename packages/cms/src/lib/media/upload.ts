@@ -73,10 +73,21 @@ export async function checkStorageConfig(): Promise<StorageConfigStatus> {
 // GENERATE PRESIGNED URL
 // =============================================================================
 
+/**
+ * Generate a presigned URL for uploading media
+ * @param filename - Original filename
+ * @param mimeType - MIME type of the file
+ * @param size - File size in bytes
+ * @param options - Optional parameters including subdomain for multi-tenant isolation
+ */
 export async function generatePresignedUrl(
   filename: string,
   mimeType: string,
-  size: number
+  size: number,
+  options?: {
+    subdomain?: string
+    category?: 'media' | 'products' | 'blog' | 'pages' | 'avatars'
+  }
 ): Promise<PresignedUrlResponse> {
   const settings = await getStorageSettings()
   const provider = (settings.provider || 'local').toUpperCase() as StorageProvider
@@ -89,9 +100,20 @@ export async function generatePresignedUrl(
     }
   }
 
-  // Generate unique key
+  // Generate unique key with tenant isolation
   const ext = filename.split('.').pop() || ''
-  const key = `uploads/${new Date().toISOString().slice(0, 10)}/${uuidv4()}.${ext}`
+  const uniqueId = uuidv4()
+  const category = options?.category || 'media'
+
+  let key: string
+  if (options?.subdomain) {
+    // Multi-tenant path: tenants/{subdomain}/{category}/{uuid}.{ext}
+    const sanitizedSubdomain = options.subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '')
+    key = `tenants/${sanitizedSubdomain}/${category}/${uniqueId}.${ext}`
+  } else {
+    // Legacy path for non-tenant uploads
+    key = `uploads/${new Date().toISOString().slice(0, 10)}/${uniqueId}.${ext}`
+  }
 
   switch (provider) {
     case 'S3':

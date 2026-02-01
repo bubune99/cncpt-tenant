@@ -3,6 +3,8 @@ import Link from "next/link";
 import { FolderOpen } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/cms/ui/card';
 import { Badge } from '@/components/cms/ui/badge';
+import { getTenantContext } from '../../lib/tenant-context';
+import { notFound } from 'next/navigation';
 
 export const metadata = {
   title: "Categories",
@@ -11,8 +13,11 @@ export const metadata = {
 
 export const revalidate = 60;
 
-async function getCategories() {
+async function getCategories(tenantId: number) {
   const categories = await prisma.blogCategory.findMany({
+    where: {
+      tenantId: tenantId,
+    },
     include: {
       _count: {
         select: { posts: true },
@@ -29,8 +34,19 @@ async function getCategories() {
   return categories;
 }
 
-export default async function CategoriesPage() {
-  const categories = await getCategories();
+interface CategoriesPageProps {
+  params: Promise<{ subdomain: string }>;
+}
+
+export default async function CategoriesPage({ params }: CategoriesPageProps) {
+  const { subdomain } = await params;
+  const tenantContext = await getTenantContext(subdomain);
+
+  if (!tenantContext) {
+    notFound();
+  }
+
+  const categories = await getCategories(tenantContext.id);
 
   return (
     <div className="container mx-auto px-4 py-12">

@@ -873,9 +873,12 @@ Click to edit posts.`,
     details: `Central media management:
 
 - Upload images, videos, and documents
-- Organize with folders
-- Search by filename
-- View file usage across the site`,
+- Organize with folders and tags
+- Search by filename or metadata
+- View file usage across the site
+- Bulk actions for efficiency
+
+Your media is stored securely in the cloud and isolated to your site.`,
   },
 
   'admin.media.manager': {
@@ -883,12 +886,183 @@ Click to edit posts.`,
     summary: 'Browse and manage your media files.',
     details: `Upload and organize media:
 
-- Drag and drop to upload
-- Create folders for organization
-- Preview files before use
-- Copy URLs for sharing
+- **Drag and drop** to upload multiple files
+- **Create folders** for logical organization
+- **Add tags** for cross-folder categorization
+- **Preview files** before inserting into content
+- **Copy URLs** for external sharing
 
-Supported: Images, videos, PDFs, documents.`,
+**Supported formats:**
+- Images: JPG, PNG, GIF, WebP, SVG
+- Videos: MP4, WebM, MOV
+- Documents: PDF, Word, Excel, PowerPoint
+- Audio: MP3, WAV
+
+**Storage:** Files are securely stored in Cloudflare R2 with CDN delivery.`,
+  },
+
+  'admin.media.folders': {
+    title: 'Media Folders',
+    summary: 'Organize files into folders.',
+    details: `Create a folder structure that works for you:
+
+**Creating Folders:**
+- Click "New Folder" button
+- Name your folder descriptively
+- Nest folders for hierarchy (e.g., Products > Phones > Cases)
+
+**Moving Files:**
+- Drag files between folders
+- Use bulk actions to move multiple files
+- Files can only be in one folder at a time
+
+**Folder Tips:**
+- Use folders for broad categories (Products, Blog, Branding)
+- Use tags for cross-cutting attributes (Featured, Sale, Hero)
+- Folder names should be clear and consistent`,
+  },
+
+  'admin.media.upload': {
+    title: 'Uploading Files',
+    summary: 'Add new media to your library.',
+    details: `Multiple ways to upload:
+
+**Drag & Drop:**
+1. Drag files from your computer
+2. Drop onto the upload zone
+3. Wait for processing to complete
+
+**Click to Browse:**
+1. Click the upload area
+2. Select files from your computer
+3. Multiple files can be selected at once
+
+**Upload Limits:**
+- Maximum file size: 50MB
+- Supported formats vary by type
+- Very large files may take longer
+
+**After Upload:**
+- Files appear in the current folder
+- Add titles and alt text for accessibility
+- Tag files for easy discovery later`,
+  },
+
+  'admin.media.tags': {
+    title: 'Media Tags',
+    summary: 'Categorize files across folders.',
+    details: `Tags help organize media beyond folders:
+
+**Why Use Tags?**
+- Find files that share attributes
+- Cross-folder organization
+- Quick filtering in media picker
+
+**Example Tags:**
+- "hero" - Hero images for pages
+- "featured" - Featured content
+- "product" - Product photography
+- "team" - Team member photos
+- "logo" - Brand assets
+
+**Managing Tags:**
+- Add tags when uploading or editing
+- Remove tags from file details
+- Search by tag in the media browser`,
+  },
+
+  'admin.media.preview': {
+    title: 'Media Preview',
+    summary: 'View file details and metadata.',
+    details: `Click any file to see its details:
+
+**Information Shown:**
+- Full preview (images/videos)
+- File name and original name
+- Dimensions (for images)
+- File size
+- Upload date and uploader
+- Current folder location
+
+**Editable Fields:**
+- **Title:** Display name for the file
+- **Alt Text:** Accessibility description (important for SEO)
+- **Caption:** Optional description
+- **Tags:** Categorization
+
+**Usage Tracking:**
+See where this file is used (products, blog posts, pages).
+This prevents accidentally deleting files that are in use.`,
+  },
+
+  'admin.media.bulk-actions': {
+    title: 'Bulk Actions',
+    summary: 'Work with multiple files at once.',
+    details: `Save time with bulk operations:
+
+**Selecting Files:**
+- Click checkboxes to select individual files
+- Use "Select All" for entire folder
+- Shift+click for range selection
+
+**Available Actions:**
+- **Move:** Move files to another folder
+- **Delete:** Remove selected files
+- **Tag:** Add tags to all selected
+- **Download:** Download as ZIP (coming soon)
+
+**Tips:**
+- Deleted files go to trash first (can be restored)
+- Bulk move is faster than dragging one by one
+- Confirm before bulk delete - it affects multiple files`,
+  },
+
+  'admin.media.search': {
+    title: 'Search Media',
+    summary: 'Find files quickly.',
+    details: `Search across your entire media library:
+
+**What's Searchable:**
+- File names
+- Titles
+- Alt text
+- Captions
+- Tags
+
+**Search Tips:**
+- Search is case-insensitive
+- Partial matches work (e.g., "prod" finds "product")
+- Clear search to return to folder view
+
+**Filtering:**
+- Combine search with folder selection
+- Filter by file type (images, videos, documents)
+- Sort by date, name, or size`,
+  },
+
+  'admin.media.storage': {
+    title: 'Storage & Delivery',
+    summary: 'How your media is stored and served.',
+    details: `Your media is securely managed:
+
+**Cloud Storage:**
+- Files stored in Cloudflare R2 (S3-compatible)
+- Automatic CDN delivery worldwide
+- Fast loading from edge locations
+
+**Tenant Isolation:**
+- Your files are completely separate from other sites
+- Storage paths include your site identifier
+- No access to other tenants' media
+
+**URL Structure:**
+Files are served from your CDN URL with paths like:
+\`https://cdn.example.com/tenants/yoursite/media/image.jpg\`
+
+**Best Practices:**
+- Optimize images before upload (compress, resize)
+- Use descriptive file names
+- Add alt text for accessibility and SEO`,
   },
 
   // Analytics
@@ -905,18 +1079,89 @@ Supported: Images, videos, PDFs, documents.`,
 Use date range selector to analyze different periods.`,
   },
 
-  // Media
+  // Media Library Extended
   'admin.media.library': {
     title: 'Media Library',
     summary: 'All uploaded images and files.',
-    details: `Manage your media:
+    details: `Your complete media management hub:
 
-- **Upload:** Drag and drop files
-- **Organize:** Create folders
-- **Search:** Find by filename
-- **Usage:** See where files are used
+**Quick Start:**
+1. Upload files via drag & drop or click
+2. Organize into folders
+3. Add tags for easy finding
+4. Insert into pages, products, or blog posts
 
-Supported: Images, videos, PDFs, documents.`,
+**Organization Tips:**
+- Create folders by content type (Products, Blog, Team)
+- Use tags for attributes (Featured, Sale, Hero)
+- Add alt text for accessibility
+
+**File Limits:**
+- Max size: 50MB per file
+- Images: JPG, PNG, GIF, WebP, SVG
+- Videos: MP4, WebM, MOV
+- Documents: PDF, Word, Excel, PowerPoint`,
+  },
+
+  'admin.media.getting-started': {
+    title: 'Getting Started with Media',
+    summary: 'Learn the basics of media management.',
+    details: `**Welcome to the Media Library!**
+
+This is where all your images, videos, and documents live.
+
+**Step 1: Upload Your First File**
+- Click the upload area or drag files
+- Wait for the upload to complete
+- Your file appears in the grid
+
+**Step 2: Organize with Folders**
+- Click "New Folder" to create structure
+- Drag files into folders
+- Example: Products / Blog / Branding
+
+**Step 3: Add Metadata**
+- Click a file to open details
+- Add a title and alt text
+- Add tags for easy discovery
+
+**Step 4: Use in Content**
+- When editing pages or posts, click "Add Media"
+- Browse or search your library
+- Select files to insert
+
+**Need Help?**
+- Press Ctrl+Q for help mode
+- Click any highlighted element for tips`,
+  },
+
+  'admin.media.best-practices': {
+    title: 'Media Best Practices',
+    summary: 'Tips for optimal media management.',
+    details: `**Image Optimization:**
+- Resize images before upload (2000px max width usually sufficient)
+- Use JPG for photos, PNG for graphics with transparency
+- WebP offers best compression for web
+
+**File Naming:**
+- Use descriptive names: "blue-running-shoes-side.jpg" not "IMG_1234.jpg"
+- Avoid spaces and special characters
+- Keep names concise but meaningful
+
+**Accessibility (Alt Text):**
+- Describe what the image shows
+- Be specific: "Woman running in blue Nike shoes" not "shoes"
+- Skip decorative images or mark as decorative
+
+**Organization:**
+- Create folders before bulk uploading
+- Be consistent with folder structure
+- Review and clean up unused files periodically
+
+**Performance:**
+- Large files slow down your site
+- Aim for <500KB for most images
+- Use video hosting for large videos`,
   },
 
   // AI Chat

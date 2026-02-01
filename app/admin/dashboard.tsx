@@ -61,6 +61,7 @@ import {
   History,
   ChevronLeft,
   ChevronRight,
+  MessageSquare,
 } from "lucide-react"
 import { deleteSubdomainAction } from "@/app/actions"
 import { rootDomain, protocol } from "@/lib/utils"
@@ -86,7 +87,7 @@ type SuperAdminInfo = {
   permissions: string[]
 }
 
-type AdminSection = "overview" | "clients" | "tiers" | "subdomains" | "users" | "teams" | "analytics" | "activity" | "settings"
+type AdminSection = "overview" | "clients" | "tiers" | "subdomains" | "users" | "teams" | "analytics" | "activity" | "feedback" | "settings"
 
 function AdminSidebar({
   activeSection,
@@ -106,6 +107,7 @@ function AdminSidebar({
     { id: "subdomains" as AdminSection, label: "Subdomains", icon: Globe },
     { id: "analytics" as AdminSection, label: "Analytics", icon: BarChart3 },
     { id: "activity" as AdminSection, label: "Activity Log", icon: History },
+    { id: "feedback" as AdminSection, label: "Feedback", icon: MessageSquare },
     { id: "settings" as AdminSection, label: "Settings", icon: Settings },
   ]
 
@@ -1218,6 +1220,287 @@ function ActivitySection() {
   )
 }
 
+// Feedback types
+type FeedbackItem = {
+  id: string
+  userId: string
+  userEmail: string
+  userName: string | null
+  tenantId: number | null
+  type: "BUG" | "FEATURE" | "GENERAL" | "OTHER"
+  subject: string | null
+  message: string
+  pageUrl: string | null
+  status: "NEW" | "REVIEWED" | "IN_PROGRESS" | "RESOLVED" | "ARCHIVED"
+  priority: number
+  adminNotes: string | null
+  resolvedBy: string | null
+  resolvedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+function FeedbackSection({ adminUserId }: { adminUserId: string }) {
+  const [feedback, setFeedback] = useState<FeedbackItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [selectedItem, setSelectedItem] = useState<FeedbackItem | null>(null)
+  const [adminNotes, setAdminNotes] = useState("")
+  const [updating, setUpdating] = useState(false)
+
+  const fetchFeedback = useCallback(async () => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams()
+      if (statusFilter !== "all") params.append("status", statusFilter)
+      const res = await fetch(`/api/feedback?${params}`)
+      if (res.ok) {
+        const data = await res.json()
+        setFeedback(data.feedback)
+      }
+    } catch (error) {
+      console.error("Failed to fetch feedback:", error)
+    } finally {
+      setLoading(false)
+    }
+  }, [statusFilter])
+
+  useEffect(() => {
+    fetchFeedback()
+  }, [fetchFeedback])
+
+  const updateFeedbackStatus = async (id: string, status: string) => {
+    setUpdating(true)
+    try {
+      const res = await fetch(`/api/feedback/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      })
+      if (res.ok) {
+        const updated = await res.json()
+        setFeedback((prev) => prev.map((f) => (f.id === id ? updated : f)))
+        if (selectedItem?.id === id) setSelectedItem(updated)
+      }
+    } catch (error) {
+      console.error("Failed to update feedback:", error)
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const saveNotes = async () => {
+    if (!selectedItem) return
+    setUpdating(true)
+    try {
+      const res = await fetch(`/api/feedback/${selectedItem.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminNotes }),
+      })
+      if (res.ok) {
+        const updated = await res.json()
+        setFeedback((prev) => prev.map((f) => (f.id === selectedItem.id ? updated : f)))
+        setSelectedItem(updated)
+      }
+    } catch (error) {
+      console.error("Failed to save notes:", error)
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case "BUG": return <AlertCircle className="h-4 w-4 text-red-500" />
+      case "FEATURE": return <TrendingUp className="h-4 w-4 text-amber-500" />
+      default: return <MessageSquare className="h-4 w-4 text-blue-500" />
+    }
+  }
+
+  const getStatusBadge = (status: string) => {
+    const colors: Record<string, string> = {
+      NEW: "bg-blue-100 text-blue-800",
+      REVIEWED: "bg-yellow-100 text-yellow-800",
+      IN_PROGRESS: "bg-purple-100 text-purple-800",
+      RESOLVED: "bg-green-100 text-green-800",
+      ARCHIVED: "bg-gray-100 text-gray-800",
+    }
+    return <Badge className={colors[status] || "bg-gray-100"}>{status}</Badge>
+  }
+
+  const newCount = feedback.filter((f) => f.status === "NEW").length
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">User Feedback</h2>
+          <p className="text-sm text-gray-500">
+            {newCount > 0 ? `${newCount} new feedback items` : "Review and respond to user feedback"}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-2 border rounded-md text-sm"
+          >
+            <option value="all">All Status</option>
+            <option value="NEW">New</option>
+            <option value="REVIEWED">Reviewed</option>
+            <option value="IN_PROGRESS">In Progress</option>
+            <option value="RESOLVED">Resolved</option>
+            <option value="ARCHIVED">Archived</option>
+          </select>
+          <Button onClick={fetchFeedback} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Feedback List */}
+        <div className="lg:col-span-2">
+          <Card>
+            <div className="divide-y max-h-[600px] overflow-y-auto">
+              {loading ? (
+                <div className="py-12 text-center">
+                  <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                </div>
+              ) : feedback.length === 0 ? (
+                <div className="py-12 text-center text-gray-500">
+                  <MessageSquare className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <p>No feedback yet</p>
+                </div>
+              ) : (
+                feedback.map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={() => {
+                      setSelectedItem(item)
+                      setAdminNotes(item.adminNotes || "")
+                    }}
+                    className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
+                      selectedItem?.id === item.id ? "bg-blue-50" : ""
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3">
+                        {getTypeIcon(item.type)}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm">
+                              {item.subject || item.message.slice(0, 40) + "..."}
+                            </span>
+                            {getStatusBadge(item.status)}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {item.userName || item.userEmail} • {new Date(item.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </Card>
+        </div>
+
+        {/* Detail Panel */}
+        <div className="lg:col-span-1">
+          <Card className="sticky top-4">
+            <CardHeader>
+              <CardTitle className="text-lg">Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {selectedItem ? (
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-xs text-gray-500">Type</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      {getTypeIcon(selectedItem.type)}
+                      <span className="font-medium">{selectedItem.type}</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs text-gray-500">From</Label>
+                    <p className="text-sm">{selectedItem.userName || "Unknown"}</p>
+                    <p className="text-xs text-gray-500">{selectedItem.userEmail}</p>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs text-gray-500">Message</Label>
+                    <p className="text-sm mt-1 whitespace-pre-wrap bg-gray-50 p-2 rounded">
+                      {selectedItem.message}
+                    </p>
+                  </div>
+
+                  {selectedItem.pageUrl && (
+                    <div>
+                      <Label className="text-xs text-gray-500">Page URL</Label>
+                      <a
+                        href={selectedItem.pageUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:underline break-all"
+                      >
+                        {selectedItem.pageUrl}
+                      </a>
+                    </div>
+                  )}
+
+                  <div>
+                    <Label className="text-xs text-gray-500">Status</Label>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {["NEW", "REVIEWED", "IN_PROGRESS", "RESOLVED", "ARCHIVED"].map((status) => (
+                        <Button
+                          key={status}
+                          size="sm"
+                          variant={selectedItem.status === status ? "default" : "outline"}
+                          onClick={() => updateFeedbackStatus(selectedItem.id, status)}
+                          disabled={updating}
+                          className="text-xs"
+                        >
+                          {status.replace("_", " ")}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs text-gray-500">Admin Notes</Label>
+                    <textarea
+                      value={adminNotes}
+                      onChange={(e) => setAdminNotes(e.target.value)}
+                      className="w-full mt-1 p-2 border rounded-md text-sm"
+                      rows={3}
+                      placeholder="Add internal notes..."
+                    />
+                    <Button
+                      size="sm"
+                      onClick={saveNotes}
+                      disabled={updating || adminNotes === (selectedItem.adminNotes || "")}
+                      className="mt-2"
+                    >
+                      Save Notes
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">Select a feedback item to view details</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 type PlatformSettings = {
   platformName: string
   supportEmail: string
@@ -1531,6 +1814,8 @@ export function AdminDashboard({
         return <AnalyticsSection />
       case "activity":
         return <ActivitySection />
+      case "feedback":
+        return <FeedbackSection adminUserId={adminUserId} />
       case "settings":
         return <SettingsSection />
       default:

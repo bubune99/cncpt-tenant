@@ -1,11 +1,30 @@
 import Link from "next/link";
 import { Logo } from '@/components/cms/branding/Logo';
+import { getTenantContext, shouldShowMaintenance } from '../lib/tenant-context';
+import { MaintenancePage } from '@/components/cms/storefront';
 
-export default function StorefrontLayout({
+export default async function StorefrontLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ subdomain: string }>;
 }) {
+  const { subdomain } = await params;
+  const tenantContext = await getTenantContext(subdomain);
+
+  // Check maintenance mode for public storefront
+  if (tenantContext && await shouldShowMaintenance(tenantContext)) {
+    return (
+      <MaintenancePage
+        siteName={subdomain}
+        message={tenantContext.maintenanceMessage}
+        showBypass={true}
+        bypassUrl={`?bypass=maintenance`}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}

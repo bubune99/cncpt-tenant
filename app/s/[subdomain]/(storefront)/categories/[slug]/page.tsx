@@ -6,15 +6,16 @@ import { Calendar, Clock, ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/cms/ui/card';
 import { Badge } from '@/components/cms/ui/badge';
 import type { Metadata } from "next";
+import { getTenantContext } from '../../../lib/tenant-context';
 
 interface PageProps {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ subdomain: string; slug: string }>;
 }
 
-async function getCategory(slug: string) {
+async function getCategory(slug: string, tenantId: number) {
   // Use findFirst due to compound unique constraint (tenantId, slug)
   const category = await prisma.blogCategory.findFirst({
-    where: { slug, tenantId: null },
+    where: { slug, tenantId },
     include: {
       posts: {
         where: {
@@ -55,8 +56,12 @@ async function getCategory(slug: string) {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const category = await getCategory(slug);
+  const { subdomain, slug } = await params;
+  const tenantContext = await getTenantContext(subdomain);
+  if (!tenantContext) {
+    return { title: 'Site Not Found' };
+  }
+  const category = await getCategory(slug, tenantContext.id);
 
   if (!category) {
     return {
@@ -71,8 +76,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function CategoryPage({ params }: PageProps) {
-  const { slug } = await params;
-  const category = await getCategory(slug);
+  const { subdomain, slug } = await params;
+  const tenantContext = await getTenantContext(subdomain);
+
+  if (!tenantContext) {
+    notFound();
+  }
+
+  const category = await getCategory(slug, tenantContext.id);
 
   if (!category) {
     notFound();

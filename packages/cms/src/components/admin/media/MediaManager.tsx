@@ -11,6 +11,7 @@ import { MediaBulkActions } from './MediaBulkActions'
 import { MediaPreviewSheet } from './MediaPreviewSheet'
 import { MediaUploader } from './MediaUploader'
 import { FolderDialog } from './FolderDialog'
+import { MediaHelpPanel } from './MediaHelpPanel'
 import {
   Dialog,
   DialogContent,
@@ -293,6 +294,11 @@ export function MediaManager() {
             onSortChange={(sortBy, sortOrder) => setFilters({ sortBy, sortOrder })}
             onUpload={() => setShowUploader(true)}
           />
+        </div>
+
+        {/* Help Panel */}
+        <div className="px-4 pt-4">
+          <MediaHelpPanel />
         </div>
 
         {/* Bulk actions */}

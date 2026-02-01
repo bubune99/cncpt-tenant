@@ -37,6 +37,7 @@ const db = prisma as PrismaWithMedia
 // Type for media where input
 interface MediaWhereInput {
   id?: { in: string[] }
+  tenantId?: number | null
   deletedAt?: null | Date | { gte?: Date }
   folderId?: string | null
   mimeType?: { startsWith?: string; contains?: string } | string
@@ -59,6 +60,7 @@ interface MediaOrderByInput {
 
 export async function listMedia(filters: MediaFilters = {}): Promise<MediaListResponse> {
   const {
+    tenantId,
     folderId,
     type,
     search,
@@ -71,6 +73,11 @@ export async function listMedia(filters: MediaFilters = {}): Promise<MediaListRe
   } = filters
 
   const where: MediaWhereInput = {}
+
+  // Multi-tenant filter - CRITICAL for data isolation
+  if (tenantId !== undefined) {
+    where.tenantId = tenantId
+  }
 
   // Soft delete filter
   if (!includeDeleted) {

@@ -3,18 +3,22 @@
  *
  * GET /api/admin/site-settings - Get current site settings
  * PUT /api/admin/site-settings - Update site settings
+ *
+ * Query params:
+ * - subdomain: The subdomain to get/update maintenance mode for
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getOrCreateSiteSettings, updateSiteSettings } from '@/lib/cms/site-settings';
 import { stackServerApp } from '@/lib/cms/stack';
+import { prisma } from '@/lib/cms/db';
 
 export const dynamic = 'force-dynamic'
 
 /**
- * GET - Fetch site settings
+ * GET - Fetch site settings (including subdomain-specific maintenance mode)
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     // Check authentication
     const user = await stackServerApp.getUser();
@@ -23,7 +27,30 @@ export async function GET() {
     }
 
     const settings = await getOrCreateSiteSettings();
-    return NextResponse.json(settings);
+
+    // Get subdomain from query params to fetch maintenance mode
+    const { searchParams } = new URL(request.url);
+    const subdomainName = searchParams.get('subdomain');
+
+    let maintenanceMode = false;
+    let maintenanceMessage: string | null = null;
+
+    if (subdomainName) {
+      const subdomain = await prisma.subdomain.findUnique({
+        where: { subdomain: subdomainName },
+        select: { maintenanceMode: true, maintenanceMsg: true },
+      });
+      if (subdomain) {
+        maintenanceMode = subdomain.maintenanceMode;
+        maintenanceMessage = subdomain.maintenanceMsg;
+      }
+    }
+
+    return NextResponse.json({
+      ...settings,
+      maintenanceMode,
+      maintenanceMessage,
+    });
   } catch (error) {
     console.error('Error fetching site settings:', error);
     return NextResponse.json(
@@ -34,7 +61,7 @@ export async function GET() {
 }
 
 /**
- * PUT - Update site settings
+ * PUT - Update site settings (including subdomain-specific maintenance mode)
  */
 export async function PUT(request: NextRequest) {
   try {
@@ -46,7 +73,7 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json();
 
-    // Validate request body
+    // Validate request body for SiteSettings fields
     const allowedFields = [
       'header',
       'footer',
@@ -68,7 +95,7 @@ export async function PUT(request: NextRequest) {
       'facebookPixelId',
     ];
 
-    // Filter to only allowed fields
+    // Filter to only allowed fields for SiteSettings
     const updateData: Record<string, unknown> = {};
     for (const field of allowedFields) {
       if (field in body) {
@@ -77,7 +104,39 @@ export async function PUT(request: NextRequest) {
     }
 
     const settings = await updateSiteSettings(updateData);
-    return NextResponse.json(settings);
+
+    // Handle subdomain-specific maintenance mode
+    const subdomainName = body.subdomain;
+    let maintenanceMode = false;
+    let maintenanceMessage: string | null = null;
+
+    if (subdomainName) {
+      // Verify user owns/can access this subdomain
+      const subdomain = await prisma.subdomain.findUnique({
+        where: { subdomain: subdomainName },
+        select: { id: true, userId: true },
+      });
+
+      if (subdomain && subdomain.userId === user.id) {
+        // User owns this subdomain, update maintenance mode
+        const updatedSubdomain = await prisma.subdomain.update({
+          where: { subdomain: subdomainName },
+          data: {
+            maintenanceMode: body.maintenanceMode ?? false,
+            maintenanceMsg: body.maintenanceMessage ?? null,
+          },
+          select: { maintenanceMode: true, maintenanceMsg: true },
+        });
+        maintenanceMode = updatedSubdomain.maintenanceMode;
+        maintenanceMessage = updatedSubdomain.maintenanceMsg;
+      }
+    }
+
+    return NextResponse.json({
+      ...settings,
+      maintenanceMode,
+      maintenanceMessage,
+    });
   } catch (error) {
     console.error('Error updating site settings:', error);
     return NextResponse.json(

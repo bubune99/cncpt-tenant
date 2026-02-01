@@ -14,6 +14,7 @@ import type { Metadata } from 'next';
 import type { Data } from '@puckeditor/core';
 import { PageWrapper, getPageLayoutSettings } from '@/components/cms/page-wrapper';
 import { PageRenderer } from '@/components/cms/page-wrapper/page-renderer';
+import { getTenantContext } from '../../../lib/tenant-context';
 
 // Force dynamic rendering to avoid SSR issues with Puck components
 export const dynamic = 'force-dynamic';
@@ -102,19 +103,20 @@ function validatePuckContent(content: unknown): Data | null {
 }
 
 interface PageProps {
-  params: Promise<{ slug: string[] }>;
+  params: Promise<{ subdomain: string; slug: string[] }>;
 }
 
 /**
- * Fetch page by slug
+ * Fetch page by slug with tenant filtering
  */
-async function getPage(slugParts: string[]) {
+async function getPage(slugParts: string[], tenantId: number) {
   const slug = '/' + slugParts.join('/');
 
   const page = await prisma.page.findFirst({
     where: {
       OR: [{ slug: slug }, { slug: slugParts.join('/') }],
       status: 'PUBLISHED',
+      tenantId: tenantId,
     },
     include: {
       featuredImage: true,
@@ -128,8 +130,12 @@ async function getPage(slugParts: string[]) {
  * Generate metadata for the page
  */
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const page = await getPage(slug);
+  const { subdomain, slug } = await params;
+  const tenantContext = await getTenantContext(subdomain);
+  if (!tenantContext) {
+    return { title: 'Site Not Found' };
+  }
+  const page = await getPage(slug, tenantContext.id);
 
   if (!page) {
     return {
@@ -180,9 +186,15 @@ export default async function CMSPage({ params }: PageProps) {
   let slugParts: string[];
 
   try {
-    const { slug } = await params;
+    const { subdomain, slug } = await params;
     slugParts = slug;
-    page = await getPage(slug);
+
+    const tenantContext = await getTenantContext(subdomain);
+    if (!tenantContext) {
+      notFound();
+    }
+
+    page = await getPage(slug, tenantContext.id);
   } catch (error) {
     console.error('Error loading page:', error);
     notFound();

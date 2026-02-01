@@ -6,15 +6,16 @@ import { Calendar, Clock, User, ArrowLeft, Tag as TagIcon, Eye } from "lucide-re
 import { Badge } from '@/components/cms/ui/badge';
 import { Separator } from '@/components/cms/ui/separator';
 import type { Metadata } from "next";
+import { getTenantContext } from '../../../lib/tenant-context';
 
 interface PageProps {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ subdomain: string; slug: string }>;
 }
 
-async function getPost(slug: string) {
+async function getPost(slug: string, tenantId: number) {
   // Use findFirst due to compound unique constraint (tenantId, slug)
   const post = await prisma.blogPost.findFirst({
-    where: { slug, tenantId: null },
+    where: { slug, tenantId },
     include: {
       author: {
         select: { id: true, name: true, email: true },
@@ -37,7 +38,7 @@ async function getPost(slug: string) {
   return post;
 }
 
-async function getRelatedPosts(postId: string, categoryIds: string[]) {
+async function getRelatedPosts(postId: string, categoryIds: string[], tenantId: number) {
   if (categoryIds.length === 0) return [];
 
   const related = await prisma.blogPost.findMany({
@@ -45,6 +46,7 @@ async function getRelatedPosts(postId: string, categoryIds: string[]) {
       id: { not: postId },
       status: "PUBLISHED",
       visibility: "PUBLIC",
+      tenantId: tenantId,
       categories: {
         some: {
           categoryId: { in: categoryIds },
@@ -73,8 +75,12 @@ async function getRelatedPosts(postId: string, categoryIds: string[]) {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const post = await getPost(slug);
+  const { subdomain, slug } = await params;
+  const tenantContext = await getTenantContext(subdomain);
+  if (!tenantContext) {
+    return { title: "Site Not Found" };
+  }
+  const post = await getPost(slug, tenantContext.id);
 
   if (!post) {
     return {
@@ -103,8 +109,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function BlogPostPage({ params }: PageProps) {
-  const { slug } = await params;
-  const post = await getPost(slug);
+  const { subdomain, slug } = await params;
+  const tenantContext = await getTenantContext(subdomain);
+
+  if (!tenantContext) {
+    notFound();
+  }
+
+  const post = await getPost(slug, tenantContext.id);
 
   if (!post || post.status !== "PUBLISHED" || post.visibility !== "PUBLIC") {
     notFound();
@@ -119,7 +131,7 @@ export default async function BlogPostPage({ params }: PageProps) {
     .catch(() => {});
 
   const categoryIds = post.categories.map((c: (typeof post.categories)[number]) => c.categoryId);
-  const relatedPosts = await getRelatedPosts(post.id, categoryIds);
+  const relatedPosts = await getRelatedPosts(post.id, categoryIds, tenantContext.id);
 
   // Render with TipTap HTML content
   return (

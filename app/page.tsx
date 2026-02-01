@@ -3,8 +3,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { ArrowRight, Globe, Shield, Zap, Users, Star } from "lucide-react"
+import { ArrowRight, Globe, Shield, Zap, Users } from "lucide-react"
 import { useUser } from "@stackframe/stack"
 
 export const dynamic = "force-dynamic"
@@ -26,11 +25,8 @@ export default function HomePage() {
               <Link href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
                 Features
               </Link>
-              <Link href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">
-                Pricing
-              </Link>
-              <Link href="#testimonials" className="text-muted-foreground hover:text-foreground transition-colors">
-                Testimonials
+              <Link href="/login" className="text-muted-foreground hover:text-foreground transition-colors">
+                Sign In
               </Link>
             </nav>
 
@@ -62,9 +58,6 @@ export default function HomePage() {
       <section className="relative py-20 lg:py-32">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-4xl mx-auto">
-            <Badge variant="secondary" className="mb-4">
-              Trusted by 10,000+ businesses
-            </Badge>
             <h1 className="text-4xl md:text-6xl font-bold text-balance mb-6">
               Create Your Own
               <span className="text-primary"> Professional Subdomain</span>
@@ -148,91 +141,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="testimonials" className="py-20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Loved by thousands of businesses</h2>
-            <p className="text-xl text-muted-foreground">See what our customers have to say about their experience</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <p className="text-muted-foreground mb-4">
-                  "SubdomainPro made it incredibly easy to set up our branded presence. The process was seamless and the
-                  support team was fantastic."
-                </p>
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                    <span className="text-sm font-semibold text-primary">SJ</span>
-                  </div>
-                  <div>
-                    <p className="font-semibold">Sarah Johnson</p>
-                    <p className="text-sm text-muted-foreground">CEO, TechStart</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <p className="text-muted-foreground mb-4">
-                  "The security features and uptime have been exceptional. We've had zero issues since launching our
-                  subdomain."
-                </p>
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                    <span className="text-sm font-semibold text-primary">MR</span>
-                  </div>
-                  <div>
-                    <p className="font-semibold">Michael Rodriguez</p>
-                    <p className="text-sm text-muted-foreground">CTO, DataFlow</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <p className="text-muted-foreground mb-4">
-                  "Perfect for our agency. We can quickly set up client subdomains and manage everything from one
-                  dashboard."
-                </p>
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                    <span className="text-sm font-semibold text-primary">EL</span>
-                  </div>
-                  <div>
-                    <p className="font-semibold">Emily Liu</p>
-                    <p className="text-sm text-muted-foreground">Founder, Creative Agency</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
       <section className="py-20 bg-primary">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-4">Ready to get started?</h2>
           <p className="text-xl text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
-            Join thousands of businesses who trust SubdomainPro for their online presence. Start your free trial today.
+            Create your professional subdomain in minutes. Start your free trial today.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {user ? (
@@ -284,13 +197,13 @@ export default function HomePage() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="#pricing" className="hover:text-foreground transition-colors">
-                    Pricing
+                  <Link href="/register" className="hover:text-foreground transition-colors">
+                    Get Started
                   </Link>
                 </li>
                 <li>
-                  <Link href="/admin" className="hover:text-foreground transition-colors">
-                    Admin
+                  <Link href="/dashboard" className="hover:text-foreground transition-colors">
+                    Dashboard
                   </Link>
                 </li>
               </ul>
