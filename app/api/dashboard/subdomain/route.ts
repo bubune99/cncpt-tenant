@@ -8,6 +8,7 @@ import { sql } from "@/lib/neon"
 import { stackServerApp } from "@/stack"
 import { canCreateSubdomain, getSubdomainUsage } from "@/lib/subscription"
 import { rootDomain, protocol } from "@/lib/utils"
+import { logPlatformActivity } from "@/lib/super-admin"
 
 export const dynamic = 'force-dynamic'
 
@@ -275,6 +276,23 @@ export async function POST(request: NextRequest) {
 
     const redirectUrl = `${protocol}://${sanitizedSubdomain}.${rootDomain}`
 
+    // Log subdomain creation activity
+    await logPlatformActivity(
+      "subdomain.create",
+      {
+        subdomain: sanitizedSubdomain,
+        siteName: siteName?.trim(),
+        useCase,
+        industry,
+      },
+      {
+        actorId: user.id,
+        actorEmail: user.primaryEmail || undefined,
+        targetType: "subdomain",
+        targetId: sanitizedSubdomain,
+      }
+    )
+
     return NextResponse.json({
       success: true,
       subdomain: {
@@ -384,6 +402,18 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
+    // Log subdomain update activity
+    await logPlatformActivity(
+      "subdomain.update",
+      { subdomain, emoji: result[0].emoji },
+      {
+        actorId: user.id,
+        actorEmail: user.primaryEmail || undefined,
+        targetType: "subdomain",
+        targetId: subdomain,
+      }
+    )
+
     return NextResponse.json({
       success: true,
       subdomain: {
@@ -440,6 +470,18 @@ export async function DELETE(request: NextRequest) {
     } catch (settingsError) {
       console.warn("[subdomain-api] Failed to delete tenant_settings:", settingsError)
     }
+
+    // Log subdomain deletion activity
+    await logPlatformActivity(
+      "subdomain.delete",
+      { subdomain },
+      {
+        actorId: user.id,
+        actorEmail: user.primaryEmail || undefined,
+        targetType: "subdomain",
+        targetId: subdomain,
+      }
+    )
 
     return NextResponse.json({ success: true })
   } catch (error) {

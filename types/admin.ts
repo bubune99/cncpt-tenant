@@ -40,6 +40,7 @@ export interface TierLimits {
   posts: number           // -1 = unlimited
   custom_domains: number  // -1 = unlimited
   team_members: number    // -1 = unlimited
+  subdomains?: number     // -1 = unlimited, optional for backwards compat
 }
 
 export interface SubscriptionTier {

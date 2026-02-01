@@ -32,9 +32,21 @@ export function DashboardContent({
       case "overview":
         return (
           <div className="space-y-8">
-            <div>
-              <h1 className="text-3xl font-bold text-balance mb-2">Welcome back, {user.name}</h1>
-              <p className="text-muted-foreground">Manage your subdomains and create new ones</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-balance mb-2">Welcome back, {user.name}</h1>
+                <p className="text-muted-foreground">Manage your subdomains and create new ones</p>
+              </div>
+              {subdomains.length > 0 && (
+                <Button
+                  onClick={() => router.push("/dashboard/create-subdomain")}
+                  className="flex items-center gap-2"
+                  data-help-key="dashboard.sites.create"
+                >
+                  <Plus className="h-4 w-4" />
+                  Create New Subdomain
+                </Button>
+              )}
             </div>
             {subdomains.length > 0 ? (
               <div data-help-key="dashboard.sites.list">

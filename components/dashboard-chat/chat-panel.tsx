@@ -202,6 +202,15 @@ export function ChatPanel({ className }: ChatPanelProps) {
         .find((m) => m.role === "user")
       const lastMessage = messages[messages.length - 1]
 
+      // Convert UIMessage to stored format
+      const storedMessages = messages.map((m) => ({
+        id: m.id,
+        role: m.role as "user" | "assistant" | "system",
+        content: getMessageText(m),
+        parts: m.parts,
+        timestamp: new Date(),
+      }))
+
       addToHistory({
         id: conversationId,
         title: lastUserMessage
@@ -209,6 +218,7 @@ export function ChatPanel({ className }: ChatPanelProps) {
           : "New Chat",
         lastMessage: getMessageText(lastMessage).slice(0, 100),
         context: context,
+        messages: storedMessages,
       })
     }
   }, [messages, conversationId, context, addToHistory])
@@ -216,8 +226,22 @@ export function ChatPanel({ className }: ChatPanelProps) {
   // Handle selecting a conversation from history
   const handleSelectConversation = useCallback(
     (id: string) => {
+      // loadConversation updates store with saved messages
       loadConversation(id)
-      setMessages([])
+
+      // Get the loaded messages from store and set them in useChat
+      const history = useDashboardChatStore.getState().conversationHistory.find((c) => c.id === id)
+      if (history?.messages && history.messages.length > 0) {
+        // Convert stored messages to UIMessage format
+        const uiMessages = history.messages.map((m) => ({
+          id: m.id,
+          role: m.role,
+          parts: m.parts || [{ type: "text" as const, text: m.content }],
+        }))
+        setMessages(uiMessages as any)
+      } else {
+        setMessages([])
+      }
       setViewMode("chat")
     },
     [loadConversation, setMessages]

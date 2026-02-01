@@ -26,6 +26,7 @@ import {
   Bot,
   Moon,
   Sun,
+  MessageSquare,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
@@ -83,6 +84,12 @@ export function DashboardSidebar({
       title: "Collaboration",
       items: [
         { id: "teams", label: "Teams", icon: Building2, helpKey: "dashboard.sidebar.teams", isRoute: true, route: "/dashboard/teams" },
+      ],
+    },
+    {
+      title: "Support",
+      items: [
+        { id: "support", label: "Support Tickets", icon: MessageSquare, helpKey: "dashboard.sidebar.support", isRoute: true, route: "/dashboard/support" },
       ],
     },
     {
@@ -220,6 +227,15 @@ export function DashboardSidebar({
             <p className="text-xs text-muted-foreground truncate">{user.email}</p>
           </div>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push("/dashboard/support")}
+          className="w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent mb-1"
+        >
+          <MessageSquare className="w-4 h-4 mr-2" />
+          Contact Support
+        </Button>
         <form action={logoutAction}>
           <Button
             variant="ghost"

@@ -157,6 +157,7 @@ function getFreeTierLimits(): TierLimits {
     posts: 10,
     custom_domains: 0,
     team_members: 0,
+    subdomains: 1,
   }
 }
 

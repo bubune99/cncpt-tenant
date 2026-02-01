@@ -17,7 +17,17 @@ interface ChatMessage {
   id: string
   role: "user" | "assistant" | "system"
   content: string
+  parts?: Array<{ type: string; text?: string }>
   timestamp?: Date
+}
+
+interface SavedConversation {
+  id: string
+  title: string
+  lastMessage: string
+  updatedAt: Date
+  context?: DashboardChatContext
+  messages: ChatMessage[]
 }
 
 interface DashboardChatState {
@@ -51,18 +61,13 @@ interface DashboardChatState {
   setError: (error: string | null) => void
 
   // History
-  conversationHistory: Array<{
-    id: string
-    title: string
-    lastMessage: string
-    updatedAt: Date
-    context?: DashboardChatContext
-  }>
+  conversationHistory: SavedConversation[]
   addToHistory: (conversation: {
     id: string
     title: string
     lastMessage: string
     context?: DashboardChatContext
+    messages: ChatMessage[]
   }) => void
   removeFromHistory: (id: string) => void
   loadConversation: (id: string) => void
@@ -162,7 +167,7 @@ export const useDashboardChatStore = create<DashboardChatState>()(
         if (history) {
           set({
             conversationId: id,
-            messages: [],
+            messages: history.messages || [],
             error: null,
             context: history.context || defaultDashboardContext,
           })
