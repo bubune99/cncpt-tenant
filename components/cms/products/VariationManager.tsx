@@ -134,73 +134,16 @@ export function VariationManager({
     try {
       setLoading(true);
 
-      // Try to fetch from API
+      // Fetch variations from API
       const response = await fetch(`/api/products/${productId}/variations`);
       if (response.ok) {
         const data = await response.json();
         setVariations(data.variations || []);
         onVariationsUpdate?.(data.variations || []);
       } else {
-        // Mock variations data for development
-        const mockVariations: ProductVariation[] = [
-          {
-            id: '1',
-            productId,
-            sku: 'PROD-RED-S',
-            price: 29.99,
-            salePrice: 24.99,
-            costPrice: 12.00,
-            stockQuantity: 50,
-            stockStatus: 'instock',
-            imageUrl: 'https://placehold.co/100x100?text=Red+S',
-            attributes: { color: 'Red', size: 'S' },
-            weight: 0.5,
-            barcode: '1234567890123',
-            lastModified: new Date().toISOString()
-          },
-          {
-            id: '2',
-            productId,
-            sku: 'PROD-RED-M',
-            price: 29.99,
-            salePrice: 24.99,
-            costPrice: 12.00,
-            stockQuantity: 75,
-            stockStatus: 'instock',
-            imageUrl: 'https://placehold.co/100x100?text=Red+M',
-            attributes: { color: 'Red', size: 'M' },
-            weight: 0.6,
-            barcode: '1234567890124',
-            lastModified: new Date().toISOString()
-          },
-          {
-            id: '3',
-            productId,
-            sku: 'PROD-BLUE-S',
-            price: 29.99,
-            stockQuantity: 30,
-            stockStatus: 'instock',
-            imageUrl: 'https://placehold.co/100x100?text=Blue+S',
-            attributes: { color: 'Blue', size: 'S' },
-            weight: 0.5,
-            lastModified: new Date().toISOString()
-          },
-          {
-            id: '4',
-            productId,
-            sku: 'PROD-BLUE-M',
-            price: 29.99,
-            stockQuantity: 0,
-            stockStatus: 'outofstock',
-            imageUrl: 'https://placehold.co/100x100?text=Blue+M',
-            attributes: { color: 'Blue', size: 'M' },
-            weight: 0.6,
-            lastModified: new Date().toISOString()
-          }
-        ];
-
-        setVariations(mockVariations);
-        onVariationsUpdate?.(mockVariations);
+        // No variations found or API error - start with empty list
+        setVariations([]);
+        onVariationsUpdate?.([]);
       }
 
     } catch (error) {

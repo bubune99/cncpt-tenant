@@ -54,77 +54,62 @@ interface Stats {
   totalExecutions: number;
 }
 
-// Mock data
-const mockPlugins: Plugin[] = [
-  {
-    id: 'plug_1',
-    name: 'Email Automation',
-    slug: 'email-automation',
-    description: 'Send transactional and marketing emails with templates',
-    version: '1.0.0',
-    icon: 'Mail',
-    color: '#3B82F6',
-    enabled: true,
-    builtIn: false,
-    primitiveCount: 4,
-    author: 'System',
-    createdAt: '2024-01-15T10:00:00Z',
-  },
-  {
-    id: 'plug_2',
-    name: 'Webhook Integration',
-    slug: 'webhook-integration',
-    description: 'Send and receive webhooks for external integrations',
-    version: '1.0.0',
-    icon: 'Webhook',
-    color: '#10B981',
-    enabled: false,
-    builtIn: false,
-    primitiveCount: 2,
-    author: 'System',
-    createdAt: '2024-01-16T10:00:00Z',
-  },
-  {
-    id: 'plug_3',
-    name: 'Data Utilities',
-    slug: 'data-utilities',
-    description: 'Built-in data transformation and validation primitives',
-    version: '1.0.0',
-    icon: 'Database',
-    color: '#8B5CF6',
-    enabled: true,
-    builtIn: true,
-    primitiveCount: 6,
-    author: 'System',
-    createdAt: '2024-01-10T10:00:00Z',
-  },
-];
-
-const mockPrimitives: Primitive[] = [
-  { id: 'prim_1', name: 'transform_json', description: 'Transform JSON data', category: 'data', icon: 'Braces', enabled: true, mounted: true, builtIn: true },
-  { id: 'prim_2', name: 'validate_data', description: 'Validate against schema', category: 'data', icon: 'CheckCircle', enabled: true, mounted: true, builtIn: true },
-  { id: 'prim_3', name: 'format_text', description: 'Format text templates', category: 'text', icon: 'FileText', enabled: true, mounted: true, builtIn: true },
-  { id: 'prim_4', name: 'send_email', description: 'Send transactional email', category: 'email', icon: 'Mail', enabled: true, mounted: true, builtIn: false },
-  { id: 'prim_5', name: 'calculate', description: 'Math expressions', category: 'math', icon: 'Calculator', enabled: true, mounted: true, builtIn: true },
-  { id: 'prim_6', name: 'conditional', description: 'If/else logic', category: 'logic', icon: 'GitBranch', enabled: true, mounted: false, builtIn: true },
-];
-
-const mockStats: Stats = {
-  primitiveCount: 12,
-  mountedCount: 10,
-  pluginCount: 3,
-  enabledPluginCount: 2,
-  workflowCount: 5,
-  totalExecutions: 1234,
+// Initial empty state
+const initialStats: Stats = {
+  primitiveCount: 0,
+  mountedCount: 0,
+  pluginCount: 0,
+  enabledPluginCount: 0,
+  workflowCount: 0,
+  totalExecutions: 0,
 };
 
 export default function PluginsPage() {
   const [activeTab, setActiveTab] = useState<'plugins' | 'primitives' | 'workflows'>('plugins');
   const [searchQuery, setSearchQuery] = useState('');
-  const [plugins, setPlugins] = useState<Plugin[]>(mockPlugins);
-  const [primitives, setPrimitives] = useState<Primitive[]>(mockPrimitives);
-  const [stats, setStats] = useState<Stats>(mockStats);
-  const [loading, setLoading] = useState(false);
+  const [plugins, setPlugins] = useState<Plugin[]>([]);
+  const [primitives, setPrimitives] = useState<Primitive[]>([]);
+  const [stats, setStats] = useState<Stats>(initialStats);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch plugins and primitives on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [pluginsRes, primitivesRes] = await Promise.all([
+          fetch('/api/cms/admin/plugins'),
+          fetch('/api/cms/admin/primitives'),
+        ]);
+
+        if (pluginsRes.ok) {
+          const pluginsData = await pluginsRes.json();
+          setPlugins(pluginsData.plugins || []);
+        }
+
+        if (primitivesRes.ok) {
+          const primitivesData = await primitivesRes.json();
+          setPrimitives(primitivesData.primitives || []);
+        }
+
+        // Update stats based on fetched data
+        setStats({
+          primitiveCount: primitives.length,
+          mountedCount: primitives.filter(p => p.mounted).length,
+          pluginCount: plugins.length,
+          enabledPluginCount: plugins.filter(p => p.enabled).length,
+          workflowCount: 0,
+          totalExecutions: 0,
+        });
+      } catch (error) {
+        console.error('Error fetching plugins data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   // Filter items based on search
   const filteredPlugins = plugins.filter(p =>

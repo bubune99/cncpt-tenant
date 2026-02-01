@@ -48,36 +48,28 @@ interface TestResult {
   executionTime: number;
 }
 
-// Mock primitive data
-const mockPrimitive: Primitive = {
-  id: 'prim_1',
-  name: 'transform_json',
-  description: 'Transform JSON data using a JavaScript expression. Useful for mapping, filtering, and reshaping data.',
+// Default empty primitive for new primitives
+const emptyPrimitive: Primitive = {
+  id: '',
+  name: '',
+  description: '',
   version: '1.0.0',
-  category: 'data',
-  tags: ['data', 'transform', 'json'],
-  icon: 'Braces',
-  timeout: 5000,
+  category: 'custom',
+  tags: [],
+  icon: 'Code2',
+  timeout: 30000,
   enabled: true,
-  mounted: true,
-  builtIn: true,
+  mounted: false,
+  builtIn: false,
   inputSchema: {
     type: 'object',
-    properties: {
-      data: {
-        type: 'object',
-        description: 'The input data to transform',
-      },
-      expression: {
-        type: 'string',
-        description: 'JavaScript expression to transform the data',
-      },
-    },
-    required: ['data', 'expression'],
+    properties: {},
+    required: [],
   },
-  handler: `// Transform JSON data using expression
-const result = eval(args.expression);
-return result;`,
+  handler: `// Handler receives 'args' (input) and 'context' (execution context)
+// Return the result of the primitive
+
+return { message: "Hello from primitive!" };`,
 };
 
 export default function PrimitiveEditorPage() {
@@ -86,47 +78,38 @@ export default function PrimitiveEditorPage() {
   const id = params.id as string;
   const isNew = id === 'new';
 
-  const [primitive, setPrimitive] = useState<Primitive>(
-    isNew
-      ? {
-          id: '',
-          name: '',
-          description: '',
-          version: '1.0.0',
-          category: 'custom',
-          tags: [],
-          icon: 'Code2',
-          timeout: 30000,
-          enabled: true,
-          mounted: false,
-          builtIn: false,
-          inputSchema: {
-            type: 'object',
-            properties: {},
-            required: [],
-          },
-          handler: `// Handler receives 'args' (input) and 'context' (execution context)
-// Return the result of the primitive
-
-return { message: "Hello from primitive!" };`,
-        }
-      : mockPrimitive
-  );
-
+  const [primitive, setPrimitive] = useState<Primitive>(emptyPrimitive);
+  const [loading, setLoading] = useState(!isNew);
   const [activeTab, setActiveTab] = useState<'handler' | 'schema' | 'settings' | 'history'>('handler');
-  const [testInput, setTestInput] = useState('{\n  "data": { "name": "John" },\n  "expression": "args.data.name.toUpperCase()"\n}');
+  const [testInput, setTestInput] = useState('{\n  "key": "value"\n}');
   const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [isTesting, setIsTesting] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [recentExecutions, setRecentExecutions] = useState<Array<{ id: string; success: boolean; executionTime: number; startedAt: string; error?: string }>>([]);
 
-  // Mock executions for history
-  const recentExecutions = [
-    { id: '1', success: true, executionTime: 12, startedAt: '2024-01-20T10:30:00Z' },
-    { id: '2', success: true, executionTime: 8, startedAt: '2024-01-20T10:25:00Z' },
-    { id: '3', success: false, error: 'Invalid expression', executionTime: 3, startedAt: '2024-01-20T10:20:00Z' },
-    { id: '4', success: true, executionTime: 15, startedAt: '2024-01-20T10:15:00Z' },
-  ];
+  // Fetch primitive data if editing existing
+  useEffect(() => {
+    if (!isNew) {
+      const fetchPrimitive = async () => {
+        try {
+          const response = await fetch(`/api/cms/admin/primitives/${id}`);
+          if (response.ok) {
+            const data = await response.json();
+            setPrimitive(data.primitive);
+            if (data.executions) {
+              setRecentExecutions(data.executions);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching primitive:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchPrimitive();
+    }
+  }, [id, isNew]);
 
   const handleSave = async () => {
     setSaving(true);

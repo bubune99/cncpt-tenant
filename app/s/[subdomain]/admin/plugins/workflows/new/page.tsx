@@ -13,135 +13,18 @@ import { ArrowLeft, Save } from 'lucide-react';
 import { WorkflowBuilder } from '@/components/cms/workflow';
 import type { WorkflowDefinition, AvailablePrimitive } from '@/components/cms/workflow';
 
-// Mock primitives for development - will be replaced with API call
-const mockPrimitives: AvailablePrimitive[] = [
-  {
-    id: 'prim-1',
-    name: 'transform_json',
-    description: 'Transform JSON data using a JavaScript expression',
-    category: 'data',
-    icon: 'Braces',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        data: { type: 'object', description: 'The input data to transform' },
-        expression: { type: 'string', description: 'JavaScript expression' },
-      },
-      required: ['data', 'expression'],
-    },
-    tags: ['data', 'transform'],
-  },
-  {
-    id: 'prim-2',
-    name: 'validate_data',
-    description: 'Validate data against a JSON Schema',
-    category: 'data',
-    icon: 'CheckCircle',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        data: { type: 'object', description: 'The data to validate' },
-        schema: { type: 'object', description: 'JSON Schema' },
-      },
-      required: ['data', 'schema'],
-    },
-    tags: ['data', 'validation'],
-  },
-  {
-    id: 'prim-3',
-    name: 'format_text',
-    description: 'Format text using template literals',
-    category: 'text',
-    icon: 'FileText',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        template: { type: 'string', description: 'Template string' },
-        variables: { type: 'object', description: 'Variables to interpolate' },
-      },
-      required: ['template', 'variables'],
-    },
-    tags: ['text', 'template'],
-  },
-  {
-    id: 'prim-4',
-    name: 'calculate',
-    description: 'Evaluate a mathematical expression',
-    category: 'math',
-    icon: 'Calculator',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        expression: { type: 'string', description: 'Mathematical expression' },
-        variables: { type: 'object', description: 'Variables' },
-      },
-      required: ['expression'],
-    },
-    tags: ['math', 'calculate'],
-  },
-  {
-    id: 'prim-5',
-    name: 'aggregate',
-    description: 'Aggregate an array of numbers',
-    category: 'math',
-    icon: 'BarChart',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        values: { type: 'array', description: 'Array of numbers' },
-        operations: { type: 'array', description: 'Operations: sum, avg, min, max' },
-      },
-      required: ['values'],
-    },
-    tags: ['math', 'aggregate'],
-  },
-  {
-    id: 'prim-6',
-    name: 'format_date',
-    description: 'Format a date using a format string',
-    category: 'datetime',
-    icon: 'Calendar',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        date: { type: 'string', description: 'Date string' },
-        format: { type: 'string', description: 'Format string (YYYY-MM-DD)' },
-      },
-      required: ['date'],
-    },
-    tags: ['date', 'format'],
-  },
-  {
-    id: 'prim-7',
-    name: 'conditional',
-    description: 'Evaluate a condition and return different values',
-    category: 'logic',
-    icon: 'GitBranch',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        condition: { type: 'string', description: 'JavaScript condition' },
-        context: { type: 'object', description: 'Variables for condition' },
-        thenValue: { description: 'Value if true' },
-        elseValue: { description: 'Value if false' },
-      },
-      required: ['condition'],
-    },
-    tags: ['logic', 'condition'],
-  },
-];
-
 export default function NewWorkflowPage() {
   const router = useRouter();
   const [workflowName, setWorkflowName] = useState('Untitled Workflow');
-  const [primitives, setPrimitives] = useState<AvailablePrimitive[]>(mockPrimitives);
+  const [primitives, setPrimitives] = useState<AvailablePrimitive[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // TODO: Fetch primitives from API
+  // Fetch primitives from API
   useEffect(() => {
     async function fetchPrimitives() {
       try {
-        const response = await fetch('/api/plugins/primitives');
+        const response = await fetch('/api/cms/admin/primitives');
         if (response.ok) {
           const data = await response.json();
           if (data.primitives?.length > 0) {
@@ -160,7 +43,8 @@ export default function NewWorkflowPage() {
         }
       } catch (error) {
         console.error('Failed to fetch primitives:', error);
-        // Keep using mock primitives
+      } finally {
+        setLoading(false);
       }
     }
 

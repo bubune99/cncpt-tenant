@@ -121,27 +121,13 @@ export default function UsersPage() {
           activeUsers,
         });
       } else {
-        // Create entry for current user if API fails
-        const mockUsers: PlatformUser[] = [];
-        if (currentUser) {
-          mockUsers.push({
-            id: currentUser.id,
-            email: currentUser.primaryEmail || '',
-            name: currentUser.displayName || null,
-            image: currentUser.profileImageUrl || null,
-            roles: [{ id: '1', name: 'super_admin', displayName: 'Super Admin' }],
-            permissionCount: 0,
-            isSuperAdmin: true,
-            createdAt: new Date().toISOString(),
-            lastLogin: new Date().toISOString(),
-          });
-        }
-        setUsers(mockUsers);
+        // No users found or API error
+        setUsers([]);
         setStats({
-          totalUsers: mockUsers.length,
-          superAdmins: 1,
-          usersWithRoles: 1,
-          activeUsers: 1,
+          totalUsers: 0,
+          superAdmins: 0,
+          usersWithRoles: 0,
+          activeUsers: 0,
         });
       }
     } catch (error) {

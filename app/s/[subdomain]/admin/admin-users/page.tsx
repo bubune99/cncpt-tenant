@@ -87,25 +87,12 @@ export default function AdminUsersPage() {
           usersWithOverrides,
         })
       } else {
-        // Use mock data for now
-        const mockUsers: AdminUser[] = [
-          {
-            id: '1',
-            email: 'admin@example.com',
-            name: 'Admin User',
-            image: null,
-            roles: [{ id: '1', name: 'super_admin', displayName: 'Super Admin' }],
-            permissionCount: 0,
-            isSuperAdmin: true,
-            createdAt: new Date().toISOString(),
-            lastLogin: new Date().toISOString(),
-          },
-        ]
-        setUsers(mockUsers)
+        // No users found or API error
+        setUsers([])
         setStats({
-          totalAdminUsers: 1,
-          superAdmins: 1,
-          usersWithRoles: 1,
+          totalAdminUsers: 0,
+          superAdmins: 0,
+          usersWithRoles: 0,
           usersWithOverrides: 0,
         })
       }
