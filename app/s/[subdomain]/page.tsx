@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation"
 import { getTenantData } from "@/lib/tenant"
 import { StorefrontRouter } from "@/components/cms/storefront"
+import { DemoWelcomePage } from "@/components/demo/DemoWelcomePage"
+import { isDemoSubdomain } from "@/lib/demo"
 
 export const dynamic = "force-dynamic"
 
@@ -30,6 +32,11 @@ function DatabaseError({ subdomain }: { subdomain: string }) {
 
 export default async function SubdomainPage({ params }: SubdomainPageProps) {
   const { subdomain } = await params
+
+  // Check if this is the demo subdomain - show welcome page
+  if (isDemoSubdomain(subdomain)) {
+    return <DemoWelcomePage />
+  }
 
   // Verify the subdomain exists in our tenant database
   let tenantData
