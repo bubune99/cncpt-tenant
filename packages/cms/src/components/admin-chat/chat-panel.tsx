@@ -471,7 +471,7 @@ Do NOT stop until you call taskComplete.`,
                     initialVisibilityType="private"
                     isReadonly={false}
                     autoResume={loadedMessages.length > 0}
-                    apiEndpoint="/api/chat"
+                    apiEndpoint="/api/cms/chat"
                     customBody={{
                       contextType: 'admin',
                       contextId: context.id,

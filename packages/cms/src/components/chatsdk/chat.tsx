@@ -41,7 +41,7 @@ export function Chat({
   isReadonly,
   autoResume,
   initialLastContext,
-  apiEndpoint = "/api/chat",
+  apiEndpoint = "/api/cms/chat",
   customBody,
   customHeader,
   containerClassName,

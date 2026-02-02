@@ -122,7 +122,7 @@ function AdminSidebar({
     <div className="w-64 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 min-h-screen border-r border-white/[0.08]">
       <div className="p-6 border-b border-white/[0.08]">
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
+          <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-blue-600 to-orange-500 flex items-center justify-center">
             <Shield className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -142,12 +142,12 @@ function AdminSidebar({
                   onClick={() => onSectionChange(item.id)}
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-all duration-200 ${
                     isActive
-                      ? "bg-gradient-to-r from-violet-500/20 to-fuchsia-500/10 text-white border border-violet-500/30 shadow-lg shadow-violet-500/10"
+                      ? "bg-gradient-to-r from-blue-600/20 to-orange-500/10 text-white border border-blue-500/30 shadow-lg shadow-blue-500/10"
                       : "text-slate-400 hover:text-white hover:bg-white/[0.05]"
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className={`h-4 w-4 ${isActive ? "text-violet-400" : ""}`} />
+                    <Icon className={`h-4 w-4 ${isActive ? "text-orange-400" : ""}`} />
                     <span className="text-sm font-medium">{item.label}</span>
                   </div>
                   {item.badge && item.badge > 0 && (
@@ -184,13 +184,13 @@ function AdminHeader() {
         </div>
         <div className="flex items-center gap-3">
           {user && (
-            <div className="flex items-center gap-3 bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 px-4 py-2 rounded-lg border border-violet-500/20">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
+            <div className="flex items-center gap-3 bg-gradient-to-r from-blue-600/10 to-orange-500/10 px-4 py-2 rounded-lg border border-blue-500/20">
+              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-600 to-orange-500 flex items-center justify-center">
                 <Crown className="h-4 w-4 text-white" />
               </div>
               <div className="text-sm">
                 <div className="font-medium text-white">{user.displayName || user.primaryEmail}</div>
-                <div className="text-violet-400 text-xs">Super Admin</div>
+                <div className="text-orange-400 text-xs">Super Admin</div>
               </div>
             </div>
           )}
@@ -305,8 +305,8 @@ function OverviewSection() {
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium text-slate-400">This Week</CardTitle>
-              <div className="h-8 w-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                <Activity className="h-4 w-4 text-violet-400" />
+              <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                <Activity className="h-4 w-4 text-orange-400" />
               </div>
             </div>
           </CardHeader>
@@ -347,7 +347,7 @@ function OverviewSection() {
                   className="flex items-center justify-between py-2 border-b border-white/[0.05] last:border-0"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-sm font-medium text-white">
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-600 to-orange-500 flex items-center justify-center text-sm font-medium text-white">
                       {index + 1}
                     </div>
                     <div>
@@ -357,7 +357,7 @@ function OverviewSection() {
                       )}
                     </div>
                   </div>
-                  <Badge className="bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 border-violet-500/20">{user.subdomainCount} subdomains</Badge>
+                  <Badge className="bg-blue-500/10 text-orange-400 hover:bg-blue-500/20 border-blue-500/20">{user.subdomainCount} subdomains</Badge>
                 </div>
               ))
             )}
@@ -592,7 +592,7 @@ function SubdomainsSection({
           <p className="text-sm text-slate-400">{total} total subdomains - Create and assign ownership to users</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setShowCreateDialog(true)} size="sm" className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white border-0">
+          <Button onClick={() => setShowCreateDialog(true)} size="sm" className="bg-gradient-to-r from-blue-700 to-orange-500 hover:from-blue-600 hover:to-orange-400 text-white border-0">
             <Globe className="h-4 w-4 mr-2" />
             Create Subdomain
           </Button>
@@ -614,7 +614,7 @@ function SubdomainsSection({
               setSearch(e.target.value)
               setPage(1)
             }}
-            className="pl-10 bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-violet-500/50"
+            className="pl-10 bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
           />
         </div>
       </div>
@@ -635,7 +635,7 @@ function SubdomainsSection({
             {loading ? (
               <TableRow className="border-white/[0.08]">
                 <TableCell colSpan={5} className="text-center py-12">
-                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-violet-400" />
+                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-400" />
                 </TableCell>
               </TableRow>
             ) : subdomains.length === 0 ? (
@@ -657,7 +657,7 @@ function SubdomainsSection({
                           href={`${protocol}://${sub.subdomain}.${rootDomain}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-violet-400 hover:text-violet-300"
+                          className="text-xs text-orange-400 hover:text-orange-300"
                         >
                           Visit →
                         </a>
@@ -699,7 +699,7 @@ function SubdomainsSection({
                           setNewOwnerId("")
                           setFoundUser(null)
                         }}
-                        className="text-violet-400 hover:text-violet-300 hover:bg-violet-500/10"
+                        className="text-orange-400 hover:text-orange-300 hover:bg-blue-500/10"
                       >
                         <ArrowRight className="h-4 w-4 mr-1" />
                         Assign
@@ -1071,7 +1071,7 @@ function UsersSection() {
               setSearch(e.target.value)
               setPage(1)
             }}
-            className="pl-10 bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-violet-500/50"
+            className="pl-10 bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
           />
         </div>
       </div>
@@ -1091,7 +1091,7 @@ function UsersSection() {
             {loading ? (
               <TableRow className="border-white/[0.08]">
                 <TableCell colSpan={5} className="text-center py-12">
-                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-violet-400" />
+                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-400" />
                 </TableCell>
               </TableRow>
             ) : users.length === 0 ? (
@@ -1121,7 +1121,7 @@ function UsersSection() {
                   <TableCell>
                     <div className="flex gap-1">
                       {user.isSuperAdmin && (
-                        <Badge className="bg-violet-500/20 text-violet-400 border-violet-500/30 hover:bg-violet-500/30">
+                        <Badge className="bg-blue-500/20 text-orange-400 border-blue-500/30 hover:bg-blue-500/30">
                           <Crown className="h-3 w-3 mr-1" />
                           Super Admin
                         </Badge>
@@ -1463,7 +1463,7 @@ function TeamsSection() {
               setShowCreateDialog(true)
             }}
             size="sm"
-            className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white border-0"
+            className="bg-gradient-to-r from-blue-700 to-orange-500 hover:from-blue-600 hover:to-orange-400 text-white border-0"
           >
             <Plus className="h-4 w-4 mr-2" />
             Create Team
@@ -1481,7 +1481,7 @@ function TeamsSection() {
               setSearch(e.target.value)
               setPage(1)
             }}
-            className="pl-10 bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-violet-500/50"
+            className="pl-10 bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
           />
         </div>
       </div>
@@ -1501,7 +1501,7 @@ function TeamsSection() {
             {loading ? (
               <TableRow className="border-white/[0.08]">
                 <TableCell colSpan={5} className="text-center py-12">
-                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-violet-400" />
+                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-400" />
                 </TableCell>
               </TableRow>
             ) : teams.length === 0 ? (
@@ -1724,7 +1724,7 @@ function AnalyticsSection() {
       <div className="space-y-6">
         <h2 className="text-xl font-semibold text-white">Platform Analytics</h2>
         <div className="py-12 text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-violet-400" />
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-orange-400" />
         </div>
       </div>
     )
@@ -1783,8 +1783,8 @@ function AnalyticsSection() {
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium text-slate-400">Teams</CardTitle>
-              <div className="h-8 w-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                <Building2 className="h-4 w-4 text-violet-400" />
+              <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                <Building2 className="h-4 w-4 text-orange-400" />
               </div>
             </div>
           </CardHeader>
@@ -1823,7 +1823,7 @@ function AnalyticsSection() {
                 return (
                   <div key={day.date} className="flex-1 flex flex-col items-center">
                     <div
-                      className="w-full bg-gradient-to-t from-violet-600 to-fuchsia-500 rounded-t"
+                      className="w-full bg-gradient-to-t from-blue-600 to-orange-400 rounded-t"
                       style={{ height: `${Math.max(height, 2)}%` }}
                       title={`${day.date}: ${day.count}`}
                     />
@@ -1846,12 +1846,12 @@ function AnalyticsSection() {
               {analytics.topUsers.map((user, index) => (
                 <div key={user.userId} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="h-6 w-6 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-xs font-medium text-white">
+                    <div className="h-6 w-6 rounded-full bg-gradient-to-br from-blue-600 to-orange-500 flex items-center justify-center text-xs font-medium text-white">
                       {index + 1}
                     </div>
                     <span className="text-sm text-slate-300 truncate max-w-[200px]">{user.email}</span>
                   </div>
-                  <Badge className="bg-violet-500/10 text-violet-400 border-violet-500/20">{user.subdomainCount}</Badge>
+                  <Badge className="bg-blue-500/10 text-orange-400 border-blue-500/20">{user.subdomainCount}</Badge>
                 </div>
               ))}
             </div>
@@ -1934,7 +1934,7 @@ function ActivitySection() {
         <div className="divide-y divide-white/[0.05]">
           {loading ? (
             <div className="py-12 text-center">
-              <Loader2 className="h-6 w-6 animate-spin mx-auto text-violet-400" />
+              <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-400" />
             </div>
           ) : logs.length === 0 ? (
             <div className="py-12 text-center text-slate-500">
@@ -2115,7 +2115,7 @@ function FeedbackSection({ adminUserId }: { adminUserId: string }) {
     const colors: Record<string, string> = {
       NEW: "bg-blue-500/10 text-blue-400 border-blue-500/20",
       REVIEWED: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-      IN_PROGRESS: "bg-violet-500/10 text-violet-400 border-violet-500/20",
+      IN_PROGRESS: "bg-blue-500/10 text-orange-400 border-blue-500/20",
       RESOLVED: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
       ARCHIVED: "bg-slate-500/10 text-slate-400 border-slate-500/20",
     }
@@ -2160,7 +2160,7 @@ function FeedbackSection({ adminUserId }: { adminUserId: string }) {
             <div className="divide-y divide-white/[0.05] max-h-[600px] overflow-y-auto">
               {loading ? (
                 <div className="py-12 text-center">
-                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-violet-400" />
+                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-400" />
                 </div>
               ) : feedback.length === 0 ? (
                 <div className="py-12 text-center text-slate-500">
@@ -2176,7 +2176,7 @@ function FeedbackSection({ adminUserId }: { adminUserId: string }) {
                       setAdminNotes(item.adminNotes || "")
                     }}
                     className={`p-4 cursor-pointer hover:bg-white/[0.02] transition-colors ${
-                      selectedItem?.id === item.id ? "bg-violet-500/10 border-l-2 border-l-violet-500" : ""
+                      selectedItem?.id === item.id ? "bg-blue-500/10 border-l-2 border-l-blue-500" : ""
                     }`}
                   >
                     <div className="flex items-start justify-between">
@@ -2239,7 +2239,7 @@ function FeedbackSection({ adminUserId }: { adminUserId: string }) {
                         href={selectedItem.pageUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-violet-400 hover:text-violet-300 break-all"
+                        className="text-sm text-orange-400 hover:text-orange-300 break-all"
                       >
                         {selectedItem.pageUrl}
                       </a>
@@ -2257,7 +2257,7 @@ function FeedbackSection({ adminUserId }: { adminUserId: string }) {
                           onClick={() => updateFeedbackStatus(selectedItem.id, status)}
                           disabled={updating}
                           className={`text-xs ${selectedItem.status === status
-                            ? "bg-violet-600 hover:bg-violet-500 text-white border-0"
+                            ? "bg-blue-600 hover:bg-blue-500 text-white border-0"
                             : "bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5"}`}
                         >
                           {status.replace("_", " ")}
@@ -2279,7 +2279,7 @@ function FeedbackSection({ adminUserId }: { adminUserId: string }) {
                       size="sm"
                       onClick={saveNotes}
                       disabled={updating || adminNotes === (selectedItem.adminNotes || "")}
-                      className="mt-2 bg-violet-600 hover:bg-violet-500 text-white border-0"
+                      className="mt-2 bg-blue-600 hover:bg-blue-500 text-white border-0"
                     >
                       Save Notes
                     </Button>
@@ -2354,7 +2354,7 @@ function SettingsSection() {
       <div className="space-y-6">
         <h2 className="text-xl font-semibold text-white">Platform Settings</h2>
         <div className="py-12 text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-violet-400" />
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-orange-400" />
         </div>
       </div>
     )
@@ -2378,7 +2378,7 @@ function SettingsSection() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-white">Platform Settings</h2>
-        <Button onClick={handleSave} disabled={saving} className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white border-0">
+        <Button onClick={handleSave} disabled={saving} className="bg-gradient-to-r from-blue-700 to-orange-500 hover:from-blue-600 hover:to-orange-400 text-white border-0">
           {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
           Save Changes
         </Button>
@@ -2388,7 +2388,7 @@ function SettingsSection() {
         <Card className="bg-slate-800/50 border-white/[0.08]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-white">
-              <Settings className="h-5 w-5 text-violet-400" />
+              <Settings className="h-5 w-5 text-orange-400" />
               General Settings
             </CardTitle>
           </CardHeader>
@@ -2400,7 +2400,7 @@ function SettingsSection() {
                   id="platformName"
                   value={settings.platformName}
                   onChange={(e) => updateSetting("platformName", e.target.value)}
-                  className="bg-slate-900/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-violet-500/50"
+                  className="bg-slate-900/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
                 />
               </div>
               <div className="space-y-2">
@@ -2410,7 +2410,7 @@ function SettingsSection() {
                   type="email"
                   value={settings.supportEmail}
                   onChange={(e) => updateSetting("supportEmail", e.target.value)}
-                  className="bg-slate-900/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-violet-500/50"
+                  className="bg-slate-900/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
                 />
               </div>
             </div>
@@ -2420,7 +2420,7 @@ function SettingsSection() {
         <Card className="bg-slate-800/50 border-white/[0.08]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-white">
-              <Shield className="h-5 w-5 text-violet-400" />
+              <Shield className="h-5 w-5 text-orange-400" />
               Access Control
             </CardTitle>
           </CardHeader>
@@ -2471,7 +2471,7 @@ function SettingsSection() {
         <Card className="bg-slate-800/50 border-white/[0.08]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-white">
-              <Database className="h-5 w-5 text-violet-400" />
+              <Database className="h-5 w-5 text-orange-400" />
               Limits
             </CardTitle>
           </CardHeader>
@@ -2484,7 +2484,7 @@ function SettingsSection() {
                   type="number"
                   value={settings.maxSubdomainsPerUser}
                   onChange={(e) => updateSetting("maxSubdomainsPerUser", parseInt(e.target.value) || 0)}
-                  className="bg-slate-900/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-violet-500/50"
+                  className="bg-slate-900/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
                 />
               </div>
               <div className="space-y-2">
@@ -2494,7 +2494,7 @@ function SettingsSection() {
                   type="number"
                   value={settings.maxTeamsPerUser}
                   onChange={(e) => updateSetting("maxTeamsPerUser", parseInt(e.target.value) || 0)}
-                  className="bg-slate-900/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-violet-500/50"
+                  className="bg-slate-900/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
                 />
               </div>
               <div className="space-y-2">
@@ -2504,7 +2504,7 @@ function SettingsSection() {
                   type="number"
                   value={settings.maxMembersPerTeam}
                   onChange={(e) => updateSetting("maxMembersPerTeam", parseInt(e.target.value) || 0)}
-                  className="bg-slate-900/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-violet-500/50"
+                  className="bg-slate-900/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
                 />
               </div>
             </div>
@@ -2514,7 +2514,7 @@ function SettingsSection() {
         <Card className="bg-slate-800/50 border-white/[0.08]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-white">
-              <Globe className="h-5 w-5 text-violet-400" />
+              <Globe className="h-5 w-5 text-orange-400" />
               Features
             </CardTitle>
           </CardHeader>
@@ -2534,7 +2534,7 @@ function SettingsSection() {
               <Input
                 id="trialDays"
                 type="number"
-                className="w-32 bg-slate-900/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-violet-500/50"
+                className="w-32 bg-slate-900/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
                 value={settings.defaultTrialDays}
                 onChange={(e) => updateSetting("defaultTrialDays", parseInt(e.target.value) || 0)}
               />
@@ -2687,7 +2687,7 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
               <CardTitle className="text-sm font-medium text-slate-400">Total Used Credits</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-violet-400">{stats.totalUsedCredits.toLocaleString()}</div>
+              <div className="text-2xl font-bold text-orange-400">{stats.totalUsedCredits.toLocaleString()}</div>
             </CardContent>
           </Card>
         </div>
@@ -2704,7 +2704,7 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
               setSearch(e.target.value)
               setPage(1)
             }}
-            className="pl-10 bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-violet-500/50"
+            className="pl-10 bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
           />
         </div>
       </div>
@@ -2727,7 +2727,7 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
             {loading ? (
               <TableRow className="border-white/[0.08]">
                 <TableCell colSpan={7} className="text-center py-12">
-                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-violet-400" />
+                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-400" />
                 </TableCell>
               </TableRow>
             ) : balances.length === 0 ? (
@@ -2743,7 +2743,7 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
                     <div className="flex items-center gap-3">
                       <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
                         balance.hasCredits !== false
-                          ? "bg-gradient-to-br from-violet-500 to-fuchsia-500"
+                          ? "bg-gradient-to-br from-blue-600 to-orange-500"
                           : "bg-slate-700"
                       }`}>
                         <Sparkles className={`h-4 w-4 ${balance.hasCredits !== false ? "text-white" : "text-slate-500"}`} />
@@ -2783,7 +2783,7 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
                       size="icon"
                       onClick={() => setSelectedUser(balance)}
                       title="Grant credits"
-                      className="text-violet-400 hover:text-violet-300 hover:bg-violet-500/10"
+                      className="text-orange-400 hover:text-orange-300 hover:bg-blue-500/10"
                     >
                       <Gift className="h-4 w-4" />
                     </Button>
@@ -3020,7 +3020,7 @@ function UserOverridesSection({ adminUserId }: { adminUserId: string }) {
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
-          <Button onClick={() => setShowCreateDialog(true)} size="sm" className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white border-0">
+          <Button onClick={() => setShowCreateDialog(true)} size="sm" className="bg-gradient-to-r from-blue-700 to-orange-500 hover:from-blue-600 hover:to-orange-400 text-white border-0">
             <Wand2 className="h-4 w-4 mr-2" />
             Create Override
           </Button>
@@ -3043,7 +3043,7 @@ function UserOverridesSection({ adminUserId }: { adminUserId: string }) {
             {loading ? (
               <TableRow className="border-white/[0.08]">
                 <TableCell colSpan={6} className="text-center py-12">
-                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-violet-400" />
+                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-400" />
                 </TableCell>
               </TableRow>
             ) : overrides.length === 0 ? (
@@ -3066,7 +3066,7 @@ function UserOverridesSection({ adminUserId }: { adminUserId: string }) {
                         <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20">∞ Subdomains</Badge>
                       )}
                       {override.unlimitedAiCredits && (
-                        <Badge className="bg-violet-500/10 text-violet-400 border-violet-500/20">∞ AI Credits</Badge>
+                        <Badge className="bg-blue-500/10 text-orange-400 border-blue-500/20">∞ AI Credits</Badge>
                       )}
                       {override.bypassPayment && (
                         <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">Free Access</Badge>

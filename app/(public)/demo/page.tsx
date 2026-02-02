@@ -4,6 +4,7 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import { ArrowRight, Play, Calendar, Sparkles } from "lucide-react"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 // Demo redirects to the actual CMS demo subdomain
 // If no demo subdomain is configured, shows a landing page with options
@@ -24,21 +25,21 @@ export default function DemoPage() {
 
   if (loading && DEMO_SUBDOMAIN) {
     return (
-      <div className="min-h-screen bg-[#0a0a0b] flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-2 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-white/60">Loading demo...</p>
+          <div className="w-12 h-12 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-white/60">Loading demo...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0b] text-white">
+    <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-800 dark:text-white">
       {/* Ambient Background */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-violet-600/20 rounded-full blur-[150px] opacity-50" />
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-cyan-600/20 rounded-full blur-[150px] opacity-40" />
+        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-blue-600/10 dark:bg-blue-600/20 rounded-full blur-[150px] opacity-50" />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-orange-500/10 dark:bg-orange-500/20 rounded-full blur-[150px] opacity-40" />
       </div>
 
       {/* Navigation */}
@@ -46,18 +47,19 @@ export default function DemoPage() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
             <div className="relative w-9 h-9">
-              <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-cyan-500 rounded-lg opacity-80 group-hover:opacity-100 transition-opacity" />
-              <div className="absolute inset-[2px] bg-[#0a0a0b] rounded-[6px] flex items-center justify-center">
-                <span className="text-sm font-bold bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">C</span>
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-800 to-orange-500 rounded-lg opacity-80 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute inset-[2px] bg-white dark:bg-gray-900 rounded-[6px] flex items-center justify-center">
+                <span className="text-sm font-bold bg-gradient-to-r from-blue-800 to-orange-500 dark:from-blue-400 dark:to-orange-400 bg-clip-text text-transparent">C</span>
               </div>
             </div>
-            <span className="text-lg font-semibold tracking-tight">CNCPT</span>
+            <span className="text-lg font-semibold tracking-tight text-gray-900 dark:text-white">CNCPT</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
-            <Link href="/pricing" className="text-sm text-white/60 hover:text-white transition-colors">Pricing</Link>
-            <Link href="/book" className="text-sm text-white/60 hover:text-white transition-colors">Book Call</Link>
-            <Link href="/register" className="px-5 py-2.5 text-sm font-medium bg-white text-black rounded-xl hover:bg-white/90 transition-colors">
+            <Link href="/pricing" className="text-sm text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-colors">Pricing</Link>
+            <Link href="/book" className="text-sm text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-colors">Book Call</Link>
+            <ThemeToggle />
+            <Link href="/register" className="px-5 py-2.5 text-sm font-medium bg-blue-800 dark:bg-white text-white dark:text-gray-900 rounded-xl hover:bg-blue-700 dark:hover:bg-white/90 transition-colors">
               Get Started
             </Link>
           </nav>
@@ -72,20 +74,20 @@ export default function DemoPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/[0.1] bg-white/[0.03] mb-8">
-              <Sparkles className="w-4 h-4 text-violet-400" />
-              <span className="text-sm text-white/60">Interactive Demo</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 dark:border-white/[0.1] bg-gray-50 dark:bg-white/[0.03] mb-8">
+              <Sparkles className="w-4 h-4 text-orange-500 dark:text-orange-400" />
+              <span className="text-sm text-gray-600 dark:text-white/60">Interactive Demo</span>
             </div>
 
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 text-gray-900 dark:text-white">
               See CNCPT CMS
               <br />
-              <span className="bg-gradient-to-r from-violet-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-800 via-blue-600 to-orange-500 dark:from-blue-400 dark:via-blue-300 dark:to-orange-400 bg-clip-text text-transparent">
                 in action
               </span>
             </h1>
 
-            <p className="text-lg text-white/50 max-w-xl mx-auto mb-10">
+            <p className="text-lg text-gray-600 dark:text-white/50 max-w-xl mx-auto mb-10">
               Experience the full power of our CMS platform. Start a free trial
               to explore all features with your own data.
             </p>
@@ -104,13 +106,13 @@ export default function DemoPage() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="relative group"
             >
-              <div className="absolute -inset-1 bg-gradient-to-r from-violet-600 to-cyan-600 rounded-2xl blur opacity-25 group-hover:opacity-40 transition-opacity" />
-              <div className="relative p-8 rounded-2xl border border-white/[0.1] bg-[#111113] h-full">
-                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center mb-6">
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-800 to-orange-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition-opacity" />
+              <div className="relative p-8 rounded-2xl border border-gray-200 dark:border-white/[0.1] bg-white dark:bg-gray-800 h-full">
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-800 to-orange-500 flex items-center justify-center mb-6">
                   <Play className="w-6 h-6 text-white" />
                 </div>
-                <h2 className="text-2xl font-bold mb-3">Start Free Trial</h2>
-                <p className="text-white/50 mb-6 leading-relaxed">
+                <h2 className="text-2xl font-bold mb-3 text-gray-900 dark:text-white">Start Free Trial</h2>
+                <p className="text-gray-600 dark:text-white/50 mb-6 leading-relaxed">
                   Get instant access to the full CMS with your own workspace.
                   No credit card required. Try all features free for 14 days.
                 </p>
@@ -121,15 +123,15 @@ export default function DemoPage() {
                     "AI features included",
                     "Cancel anytime",
                   ].map((item) => (
-                    <li key={item} className="flex items-center gap-3 text-sm text-white/70">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    <li key={item} className="flex items-center gap-3 text-sm text-gray-600 dark:text-white/70">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
                       {item}
                     </li>
                   ))}
                 </ul>
                 <Link
                   href="/register"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-white text-black rounded-xl font-medium hover:bg-white/90 transition-colors"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-800 dark:bg-white text-white dark:text-gray-900 rounded-xl font-medium hover:bg-blue-700 dark:hover:bg-white/90 transition-colors"
                 >
                   Start free trial
                   <ArrowRight className="w-4 h-4" />
@@ -144,12 +146,12 @@ export default function DemoPage() {
               transition={{ duration: 0.5, delay: 0.3 }}
               className="relative"
             >
-              <div className="p-8 rounded-2xl border border-white/[0.1] bg-white/[0.02] h-full">
-                <div className="w-14 h-14 rounded-xl bg-white/[0.05] border border-white/[0.1] flex items-center justify-center mb-6">
-                  <Calendar className="w-6 h-6 text-white/60" />
+              <div className="p-8 rounded-2xl border border-gray-200 dark:border-white/[0.1] bg-gray-50 dark:bg-white/[0.02] h-full">
+                <div className="w-14 h-14 rounded-xl bg-gray-100 dark:bg-white/[0.05] border border-gray-200 dark:border-white/[0.1] flex items-center justify-center mb-6">
+                  <Calendar className="w-6 h-6 text-gray-500 dark:text-white/60" />
                 </div>
-                <h2 className="text-2xl font-bold mb-3">Book a Live Demo</h2>
-                <p className="text-white/50 mb-6 leading-relaxed">
+                <h2 className="text-2xl font-bold mb-3 text-gray-900 dark:text-white">Book a Live Demo</h2>
+                <p className="text-gray-600 dark:text-white/50 mb-6 leading-relaxed">
                   Want a personalized walkthrough? Schedule a 30-minute call
                   and we&apos;ll show you exactly how CNCPT can work for your business.
                 </p>
@@ -160,15 +162,15 @@ export default function DemoPage() {
                     "Custom use-case discussion",
                     "Free consultation",
                   ].map((item) => (
-                    <li key={item} className="flex items-center gap-3 text-sm text-white/70">
-                      <div className="w-1.5 h-1.5 rounded-full bg-violet-400" />
+                    <li key={item} className="flex items-center gap-3 text-sm text-gray-600 dark:text-white/70">
+                      <div className="w-1.5 h-1.5 rounded-full bg-orange-500 dark:bg-orange-400" />
                       {item}
                     </li>
                   ))}
                 </ul>
                 <Link
                   href="/book"
-                  className="inline-flex items-center gap-2 px-6 py-3 border border-white/[0.1] text-white rounded-xl font-medium hover:bg-white/[0.05] transition-colors"
+                  className="inline-flex items-center gap-2 px-6 py-3 border border-gray-200 dark:border-white/[0.1] text-gray-700 dark:text-white rounded-xl font-medium hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors"
                 >
                   Schedule call
                   <ArrowRight className="w-4 h-4" />
@@ -180,7 +182,7 @@ export default function DemoPage() {
       </section>
 
       {/* CMS Preview */}
-      <section className="relative py-20 px-6 border-t border-white/[0.06]">
+      <section className="relative py-20 px-6 border-t border-gray-200 dark:border-white/[0.06]">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -188,8 +190,8 @@ export default function DemoPage() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl font-bold mb-4">What you&apos;ll get</h2>
-            <p className="text-white/50">A complete CMS with everything built-in.</p>
+            <h2 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">What you&apos;ll get</h2>
+            <p className="text-gray-600 dark:text-white/50">A complete CMS with everything built-in.</p>
           </motion.div>
 
           {/* Feature Grid */}
@@ -198,32 +200,32 @@ export default function DemoPage() {
               {
                 title: "Visual Page Builder",
                 desc: "Drag-and-drop editor with 40+ components",
-                gradient: "from-violet-500 to-purple-600",
+                gradient: "from-blue-800 to-blue-600",
               },
               {
                 title: "Product Management",
                 desc: "Inventory, variants, pricing, bulk operations",
-                gradient: "from-cyan-500 to-blue-600",
+                gradient: "from-orange-600 to-orange-500",
               },
               {
                 title: "Blog & Content",
                 desc: "Rich editor, categories, SEO tools",
-                gradient: "from-emerald-500 to-teal-600",
+                gradient: "from-emerald-600 to-teal-500",
               },
               {
                 title: "Email Marketing",
                 desc: "Campaigns, automation, analytics",
-                gradient: "from-orange-500 to-red-600",
+                gradient: "from-blue-700 to-blue-500",
               },
               {
                 title: "AI Assistant",
                 desc: "Content generation, optimization, chat",
-                gradient: "from-pink-500 to-rose-600",
+                gradient: "from-orange-500 to-amber-500",
               },
               {
                 title: "Analytics Dashboard",
                 desc: "Real-time insights and reporting",
-                gradient: "from-amber-500 to-yellow-600",
+                gradient: "from-gray-700 to-gray-600",
               },
             ].map((feature, i) => (
               <motion.div
@@ -232,13 +234,13 @@ export default function DemoPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="p-5 rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.04] transition-colors"
+                className="p-5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.02] hover:bg-gray-100 dark:hover:bg-white/[0.04] transition-colors"
               >
                 <div className={`inline-flex p-2.5 rounded-lg bg-gradient-to-br ${feature.gradient} mb-4`}>
                   <div className="w-5 h-5 bg-white/20 rounded" />
                 </div>
-                <h3 className="font-semibold mb-1">{feature.title}</h3>
-                <p className="text-sm text-white/50">{feature.desc}</p>
+                <h3 className="font-semibold mb-1 text-gray-900 dark:text-white">{feature.title}</h3>
+                <p className="text-sm text-gray-600 dark:text-white/50">{feature.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -254,17 +256,17 @@ export default function DemoPage() {
             viewport={{ once: true }}
             className="relative"
           >
-            <div className="absolute -inset-4 bg-gradient-to-r from-violet-600/20 via-cyan-600/20 to-emerald-600/20 rounded-3xl blur-2xl opacity-40" />
-            <div className="relative rounded-2xl border border-white/[0.1] bg-[#111113] overflow-hidden">
+            <div className="absolute -inset-4 bg-gradient-to-r from-blue-600/10 via-orange-500/10 to-blue-500/10 dark:from-blue-600/20 dark:via-orange-500/20 dark:to-blue-500/20 rounded-3xl blur-2xl opacity-40" />
+            <div className="relative rounded-2xl border border-gray-200 dark:border-white/[0.1] bg-white dark:bg-gray-800 overflow-hidden">
               {/* Browser chrome */}
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] bg-white/[0.02]">
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02]">
                 <div className="flex gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-white/10" />
-                  <div className="w-3 h-3 rounded-full bg-white/10" />
-                  <div className="w-3 h-3 rounded-full bg-white/10" />
+                  <div className="w-3 h-3 rounded-full bg-gray-300 dark:bg-white/10" />
+                  <div className="w-3 h-3 rounded-full bg-gray-300 dark:bg-white/10" />
+                  <div className="w-3 h-3 rounded-full bg-gray-300 dark:bg-white/10" />
                 </div>
                 <div className="flex-1 flex justify-center">
-                  <div className="px-4 py-1 rounded-md bg-white/[0.05] text-xs text-white/40">
+                  <div className="px-4 py-1 rounded-md bg-gray-100 dark:bg-white/[0.05] text-xs text-gray-500 dark:text-white/40">
                     yoursite.cncptweb.com/admin
                   </div>
                 </div>
@@ -273,12 +275,12 @@ export default function DemoPage() {
               {/* Dashboard mockup */}
               <div className="flex">
                 {/* Sidebar */}
-                <div className="w-52 border-r border-white/[0.06] p-4 hidden md:block">
+                <div className="w-52 border-r border-gray-200 dark:border-white/[0.06] p-4 hidden md:block bg-gray-50 dark:bg-transparent">
                   <div className="space-y-1">
                     {["Dashboard", "Products", "Orders", "Pages", "Blog", "Media", "Analytics", "Settings"].map((item, i) => (
                       <div
                         key={item}
-                        className={`px-3 py-2 rounded-lg text-sm ${i === 0 ? "bg-white/[0.08] text-white" : "text-white/40"}`}
+                        className={`px-3 py-2 rounded-lg text-sm ${i === 0 ? "bg-blue-50 dark:bg-white/[0.08] text-blue-800 dark:text-white" : "text-gray-500 dark:text-white/40"}`}
                       >
                         {item}
                       </div>
@@ -287,31 +289,31 @@ export default function DemoPage() {
                 </div>
 
                 {/* Main */}
-                <div className="flex-1 p-6">
+                <div className="flex-1 p-6 bg-white dark:bg-transparent">
                   <div className="flex items-center justify-between mb-6">
                     <div>
-                      <div className="h-6 w-32 bg-white/10 rounded mb-1" />
-                      <div className="h-4 w-48 bg-white/5 rounded" />
+                      <div className="h-6 w-32 bg-gray-200 dark:bg-white/10 rounded mb-1" />
+                      <div className="h-4 w-48 bg-gray-100 dark:bg-white/5 rounded" />
                     </div>
-                    <div className="h-9 w-24 bg-violet-500/20 rounded-lg" />
+                    <div className="h-9 w-24 bg-orange-500/20 rounded-lg" />
                   </div>
 
                   <div className="grid grid-cols-4 gap-4 mb-6">
                     {[1, 2, 3, 4].map((n) => (
-                      <div key={n} className="p-4 rounded-xl border border-white/[0.06] bg-white/[0.02]">
-                        <div className="h-3 w-16 bg-white/10 rounded mb-2" />
-                        <div className="h-6 w-20 bg-white/20 rounded mb-1" />
+                      <div key={n} className="p-4 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02]">
+                        <div className="h-3 w-16 bg-gray-200 dark:bg-white/10 rounded mb-2" />
+                        <div className="h-6 w-20 bg-gray-300 dark:bg-white/20 rounded mb-1" />
                         <div className="h-3 w-12 bg-emerald-500/30 rounded" />
                       </div>
                     ))}
                   </div>
 
-                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                  <div className="rounded-xl border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] p-4">
                     <div className="flex items-center justify-between mb-4">
-                      <div className="h-4 w-32 bg-white/10 rounded" />
+                      <div className="h-4 w-32 bg-gray-200 dark:bg-white/10 rounded" />
                       <div className="flex gap-2">
                         {[1, 2, 3].map((n) => (
-                          <div key={n} className="h-6 w-12 bg-white/5 rounded" />
+                          <div key={n} className="h-6 w-12 bg-gray-100 dark:bg-white/5 rounded" />
                         ))}
                       </div>
                     </div>
@@ -319,7 +321,7 @@ export default function DemoPage() {
                       {[40, 65, 45, 80, 55, 90, 75, 85, 60, 95, 70, 88].map((h, i) => (
                         <div
                           key={i}
-                          className="flex-1 bg-gradient-to-t from-violet-600/60 to-cyan-500/60 rounded-sm"
+                          className="flex-1 bg-gradient-to-t from-blue-600/60 to-orange-400/60 rounded-sm"
                           style={{ height: `${h}%` }}
                         />
                       ))}
@@ -340,13 +342,13 @@ export default function DemoPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl font-bold mb-4">Ready to try it yourself?</h2>
-            <p className="text-white/50 mb-8">
+            <h2 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">Ready to try it yourself?</h2>
+            <p className="text-gray-600 dark:text-white/50 mb-8">
               Start your free trial and experience the full CMS in minutes.
             </p>
             <Link
               href="/register"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-white text-black rounded-xl font-medium hover:bg-white/90 transition-colors"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-blue-800 dark:bg-white text-white dark:text-gray-900 rounded-xl font-medium hover:bg-blue-700 dark:hover:bg-white/90 transition-colors"
             >
               Start free trial
               <ArrowRight className="w-4 h-4" />
@@ -356,18 +358,18 @@ export default function DemoPage() {
       </section>
 
       {/* Footer */}
-      <footer className="relative py-12 px-6 border-t border-white/[0.06]">
+      <footer className="relative py-12 px-6 border-t border-gray-200 dark:border-white/[0.06]">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-2">
             <div className="relative w-7 h-7">
-              <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-cyan-500 rounded-md opacity-80" />
-              <div className="absolute inset-[2px] bg-[#0a0a0b] rounded-[4px] flex items-center justify-center">
-                <span className="text-xs font-bold bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">C</span>
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-800 to-orange-500 rounded-md opacity-80" />
+              <div className="absolute inset-[2px] bg-white dark:bg-gray-900 rounded-[4px] flex items-center justify-center">
+                <span className="text-xs font-bold bg-gradient-to-r from-blue-800 to-orange-500 dark:from-blue-400 dark:to-orange-400 bg-clip-text text-transparent">C</span>
               </div>
             </div>
-            <span className="font-semibold">CNCPT</span>
+            <span className="font-semibold text-gray-900 dark:text-white">CNCPT</span>
           </Link>
-          <p className="text-sm text-white/30">
+          <p className="text-sm text-gray-400 dark:text-white/30">
             &copy; {new Date().getFullYear()} CNCPT Web. All rights reserved.
           </p>
         </div>

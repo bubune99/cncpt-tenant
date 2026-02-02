@@ -4,6 +4,7 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import { useState } from "react"
 import { Check, Sparkles, Zap, HelpCircle } from "lucide-react"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 const plans = [
   {
@@ -131,12 +132,12 @@ export default function PricingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   return (
-    <div className="min-h-screen bg-[#0a0a0b] text-white">
+    <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-800 dark:text-white">
       {/* Ambient Background */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-violet-600/20 rounded-full blur-[150px] opacity-50" />
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-cyan-600/20 rounded-full blur-[150px] opacity-40" />
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDMpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-60" />
+        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-blue-600/10 dark:bg-blue-600/20 rounded-full blur-[150px] opacity-50" />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-orange-500/10 dark:bg-orange-500/20 rounded-full blur-[150px] opacity-40" />
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDAsMCwwLDAuMDMpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] dark:bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDMpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-60" />
       </div>
 
       {/* Navigation */}
@@ -144,18 +145,19 @@ export default function PricingPage() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
             <div className="relative w-9 h-9">
-              <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-cyan-500 rounded-lg opacity-80 group-hover:opacity-100 transition-opacity" />
-              <div className="absolute inset-[2px] bg-[#0a0a0b] rounded-[6px] flex items-center justify-center">
-                <span className="text-sm font-bold bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">C</span>
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-800 to-orange-500 rounded-lg opacity-80 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute inset-[2px] bg-white dark:bg-gray-900 rounded-[6px] flex items-center justify-center">
+                <span className="text-sm font-bold bg-gradient-to-r from-blue-800 to-orange-500 dark:from-blue-400 dark:to-orange-400 bg-clip-text text-transparent">C</span>
               </div>
             </div>
-            <span className="text-lg font-semibold tracking-tight">CNCPT</span>
+            <span className="text-lg font-semibold tracking-tight text-gray-900 dark:text-white">CNCPT</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
-            <Link href="/demo" className="text-sm text-white/60 hover:text-white transition-colors">Demo</Link>
-            <Link href="/book" className="text-sm text-white/60 hover:text-white transition-colors">Book Call</Link>
-            <Link href="/register" className="px-5 py-2.5 text-sm font-medium bg-white text-black rounded-xl hover:bg-white/90 transition-colors">
+            <Link href="/demo" className="text-sm text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-colors">Demo</Link>
+            <Link href="/book" className="text-sm text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-colors">Book Call</Link>
+            <ThemeToggle />
+            <Link href="/register" className="px-5 py-2.5 text-sm font-medium bg-blue-800 dark:bg-white text-white dark:text-gray-900 rounded-xl hover:bg-blue-700 dark:hover:bg-white/90 transition-colors">
               Get Started
             </Link>
           </nav>
@@ -170,14 +172,14 @@ export default function PricingPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 text-gray-900 dark:text-white">
               Simple, transparent
               <br />
-              <span className="bg-gradient-to-r from-violet-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-800 via-blue-600 to-orange-500 dark:from-blue-400 dark:via-blue-300 dark:to-orange-400 bg-clip-text text-transparent">
                 per-site pricing
               </span>
             </h1>
-            <p className="text-lg text-white/50 max-w-xl mx-auto mb-10">
+            <p className="text-lg text-gray-600 dark:text-white/50 max-w-xl mx-auto mb-10">
               Everything you need to build and scale. No hidden fees.
               Pay only for what you use.
             </p>
@@ -188,12 +190,12 @@ export default function PricingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="inline-flex items-center gap-4 p-1.5 rounded-xl border border-white/[0.1] bg-white/[0.02]"
+            className="inline-flex items-center gap-4 p-1.5 rounded-xl border border-gray-200 dark:border-white/[0.1] bg-gray-50 dark:bg-white/[0.02]"
           >
             <button
               onClick={() => setAnnual(false)}
               className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                !annual ? "bg-white text-black" : "text-white/60 hover:text-white"
+                !annual ? "bg-blue-800 dark:bg-white text-white dark:text-gray-900" : "text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white"
               }`}
             >
               Monthly
@@ -201,11 +203,11 @@ export default function PricingPage() {
             <button
               onClick={() => setAnnual(true)}
               className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                annual ? "bg-white text-black" : "text-white/60 hover:text-white"
+                annual ? "bg-blue-800 dark:bg-white text-white dark:text-gray-900" : "text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white"
               }`}
             >
               Annual
-              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
                 Save 17%
               </span>
             </button>
@@ -225,30 +227,30 @@ export default function PricingPage() {
                 transition={{ duration: 0.5, delay: 0.1 + i * 0.1 }}
                 className={`relative rounded-2xl border p-6 ${
                   plan.popular
-                    ? "border-violet-500/50 bg-violet-500/5"
-                    : "border-white/[0.08] bg-white/[0.02]"
+                    ? "border-orange-500/50 bg-orange-500/5"
+                    : "border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.02]"
                 }`}
               >
                 {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-gradient-to-r from-violet-600 to-cyan-600 text-xs font-medium">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-gradient-to-r from-blue-800 to-orange-500 text-xs font-medium text-white">
                     Most Popular
                   </div>
                 )}
 
                 <div className="mb-6">
-                  <h3 className="text-xl font-semibold mb-1">{plan.name}</h3>
-                  <p className="text-sm text-white/40">{plan.description}</p>
+                  <h3 className="text-xl font-semibold mb-1 text-gray-900 dark:text-white">{plan.name}</h3>
+                  <p className="text-sm text-gray-500 dark:text-white/40">{plan.description}</p>
                 </div>
 
                 <div className="mb-6">
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold">
+                    <span className="text-4xl font-bold text-gray-900 dark:text-white">
                       ${annual ? Math.round(plan.yearlyPrice / 12) : plan.price}
                     </span>
-                    <span className="text-white/40">/mo</span>
+                    <span className="text-gray-500 dark:text-white/40">/mo</span>
                   </div>
                   {annual && (
-                    <p className="text-sm text-white/40 mt-1">
+                    <p className="text-sm text-gray-500 dark:text-white/40 mt-1">
                       ${plan.yearlyPrice}/year billed annually
                     </p>
                   )}
@@ -258,8 +260,8 @@ export default function PricingPage() {
                   href={plan.href}
                   className={`block w-full py-3 rounded-xl text-center text-sm font-medium transition-all mb-6 ${
                     plan.popular
-                      ? "bg-gradient-to-r from-violet-600 to-cyan-600 text-white hover:opacity-90"
-                      : "border border-white/[0.1] text-white hover:bg-white/[0.05]"
+                      ? "bg-gradient-to-r from-blue-800 to-orange-500 text-white hover:opacity-90"
+                      : "border border-gray-200 dark:border-white/[0.1] text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/[0.05]"
                   }`}
                 >
                   {plan.cta}
@@ -268,12 +270,12 @@ export default function PricingPage() {
                 <ul className="space-y-3">
                   {plan.features.map((feature, j) => (
                     <li key={j} className="flex items-start gap-3 text-sm">
-                      <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
-                      <span className="text-white/70">{feature.text}</span>
+                      <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
+                      <span className="text-gray-600 dark:text-white/70">{feature.text}</span>
                       {feature.tooltip && (
                         <span className="group relative">
-                          <HelpCircle className="w-3.5 h-3.5 text-white/30 cursor-help" />
-                          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 rounded bg-white text-black text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                          <HelpCircle className="w-3.5 h-3.5 text-gray-400 dark:text-white/30 cursor-help" />
+                          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 rounded bg-gray-900 dark:bg-white text-white dark:text-black text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                             {feature.tooltip}
                           </span>
                         </span>
@@ -288,7 +290,7 @@ export default function PricingPage() {
       </section>
 
       {/* Add-ons */}
-      <section className="relative py-20 px-6 border-t border-white/[0.06]">
+      <section className="relative py-20 px-6 border-t border-gray-200 dark:border-white/[0.06]">
         <div className="max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -296,8 +298,8 @@ export default function PricingPage() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl font-bold mb-4">Add-ons & Overages</h2>
-            <p className="text-white/50">Need more? Scale up with flexible add-ons.</p>
+            <h2 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">Add-ons & Overages</h2>
+            <p className="text-gray-600 dark:text-white/50">Need more? Scale up with flexible add-ons.</p>
           </motion.div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -308,11 +310,11 @@ export default function PricingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="p-5 rounded-xl border border-white/[0.08] bg-white/[0.02]"
+                className="p-5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.02]"
               >
-                <h3 className="font-medium mb-1">{addon.name}</h3>
-                <p className="text-2xl font-bold text-white mb-1">{addon.price}</p>
-                <p className="text-xs text-white/40">{addon.note}</p>
+                <h3 className="font-medium mb-1 text-gray-900 dark:text-white">{addon.name}</h3>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{addon.price}</p>
+                <p className="text-xs text-gray-500 dark:text-white/40">{addon.note}</p>
               </motion.div>
             ))}
           </div>
@@ -320,7 +322,7 @@ export default function PricingPage() {
       </section>
 
       {/* AI Credit Packs */}
-      <section className="relative py-20 px-6 border-t border-white/[0.06]">
+      <section className="relative py-20 px-6 border-t border-gray-200 dark:border-white/[0.06]">
         <div className="max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -328,12 +330,12 @@ export default function PricingPage() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 text-violet-400 text-sm mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-600 dark:text-orange-400 text-sm mb-4">
               <Sparkles className="w-4 h-4" />
               AI Credits
             </div>
-            <h2 className="text-3xl font-bold mb-4">AI Credit Packs</h2>
-            <p className="text-white/50">Need more AI power? Purchase credits anytime.</p>
+            <h2 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">AI Credit Packs</h2>
+            <p className="text-gray-600 dark:text-white/50">Need more AI power? Purchase credits anytime.</p>
           </motion.div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -346,17 +348,17 @@ export default function PricingPage() {
                 transition={{ delay: i * 0.1 }}
                 className={`p-5 rounded-xl border ${
                   pack.popular
-                    ? "border-violet-500/50 bg-violet-500/5"
-                    : "border-white/[0.08] bg-white/[0.02]"
+                    ? "border-orange-500/50 bg-orange-500/5"
+                    : "border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.02]"
                 }`}
               >
                 {pack.popular && (
-                  <span className="text-xs text-violet-400 font-medium">Best Value</span>
+                  <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">Best Value</span>
                 )}
-                <h3 className="font-medium mb-1">{pack.name}</h3>
-                <p className="text-3xl font-bold text-white mb-1">{pack.credits}</p>
-                <p className="text-sm text-white/40 mb-3">credits</p>
-                <p className="text-lg font-semibold text-emerald-400">{pack.price}</p>
+                <h3 className="font-medium mb-1 text-gray-900 dark:text-white">{pack.name}</h3>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{pack.credits}</p>
+                <p className="text-sm text-gray-500 dark:text-white/40 mb-3">credits</p>
+                <p className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">{pack.price}</p>
               </motion.div>
             ))}
           </div>
@@ -364,7 +366,7 @@ export default function PricingPage() {
       </section>
 
       {/* FAQ */}
-      <section className="relative py-20 px-6 border-t border-white/[0.06]">
+      <section className="relative py-20 px-6 border-t border-gray-200 dark:border-white/[0.06]">
         <div className="max-w-3xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -372,7 +374,7 @@ export default function PricingPage() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl font-bold mb-4">Frequently Asked Questions</h2>
+            <h2 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">Frequently Asked Questions</h2>
           </motion.div>
 
           <div className="space-y-3">
@@ -383,19 +385,19 @@ export default function PricingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.05 }}
-                className="border border-white/[0.08] rounded-xl overflow-hidden"
+                className="border border-gray-200 dark:border-white/[0.08] rounded-xl overflow-hidden"
               >
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-white/[0.02] transition-colors"
+                  className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
                 >
-                  <span className="font-medium">{faq.q}</span>
-                  <span className={`text-white/40 transition-transform ${openFaq === i ? "rotate-45" : ""}`}>
+                  <span className="font-medium text-gray-900 dark:text-white">{faq.q}</span>
+                  <span className={`text-gray-400 dark:text-white/40 transition-transform ${openFaq === i ? "rotate-45" : ""}`}>
                     +
                   </span>
                 </button>
                 {openFaq === i && (
-                  <div className="px-6 pb-4 text-sm text-white/60 leading-relaxed">
+                  <div className="px-6 pb-4 text-sm text-gray-600 dark:text-white/60 leading-relaxed">
                     {faq.a}
                   </div>
                 )}
@@ -412,25 +414,25 @@ export default function PricingPage() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="relative rounded-2xl border border-white/[0.1] bg-white/[0.02] p-12 text-center overflow-hidden"
+            className="relative rounded-2xl border border-gray-200 dark:border-white/[0.1] bg-white dark:bg-white/[0.02] p-12 text-center overflow-hidden"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-violet-600/20 via-cyan-600/20 to-emerald-600/20 blur-3xl opacity-30" />
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-orange-500/10 to-blue-500/10 dark:from-blue-600/20 dark:via-orange-500/20 dark:to-blue-500/20 blur-3xl opacity-30" />
             <div className="relative">
-              <Zap className="w-12 h-12 text-violet-400 mx-auto mb-6" />
-              <h2 className="text-3xl font-bold mb-4">Ready to get started?</h2>
-              <p className="text-white/50 mb-8 max-w-md mx-auto">
+              <Zap className="w-12 h-12 text-orange-500 dark:text-orange-400 mx-auto mb-6" />
+              <h2 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">Ready to get started?</h2>
+              <p className="text-gray-600 dark:text-white/50 mb-8 max-w-md mx-auto">
                 Start your free trial today. No credit card required.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
                   href="/register"
-                  className="px-8 py-4 bg-white text-black rounded-xl font-medium hover:bg-white/90 transition-colors"
+                  className="px-8 py-4 bg-blue-800 dark:bg-white text-white dark:text-gray-900 rounded-xl font-medium hover:bg-blue-700 dark:hover:bg-white/90 transition-colors"
                 >
                   Start free trial
                 </Link>
                 <Link
                   href="/book"
-                  className="px-8 py-4 border border-white/[0.1] rounded-xl font-medium hover:bg-white/[0.05] transition-colors"
+                  className="px-8 py-4 border border-gray-200 dark:border-white/[0.1] rounded-xl font-medium hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors text-gray-700 dark:text-white"
                 >
                   Talk to sales
                 </Link>
@@ -441,18 +443,18 @@ export default function PricingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="relative py-12 px-6 border-t border-white/[0.06]">
+      <footer className="relative py-12 px-6 border-t border-gray-200 dark:border-white/[0.06]">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-2">
             <div className="relative w-7 h-7">
-              <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-cyan-500 rounded-md opacity-80" />
-              <div className="absolute inset-[2px] bg-[#0a0a0b] rounded-[4px] flex items-center justify-center">
-                <span className="text-xs font-bold bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">C</span>
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-800 to-orange-500 rounded-md opacity-80" />
+              <div className="absolute inset-[2px] bg-white dark:bg-gray-900 rounded-[4px] flex items-center justify-center">
+                <span className="text-xs font-bold bg-gradient-to-r from-blue-800 to-orange-500 dark:from-blue-400 dark:to-orange-400 bg-clip-text text-transparent">C</span>
               </div>
             </div>
-            <span className="font-semibold">CNCPT</span>
+            <span className="font-semibold text-gray-900 dark:text-white">CNCPT</span>
           </Link>
-          <p className="text-sm text-white/30">
+          <p className="text-sm text-gray-400 dark:text-white/30">
             &copy; {new Date().getFullYear()} CNCPT Web. All rights reserved.
           </p>
         </div>
