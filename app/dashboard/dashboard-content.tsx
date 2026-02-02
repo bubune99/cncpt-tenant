@@ -9,7 +9,6 @@ import { Billing } from "./billing"
 import { Credits } from "./credits"
 import { FrontendDeployment } from "./frontend-deployment"
 import { McpIntegration } from "./mcp-integration"
-import { CMSFeatures } from "./cms-features"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -79,8 +78,6 @@ export function DashboardContent({
         return <SiteVisibility selectedSubdomain={selectedSubdomain} />
       case "domains":
         return <DomainManagement subdomains={subdomains} selectedSubdomain={selectedSubdomain} />
-      case "cms-features":
-        return <CMSFeatures selectedSubdomain={selectedSubdomain} />
       case "settings":
         return <SiteSettings selectedSubdomain={selectedSubdomain} />
       case "appearance":

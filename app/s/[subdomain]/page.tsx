@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation"
 import { getTenantData } from "@/lib/tenant"
 import { StorefrontRouter } from "@/components/cms/storefront"
-import { DemoWelcomePage } from "@/components/demo/DemoWelcomePage"
-import { isDemoSubdomain } from "@/lib/demo"
+import { prisma } from "@/lib/cms/db"
+import type { Data } from "@puckeditor/core"
+import { PageWrapper, getPageLayoutSettings } from "@/components/cms/page-wrapper"
+import { PageRenderer } from "@/components/cms/page-wrapper/page-renderer"
 
 export const dynamic = "force-dynamic"
 
@@ -30,13 +32,94 @@ function DatabaseError({ subdomain }: { subdomain: string }) {
   )
 }
 
+/**
+ * Recursively validate component data
+ */
+function isValidComponent(item: unknown, depth = 0): boolean {
+  if (depth > 50) return false
+  if (!item || typeof item !== "object") return false
+
+  const component = item as Record<string, unknown>
+  if (typeof component.type !== "string" || !component.type.trim()) {
+    return false
+  }
+
+  if (component.props && typeof component.props === "object") {
+    const props = component.props as Record<string, unknown>
+    for (const [, value] of Object.entries(props)) {
+      if (Array.isArray(value)) {
+        for (const nestedItem of value) {
+          if (nestedItem && typeof nestedItem === "object" && "type" in nestedItem) {
+            if (!isValidComponent(nestedItem, depth + 1)) {
+              return false
+            }
+          }
+        }
+      } else if (value && typeof value === "object" && "type" in value) {
+        if (!isValidComponent(value, depth + 1)) {
+          return false
+        }
+      }
+    }
+  }
+
+  return true
+}
+
+/**
+ * Validate Puck content data
+ */
+function validatePuckContent(content: unknown): Data | null {
+  if (!content || typeof content !== "object") return null
+
+  const data = content as Data
+  if (!Array.isArray(data.content)) return null
+
+  for (const item of data.content) {
+    if (!isValidComponent(item)) {
+      return null
+    }
+  }
+
+  if (data.zones && typeof data.zones === "object") {
+    for (const [, zoneContent] of Object.entries(data.zones)) {
+      if (Array.isArray(zoneContent)) {
+        for (const item of zoneContent) {
+          if (!isValidComponent(item)) {
+            return null
+          }
+        }
+      }
+    }
+  }
+
+  return data as Data
+}
+
+/**
+ * Fetch home page (slug "/") for the tenant
+ */
+async function getHomePage(tenantId: number) {
+  try {
+    const page = await prisma.page.findFirst({
+      where: {
+        slug: "/",
+        status: "PUBLISHED",
+        tenantId: tenantId,
+      },
+      include: {
+        featuredImage: true,
+      },
+    })
+    return page
+  } catch (error) {
+    console.error("[Storefront] Error fetching home page:", error)
+    return null
+  }
+}
+
 export default async function SubdomainPage({ params }: SubdomainPageProps) {
   const { subdomain } = await params
-
-  // Check if this is the demo subdomain - show welcome page
-  if (isDemoSubdomain(subdomain)) {
-    return <DemoWelcomePage />
-  }
 
   // Verify the subdomain exists in our tenant database
   let tenantData
@@ -52,8 +135,24 @@ export default async function SubdomainPage({ params }: SubdomainPageProps) {
     notFound()
   }
 
-  // Use the CMS StorefrontRouter to render the home page
-  // Pass tenantId to filter content by tenant
+  // Check if tenant has a home page with Puck content
+  const homePage = await getHomePage(tenantData.id)
+
+  if (homePage && homePage.content) {
+    // Validate and render Puck content
+    const validatedContent = validatePuckContent(homePage.content)
+
+    if (validatedContent) {
+      // Render the home page with Puck content
+      return (
+        <PageWrapper pageSettings={getPageLayoutSettings(homePage)}>
+          <PageRenderer puckContent={validatedContent} />
+        </PageWrapper>
+      )
+    }
+  }
+
+  // Fall back to the default StorefrontRouter
   return (
     <StorefrontRouter subdomain={subdomain} path={[]} tenantId={tenantData.id} />
   )

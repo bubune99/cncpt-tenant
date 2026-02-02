@@ -10,7 +10,113 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/neon";
 import { redis } from "@/lib/redis";
+import { prisma } from "@/lib/cms/db";
 import { DEMO_CONFIG } from "@/lib/demo";
+
+// Puck content for the demo welcome/home page
+// Uses components from pagesPuckConfig (puck/pages/config.tsx)
+const DEMO_HOME_PAGE_CONTENT = {
+  root: { props: {} },
+  content: [
+    {
+      type: "HeroSection",
+      props: {
+        title: "Welcome to CNCPT Demo",
+        subtitle: "Explore the full power of our all-in-one CMS platform. Browse products, manage content, view analytics, and discover AI-powered features. No sign-up required.",
+        backgroundColor: "#1e3a5f",
+        textColor: "#ffffff",
+        height: "large",
+        alignment: "center",
+        overlay: false,
+        overlayOpacity: 50,
+      },
+    },
+    {
+      type: "Spacer",
+      props: {
+        height: "large",
+      },
+    },
+    {
+      type: "Heading",
+      props: {
+        text: "What You Can Explore",
+        level: "h2",
+        align: "center",
+      },
+    },
+    {
+      type: "Text",
+      props: {
+        text: "This demo includes sample data across all features",
+        align: "center",
+        size: "large",
+      },
+    },
+    {
+      type: "Spacer",
+      props: {
+        height: "medium",
+      },
+    },
+    {
+      type: "TextBlock",
+      props: {
+        content: `
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; max-width: 1200px; margin: 0 auto;">
+            <div style="padding: 1.5rem; border: 1px solid #e5e7eb; border-radius: 0.5rem;">
+              <h3 style="font-weight: 600; margin-bottom: 0.5rem;">Product Management</h3>
+              <p style="color: #666;">Manage inventory, variants, pricing, and more</p>
+            </div>
+            <div style="padding: 1.5rem; border: 1px solid #e5e7eb; border-radius: 0.5rem;">
+              <h3 style="font-weight: 600; margin-bottom: 0.5rem;">Content & Blog</h3>
+              <p style="color: #666;">Rich text editor with SEO tools and scheduling</p>
+            </div>
+            <div style="padding: 1.5rem; border: 1px solid #e5e7eb; border-radius: 0.5rem;">
+              <h3 style="font-weight: 600; margin-bottom: 0.5rem;">Visual Page Builder</h3>
+              <p style="color: #666;">Drag-and-drop editor with 40+ components</p>
+            </div>
+            <div style="padding: 1.5rem; border: 1px solid #e5e7eb; border-radius: 0.5rem;">
+              <h3 style="font-weight: 600; margin-bottom: 0.5rem;">Analytics Dashboard</h3>
+              <p style="color: #666;">Real-time insights and conversion tracking</p>
+            </div>
+            <div style="padding: 1.5rem; border: 1px solid #e5e7eb; border-radius: 0.5rem;">
+              <h3 style="font-weight: 600; margin-bottom: 0.5rem;">Email Marketing</h3>
+              <p style="color: #666;">Campaigns, automation, and analytics</p>
+            </div>
+            <div style="padding: 1.5rem; border: 1px solid #e5e7eb; border-radius: 0.5rem;">
+              <h3 style="font-weight: 600; margin-bottom: 0.5rem;">AI Assistant</h3>
+              <p style="color: #666;">Generate content with intelligent suggestions</p>
+            </div>
+          </div>
+        `,
+        size: "medium",
+        alignment: "left",
+        maxWidth: "100%",
+        padding: "medium",
+      },
+    },
+    {
+      type: "Spacer",
+      props: {
+        height: "large",
+      },
+    },
+    {
+      type: "CTASection",
+      props: {
+        title: "Ready to Explore?",
+        description: "Click below to access the full CMS admin panel and see all features in action.",
+        buttonText: "Explore the CMS",
+        buttonUrl: "/admin",
+        backgroundColor: "#c2410c",
+        textColor: "#ffffff",
+        alignment: "center",
+      },
+    },
+  ],
+  zones: {},
+};
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +173,34 @@ export async function POST(request: NextRequest) {
       userId: "demo-system",
       isDemo: true,
     });
+
+    // Create the demo home page using Puck content
+    try {
+      await prisma.page.upsert({
+        where: {
+          id: "demo-home-page",
+        },
+        update: {
+          content: DEMO_HOME_PAGE_CONTENT,
+          status: "PUBLISHED",
+        },
+        create: {
+          id: "demo-home-page",
+          title: "Welcome to CNCPT Demo",
+          slug: "/",
+          status: "PUBLISHED",
+          tenantId: subdomainId,
+          content: DEMO_HOME_PAGE_CONTENT,
+          metaTitle: "CNCPT Demo - Explore Our CMS Platform",
+          metaDescription: "Experience the full power of CNCPT CMS. Browse products, manage content, view analytics, and discover AI-powered features.",
+          headerMode: "NONE",
+          footerMode: "NONE",
+        },
+      });
+      console.log("[demo-setup] Demo home page created successfully");
+    } catch (e) {
+      console.log("[demo-setup] Error creating demo home page:", e);
+    }
 
     // Seed sample blog posts if the posts table exists
     try {
