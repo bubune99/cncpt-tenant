@@ -209,18 +209,20 @@ ON CONFLICT (name) DO UPDATE SET
   sort_order = EXCLUDED.sort_order,
   updated_at = NOW();
 
--- Seed Credit Packs (Stripe prices to be added later)
-INSERT INTO ai_credit_packs (name, display_name, description, credits, bonus_credits, price_cents, badge, is_popular, sort_order, show_in_onboarding) VALUES
-  ('starter', 'Starter Pack', 'Get started with AI features', 500, 0, 500, NULL, false, 1, true),
-  ('popular', 'Growth Pack', 'Most popular choice', 2000, 200, 1500, 'popular', true, 2, true),
-  ('pro', 'Pro Pack', 'For power users', 5000, 750, 3500, 'best_value', false, 3, true),
-  ('enterprise', 'Enterprise Pack', 'Maximum credits', 15000, 3000, 9900, NULL, false, 4, false)
+-- Seed Credit Packs with Stripe IDs (LIVE)
+INSERT INTO ai_credit_packs (name, display_name, description, credits, bonus_credits, price_cents, stripe_product_id, stripe_price_id, badge, is_popular, sort_order, show_in_onboarding) VALUES
+  ('starter', 'Starter Pack', 'Get started with AI features', 500, 0, 500, 'prod_TtyK5VFxgLWHVY', 'price_1SwANX86FlZ1gJyipeFc28sg', NULL, false, 1, true),
+  ('popular', 'Growth Pack', 'Most popular choice', 2000, 200, 1500, 'prod_TtyKu7obi3CsSU', 'price_1SwANY86FlZ1gJyigoLMw5JE', 'popular', true, 2, true),
+  ('pro', 'Pro Pack', 'For power users', 5000, 750, 3500, 'prod_TtyK8lp2AeUixT', 'price_1SwANZ86FlZ1gJyiY6hBvR1x', 'best_value', false, 3, true),
+  ('enterprise', 'Enterprise Pack', 'Maximum credits', 15000, 3000, 9900, 'prod_TtyKtUtckAJ4QM', 'price_1SwANZ86FlZ1gJyiEe5UHRtt', NULL, false, 4, false)
 ON CONFLICT (name) DO UPDATE SET
   display_name = EXCLUDED.display_name,
   description = EXCLUDED.description,
   credits = EXCLUDED.credits,
   bonus_credits = EXCLUDED.bonus_credits,
   price_cents = EXCLUDED.price_cents,
+  stripe_product_id = EXCLUDED.stripe_product_id,
+  stripe_price_id = EXCLUDED.stripe_price_id,
   badge = EXCLUDED.badge,
   is_popular = EXCLUDED.is_popular,
   sort_order = EXCLUDED.sort_order,
@@ -228,23 +230,26 @@ ON CONFLICT (name) DO UPDATE SET
   updated_at = NOW();
 
 -- ============================================
--- 7. Update subscription_tiers with AI credit limits
+-- 7. Update subscription_tiers with AI credit limits (Per-Site Model)
 -- ============================================
-UPDATE subscription_tiers SET
-  limits = limits || '{"ai_credits_monthly": 50, "ai_credits_rollover_cap": 100, "ai_features": ["chat", "content_rewrite", "content_summarize", "seo_meta", "grammar_check", "tone_adjust"]}'::jsonb
-WHERE name = 'free';
+-- Note: AI credits are now included in the tier limits defined in seed-tiers.sql
+-- These updates ensure ai_features are properly set for each tier
 
 UPDATE subscription_tiers SET
-  limits = limits || '{"ai_credits_monthly": 200, "ai_credits_rollover_cap": 400, "ai_features": ["chat", "chat_with_context", "content_generation", "content_rewrite", "content_expand", "content_summarize", "seo_meta", "seo_keywords", "image_generation", "image_background", "translation", "grammar_check", "tone_adjust"]}'::jsonb
+  limits = limits || '{"ai_features": ["chat", "chat_with_context", "content_generation", "content_rewrite", "content_expand", "content_summarize", "seo_meta", "seo_keywords", "image_generation", "image_background", "translation", "grammar_check", "tone_adjust"]}'::jsonb
 WHERE name = 'starter';
 
 UPDATE subscription_tiers SET
-  limits = limits || '{"ai_credits_monthly": 1000, "ai_credits_rollover_cap": 2000, "ai_features": ["chat", "chat_with_context", "content_generation", "content_rewrite", "content_expand", "content_summarize", "seo_meta", "seo_keywords", "image_generation", "image_edit", "image_background", "translation", "grammar_check", "tone_adjust"]}'::jsonb
+  limits = limits || '{"ai_features": ["chat", "chat_with_context", "content_generation", "content_rewrite", "content_expand", "content_summarize", "seo_meta", "seo_keywords", "image_generation", "image_background", "translation", "grammar_check", "tone_adjust"]}'::jsonb
+WHERE name = 'growth';
+
+UPDATE subscription_tiers SET
+  limits = limits || '{"ai_features": ["chat", "chat_with_context", "content_generation", "content_rewrite", "content_expand", "content_summarize", "seo_meta", "seo_keywords", "image_generation", "image_edit", "image_background", "translation", "grammar_check", "tone_adjust"]}'::jsonb
 WHERE name = 'pro';
 
 UPDATE subscription_tiers SET
-  limits = limits || '{"ai_credits_monthly": 5000, "ai_credits_rollover_cap": 10000, "ai_features": "*"}'::jsonb
-WHERE name = 'enterprise';
+  limits = limits || '{"ai_features": "*"}'::jsonb
+WHERE name = 'business';
 
 -- ============================================
 -- 8. Output summary
