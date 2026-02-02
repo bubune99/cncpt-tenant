@@ -8,6 +8,7 @@
 
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -107,6 +108,7 @@ const logLevelColors: Record<string, string> = {
 
 export default function WorkflowDetailPage({ params }: PageProps) {
   const { id } = use(params);
+  const { buildPath } = useCMSConfig();
   const router = useRouter();
   const [workflow, setWorkflow] = useState<Workflow | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -228,7 +230,7 @@ export default function WorkflowDetailPage({ params }: PageProps) {
         <div className="text-center py-12">
           <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-lg font-medium mb-2">{error || 'Workflow not found'}</h3>
-          <Link href="/admin/workflows">
+          <Link href={buildPath('/admin/workflows')}>
             <Button variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Workflows
@@ -248,7 +250,7 @@ export default function WorkflowDetailPage({ params }: PageProps) {
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-          <Link href="/admin/workflows" className="hover:text-foreground transition-colors">
+          <Link href={buildPath('/admin/workflows')} className="hover:text-foreground transition-colors">
             Workflows
           </Link>
           <ChevronRight className="h-4 w-4" />
@@ -297,7 +299,7 @@ export default function WorkflowDetailPage({ params }: PageProps) {
               )}
               Run Now
             </Button>
-            <Link href={`/admin/workflows/${id}/edit`}>
+            <Link href={buildPath(`/admin/workflows/${id}/edit`)}>
               <Button variant="outline">
                 <Edit className="h-4 w-4 mr-2" />
                 Edit

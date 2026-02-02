@@ -9,6 +9,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { ArrowLeft, Loader2, Save, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/cms/ui/button';
 import { toast } from 'sonner';
@@ -43,6 +44,7 @@ interface NavLink {
 }
 
 export default function HeaderEditorPage() {
+  const { buildPath } = useCMSConfig();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -135,7 +137,7 @@ export default function HeaderEditorPage() {
       <div className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b bg-background">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/admin/site-settings">
+            <Link href={buildPath('/admin/site-settings')}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>

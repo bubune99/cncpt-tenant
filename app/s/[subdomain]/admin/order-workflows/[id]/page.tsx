@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import { useCMSConfig } from '@/contexts/CMSConfigContext'
 import {
   ArrowLeft,
   Save,
@@ -102,6 +103,7 @@ interface OrderWorkflow {
 }
 
 export default function EditOrderWorkflowPage() {
+  const { buildPath } = useCMSConfig()
   const router = useRouter()
   const params = useParams()
   const workflowId = params.id as string
@@ -417,7 +419,7 @@ export default function EditOrderWorkflowPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
-          <Link href="/admin/order-workflows">
+          <Link href={buildPath('/admin/order-workflows')}>
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-4 w-4" />
             </Button>

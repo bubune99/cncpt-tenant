@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useCMSConfig } from '@/contexts/CMSConfigContext'
 import {
   ArrowLeft,
   Save,
@@ -55,6 +56,7 @@ interface PageProps {
 }
 
 export default function EditRolePage({ params }: PageProps) {
+  const { buildPath } = useCMSConfig()
   const { id } = use(params)
   const router = useRouter()
   const [role, setRole] = useState<Role | null>(null)
@@ -219,7 +221,7 @@ export default function EditRolePage({ params }: PageProps) {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
-          <Link href="/admin/roles">
+          <Link href={buildPath('/admin/roles')}>
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>

@@ -5,6 +5,7 @@ import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/cms/ui/button';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { Puck, Data, Drawer } from '@puckeditor/core';
 import '@puckeditor/core/puck.css';
 
@@ -124,6 +125,7 @@ const defaultHeaderData: Data = {
 };
 
 export default function HeaderEditorPage() {
+  const { buildPath } = useCMSConfig();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -255,7 +257,7 @@ export default function HeaderEditorPage() {
           Unable to load header settings. Please try again.
         </p>
         <Button asChild>
-          <Link href="/admin/pages/layout">
+          <Link href={buildPath('/admin/pages/layout')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Layout Settings
           </Link>
@@ -270,7 +272,7 @@ export default function HeaderEditorPage() {
         {/* Application Header */}
         <div className="puck-app-header">
           <div className="puck-app-header-left">
-            <Link href="/admin/pages/layout" className="puck-back-link">
+            <Link href={buildPath('/admin/pages/layout')} className="puck-back-link">
               <ArrowLeft className="h-4 w-4" />
               <span>Layout</span>
             </Link>

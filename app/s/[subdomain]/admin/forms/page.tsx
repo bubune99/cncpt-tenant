@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { Button } from '@/components/cms/ui/button';
 import {
   Card,
@@ -70,6 +71,7 @@ interface Form {
 }
 
 export default function FormsPage() {
+  const { buildPath } = useCMSConfig();
   const [forms, setForms] = useState<Form[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -201,7 +203,7 @@ export default function FormsPage() {
             Refresh
           </Button>
           <Button asChild data-help-key="admin.forms.new">
-            <Link href="/admin/forms/new">
+            <Link href={buildPath('/admin/forms/new')}>
               <Plus className="mr-2 h-4 w-4" />
               New Form
             </Link>
@@ -283,7 +285,7 @@ export default function FormsPage() {
                 Get started by creating your first form.
               </p>
               <Button asChild>
-                <Link href="/admin/forms/new">
+                <Link href={buildPath('/admin/forms/new')}>
                   <Plus className="mr-2 h-4 w-4" />
                   Create Form
                 </Link>
@@ -306,7 +308,7 @@ export default function FormsPage() {
                   <TableRow key={form.id}>
                     <TableCell>
                       <Link
-                        href={'/admin/forms/' + form.id}
+                        href={buildPath('/admin/forms/' + form.id)}
                         className="flex items-center gap-3 hover:text-primary transition-colors"
                       >
                         <ClipboardList className="h-4 w-4 text-muted-foreground" />
@@ -328,7 +330,7 @@ export default function FormsPage() {
                     <TableCell>{getStatusBadge(form.status)}</TableCell>
                     <TableCell>
                       <Link
-                        href={'/admin/forms/' + form.id + '?tab=submissions'}
+                        href={buildPath('/admin/forms/' + form.id + '?tab=submissions')}
                         className="flex items-center gap-2 hover:text-primary"
                       >
                         <Inbox className="h-4 w-4" />
@@ -347,13 +349,13 @@ export default function FormsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
-                            <Link href={'/admin/forms/' + form.id}>
+                            <Link href={buildPath('/admin/forms/' + form.id)}>
                               <Pencil className="mr-2 h-4 w-4" />
                               Edit Form
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>
-                            <Link href={'/admin/forms/' + form.id + '?tab=submissions'}>
+                            <Link href={buildPath('/admin/forms/' + form.id + '?tab=submissions')}>
                               <Inbox className="mr-2 h-4 w-4" />
                               View Submissions
                             </Link>

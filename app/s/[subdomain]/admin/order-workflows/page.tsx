@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useCMSConfig } from '@/contexts/CMSConfigContext'
 import {
   Plus,
   MoreHorizontal,
@@ -79,6 +80,7 @@ interface OrderWorkflow {
 }
 
 export default function OrderWorkflowsPage() {
+  const { buildPath } = useCMSConfig()
   const [workflows, setWorkflows] = useState<OrderWorkflow[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -240,7 +242,7 @@ export default function OrderWorkflowsPage() {
               Seed Defaults
             </Button>
           )}
-          <Link href="/admin/order-workflows/new">
+          <Link href={buildPath('/admin/order-workflows/new')}>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
               New Workflow
@@ -270,7 +272,7 @@ export default function OrderWorkflowsPage() {
                 <RefreshCw className={`h-4 w-4 mr-2 ${isSeeding ? 'animate-spin' : ''}`} />
                 Seed Defaults
               </Button>
-              <Link href="/admin/order-workflows/new">
+              <Link href={buildPath('/admin/order-workflows/new')}>
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
                   Create Workflow
@@ -305,7 +307,7 @@ export default function OrderWorkflowsPage() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Link
-                          href={`/admin/order-workflows/${workflow.id}`}
+                          href={buildPath(`/admin/order-workflows/${workflow.id}`)}
                           className="font-medium hover:text-primary transition-colors"
                         >
                           {workflow.name}
@@ -395,7 +397,7 @@ export default function OrderWorkflowsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
-                            <Link href={`/admin/order-workflows/${workflow.id}`}>
+                            <Link href={buildPath(`/admin/order-workflows/${workflow.id}`)}>
                               <Edit className="h-4 w-4 mr-2" />
                               Edit
                             </Link>

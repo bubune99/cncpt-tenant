@@ -17,6 +17,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import {
   ArrowLeft,
   Loader2,
@@ -68,6 +69,7 @@ interface SiteSettings {
 }
 
 export default function SiteSettingsPage() {
+  const { buildPath } = useCMSConfig();
   const router = useRouter();
   const params = useParams();
   const subdomain = params.subdomain as string;
@@ -171,7 +173,7 @@ export default function SiteSettingsPage() {
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/admin">
+            <Link href={buildPath('/admin')}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
@@ -239,7 +241,7 @@ export default function SiteSettingsPage() {
                   </p>
                 </div>
                 <Button asChild>
-                  <Link href="/admin/site-settings/header">
+                  <Link href={buildPath('/admin/site-settings/header')}>
                     Edit Header
                   </Link>
                 </Button>
@@ -272,7 +274,7 @@ export default function SiteSettingsPage() {
                   </p>
                 </div>
                 <Button asChild>
-                  <Link href="/admin/site-settings/footer">
+                  <Link href={buildPath('/admin/site-settings/footer')}>
                     Edit Footer
                   </Link>
                 </Button>
@@ -312,7 +314,7 @@ export default function SiteSettingsPage() {
                 </div>
                 {formData.showAnnouncementBar && (
                   <Button variant="outline" asChild>
-                    <Link href="/admin/site-settings/announcement">
+                    <Link href={buildPath('/admin/site-settings/announcement')}>
                       Edit Announcement
                     </Link>
                   </Button>

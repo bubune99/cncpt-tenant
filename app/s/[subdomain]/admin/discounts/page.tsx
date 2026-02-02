@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/cms/ui/card';
 import { Button } from '@/components/cms/ui/button';
 import { Input } from '@/components/cms/ui/input';
@@ -88,6 +89,7 @@ interface Pagination {
 }
 
 export default function DiscountsPage() {
+  const { buildPath } = useCMSConfig();
   const [discounts, setDiscounts] = useState<DiscountCode[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState(true);
@@ -281,7 +283,7 @@ export default function DiscountsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Link href="/admin/discounts/create">
+          <Link href={buildPath('/admin/discounts/create')}>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
               Create Discount
@@ -472,7 +474,7 @@ export default function DiscountsPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem asChild>
-                        <Link href={`/admin/discounts/${discount.id}`}>
+                        <Link href={buildPath(`/admin/discounts/${discount.id}`)}>
                           <Edit className="h-4 w-4 mr-2" />
                           Edit
                         </Link>

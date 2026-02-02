@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { Button } from '@/components/cms/ui/button';
 import {
   Card,
@@ -41,6 +42,7 @@ interface SiteSettings {
 }
 
 export default function LayoutSettingsPage() {
+  const { buildPath } = useCMSConfig();
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -97,7 +99,7 @@ export default function LayoutSettingsPage() {
       description: 'Site navigation, logo, and top bar settings',
       icon: PanelTop,
       configured: !!settings?.header,
-      editUrl: '/admin/pages/layout/header',
+      editUrl: buildPath('/admin/pages/layout/header'),
     },
     {
       id: 'footer',
@@ -105,7 +107,7 @@ export default function LayoutSettingsPage() {
       description: 'Footer links, social media, and copyright',
       icon: PanelBottom,
       configured: !!settings?.footer,
-      editUrl: '/admin/pages/layout/footer',
+      editUrl: buildPath('/admin/pages/layout/footer'),
     },
     {
       id: 'announcement',
@@ -113,7 +115,7 @@ export default function LayoutSettingsPage() {
       description: 'Top banner for promotions and alerts',
       icon: Bell,
       configured: !!settings?.announcementBar,
-      editUrl: '/admin/pages/layout/announcement',
+      editUrl: buildPath('/admin/pages/layout/announcement'),
       toggle: true,
       enabled: settings?.showAnnouncementBar || false,
     },
@@ -133,7 +135,7 @@ export default function LayoutSettingsPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/admin/pages">
+            <Link href={buildPath('/admin/pages')}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>

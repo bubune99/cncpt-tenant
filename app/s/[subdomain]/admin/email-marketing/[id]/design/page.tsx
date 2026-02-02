@@ -11,6 +11,7 @@ import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/cms/ui/button'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { useCMSConfig } from '@/contexts/CMSConfigContext'
 import dynamic from 'next/dynamic'
 
 // Dynamically import Puck to avoid SSR issues
@@ -298,6 +299,7 @@ export default function EmailDesignerPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = use(params)
+  const { buildPath } = useCMSConfig()
   const [campaign, setCampaign] = useState<EmailCampaign | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -318,7 +320,7 @@ export default function EmailDesignerPage({
       <div className="flex items-center gap-2">
         <HelpModeButton />
         {children}
-        <Link href={`/admin/email-marketing/${id}`}>
+        <Link href={buildPath(`/admin/email-marketing/${id}`)}>
           <Button variant="outline" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Campaign
@@ -436,7 +438,7 @@ export default function EmailDesignerPage({
           The campaign you&apos;re looking for doesn&apos;t exist or couldn&apos;t be loaded.
         </p>
         <Button asChild>
-          <Link href="/admin/email-marketing">
+          <Link href={buildPath('/admin/email-marketing')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Email Marketing
           </Link>

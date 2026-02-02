@@ -8,6 +8,7 @@
 
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { WorkflowBuilder } from '@/components/cms/workflow';
@@ -152,6 +153,7 @@ interface PageProps {
 
 export default function EditWorkflowPage({ params }: PageProps) {
   const { id } = use(params);
+  const { buildPath } = useCMSConfig();
   const router = useRouter();
   const [workflow, setWorkflow] = useState<Workflow | null>(null);
   const [workflowName, setWorkflowName] = useState('');
@@ -277,7 +279,7 @@ export default function EditWorkflowPage({ params }: PageProps) {
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-lg font-semibold mb-2">{error || 'Workflow not found'}</h2>
-          <Link href="/admin/workflows">
+          <Link href={buildPath('/admin/workflows')}>
             <button className="text-primary hover:underline">
               Back to Workflows
             </button>
@@ -306,7 +308,7 @@ export default function EditWorkflowPage({ params }: PageProps) {
       <div className="h-14 border-b border-border bg-card flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-4">
           <Link
-            href={`/admin/workflows/${id}`}
+            href={buildPath(`/admin/workflows/${id}`)}
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />

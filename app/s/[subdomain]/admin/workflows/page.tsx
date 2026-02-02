@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import {
   Plus,
   Play,
@@ -57,6 +58,7 @@ const triggerTypeColors: Record<string, string> = {
 };
 
 export default function WorkflowsPage() {
+  const { buildPath } = useCMSConfig();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -161,7 +163,7 @@ export default function WorkflowsPage() {
             Create and manage automated workflows using visual builder
           </p>
         </div>
-        <Link href="/admin/workflows/new" data-help-key="admin.workflows.new">
+        <Link href={buildPath('/admin/workflows/new')} data-help-key="admin.workflows.new">
           <Button>
             <Plus className="h-4 w-4 mr-2" />
             New Workflow
@@ -183,7 +185,7 @@ export default function WorkflowsPage() {
           <p className="text-muted-foreground mb-4">
             Create your first workflow to automate tasks using primitives
           </p>
-          <Link href="/admin/workflows/new">
+          <Link href={buildPath('/admin/workflows/new')}>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
               Create Workflow
@@ -209,7 +211,7 @@ export default function WorkflowsPage() {
                   <td className="px-4 py-4">
                     <div>
                       <Link
-                        href={`/admin/workflows/${workflow.id}/edit`}
+                        href={buildPath(`/admin/workflows/${workflow.id}/edit`)}
                         className="font-medium hover:text-primary transition-colors"
                       >
                         {workflow.name}
@@ -275,7 +277,7 @@ export default function WorkflowsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
-                            <Link href={`/admin/workflows/${workflow.id}/edit`}>
+                            <Link href={buildPath(`/admin/workflows/${workflow.id}/edit`)}>
                               <Edit className="h-4 w-4 mr-2" />
                               Edit
                             </Link>

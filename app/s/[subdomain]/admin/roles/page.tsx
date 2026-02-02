@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useCMSConfig } from '@/contexts/CMSConfigContext'
 import {
   Search,
   Plus,
@@ -75,6 +76,7 @@ interface RoleStats {
 }
 
 export default function RolesPage() {
+  const { buildPath } = useCMSConfig()
   const [roles, setRoles] = useState<Role[]>([])
   const [stats, setStats] = useState<RoleStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -239,7 +241,7 @@ export default function RolesPage() {
             Refresh
           </Button>
           <Button asChild data-help-key="admin.roles.create">
-            <Link href="/admin/roles/new">
+            <Link href={buildPath('/admin/roles/new')}>
               <Plus className="h-4 w-4 mr-2" />
               Create Role
             </Link>
@@ -337,7 +339,7 @@ export default function RolesPage() {
                     Seed Built-in Roles
                   </Button>
                   <Button asChild>
-                    <Link href="/admin/roles/new">Create Custom Role</Link>
+                    <Link href={buildPath('/admin/roles/new')}>Create Custom Role</Link>
                   </Button>
                 </div>
               )}
@@ -400,7 +402,7 @@ export default function RolesPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem asChild>
-                        <Link href={`/admin/roles/${role.id}`}>
+                        <Link href={buildPath(`/admin/roles/${role.id}`)}>
                           <Edit className="h-4 w-4 mr-2" />
                           {role.isSystem ? 'View Details' : 'Edit Role'}
                         </Link>

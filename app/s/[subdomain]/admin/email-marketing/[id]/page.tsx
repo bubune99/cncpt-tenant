@@ -35,6 +35,7 @@ import { Label } from '@/components/cms/ui/label';
 import { Switch } from '@/components/cms/ui/switch';
 import { toast } from "sonner";
 import Link from "next/link";
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 
 // Dynamically import Render for email preview (Puck editor is in dedicated /design route)
 const Render = dynamic(
@@ -70,6 +71,7 @@ const emptyPuckData: Data = {
 };
 
 export default function EmailCampaignEditorPage() {
+  const { buildPath } = useCMSConfig();
   const params = useParams();
   const router = useRouter();
   const isNew = params.id === "create";
@@ -324,7 +326,7 @@ export default function EmailCampaignEditorPage() {
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/admin/email-marketing">
+            <Link href={buildPath('/admin/email-marketing')}>
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
@@ -417,7 +419,7 @@ export default function EmailCampaignEditorPage() {
                     <p className="text-sm text-muted-foreground">
                       Open the full-screen editor with AI assistance, component previews, and drag-and-drop
                     </p>
-                    <Link href={`/admin/email-marketing/${campaignId}/design`}>
+                    <Link href={buildPath(`/admin/email-marketing/${campaignId}/design`)}>
                       <Button size="lg" className="gap-2">
                         <Settings className="h-4 w-4" />
                         Open Email Designer

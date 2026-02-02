@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { useSubdomainAccess } from '@/hooks/use-subdomain-access';
@@ -73,6 +74,7 @@ interface UserStats {
 }
 
 export default function UsersPage() {
+  const { buildPath } = useCMSConfig();
   const { user: currentUser, isLoading: authLoading } = useAuth();
   const { hasAccess, isLoading: accessLoading } = useSubdomainAccess('admin');
   const router = useRouter();
@@ -367,7 +369,7 @@ export default function UsersPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
-                            <Link href={`/admin/users/${user.id}`}>
+                            <Link href={buildPath(`/admin/users/${user.id}`)}>
                               <Key className="h-4 w-4 mr-2" />
                               Manage Permissions
                             </Link>
@@ -402,7 +404,7 @@ export default function UsersPage() {
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           <Button variant="outline" className="justify-start h-auto py-4" asChild>
-            <Link href="/admin/roles">
+            <Link href={buildPath('/admin/roles')}>
               <Shield className="h-5 w-5 mr-3" />
               <div className="text-left">
                 <div className="font-medium">Manage Roles</div>
@@ -413,7 +415,7 @@ export default function UsersPage() {
             </Link>
           </Button>
           <Button variant="outline" className="justify-start h-auto py-4" asChild>
-            <Link href="/admin/roles/new">
+            <Link href={buildPath('/admin/roles/new')}>
               <Key className="h-5 w-5 mr-3" />
               <div className="text-left">
                 <div className="font-medium">Create New Role</div>

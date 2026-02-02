@@ -8,6 +8,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { WorkflowBuilder } from '@/components/cms/workflow';
@@ -132,6 +133,7 @@ const defaultPrimitives: AvailablePrimitive[] = [
 ];
 
 export default function NewWorkflowPage() {
+  const { buildPath } = useCMSConfig();
   const router = useRouter();
   const [workflowName, setWorkflowName] = useState('Untitled Workflow');
   const [primitives, setPrimitives] = useState<AvailablePrimitive[]>(defaultPrimitives);
@@ -222,7 +224,7 @@ export default function NewWorkflowPage() {
       <div className="h-14 border-b border-border bg-card flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-4">
           <Link
-            href="/admin/workflows"
+            href={buildPath('/admin/workflows')}
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />

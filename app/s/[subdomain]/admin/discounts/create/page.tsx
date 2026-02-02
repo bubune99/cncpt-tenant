@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/cms/ui/card';
 import { Button } from '@/components/cms/ui/button';
 import { Input } from '@/components/cms/ui/input';
@@ -37,6 +38,7 @@ interface FormData {
 }
 
 export default function CreateDiscountPage() {
+  const { buildPath } = useCMSConfig();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -161,7 +163,7 @@ export default function CreateDiscountPage() {
     <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link href="/admin/discounts">
+        <Link href={buildPath('/admin/discounts')}>
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -440,7 +442,7 @@ export default function CreateDiscountPage() {
             {(loading || syncing) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             {loading ? 'Creating...' : syncing ? 'Syncing...' : 'Create Discount'}
           </Button>
-          <Link href="/admin/discounts">
+          <Link href={buildPath('/admin/discounts')}>
             <Button type="button" variant="outline">
               Cancel
             </Button>

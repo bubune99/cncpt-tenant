@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useCMSConfig } from '@/contexts/CMSConfigContext'
 import {
   ArrowLeft,
   Shield,
@@ -102,6 +103,7 @@ interface PageProps {
 }
 
 export default function UserPermissionsPage({ params }: PageProps) {
+  const { buildPath } = useCMSConfig()
   const { id } = use(params)
   const router = useRouter()
   const [userPerms, setUserPerms] = useState<UserPermissions | null>(null)
@@ -330,7 +332,7 @@ export default function UserPermissionsPage({ params }: PageProps) {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
-          <Link href="/admin/admin-users">
+          <Link href={buildPath('/admin/admin-users')}>
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>

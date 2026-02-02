@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { Button } from '@/components/cms/ui/button';
 import {
   Card,
@@ -25,6 +26,7 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function NewFormPage() {
+  const { buildPath } = useCMSConfig();
   const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState({
@@ -72,7 +74,7 @@ export default function NewFormPage() {
     <div className="p-6 lg:p-8 max-w-2xl">
       <div className="mb-8">
         <Button variant="ghost" asChild className="mb-4">
-          <Link href="/admin/forms">
+          <Link href={buildPath('/admin/forms')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Forms
           </Link>
@@ -159,7 +161,7 @@ export default function NewFormPage() {
 
           <div className="flex gap-4 pt-4">
             <Button variant="outline" asChild>
-              <Link href="/admin/forms">Cancel</Link>
+              <Link href={buildPath('/admin/forms')}>Cancel</Link>
             </Button>
             <Button onClick={handleCreate} disabled={isCreating || !formData.name.trim()}>
               {isCreating ? (

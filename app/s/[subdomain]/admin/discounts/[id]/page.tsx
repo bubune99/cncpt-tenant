@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/cms/ui/card';
 import { Button } from '@/components/cms/ui/button';
 import { Input } from '@/components/cms/ui/input';
@@ -102,6 +103,7 @@ interface FormData {
 }
 
 export default function EditDiscountPage({ params }: PageProps) {
+  const { buildPath } = useCMSConfig();
   const { id } = use(params);
   const router = useRouter();
   const [discount, setDiscount] = useState<DiscountCode | null>(null);
@@ -304,7 +306,7 @@ export default function EditDiscountPage({ params }: PageProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/admin/discounts">
+          <Link href={buildPath('/admin/discounts')}>
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -676,7 +678,7 @@ export default function EditDiscountPage({ params }: PageProps) {
             {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Save Changes
           </Button>
-          <Link href="/admin/discounts">
+          <Link href={buildPath('/admin/discounts')}>
             <Button type="button" variant="outline">
               Cancel
             </Button>

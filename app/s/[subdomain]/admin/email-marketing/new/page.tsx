@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { Button } from '@/components/cms/ui/button';
 import { Input } from '@/components/cms/ui/input';
 import { Label } from '@/components/cms/ui/label';
@@ -39,6 +40,7 @@ import {
 import { toast } from 'sonner';
 
 export default function NewCampaignPage() {
+  const { buildPath } = useCMSConfig();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -120,7 +122,7 @@ export default function NewCampaignPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/admin/email-marketing">
+            <Link href={buildPath('/admin/email-marketing')}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
@@ -133,7 +135,7 @@ export default function NewCampaignPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
-            <Link href="/admin/email-marketing">Cancel</Link>
+            <Link href={buildPath('/admin/email-marketing')}>Cancel</Link>
           </Button>
           <Button variant="outline">
             <Eye className="mr-2 h-4 w-4" />

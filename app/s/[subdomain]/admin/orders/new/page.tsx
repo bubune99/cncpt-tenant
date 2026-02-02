@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { Button } from '@/components/cms/ui/button';
 import { Input } from '@/components/cms/ui/input';
 import { Label } from '@/components/cms/ui/label';
@@ -67,6 +68,7 @@ interface OrderItem {
 
 export default function NewOrderPage() {
   const router = useRouter();
+  const { buildPath } = useCMSConfig();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [formData, setFormData] = useState({
@@ -212,7 +214,7 @@ export default function NewOrderPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/admin/orders">
+            <Link href={buildPath('/admin/orders')}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
@@ -225,7 +227,7 @@ export default function NewOrderPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
-            <Link href="/admin/orders">Cancel</Link>
+            <Link href={buildPath('/admin/orders')}>Cancel</Link>
           </Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting ? (

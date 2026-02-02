@@ -38,6 +38,7 @@ import { Badge } from '@/components/cms/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/cms/ui/tabs';
 import { toast } from "sonner";
 import Link from "next/link";
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { useAuth } from '@/hooks/use-auth';
 
 interface EmailCampaign {
@@ -65,6 +66,7 @@ interface EmailStats {
 }
 
 export default function EmailMarketingPage() {
+  const { buildPath } = useCMSConfig();
   const { user } = useAuth();
   const [campaigns, setCampaigns] = useState<EmailCampaign[]>([]);
   const [stats, setStats] = useState<EmailStats>({
@@ -273,7 +275,7 @@ export default function EmailMarketingPage() {
             )}
           </Button>
           <Button asChild data-help-key="admin.email-marketing.new">
-            <Link href="/admin/email-marketing/new">
+            <Link href={buildPath('/admin/email-marketing/new')}>
               <Plus className="mr-2 h-4 w-4" />
               Create Campaign
             </Link>
@@ -449,19 +451,19 @@ export default function EmailMarketingPage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
                               <DropdownMenuItem asChild>
-                                <Link href={`/admin/email-marketing/${campaign.id}/design`}>
+                                <Link href={buildPath(`/admin/email-marketing/${campaign.id}/design`)}>
                                   <Paintbrush className="mr-2 h-4 w-4" />
                                   Design Email
                                 </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem asChild>
-                                <Link href={`/admin/email-marketing/${campaign.id}`}>
+                                <Link href={buildPath(`/admin/email-marketing/${campaign.id}`)}>
                                   <Settings className="mr-2 h-4 w-4" />
                                   Edit Settings
                                 </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem asChild>
-                                <Link href={`/admin/email-marketing/${campaign.id}`}>
+                                <Link href={buildPath(`/admin/email-marketing/${campaign.id}`)}>
                                   <Eye className="mr-2 h-4 w-4" />
                                   Preview
                                 </Link>
@@ -496,7 +498,7 @@ export default function EmailMarketingPage() {
                         <Mail className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                         <p className="text-muted-foreground">No campaigns found</p>
                         <Button variant="outline" className="mt-4" asChild>
-                          <Link href="/admin/email-marketing/new">
+                          <Link href={buildPath('/admin/email-marketing/new')}>
                             <Plus className="h-4 w-4 mr-2" />
                             Create Your First Campaign
                           </Link>
@@ -574,7 +576,7 @@ export default function EmailMarketingPage() {
                   </CardDescription>
                 </div>
                 <Button asChild>
-                  <Link href="/admin/email-marketing/templates/new">
+                  <Link href={buildPath('/admin/email-marketing/templates/new')}>
                     <Plus className="h-4 w-4 mr-2" />
                     Create Template
                   </Link>
@@ -586,7 +588,7 @@ export default function EmailMarketingPage() {
                 <Mail className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-muted-foreground mb-4">No templates yet</p>
                 <Button variant="outline" asChild>
-                  <Link href="/admin/email-marketing/templates/new">
+                  <Link href={buildPath('/admin/email-marketing/templates/new')}>
                     <Plus className="h-4 w-4 mr-2" />
                     Create Your First Template
                   </Link>

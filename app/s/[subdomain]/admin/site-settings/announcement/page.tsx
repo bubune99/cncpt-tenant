@@ -8,6 +8,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { ArrowLeft, Loader2, Save, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/cms/ui/button';
 import { toast } from 'sonner';
@@ -35,6 +36,7 @@ const defaultAnnouncementProps: AnnouncementBarProps = {
 };
 
 export default function AnnouncementEditorPage() {
+  const { buildPath } = useCMSConfig();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(true);
@@ -107,7 +109,7 @@ export default function AnnouncementEditorPage() {
       <div className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b bg-background">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/admin/site-settings">
+            <Link href={buildPath('/admin/site-settings')}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>

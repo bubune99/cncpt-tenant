@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useCMSConfig } from '@/contexts/CMSConfigContext'
 import {
   ArrowLeft,
   Save,
@@ -32,6 +33,7 @@ import { toast } from 'sonner'
 import { PERMISSION_GROUPS } from '@/lib/cms/permissions/constants'
 
 export default function NewRolePage() {
+  const { buildPath } = useCMSConfig()
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [expandedGroups, setExpandedGroups] = useState<string[]>([])
@@ -145,7 +147,7 @@ export default function NewRolePage() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
-          <Link href="/admin/roles">
+          <Link href={buildPath('/admin/roles')}>
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>

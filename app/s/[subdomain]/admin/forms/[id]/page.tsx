@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { Button } from '@/components/cms/ui/button';
 import {
   Card,
@@ -125,6 +126,7 @@ const FIELD_TYPES = [
 
 export default function FormEditorPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const { buildPath } = useCMSConfig();
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialTab = searchParams.get('tab') || 'fields';
@@ -312,7 +314,7 @@ export default function FormEditorPage({ params }: { params: Promise<{ id: strin
       <div className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-4">
           <Button variant="ghost" asChild>
-            <Link href="/admin/forms">
+            <Link href={buildPath('/admin/forms')}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
             </Link>

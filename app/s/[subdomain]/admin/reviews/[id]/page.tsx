@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/cms/ui/card';
 import { Button } from '@/components/cms/ui/button';
@@ -81,6 +82,7 @@ interface PageProps {
 }
 
 export default function ReviewDetailPage({ params }: PageProps) {
+  const { buildPath } = useCMSConfig();
   const { id } = use(params);
   const router = useRouter();
   const [review, setReview] = useState<Review | null>(null);
@@ -248,7 +250,7 @@ export default function ReviewDetailPage({ params }: PageProps) {
         <AlertCircle className="h-12 w-12 text-muted-foreground" />
         <p className="text-muted-foreground">Review not found</p>
         <Button asChild>
-          <Link href="/admin/reviews">Back to Reviews</Link>
+          <Link href={buildPath('/admin/reviews')}>Back to Reviews</Link>
         </Button>
       </div>
     );
@@ -260,7 +262,7 @@ export default function ReviewDetailPage({ params }: PageProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/admin/reviews">
+            <Link href={buildPath('/admin/reviews')}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
@@ -488,7 +490,7 @@ export default function ReviewDetailPage({ params }: PageProps) {
                 <div className="flex-1 min-w-0">
                   <h4 className="font-medium truncate">{review.product.name}</h4>
                   <Link
-                    href={`/admin/products/${review.productId}`}
+                    href={buildPath(`/admin/products/${review.productId}`)}
                     className="text-sm text-primary hover:underline inline-flex items-center gap-1"
                   >
                     View Product
@@ -524,7 +526,7 @@ export default function ReviewDetailPage({ params }: PageProps) {
               {review.user && (
                 <div className="pt-2 border-t">
                   <Link
-                    href={`/admin/customers/${review.userId}`}
+                    href={buildPath(`/admin/customers/${review.userId}`)}
                     className="text-sm text-primary hover:underline inline-flex items-center gap-1"
                   >
                     View Customer Profile
@@ -535,7 +537,7 @@ export default function ReviewDetailPage({ params }: PageProps) {
               {review.orderId && (
                 <div className="pt-2 border-t">
                   <Link
-                    href={`/admin/orders/${review.orderId}`}
+                    href={buildPath(`/admin/orders/${review.orderId}`)}
                     className="text-sm text-primary hover:underline inline-flex items-center gap-1"
                   >
                     View Related Order

@@ -5,6 +5,7 @@ import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/cms/ui/button';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import dynamic from 'next/dynamic';
 
 // Dynamically import Puck to avoid SSR issues
@@ -111,6 +112,7 @@ function ComponentListWithPreviews() {
 }
 
 export default function AnnouncementEditorPage() {
+  const { buildPath } = useCMSConfig();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -248,7 +250,7 @@ export default function AnnouncementEditorPage() {
           Unable to load announcement settings. Please try again.
         </p>
         <Button asChild>
-          <Link href="/admin/pages/layout">
+          <Link href={buildPath('/admin/pages/layout')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Layout Settings
           </Link>
@@ -263,7 +265,7 @@ export default function AnnouncementEditorPage() {
         {/* Application Header */}
         <div className="puck-app-header">
           <div className="puck-app-header-left">
-            <Link href="/admin/pages/layout" className="puck-back-link">
+            <Link href={buildPath('/admin/pages/layout')} className="puck-back-link">
               <ArrowLeft className="h-4 w-4" />
               <span>Layout</span>
             </Link>

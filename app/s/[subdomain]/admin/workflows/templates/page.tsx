@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import {
   Search,
   Play,
@@ -66,6 +67,7 @@ const categoryLabels: Record<string, string> = {
 };
 
 export default function WorkflowTemplatesPage() {
+  const { buildPath } = useCMSConfig();
   const router = useRouter();
   const [templates, setTemplates] = useState<WorkflowTemplate[]>([]);
   const [byCategory, setByCategory] = useState<TemplatesByCategory>({});
@@ -202,7 +204,7 @@ export default function WorkflowTemplatesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/admin/workflows">
+          <Link href={buildPath('/admin/workflows')}>
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-4 w-4" />
             </Button>
