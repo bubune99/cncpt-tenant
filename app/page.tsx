@@ -1,732 +1,616 @@
 "use client"
 
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { ArrowRight, Globe, Shield, Zap, Users, Play, ShoppingCart, FileText, BarChart3, Image, Mail, Palette, Settings, Sparkles } from "lucide-react"
 import { useUser } from "@stackframe/stack"
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
+import { motion, useScroll, useTransform, useInView, AnimatePresence } from "framer-motion"
 
 export const dynamic = "force-dynamic"
 
+// Feature data
+const features = [
+  {
+    title: "Visual Page Builder",
+    description: "Drag-and-drop editor with 40+ components. Build stunning pages without writing code.",
+    gradient: "from-violet-500 to-purple-600",
+  },
+  {
+    title: "Product Management",
+    description: "Inventory tracking, variants, bulk operations. Everything you need to run your store.",
+    gradient: "from-cyan-500 to-blue-600",
+  },
+  {
+    title: "Content & Blog",
+    description: "Rich editor with SEO tools, scheduling, categories. Publish content that ranks.",
+    gradient: "from-emerald-500 to-teal-600",
+  },
+  {
+    title: "Email Marketing",
+    description: "Beautiful campaigns, automation, analytics. Turn visitors into loyal customers.",
+    gradient: "from-orange-500 to-red-600",
+  },
+  {
+    title: "AI Assistant",
+    description: "Generate copy, optimize content, answer questions. Your intelligent co-pilot.",
+    gradient: "from-pink-500 to-rose-600",
+  },
+  {
+    title: "Analytics",
+    description: "Real-time insights, conversion tracking, customer journeys. Make data-driven decisions.",
+    gradient: "from-amber-500 to-yellow-600",
+  },
+]
+
+const stats = [
+  { value: "99.9%", label: "Uptime SLA" },
+  { value: "<100ms", label: "Global Latency" },
+  { value: "50+", label: "Integrations" },
+  { value: "24/7", label: "Support" },
+]
+
 export default function HomePage() {
   const user = useUser()
-  const [activeFeature, setActiveFeature] = useState(0)
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  const heroRef = useRef<HTMLDivElement>(null)
+  const featuresRef = useRef<HTMLDivElement>(null)
+  const isInView = useInView(featuresRef, { once: true, margin: "-100px" })
 
-  const cmsFeatures = [
-    {
-      id: 'dashboard',
-      title: 'Intuitive Dashboard',
-      description: 'Get a complete overview of your business at a glance with real-time metrics, recent activity, and quick actions.',
-      icon: BarChart3,
-    },
-    {
-      id: 'products',
-      title: 'Product Management',
-      description: 'Manage your entire product catalog with variants, inventory tracking, pricing, and bulk operations.',
-      icon: ShoppingCart,
-    },
-    {
-      id: 'content',
-      title: 'Blog & Content',
-      description: 'Create engaging content with a rich editor, categories, tags, scheduling, and SEO optimization built-in.',
-      icon: FileText,
-    },
-    {
-      id: 'pages',
-      title: 'Visual Page Builder',
-      description: 'Build stunning pages with our drag-and-drop editor. No coding required - just point, click, and publish.',
-      icon: Palette,
-    },
-    {
-      id: 'media',
-      title: 'Media Library',
-      description: 'Upload, organize, and manage all your images, videos, and files in one central, searchable location.',
-      icon: Image,
-    },
-    {
-      id: 'email',
-      title: 'Email Marketing',
-      description: 'Create beautiful email campaigns, manage subscribers, and track engagement with built-in analytics.',
-      icon: Mail,
-    },
-  ]
+  const { scrollYProgress } = useScroll()
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0])
+  const heroScale = useTransform(scrollYProgress, [0, 0.2], [1, 0.95])
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (heroRef.current) {
+        const rect = heroRef.current.getBoundingClientRect()
+        setMousePosition({
+          x: (e.clientX - rect.left - rect.width / 2) / 50,
+          y: (e.clientY - rect.top - rect.height / 2) / 50,
+        })
+      }
+    }
+    window.addEventListener("mousemove", handleMouseMove)
+    return () => window.removeEventListener("mousemove", handleMouseMove)
+  }, [])
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center">
-              <Globe className="h-8 w-8 text-primary" />
-              <span className="ml-2 text-xl font-bold text-foreground">CNCPT Web</span>
-            </div>
+    <div className="min-h-screen bg-[#0a0a0b] text-white overflow-x-hidden">
+      {/* Ambient Background */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-violet-600/20 rounded-full blur-[150px] opacity-50" />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-cyan-600/20 rounded-full blur-[150px] opacity-40" />
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDMpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-60" />
+      </div>
 
-            <nav className="hidden md:flex items-center space-x-8">
-              <Link href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
-                Features
-              </Link>
-              <Link href="#cms" className="text-muted-foreground hover:text-foreground transition-colors">
-                CMS
-              </Link>
-              <Link href="/demo" className="text-muted-foreground hover:text-foreground transition-colors">
-                Demo
-              </Link>
-              <Link href="/book" className="text-muted-foreground hover:text-foreground transition-colors">
-                Book Consultation
-              </Link>
+      {/* Navigation */}
+      <motion.header
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="fixed top-0 left-0 right-0 z-50"
+      >
+        <div className="mx-auto max-w-7xl px-6 py-4">
+          <div className="flex items-center justify-between rounded-2xl border border-white/[0.08] bg-white/[0.02] backdrop-blur-xl px-6 py-3">
+            <Link href="/" className="flex items-center gap-3 group">
+              <div className="relative w-9 h-9">
+                <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-cyan-500 rounded-lg opacity-80 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute inset-[2px] bg-[#0a0a0b] rounded-[6px] flex items-center justify-center">
+                  <span className="text-sm font-bold bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">C</span>
+                </div>
+              </div>
+              <span className="text-lg font-semibold tracking-tight">CNCPT</span>
+            </Link>
+
+            <nav className="hidden md:flex items-center gap-1">
+              {["Features", "Demo", "Pricing", "Book Call"].map((item) => (
+                <Link
+                  key={item}
+                  href={item === "Features" ? "#features" : item === "Demo" ? "/demo" : item === "Pricing" ? "/pricing" : "/book"}
+                  className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors rounded-lg hover:bg-white/[0.05]"
+                >
+                  {item}
+                </Link>
+              ))}
             </nav>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center gap-3">
               {user ? (
-                <>
-                  <span className="text-sm text-muted-foreground hidden sm:inline">
-                    Welcome, {user.displayName || user.primaryEmail?.split('@')[0]}
-                  </span>
-                  <Button asChild>
-                    <Link href="/dashboard">Dashboard</Link>
-                  </Button>
-                </>
+                <Link
+                  href="/dashboard"
+                  className="px-5 py-2.5 text-sm font-medium bg-white text-black rounded-xl hover:bg-white/90 transition-colors"
+                >
+                  Dashboard
+                </Link>
               ) : (
                 <>
-                  <Button variant="ghost" asChild className="hidden sm:inline-flex">
-                    <Link href="/login">Sign In</Link>
-                  </Button>
-                  <Button asChild>
-                    <Link href="/register">Get Started</Link>
-                  </Button>
+                  <Link
+                    href="/login"
+                    className="hidden sm:block px-4 py-2 text-sm text-white/60 hover:text-white transition-colors"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="px-5 py-2.5 text-sm font-medium bg-white text-black rounded-xl hover:bg-white/90 transition-colors"
+                  >
+                    Get Started
+                  </Link>
                 </>
               )}
             </div>
           </div>
         </div>
-      </header>
+      </motion.header>
 
       {/* Hero Section */}
-      <section className="relative py-20 lg:py-32 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5" />
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="text-center max-w-4xl mx-auto">
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6">
-              <Sparkles className="h-4 w-4" />
-              <span>AI-Powered CMS Platform</span>
-            </div>
-            <h1 className="text-4xl md:text-6xl font-bold text-balance mb-6">
-              Build & Manage Your
-              <span className="text-primary"> Online Business</span>
-            </h1>
-            <p className="text-xl text-muted-foreground text-pretty mb-8 max-w-2xl mx-auto">
-              The all-in-one platform for creating websites, managing products, publishing content, and growing your business online.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              {user ? (
-                <Button size="lg" asChild>
-                  <Link href="/dashboard">
-                    Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              ) : (
-                <>
-                  <Button size="lg" asChild>
-                    <Link href="/register">
-                      Start Free Trial <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                  <Button size="lg" variant="outline" asChild>
-                    <Link href="/demo">
-                      <Play className="mr-2 h-4 w-4" /> Try Demo
-                    </Link>
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Quick Features */}
-      <section id="features" className="py-20 bg-muted/50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <motion.section
+        ref={heroRef}
+        style={{ opacity: heroOpacity, scale: heroScale }}
+        className="relative min-h-screen flex items-center justify-center pt-32 pb-20 px-6"
+      >
+        <div className="max-w-7xl mx-auto w-full">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Everything you need to succeed online</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Our platform provides all the tools and features you need to create, manage, and grow your online presence.
-            </p>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/[0.1] bg-white/[0.03] mb-8"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="text-sm text-white/60">Now with AI-powered content generation</span>
+            </motion.div>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-6"
+            >
+              <span className="block">The CMS that</span>
+              <span className="block bg-gradient-to-r from-violet-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent">
+                grows with you
+              </span>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="text-lg sm:text-xl text-white/50 max-w-2xl mx-auto mb-10 leading-relaxed"
+            >
+              Build websites, manage products, publish content, and run marketing campaigns.
+              One platform, unlimited possibilities.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="flex flex-col sm:flex-row gap-4 justify-center"
+            >
+              <Link
+                href="/register"
+                className="group relative px-8 py-4 text-base font-medium rounded-xl overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-cyan-600 transition-transform group-hover:scale-105" />
+                <div className="absolute inset-[1px] bg-[#0a0a0b] rounded-[10px] transition-opacity group-hover:opacity-0" />
+                <span className="relative bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent group-hover:text-white transition-colors">
+                  Start free trial
+                </span>
+              </Link>
+              <Link
+                href="/demo"
+                className="group px-8 py-4 text-base font-medium rounded-xl border border-white/[0.1] hover:border-white/[0.2] bg-white/[0.02] hover:bg-white/[0.05] transition-all flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+                <span className="text-white/80 group-hover:text-white transition-colors">Explore demo</span>
+              </Link>
+            </motion.div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="border-2 hover:border-primary/50 transition-colors">
-              <CardContent className="p-6">
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                  <Zap className="h-6 w-6 text-primary" />
+          {/* Floating Dashboard Preview */}
+          <motion.div
+            initial={{ opacity: 0, y: 60 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            style={{
+              transform: `perspective(1000px) rotateX(${mousePosition.y * 0.5}deg) rotateY(${mousePosition.x * 0.5}deg)`,
+            }}
+            className="relative mx-auto max-w-5xl"
+          >
+            {/* Glow effect */}
+            <div className="absolute -inset-4 bg-gradient-to-r from-violet-600/20 via-cyan-600/20 to-emerald-600/20 rounded-3xl blur-2xl opacity-60" />
+
+            {/* Dashboard mockup */}
+            <div className="relative rounded-2xl border border-white/[0.1] bg-[#111113] overflow-hidden shadow-2xl">
+              {/* Browser chrome */}
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] bg-white/[0.02]">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-white/10" />
+                  <div className="w-3 h-3 rounded-full bg-white/10" />
+                  <div className="w-3 h-3 rounded-full bg-white/10" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Lightning Fast Setup</h3>
-                <p className="text-muted-foreground">
-                  Get your site up and running in minutes, not hours. Our streamlined process makes it incredibly easy.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 hover:border-primary/50 transition-colors">
-              <CardContent className="p-6">
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                  <Shield className="h-6 w-6 text-primary" />
+                <div className="flex-1 flex justify-center">
+                  <div className="px-4 py-1 rounded-md bg-white/[0.05] text-xs text-white/40">
+                    app.cncptweb.com/admin
+                  </div>
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Enterprise Security</h3>
-                <p className="text-muted-foreground">
-                  Bank-level security with SSL certificates, DDoS protection, and 99.9% uptime guarantee.
-                </p>
-              </CardContent>
-            </Card>
+              </div>
 
-            <Card className="border-2 hover:border-primary/50 transition-colors">
-              <CardContent className="p-6">
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                  <Users className="h-6 w-6 text-primary" />
+              {/* Dashboard content */}
+              <div className="flex">
+                {/* Sidebar */}
+                <div className="w-48 border-r border-white/[0.06] p-4 hidden sm:block">
+                  <div className="space-y-1">
+                    {["Dashboard", "Products", "Orders", "Content", "Analytics"].map((item, i) => (
+                      <div
+                        key={item}
+                        className={`px-3 py-2 rounded-lg text-sm ${i === 0 ? "bg-white/[0.08] text-white" : "text-white/40"}`}
+                      >
+                        {item}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Team Collaboration</h3>
-                <p className="text-muted-foreground">
-                  Invite team members, set permissions, and collaborate seamlessly on your projects.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
 
-      {/* CMS Features with Visual Previews */}
-      <section id="cms" className="py-20 lg:py-32">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-4">
-              Powerful CMS
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              A Complete Content Management System
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Everything you need to manage products, content, and customers - all in one beautiful interface.
-            </p>
-            <div className="mt-6">
-              <Button asChild variant="outline">
-                <Link href="/demo">
-                  <Play className="mr-2 h-4 w-4" /> Explore Full Demo
-                </Link>
-              </Button>
-            </div>
-          </div>
+                {/* Main content */}
+                <div className="flex-1 p-6">
+                  {/* Stats row */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    {[
+                      { label: "Revenue", value: "$12,450", change: "+12.5%", up: true },
+                      { label: "Orders", value: "89", change: "+8.2%", up: true },
+                      { label: "Visitors", value: "2,847", change: "+24.1%", up: true },
+                      { label: "Conversion", value: "3.2%", change: "-0.4%", up: false },
+                    ].map((stat, i) => (
+                      <motion.div
+                        key={stat.label}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: 0.8 + i * 0.1 }}
+                        className="p-4 rounded-xl border border-white/[0.06] bg-white/[0.02]"
+                      >
+                        <div className="text-xs text-white/40 mb-1">{stat.label}</div>
+                        <div className="text-xl font-semibold text-white">{stat.value}</div>
+                        <div className={`text-xs ${stat.up ? "text-emerald-400" : "text-red-400"}`}>
+                          {stat.change}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
 
-          <div className="grid lg:grid-cols-2 gap-12 items-start">
-            {/* Feature List */}
-            <div className="space-y-4">
-              {cmsFeatures.map((feature, index) => (
-                <button
-                  key={feature.id}
-                  onClick={() => setActiveFeature(index)}
-                  className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-                    activeFeature === index
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-primary/50 hover:bg-muted/50'
-                  }`}
-                >
-                  <div className="flex items-start gap-4">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      activeFeature === index ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                    }`}>
-                      <feature.icon className="h-5 w-5" />
+                  {/* Chart placeholder */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.6, delay: 1.2 }}
+                    className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4"
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-sm text-white/60">Revenue Overview</span>
+                      <div className="flex gap-2">
+                        {["7d", "30d", "90d"].map((period, i) => (
+                          <button
+                            key={period}
+                            className={`px-2 py-1 text-xs rounded ${i === 1 ? "bg-white/[0.1] text-white" : "text-white/40"}`}
+                          >
+                            {period}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-semibold mb-1">{feature.title}</h3>
-                      <p className="text-sm text-muted-foreground">{feature.description}</p>
+                    <div className="flex items-end gap-1 h-32">
+                      {[40, 65, 45, 80, 55, 90, 75, 85, 60, 95, 70, 88].map((h, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ height: 0 }}
+                          animate={{ height: `${h}%` }}
+                          transition={{ duration: 0.6, delay: 1.4 + i * 0.05, ease: [0.16, 1, 0.3, 1] }}
+                          className="flex-1 bg-gradient-to-t from-violet-600/60 to-cyan-500/60 rounded-sm"
+                        />
+                      ))}
                     </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            {/* Visual Preview */}
-            <div className="lg:sticky lg:top-24">
-              <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-2 shadow-2xl">
-                <div className="bg-gray-800 rounded-t-xl px-4 py-2 flex items-center gap-2">
-                  <div className="flex gap-1.5">
-                    <div className="w-3 h-3 rounded-full bg-red-500" />
-                    <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                    <div className="w-3 h-3 rounded-full bg-green-500" />
-                  </div>
-                  <div className="flex-1 text-center">
-                    <span className="text-xs text-gray-400">CNCPT CMS - {cmsFeatures[activeFeature].title}</span>
-                  </div>
-                </div>
-                <div className="bg-gray-100 rounded-b-xl overflow-hidden">
-                  {activeFeature === 0 && <DashboardPreview />}
-                  {activeFeature === 1 && <ProductsPreview />}
-                  {activeFeature === 2 && <BlogPreview />}
-                  {activeFeature === 3 && <PageBuilderPreview />}
-                  {activeFeature === 4 && <MediaPreview />}
-                  {activeFeature === 5 && <EmailPreview />}
+                  </motion.div>
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
-      {/* More Features Grid */}
-      <section className="py-20 bg-muted/50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">And So Much More</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
-              Discover all the powerful features that make CNCPT Web the complete solution for your business.
-            </p>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { icon: ShoppingCart, title: 'Order Management', desc: 'Process orders, refunds, and fulfillment' },
-              { icon: Users, title: 'Customer CRM', desc: 'Track customer history and preferences' },
-              { icon: BarChart3, title: 'Analytics', desc: 'Detailed insights and reports' },
-              { icon: Settings, title: 'Workflows', desc: 'Automate repetitive tasks' },
-              { icon: Shield, title: 'Role Permissions', desc: 'Granular access control' },
-              { icon: Globe, title: 'Custom Domains', desc: 'Use your own domain name' },
-              { icon: Sparkles, title: 'AI Assistant', desc: 'AI-powered content generation' },
-              { icon: Mail, title: 'Email Automation', desc: 'Triggered email campaigns' },
-            ].map((item, i) => (
-              <div key={i} className="bg-background rounded-xl p-5 border hover:border-primary/50 hover:shadow-md transition-all">
-                <item.icon className="h-8 w-8 text-primary mb-3" />
-                <h3 className="font-semibold mb-1">{item.title}</h3>
-                <p className="text-sm text-muted-foreground">{item.desc}</p>
-              </div>
+      {/* Stats Section */}
+      <section className="relative py-24 px-6 border-y border-white/[0.06]">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-0 md:divide-x divide-white/[0.06]">
+            {stats.map((stat, i) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                className="text-center md:px-8"
+              >
+                <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent mb-2">
+                  {stat.value}
+                </div>
+                <div className="text-sm text-white/40">{stat.label}</div>
+              </motion.div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section ref={featuresRef} id="features" className="relative py-32 px-6">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-20"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+              Everything you need.
+              <br />
+              <span className="text-white/40">Nothing you don&apos;t.</span>
+            </h2>
+            <p className="text-lg text-white/50 max-w-2xl mx-auto">
+              A complete toolkit for building and scaling your online presence.
+              Thoughtfully designed, obsessively refined.
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {features.map((feature, i) => (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 20 }}
+                animate={isInView ? { opacity: 1, y: 0 } : {}}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                className="group relative p-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300 overflow-hidden"
+              >
+                {/* Gradient orb */}
+                <div className={`absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br ${feature.gradient} rounded-full blur-3xl opacity-0 group-hover:opacity-20 transition-opacity duration-500`} />
+
+                <div className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${feature.gradient} mb-4`}>
+                  <div className="w-6 h-6 bg-white/20 rounded-lg" />
+                </div>
+
+                <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
+                <p className="text-sm text-white/50 leading-relaxed">{feature.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Visual Feature Showcase */}
+      <section className="relative py-32 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -40 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 text-violet-400 text-sm mb-6">
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
+                Visual Page Builder
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+                Build pages
+                <br />
+                <span className="text-white/40">visually</span>
+              </h2>
+              <p className="text-lg text-white/50 mb-8 leading-relaxed">
+                Drag and drop components, customize styles, and publish instantly.
+                No code required. Your creativity, your rules.
+              </p>
+              <ul className="space-y-4">
+                {["40+ pre-built components", "Custom CSS & animations", "Mobile-responsive preview", "One-click publish"].map((item, i) => (
+                  <motion.li
+                    key={item}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4, delay: 0.2 + i * 0.1 }}
+                    className="flex items-center gap-3"
+                  >
+                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-white/70">{item}</span>
+                  </motion.li>
+                ))}
+              </ul>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 40 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="relative"
+            >
+              <div className="absolute -inset-4 bg-gradient-to-r from-violet-600/20 to-cyan-600/20 rounded-3xl blur-2xl opacity-40" />
+              <div className="relative rounded-2xl border border-white/[0.1] bg-[#111113] overflow-hidden p-4">
+                {/* Page builder mockup */}
+                <div className="flex gap-4">
+                  <div className="w-32 space-y-2 shrink-0">
+                    <div className="text-xs text-white/40 mb-3">Components</div>
+                    {["Hero", "Features", "Pricing", "CTA", "Footer"].map((comp, i) => (
+                      <motion.div
+                        key={comp}
+                        initial={{ opacity: 0, x: -10 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.3, delay: 0.4 + i * 0.05 }}
+                        className="p-2 rounded-lg border border-white/[0.06] bg-white/[0.02] text-xs text-white/60 cursor-grab hover:border-violet-500/30 hover:bg-violet-500/5 transition-all"
+                      >
+                        {comp}
+                      </motion.div>
+                    ))}
+                  </div>
+                  <div className="flex-1 space-y-3">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.4, delay: 0.5 }}
+                      className="h-24 rounded-xl border-2 border-dashed border-violet-500/30 bg-violet-500/5 flex items-center justify-center"
+                    >
+                      <div className="text-center">
+                        <div className="h-4 w-32 bg-white/10 rounded mb-2 mx-auto" />
+                        <div className="h-2 w-20 bg-white/5 rounded mx-auto" />
+                      </div>
+                    </motion.div>
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.4, delay: 0.6 }}
+                      className="h-16 rounded-xl border border-white/[0.06] bg-white/[0.02] flex items-center px-4 gap-3"
+                    >
+                      <div className="w-8 h-8 rounded bg-white/10" />
+                      <div className="flex-1 space-y-1">
+                        <div className="h-2 w-24 bg-white/10 rounded" />
+                        <div className="h-2 w-16 bg-white/5 rounded" />
+                      </div>
+                    </motion.div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[1, 2, 3].map((n) => (
+                        <motion.div
+                          key={n}
+                          initial={{ opacity: 0, y: 10 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ duration: 0.3, delay: 0.7 + n * 0.1 }}
+                          className="aspect-square rounded-lg border border-white/[0.06] bg-white/[0.02]"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-primary">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-4">Ready to get started?</h2>
-          <p className="text-xl text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
-            Try our interactive demo or start your free trial today. No credit card required.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            {user ? (
-              <Button size="lg" variant="secondary" asChild>
-                <Link href="/dashboard">
-                  Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            ) : (
-              <>
-                <Button size="lg" variant="secondary" asChild>
-                  <Link href="/register">
-                    Start Free Trial <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary"
-                  asChild
+      <section className="relative py-32 px-6">
+        <div className="max-w-4xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="relative"
+          >
+            {/* Background glow */}
+            <div className="absolute inset-0 bg-gradient-to-r from-violet-600/30 via-cyan-600/30 to-emerald-600/30 blur-3xl opacity-30" />
+
+            <div className="relative rounded-3xl border border-white/[0.1] bg-white/[0.02] backdrop-blur-sm p-12 md:p-16">
+              <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+                Ready to build something
+                <br />
+                <span className="bg-gradient-to-r from-violet-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent">
+                  extraordinary?
+                </span>
+              </h2>
+              <p className="text-lg text-white/50 mb-10 max-w-xl mx-auto">
+                Start your free trial today. No credit card required.
+                Cancel anytime.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link
+                  href="/register"
+                  className="px-8 py-4 text-base font-medium bg-white text-black rounded-xl hover:bg-white/90 transition-colors"
                 >
-                  <Link href="/demo">Try Demo First</Link>
-                </Button>
-              </>
-            )}
-          </div>
+                  Start free trial
+                </Link>
+                <Link
+                  href="/book"
+                  className="px-8 py-4 text-base font-medium rounded-xl border border-white/[0.1] hover:border-white/[0.2] bg-white/[0.02] hover:bg-white/[0.05] transition-all"
+                >
+                  Book a demo
+                </Link>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-muted py-12">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center mb-4">
-                <Globe className="h-6 w-6 text-primary" />
-                <span className="ml-2 text-lg font-bold">CNCPT Web</span>
-              </div>
-              <p className="text-muted-foreground">
-                The all-in-one platform for creating and managing your online business.
+      <footer className="relative py-16 px-6 border-t border-white/[0.06]">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
+            <div className="col-span-2">
+              <Link href="/" className="flex items-center gap-3 mb-4">
+                <div className="relative w-8 h-8">
+                  <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-cyan-500 rounded-lg opacity-80" />
+                  <div className="absolute inset-[2px] bg-[#0a0a0b] rounded-[5px] flex items-center justify-center">
+                    <span className="text-xs font-bold bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">C</span>
+                  </div>
+                </div>
+                <span className="text-lg font-semibold">CNCPT</span>
+              </Link>
+              <p className="text-sm text-white/40 max-w-xs">
+                The all-in-one platform for building and managing your online business.
               </p>
             </div>
 
-            <div>
-              <h3 className="font-semibold mb-4">Product</h3>
-              <ul className="space-y-2 text-muted-foreground">
-                <li>
-                  <Link href="#features" className="hover:text-foreground transition-colors">
-                    Features
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#cms" className="hover:text-foreground transition-colors">
-                    CMS
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/demo" className="hover:text-foreground transition-colors">
-                    Demo
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/register" className="hover:text-foreground transition-colors">
-                    Get Started
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="font-semibold mb-4">Company</h3>
-              <ul className="space-y-2 text-muted-foreground">
-                <li>
-                  <Link href="/book" className="hover:text-foreground transition-colors">
-                    Book Consultation
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-foreground transition-colors">
-                    About
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-foreground transition-colors">
-                    Contact
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-foreground transition-colors">
-                    Privacy
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="font-semibold mb-4">Support</h3>
-              <ul className="space-y-2 text-muted-foreground">
-                <li>
-                  <Link href="#" className="hover:text-foreground transition-colors">
-                    Help Center
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-foreground transition-colors">
-                    Documentation
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-foreground transition-colors">
-                    Status
-                  </Link>
-                </li>
-              </ul>
-            </div>
+            {[
+              { title: "Product", links: ["Features", "Demo", "Pricing", "Changelog"] },
+              { title: "Company", links: ["About", "Blog", "Careers", "Contact"] },
+              { title: "Legal", links: ["Privacy", "Terms", "Security"] },
+            ].map((section) => (
+              <div key={section.title}>
+                <h4 className="text-sm font-medium text-white mb-4">{section.title}</h4>
+                <ul className="space-y-3">
+                  {section.links.map((link) => (
+                    <li key={link}>
+                      <Link
+                        href={link === "Demo" ? "/demo" : link === "Pricing" ? "/pricing" : "#"}
+                        className="text-sm text-white/40 hover:text-white transition-colors"
+                      >
+                        {link}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
 
-          <div className="border-t border-border mt-8 pt-8 text-center text-muted-foreground">
-            <p>&copy; {new Date().getFullYear()} CNCPT Web. All rights reserved.</p>
+          <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-white/[0.06]">
+            <p className="text-sm text-white/30">
+              &copy; {new Date().getFullYear()} CNCPT Web. All rights reserved.
+            </p>
+            <div className="flex items-center gap-4 mt-4 md:mt-0">
+              {["Twitter", "GitHub", "Discord"].map((social) => (
+                <Link
+                  key={social}
+                  href="#"
+                  className="text-sm text-white/30 hover:text-white transition-colors"
+                >
+                  {social}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </footer>
-    </div>
-  )
-}
-
-// Mini Preview Components
-
-function DashboardPreview() {
-  return (
-    <div className="p-4 min-h-[300px]">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-900 text-sm">Dashboard</h3>
-        <span className="text-xs text-gray-500">Today</span>
-      </div>
-
-      {/* Stats Row */}
-      <div className="grid grid-cols-4 gap-2 mb-4">
-        {[
-          { label: 'Revenue', value: '$12,450', change: '+12%', color: 'text-green-600' },
-          { label: 'Orders', value: '89', change: '+8%', color: 'text-green-600' },
-          { label: 'Visitors', value: '2,847', change: '+15%', color: 'text-green-600' },
-          { label: 'Products', value: '48', change: '+3', color: 'text-blue-600' },
-        ].map((stat, i) => (
-          <div key={i} className="bg-white rounded-lg p-2 shadow-sm border">
-            <p className="text-[10px] text-gray-500">{stat.label}</p>
-            <p className="text-sm font-bold text-gray-900">{stat.value}</p>
-            <p className={`text-[10px] ${stat.color}`}>{stat.change}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Chart */}
-      <div className="bg-white rounded-lg p-3 shadow-sm border mb-4">
-        <p className="text-xs font-medium text-gray-700 mb-2">Revenue This Week</p>
-        <div className="flex items-end justify-between h-16 gap-1">
-          {[40, 65, 45, 80, 55, 90, 70].map((h, i) => (
-            <div key={i} className="flex-1 bg-blue-500 rounded-t opacity-80" style={{ height: `${h}%` }} />
-          ))}
-        </div>
-      </div>
-
-      {/* Recent Activity */}
-      <div className="bg-white rounded-lg p-3 shadow-sm border">
-        <p className="text-xs font-medium text-gray-700 mb-2">Recent Activity</p>
-        <div className="space-y-2">
-          {[
-            { icon: '🛒', text: 'New order #1247', time: '2m ago' },
-            { icon: '👤', text: 'New customer signup', time: '15m ago' },
-            { icon: '📦', text: 'Order shipped', time: '1h ago' },
-          ].map((item, i) => (
-            <div key={i} className="flex items-center gap-2 text-[10px]">
-              <span>{item.icon}</span>
-              <span className="flex-1 text-gray-700">{item.text}</span>
-              <span className="text-gray-400">{item.time}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function ProductsPreview() {
-  const products = [
-    { name: 'Wireless Headphones', price: '$199.99', stock: 45, status: 'active' },
-    { name: 'Smart Watch Pro', price: '$299.99', stock: 23, status: 'active' },
-    { name: 'Leather Wallet', price: '$59.99', stock: 89, status: 'active' },
-    { name: 'Coffee Set', price: '$74.99', stock: 0, status: 'draft' },
-  ]
-
-  return (
-    <div className="p-4 min-h-[300px]">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-900 text-sm">Products</h3>
-        <button className="bg-blue-600 text-white px-2 py-1 rounded text-[10px] font-medium">+ Add</button>
-      </div>
-
-      {/* Search */}
-      <div className="mb-3">
-        <input
-          type="text"
-          placeholder="Search products..."
-          className="w-full px-3 py-1.5 border rounded-lg text-xs bg-white"
-          readOnly
-        />
-      </div>
-
-      {/* Products Table */}
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-        <table className="w-full text-[10px]">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-3 py-2 text-left text-gray-500 font-medium">Product</th>
-              <th className="px-3 py-2 text-left text-gray-500 font-medium">Price</th>
-              <th className="px-3 py-2 text-left text-gray-500 font-medium">Stock</th>
-              <th className="px-3 py-2 text-left text-gray-500 font-medium">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {products.map((p, i) => (
-              <tr key={i} className="hover:bg-gray-50">
-                <td className="px-3 py-2 font-medium text-gray-900">{p.name}</td>
-                <td className="px-3 py-2 text-gray-600">{p.price}</td>
-                <td className="px-3 py-2 text-gray-600">{p.stock}</td>
-                <td className="px-3 py-2">
-                  <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-medium ${
-                    p.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                  }`}>
-                    {p.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
-}
-
-function BlogPreview() {
-  const posts = [
-    { title: '10 Tips for E-Commerce Success', status: 'published', views: 1247 },
-    { title: 'The Future of AI in Content', status: 'published', views: 892 },
-    { title: 'Maximizing Website Performance', status: 'draft', views: 0 },
-  ]
-
-  return (
-    <div className="p-4 min-h-[300px]">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-900 text-sm">Blog Posts</h3>
-        <button className="bg-blue-600 text-white px-2 py-1 rounded text-[10px] font-medium">+ New Post</button>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-2 mb-3">
-        {['All', 'Published', 'Draft'].map((tab, i) => (
-          <button
-            key={tab}
-            className={`px-2 py-1 rounded text-[10px] font-medium ${
-              i === 0 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {/* Posts */}
-      <div className="space-y-2">
-        {posts.map((post, i) => (
-          <div key={i} className="bg-white rounded-lg p-3 shadow-sm border flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-gray-900 truncate">{post.title}</p>
-              <div className="flex items-center gap-2 mt-1">
-                <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-medium ${
-                  post.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                }`}>
-                  {post.status}
-                </span>
-                <span className="text-[10px] text-gray-400">{post.views} views</span>
-              </div>
-            </div>
-            <button className="text-[10px] text-blue-600 font-medium">Edit</button>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function PageBuilderPreview() {
-  return (
-    <div className="p-4 min-h-[300px]">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-900 text-sm">Page Builder</h3>
-        <button className="bg-green-600 text-white px-2 py-1 rounded text-[10px] font-medium">Publish</button>
-      </div>
-
-      <div className="flex gap-2">
-        {/* Components Sidebar */}
-        <div className="w-20 bg-white rounded-lg shadow-sm border p-2 space-y-2">
-          <p className="text-[8px] font-medium text-gray-500 uppercase">Components</p>
-          {['Hero', 'Text', 'Image', 'Grid', 'CTA'].map((comp) => (
-            <div key={comp} className="bg-gray-50 rounded p-1.5 text-[9px] text-center text-gray-600 cursor-grab hover:bg-gray-100">
-              {comp}
-            </div>
-          ))}
-        </div>
-
-        {/* Canvas */}
-        <div className="flex-1 bg-white rounded-lg shadow-sm border p-2">
-          <div className="border-2 border-dashed border-blue-300 rounded-lg p-3 mb-2 bg-blue-50">
-            <div className="h-8 bg-blue-200 rounded mb-2" />
-            <div className="h-3 bg-blue-200 rounded w-2/3 mx-auto" />
-          </div>
-          <div className="border-2 border-dashed border-gray-200 rounded-lg p-2 mb-2">
-            <div className="h-2 bg-gray-200 rounded mb-1" />
-            <div className="h-2 bg-gray-200 rounded mb-1" />
-            <div className="h-2 bg-gray-200 rounded w-3/4" />
-          </div>
-          <div className="grid grid-cols-3 gap-1">
-            {[1, 2, 3].map((n) => (
-              <div key={n} className="aspect-square bg-gray-100 rounded border-2 border-dashed border-gray-200" />
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function MediaPreview() {
-  return (
-    <div className="p-4 min-h-[300px]">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-900 text-sm">Media Library</h3>
-        <button className="bg-blue-600 text-white px-2 py-1 rounded text-[10px] font-medium">+ Upload</button>
-      </div>
-
-      {/* Upload Zone */}
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center mb-3 bg-white">
-        <div className="text-gray-400 text-xl mb-1">📁</div>
-        <p className="text-[10px] text-gray-500">Drop files here or click to upload</p>
-      </div>
-
-      {/* Media Grid */}
-      <div className="grid grid-cols-4 gap-2">
-        {[
-          'bg-gradient-to-br from-blue-400 to-purple-500',
-          'bg-gradient-to-br from-green-400 to-teal-500',
-          'bg-gradient-to-br from-orange-400 to-red-500',
-          'bg-gradient-to-br from-pink-400 to-purple-500',
-          'bg-gradient-to-br from-yellow-400 to-orange-500',
-          'bg-gradient-to-br from-indigo-400 to-blue-500',
-          'bg-gradient-to-br from-teal-400 to-green-500',
-          'bg-gradient-to-br from-red-400 to-pink-500',
-        ].map((bg, i) => (
-          <div
-            key={i}
-            className={`aspect-square ${bg} rounded-lg cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all`}
-          />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function EmailPreview() {
-  return (
-    <div className="p-4 min-h-[300px]">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-900 text-sm">Email Marketing</h3>
-        <button className="bg-blue-600 text-white px-2 py-1 rounded text-[10px] font-medium">+ Campaign</button>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        {[
-          { label: 'Subscribers', value: '2,847' },
-          { label: 'Open Rate', value: '42.3%' },
-          { label: 'Click Rate', value: '8.7%' },
-        ].map((stat, i) => (
-          <div key={i} className="bg-white rounded-lg p-2 shadow-sm border text-center">
-            <p className="text-xs font-bold text-gray-900">{stat.value}</p>
-            <p className="text-[9px] text-gray-500">{stat.label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Campaigns */}
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-        <div className="px-3 py-2 bg-gray-50 border-b">
-          <p className="text-[10px] font-medium text-gray-700">Recent Campaigns</p>
-        </div>
-        <div className="divide-y">
-          {[
-            { name: 'Welcome Series', sent: 156, status: 'active' },
-            { name: 'Flash Sale Alert', sent: 2847, status: 'sent' },
-            { name: 'Newsletter #12', sent: 0, status: 'draft' },
-          ].map((campaign, i) => (
-            <div key={i} className="px-3 py-2 flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-medium text-gray-900">{campaign.name}</p>
-                <p className="text-[9px] text-gray-500">{campaign.sent} sent</p>
-              </div>
-              <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-medium ${
-                campaign.status === 'active' ? 'bg-green-100 text-green-700' :
-                campaign.status === 'sent' ? 'bg-blue-100 text-blue-700' :
-                'bg-gray-100 text-gray-600'
-              }`}>
-                {campaign.status}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   )
 }
