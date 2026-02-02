@@ -102,10 +102,10 @@ export default function HomePage() {
             </Link>
 
             <nav className="hidden md:flex items-center gap-1">
-              {["Features", "Demo", "Pricing", "Book Call"].map((item) => (
+              {["Demo", "Pricing", "Book Call"].map((item) => (
                 <Link
                   key={item}
-                  href={item === "Features" ? "#features" : item === "Demo" ? "/demo" : item === "Pricing" ? "/pricing" : "/book"}
+                  href={item === "Demo" ? "/demo" : item === "Pricing" ? "/pricing" : "/book"}
                   className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors rounded-lg hover:bg-white/[0.05]"
                 >
                   {item}
@@ -571,20 +571,31 @@ export default function HomePage() {
             </div>
 
             {[
-              { title: "Product", links: ["Features", "Demo", "Pricing", "Changelog"] },
-              { title: "Company", links: ["About", "Blog", "Careers", "Contact"] },
-              { title: "Legal", links: ["Privacy", "Terms", "Security"] },
+              { title: "Product", links: [
+                { name: "Demo", href: "/demo" },
+                { name: "Pricing", href: "/pricing" },
+                { name: "Get Started", href: "/register" },
+              ]},
+              { title: "Company", links: [
+                { name: "Book Call", href: "/book" },
+                { name: "About", href: "#" },
+                { name: "Contact", href: "#" },
+              ]},
+              { title: "Legal", links: [
+                { name: "Privacy", href: "#" },
+                { name: "Terms", href: "#" },
+              ]},
             ].map((section) => (
               <div key={section.title}>
                 <h4 className="text-sm font-medium text-white mb-4">{section.title}</h4>
                 <ul className="space-y-3">
                   {section.links.map((link) => (
-                    <li key={link}>
+                    <li key={link.name}>
                       <Link
-                        href={link === "Demo" ? "/demo" : link === "Pricing" ? "/pricing" : "#"}
+                        href={link.href}
                         className="text-sm text-white/40 hover:text-white transition-colors"
                       >
-                        {link}
+                        {link.name}
                       </Link>
                     </li>
                   ))}
