@@ -1,17 +1,25 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import { ArrowRight, Play, Calendar, Sparkles } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { rootDomain, protocol } from "@/lib/utils"
+import { useTheme } from "next-themes"
 
 // Demo page now directly links to the built-in demo subdomain
 // which provides a read-only view of the CMS backend
 
 export default function DemoPage() {
   const [isRedirecting, setIsRedirecting] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const { resolvedTheme } = useTheme()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Build the demo URL
   const demoUrl = `${protocol}://demo.${rootDomain}/admin`
@@ -43,14 +51,20 @@ export default function DemoPage() {
       {/* Navigation */}
       <header className="relative z-50 py-6 px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative w-9 h-9">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-800 to-orange-500 rounded-lg opacity-80 group-hover:opacity-100 transition-opacity" />
-              <div className="absolute inset-[2px] bg-white dark:bg-gray-900 rounded-[6px] flex items-center justify-center">
-                <span className="text-sm font-bold bg-gradient-to-r from-blue-800 to-orange-500 dark:from-blue-400 dark:to-orange-400 bg-clip-text text-transparent">C</span>
-              </div>
-            </div>
-            <span className="text-lg font-semibold tracking-tight text-gray-900 dark:text-white">CNCPT</span>
+          <Link href="/" className="flex items-center group">
+            {mounted && (
+              <Image
+                src={resolvedTheme === "dark" ? "/CNCPT_Web_logo_white.png" : "/CNCPT_Web_logo_navy.png"}
+                alt="CNCPT Web"
+                width={140}
+                height={40}
+                className="h-9 w-auto"
+                priority
+              />
+            )}
+            {!mounted && (
+              <div className="h-9 w-[140px] bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+            )}
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
@@ -358,14 +372,19 @@ export default function DemoPage() {
       {/* Footer */}
       <footer className="relative py-12 px-6 border-t border-gray-200 dark:border-white/[0.06]">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="relative w-7 h-7">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-800 to-orange-500 rounded-md opacity-80" />
-              <div className="absolute inset-[2px] bg-white dark:bg-gray-900 rounded-[4px] flex items-center justify-center">
-                <span className="text-xs font-bold bg-gradient-to-r from-blue-800 to-orange-500 dark:from-blue-400 dark:to-orange-400 bg-clip-text text-transparent">C</span>
-              </div>
-            </div>
-            <span className="font-semibold text-gray-900 dark:text-white">CNCPT</span>
+          <Link href="/" className="flex items-center">
+            {mounted && (
+              <Image
+                src={resolvedTheme === "dark" ? "/CNCPT_Web_logo_white.png" : "/CNCPT_Web_logo_navy.png"}
+                alt="CNCPT Web"
+                width={100}
+                height={30}
+                className="h-7 w-auto"
+              />
+            )}
+            {!mounted && (
+              <div className="h-7 w-[100px] bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+            )}
           </Link>
           <p className="text-sm text-gray-400 dark:text-white/30">
             &copy; {new Date().getFullYear()} CNCPT Web. All rights reserved.

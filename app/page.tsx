@@ -1,10 +1,12 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { useUser } from "@stackframe/stack"
 import { useState, useEffect, useRef } from "react"
 import { motion, useScroll, useTransform, useInView, AnimatePresence } from "framer-motion"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { useTheme } from "next-themes"
 
 export const dynamic = "force-dynamic"
 
@@ -51,6 +53,8 @@ const stats = [
 
 export default function HomePage() {
   const user = useUser()
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const heroRef = useRef<HTMLDivElement>(null)
   const featuresRef = useRef<HTMLDivElement>(null)
@@ -59,6 +63,11 @@ export default function HomePage() {
   const { scrollYProgress } = useScroll()
   const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0])
   const heroScale = useTransform(scrollYProgress, [0, 0.2], [1, 0.95])
+
+  // Handle hydration mismatch for theme
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -92,14 +101,20 @@ export default function HomePage() {
       >
         <div className="mx-auto max-w-7xl px-6 py-4">
           <div className="flex items-center justify-between rounded-2xl border border-gray-200 dark:border-white/[0.08] bg-white/80 dark:bg-white/[0.02] backdrop-blur-xl px-6 py-3">
-            <Link href="/" className="flex items-center gap-3 group">
-              <div className="relative w-9 h-9">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-800 to-orange-500 rounded-lg opacity-80 group-hover:opacity-100 transition-opacity" />
-                <div className="absolute inset-[2px] bg-white dark:bg-gray-900 rounded-[6px] flex items-center justify-center">
-                  <span className="text-sm font-bold bg-gradient-to-r from-blue-800 to-orange-500 dark:from-blue-400 dark:to-orange-400 bg-clip-text text-transparent">C</span>
-                </div>
-              </div>
-              <span className="text-lg font-semibold tracking-tight text-gray-900 dark:text-white">CNCPT</span>
+            <Link href="/" className="flex items-center group">
+              {mounted && (
+                <Image
+                  src={resolvedTheme === "dark" ? "/CNCPT_Web_logo_white.png" : "/CNCPT_Web_logo_navy.png"}
+                  alt="CNCPT Web"
+                  width={140}
+                  height={40}
+                  className="h-9 w-auto"
+                  priority
+                />
+              )}
+              {!mounted && (
+                <div className="h-9 w-[140px] bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              )}
             </Link>
 
             <nav className="hidden md:flex items-center gap-1">
@@ -558,14 +573,19 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
             <div className="col-span-2">
-              <Link href="/" className="flex items-center gap-3 mb-4">
-                <div className="relative w-8 h-8">
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-800 to-orange-500 rounded-lg opacity-80" />
-                  <div className="absolute inset-[2px] bg-white dark:bg-gray-900 rounded-[5px] flex items-center justify-center">
-                    <span className="text-xs font-bold bg-gradient-to-r from-blue-800 to-orange-500 dark:from-blue-400 dark:to-orange-400 bg-clip-text text-transparent">C</span>
-                  </div>
-                </div>
-                <span className="text-lg font-semibold text-gray-900 dark:text-white">CNCPT</span>
+              <Link href="/" className="flex items-center mb-4">
+                {mounted && (
+                  <Image
+                    src={resolvedTheme === "dark" ? "/CNCPT_Web_logo_white.png" : "/CNCPT_Web_logo_navy.png"}
+                    alt="CNCPT Web"
+                    width={120}
+                    height={35}
+                    className="h-8 w-auto"
+                  />
+                )}
+                {!mounted && (
+                  <div className="h-8 w-[120px] bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                )}
               </Link>
               <p className="text-sm text-gray-500 dark:text-white/40 max-w-xs">
                 The all-in-one platform for building and managing your online business.
