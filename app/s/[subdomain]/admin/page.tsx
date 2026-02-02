@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { isDemoSubdomain, DEMO_USER } from '@/lib/demo';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 
 interface DashboardStats {
   totalUsers: number;
@@ -33,6 +34,7 @@ export default function AdminDashboard() {
   const router = useRouter();
   const params = useParams();
   const subdomain = params?.subdomain as string;
+  const { buildPath } = useCMSConfig();
 
   // Check if this is the demo subdomain
   const isDemo = isDemoSubdomain(subdomain);
@@ -217,19 +219,19 @@ export default function AdminDashboard() {
             <CardDescription>Navigate to common sections</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Link href="/admin/products">
+            <Link href={buildPath('/admin/products')}>
               <Button variant="outline" className="w-full justify-between text-sm">
                 Manage Products
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <Link href="/admin/orders">
+            <Link href={buildPath('/admin/orders')}>
               <Button variant="outline" className="w-full justify-between text-sm">
                 View Orders
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <Link href="/admin/customers">
+            <Link href={buildPath('/admin/customers')}>
               <Button variant="outline" className="w-full justify-between text-sm">
                 Customer List
                 <ArrowRight className="h-4 w-4" />
@@ -244,19 +246,19 @@ export default function AdminDashboard() {
             <CardDescription>Manage your site content</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Link href="/admin/pages">
+            <Link href={buildPath('/admin/pages')}>
               <Button variant="outline" className="w-full justify-between text-sm">
                 Edit Pages
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <Link href="/admin/blog">
+            <Link href={buildPath('/admin/blog')}>
               <Button variant="outline" className="w-full justify-between text-sm">
                 Blog Posts
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <Link href="/admin/media">
+            <Link href={buildPath('/admin/media')}>
               <Button variant="outline" className="w-full justify-between text-sm">
                 Media Library
                 <ArrowRight className="h-4 w-4" />

@@ -53,6 +53,7 @@ import {
 import { toast } from "sonner";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 
 interface BlogPost {
   id: string;
@@ -93,6 +94,7 @@ const statusColors: Record<string, "default" | "secondary" | "destructive" | "ou
 };
 
 export default function BlogPostsPage() {
+  const { buildPath } = useCMSConfig();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -179,10 +181,10 @@ export default function BlogPostsPage() {
         </div>
         <div className="flex gap-2" data-help-key="admin.blog.actions">
           <Button variant="outline" asChild data-help-key="admin.blog.categories">
-            <Link href="/admin/blog/categories">Categories</Link>
+            <Link href={buildPath('/admin/blog/categories')}>Categories</Link>
           </Button>
           <Button variant="outline" asChild data-help-key="admin.blog.tags">
-            <Link href="/admin/blog/tags">Tags</Link>
+            <Link href={buildPath('/admin/blog/tags')}>Tags</Link>
           </Button>
           <Button variant="outline" onClick={fetchPosts} disabled={isLoading} data-help-key="admin.blog.refresh">
             {isLoading ? (
@@ -193,7 +195,7 @@ export default function BlogPostsPage() {
             Refresh
           </Button>
           <Button asChild data-help-key="admin.blog.new">
-            <Link href="/admin/blog/new">
+            <Link href={buildPath('/admin/blog/new')}>
               <Plus className="mr-2 h-4 w-4" />
               New Post
             </Link>
@@ -378,7 +380,7 @@ export default function BlogPostsPage() {
                       <FileText className="h-8 w-8 text-muted-foreground" />
                       <p className="text-muted-foreground">No posts found</p>
                       <Button asChild size="sm">
-                        <Link href="/admin/blog/new">Create your first post</Link>
+                        <Link href={buildPath('/admin/blog/new')}>Create your first post</Link>
                       </Button>
                     </div>
                   </TableCell>

@@ -5,6 +5,7 @@ import { Loader2, AlertCircle, ArrowLeft, Download } from "lucide-react";
 import { Button } from "@/components/cms/ui/button";
 import { toast } from "sonner";
 import Link from "next/link";
+import { useCMSConfig } from "@/contexts/CMSConfigContext";
 import { Puck, Data, Drawer } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
 
@@ -375,6 +376,7 @@ export default function PagePuckEditorPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const { buildPath } = useCMSConfig();
   const [page, setPage] = useState<Page | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -530,7 +532,7 @@ export default function PagePuckEditorPage({
           The page you&apos;re looking for doesn&apos;t exist or couldn&apos;t be loaded.
         </p>
         <Button asChild>
-          <Link href="/admin/pages">
+          <Link href={buildPath('/admin/pages')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Pages
           </Link>
@@ -549,7 +551,7 @@ export default function PagePuckEditorPage({
         {/* Application Header */}
         <div className="puck-app-header">
           <div className="puck-app-header-left">
-            <Link href="/admin/pages" className="puck-back-link">
+            <Link href={buildPath('/admin/pages')} className="puck-back-link">
               <ArrowLeft className="h-4 w-4" />
               <span>Pages</span>
             </Link>

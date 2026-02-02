@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { Button } from '@/components/cms/ui/button';
 import { Input } from '@/components/cms/ui/input';
 import { Label } from '@/components/cms/ui/label';
@@ -40,6 +41,7 @@ interface ParentPage {
 
 export default function NewPagePage() {
   const router = useRouter();
+  const { buildPath } = useCMSConfig();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [parentPages, setParentPages] = useState<ParentPage[]>([]);
   const [formData, setFormData] = useState({
@@ -132,7 +134,7 @@ export default function NewPagePage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/admin/pages">
+            <Link href={buildPath('/admin/pages')}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
@@ -145,7 +147,7 @@ export default function NewPagePage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
-            <Link href="/admin/pages">Cancel</Link>
+            <Link href={buildPath('/admin/pages')}>Cancel</Link>
           </Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting ? (

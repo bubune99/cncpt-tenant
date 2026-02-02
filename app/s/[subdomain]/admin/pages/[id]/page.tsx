@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { Button } from '@/components/cms/ui/button';
 import {
   Card,
@@ -59,6 +60,7 @@ export default function PageEditPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const { buildPath } = useCMSConfig();
   const [page, setPage] = useState<Page | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -182,7 +184,7 @@ export default function PageEditPage({
             The page you&apos;re looking for doesn&apos;t exist or couldn&apos;t be loaded.
           </p>
           <Button asChild>
-            <Link href="/admin/pages">
+            <Link href={buildPath('/admin/pages')}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Pages
             </Link>
@@ -198,7 +200,7 @@ export default function PageEditPage({
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/admin/pages">
+            <Link href={buildPath('/admin/pages')}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
@@ -444,7 +446,7 @@ export default function PageEditPage({
                 </Link>
               </Button>
               <Button variant="outline" className="w-full justify-start" asChild>
-                <Link href="/admin/pages">
+                <Link href={buildPath('/admin/pages')}>
                   <FileText className="mr-2 h-4 w-4" />
                   All Pages
                 </Link>

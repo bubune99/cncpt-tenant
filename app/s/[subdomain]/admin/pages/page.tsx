@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/cms/ui/button';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import {
   Card,
   CardContent,
@@ -73,6 +74,7 @@ interface Page {
 }
 
 export default function PagesPage() {
+  const { buildPath } = useCMSConfig();
   const [pages, setPages] = useState<Page[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -209,7 +211,7 @@ export default function PagesPage() {
             Refresh
           </Button>
           <Button asChild data-help-key="admin.pages.new">
-            <Link href="/admin/pages/new">
+            <Link href={buildPath('/admin/pages/new')}>
               <Plus className="mr-2 h-4 w-4" />
               New Page
             </Link>
@@ -233,7 +235,7 @@ export default function PagesPage() {
               </div>
             </div>
             <Button asChild>
-              <Link href="/admin/pages/layout">
+              <Link href={buildPath('/admin/pages/layout')}>
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit Layout
               </Link>
@@ -243,7 +245,7 @@ export default function PagesPage() {
         <CardContent>
           <div className="grid gap-3 md:grid-cols-3">
             <Link
-              href="/admin/pages/layout/header"
+              href={buildPath('/admin/pages/layout/header')}
               className="flex items-center gap-3 p-3 rounded-lg border hover:border-primary/50 hover:bg-accent transition-colors"
             >
               <PanelTop className="h-5 w-5 text-muted-foreground" />
@@ -253,7 +255,7 @@ export default function PagesPage() {
               </div>
             </Link>
             <Link
-              href="/admin/pages/layout/footer"
+              href={buildPath('/admin/pages/layout/footer')}
               className="flex items-center gap-3 p-3 rounded-lg border hover:border-primary/50 hover:bg-accent transition-colors"
             >
               <PanelBottom className="h-5 w-5 text-muted-foreground" />
@@ -263,7 +265,7 @@ export default function PagesPage() {
               </div>
             </Link>
             <Link
-              href="/admin/pages/layout/announcement"
+              href={buildPath('/admin/pages/layout/announcement')}
               className="flex items-center gap-3 p-3 rounded-lg border hover:border-primary/50 hover:bg-accent transition-colors"
             >
               <Bell className="h-5 w-5 text-muted-foreground" />
@@ -350,7 +352,7 @@ export default function PagesPage() {
                 Get started by creating your first page.
               </p>
               <Button asChild>
-                <Link href="/admin/pages/new">
+                <Link href={buildPath('/admin/pages/new')}>
                   <Plus className="mr-2 h-4 w-4" />
                   Create Page
                 </Link>
@@ -373,7 +375,7 @@ export default function PagesPage() {
                   <TableRow key={page.id}>
                     <TableCell>
                       <Link
-                        href={`/admin/pages/${page.id}`}
+                        href={buildPath(`/admin/pages/${page.id}`)}
                         className="flex items-center gap-3 hover:text-primary transition-colors"
                       >
                         {getPageIcon(page.slug)}
@@ -411,13 +413,13 @@ export default function PagesPage() {
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>
-                            <Link href={`/admin/pages/${page.id}`}>
+                            <Link href={buildPath(`/admin/pages/${page.id}`)}>
                               <Pencil className="mr-2 h-4 w-4" />
                               Edit Settings
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>
-                            <Link href={`/admin/pages/${page.id}/puck`}>
+                            <Link href={buildPath(`/admin/pages/${page.id}/puck`)}>
                               <Layers className="mr-2 h-4 w-4" />
                               Visual Editor
                             </Link>

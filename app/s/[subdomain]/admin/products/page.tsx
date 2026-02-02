@@ -40,9 +40,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/cms/ui/ta
 import { toast } from "sonner";
 import Link from "next/link";
 import { useAuth } from '@/hooks/use-auth';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 
 export default function ProductsPage() {
   const { user } = useAuth();
+  const { buildPath } = useCMSConfig();
   const [products, setProducts] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -156,7 +158,7 @@ export default function ProductsPage() {
             )}
           </Button>
           <Button asChild data-help-key="admin.products.add">
-            <Link href="/admin/products/new">
+            <Link href={buildPath('/admin/products/new')}>
               <Plus className="mr-2 h-4 w-4" />
               Add Product
             </Link>

@@ -55,6 +55,7 @@ import { Checkbox } from '@/components/cms/ui/checkbox';
 import { toast } from "sonner";
 import Link from "next/link";
 import { useAuth } from '@/hooks/use-auth';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 
 interface Order {
   id: string;
@@ -73,6 +74,7 @@ interface Order {
 
 export default function OrdersPage() {
   const { user } = useAuth();
+  const { buildPath } = useCMSConfig();
   const [orders, setOrders] = useState<Order[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -229,7 +231,7 @@ export default function OrdersPage() {
             Export
           </Button>
           <Button asChild data-help-key="admin.orders.new">
-            <Link href="/admin/orders/new">
+            <Link href={buildPath('/admin/orders/new')}>
               <Plus className="mr-2 h-4 w-4" />
               New Order
             </Link>
