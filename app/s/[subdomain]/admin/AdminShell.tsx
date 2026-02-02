@@ -119,6 +119,7 @@ export function AdminShell({
     siteName,
     userRole = 'Super Admin',
     showChat = true,
+    isDemo = false,
   } = config;
 
   // Helper to build paths with basePath prefix
@@ -193,11 +194,16 @@ export function AdminShell({
     return pathname?.startsWith(fullHref);
   };
 
-  // Show admin layout for all authenticated users
+  // Show admin layout for authenticated users OR demo mode
   // Role-based access control is handled at the page/route level
-  if (!user) {
+  if (!user && !isDemo) {
     return <>{children}</>;
   }
+
+  // Create a display user for demo mode
+  const displayUser = isDemo && !user
+    ? { displayName: 'Demo User', primaryEmail: 'demo@cncptweb.com' }
+    : user;
 
   return (
     <CMSConfigProvider config={config}>
@@ -229,10 +235,14 @@ export function AdminShell({
 
             {/* Admin info */}
             <div className="px-4 py-3 border-b border-border">
-              <p className="text-sm font-medium">{user.displayName || 'Admin'}</p>
-              <p className="text-xs text-muted-foreground">{user.primaryEmail}</p>
-              <span className="inline-flex items-center px-2 py-0.5 mt-1 text-xs font-medium rounded-full bg-primary/10 text-primary">
-                {userRole}
+              <p className="text-sm font-medium">{displayUser?.displayName || 'Admin'}</p>
+              <p className="text-xs text-muted-foreground">{displayUser?.primaryEmail}</p>
+              <span className={`inline-flex items-center px-2 py-0.5 mt-1 text-xs font-medium rounded-full ${
+                isDemo
+                  ? 'bg-orange-500/10 text-orange-500'
+                  : 'bg-primary/10 text-primary'
+              }`}>
+                {isDemo ? 'Demo Viewer' : userRole}
               </span>
             </div>
 
@@ -291,14 +301,25 @@ export function AdminShell({
                 <ArrowLeft className="h-4 w-4" />
                 View Site
               </Link>
-              <button
-                onClick={() => signOut()}
-                data-help-key="admin.sidebar.sign-out"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors w-full"
-              >
-                <LogOut className="h-4 w-4" />
-                Sign Out
-              </button>
+              {isDemo ? (
+                <Link
+                  href="/pricing"
+                  data-help-key="admin.sidebar.start-trial"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium bg-orange-500/10 text-orange-600 hover:bg-orange-500/20 transition-colors w-full"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Start Free Trial
+                </Link>
+              ) : (
+                <button
+                  onClick={() => signOut()}
+                  data-help-key="admin.sidebar.sign-out"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors w-full"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign Out
+                </button>
+              )}
             </div>
           </div>
         </div>

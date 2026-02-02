@@ -17,6 +17,8 @@ export interface CMSConfig {
   userRole?: string;
   /** Whether to show the AI chat panel */
   showChat?: boolean;
+  /** Whether this is demo mode (read-only, public access) */
+  isDemo?: boolean;
 }
 
 interface CMSConfigContextValue {
@@ -24,6 +26,7 @@ interface CMSConfigContextValue {
   siteUrl: string;
   siteName?: string;
   userRole: string;
+  isDemo: boolean;
   /** Build a path prefixed with the base path */
   buildPath: (path: string) => string;
   /** Build an API path prefixed for the current tenant */
@@ -43,6 +46,7 @@ export function CMSConfigProvider({
   const siteUrl = config.siteUrl || '/';
   const siteName = config.siteName;
   const userRole = config.userRole || 'Super Admin';
+  const isDemo = config.isDemo || false;
 
   // Helper to prefix paths with basePath
   const buildPath = (path: string): string => {
@@ -66,6 +70,7 @@ export function CMSConfigProvider({
         siteUrl,
         siteName,
         userRole,
+        isDemo,
         buildPath,
         buildApiPath,
       }}
@@ -83,6 +88,7 @@ export function useCMSConfig(): CMSConfigContextValue {
       basePath: '',
       siteUrl: '/',
       userRole: 'Super Admin',
+      isDemo: false,
       buildPath: (path) => path,
       buildApiPath: (path) => path,
     };

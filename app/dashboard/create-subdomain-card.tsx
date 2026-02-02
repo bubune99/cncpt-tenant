@@ -6,7 +6,7 @@ export function CreateSubdomainCard() {
     <Card>
       <CardHeader>
         <CardTitle>Create New Subdomain</CardTitle>
-        <CardDescription>Add a new subdomain to your account with a custom emoji</CardDescription>
+        <CardDescription>Add a new subdomain to your account</CardDescription>
       </CardHeader>
       <CardContent>
         <SubdomainForm />

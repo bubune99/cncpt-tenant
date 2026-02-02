@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { AdminShell } from './AdminShell';
+import { isDemoSubdomain, DEMO_CONFIG } from '@/lib/demo';
 
 interface CMSFeatures {
   blog: boolean;
@@ -88,9 +89,20 @@ export function AdminShellWrapper({
   const [showChat, setShowChat] = useState(true);
   const [loading, setLoading] = useState(true);
 
+  // Check if this is demo mode
+  const isDemo = isDemoSubdomain(subdomain);
+
   useEffect(() => {
     async function loadFeatures() {
       if (!subdomain) {
+        setLoading(false);
+        return;
+      }
+
+      // For demo mode, enable all features
+      if (isDemo) {
+        setHiddenItems([]);
+        setShowChat(true);
         setLoading(false);
         return;
       }
@@ -113,15 +125,16 @@ export function AdminShellWrapper({
     }
 
     loadFeatures();
-  }, [subdomain]);
+  }, [subdomain, isDemo]);
 
   // Build config
   const config = {
     basePath: `/s/${subdomain}`,
     siteUrl: `/${subdomain}`,
-    siteName: subdomain,
+    siteName: isDemo ? DEMO_CONFIG.siteName : subdomain,
     hiddenItems,
     showChat,
+    isDemo,
   };
 
   // Show loading spinner while fetching features

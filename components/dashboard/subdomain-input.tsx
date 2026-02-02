@@ -18,23 +18,25 @@ const EMOJI_OPTIONS = [
 interface SubdomainInputProps {
   value: string
   onChange: (value: string) => void
-  emoji: string
-  onEmojiChange: (emoji: string) => void
+  emoji?: string
+  onEmojiChange?: (emoji: string) => void
   domain: string
   onAvailabilityChange?: (isAvailable: boolean | null) => void
   disabled?: boolean
   error?: string
+  showEmojiSelector?: boolean
 }
 
 export function SubdomainInput({
   value,
   onChange,
-  emoji,
+  emoji = "🌐",
   onEmojiChange,
   domain,
   onAvailabilityChange,
   disabled = false,
   error: externalError,
+  showEmojiSelector = false,
 }: SubdomainInputProps) {
   const [checking, setChecking] = useState(false)
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null)
@@ -192,31 +194,33 @@ export function SubdomainInput({
         )}
       </div>
 
-      {/* Emoji Selector */}
-      <div className="space-y-2">
-        <Label>Choose Icon</Label>
-        <div className="grid grid-cols-8 gap-2">
-          {EMOJI_OPTIONS.map((e) => (
-            <Button
-              key={e}
-              type="button"
-              variant={emoji === e ? "default" : "outline"}
-              size="lg"
-              onClick={() => onEmojiChange(e)}
-              disabled={disabled}
-              className="text-xl h-10 w-10 p-0"
-            >
-              {e}
-            </Button>
-          ))}
+      {/* Emoji Selector - Optional */}
+      {showEmojiSelector && onEmojiChange && (
+        <div className="space-y-2">
+          <Label>Choose Icon (Optional)</Label>
+          <div className="grid grid-cols-8 gap-2">
+            {EMOJI_OPTIONS.map((e) => (
+              <Button
+                key={e}
+                type="button"
+                variant={emoji === e ? "default" : "outline"}
+                size="lg"
+                onClick={() => onEmojiChange(e)}
+                disabled={disabled}
+                className="text-xl h-10 w-10 p-0"
+              >
+                {e}
+              </Button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Preview */}
       <div className="p-4 bg-muted rounded-lg">
         <Label className="text-xs text-muted-foreground mb-2 block">Preview</Label>
         <div className="flex items-center gap-2">
-          <span className="text-2xl">{emoji}</span>
+          {showEmojiSelector && <span className="text-2xl">{emoji}</span>}
           <span className="font-medium text-lg">
             {value || "yoursite"}.{domain}
           </span>

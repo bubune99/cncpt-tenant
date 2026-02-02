@@ -5,11 +5,14 @@
  *
  * Checks if the current user has access to a subdomain.
  * Returns access type (owner/team) and access level.
+ *
+ * Special case: "demo" subdomain allows unauthenticated read-only access.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { stackServerApp } from "@/stack";
 import { canAccessSubdomain } from "@/lib/team-auth";
+import { isDemoSubdomain, DEMO_USER } from "@/lib/demo";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +22,22 @@ interface RouteParams {
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
+    const { subdomain } = await params;
+    const url = new URL(request.url);
+    const requiredLevel = (url.searchParams.get("level") || "view") as "view" | "edit" | "admin";
+
+    // Special handling for demo subdomain - allow unauthenticated access
+    if (isDemoSubdomain(subdomain)) {
+      return NextResponse.json({
+        hasAccess: true,
+        accessType: "demo",
+        accessLevel: "view", // Read-only access for demo
+        isDemo: true,
+        userId: DEMO_USER.id,
+        subdomain,
+      });
+    }
+
     const user = await stackServerApp.getUser();
 
     if (!user) {
@@ -27,10 +46,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         { status: 401 }
       );
     }
-
-    const { subdomain } = await params;
-    const url = new URL(request.url);
-    const requiredLevel = (url.searchParams.get("level") || "view") as "view" | "edit" | "admin";
 
     const accessResult = await canAccessSubdomain(user.id, subdomain, requiredLevel);
 

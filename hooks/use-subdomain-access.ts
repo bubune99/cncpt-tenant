@@ -5,11 +5,12 @@ import { useParams } from "next/navigation";
 
 export interface SubdomainAccess {
   hasAccess: boolean;
-  accessType: "owner" | "team" | null;
+  accessType: "owner" | "team" | "demo" | null;
   accessLevel: "view" | "edit" | "admin" | null;
   teamId?: string;
   isLoading: boolean;
   error: string | null;
+  isDemo?: boolean;
 }
 
 /**
@@ -70,6 +71,7 @@ export function useSubdomainAccess(
           teamId: data.teamId,
           isLoading: false,
           error: null,
+          isDemo: data.isDemo || false,
         });
       } catch (error) {
         console.error("[useSubdomainAccess] Error:", error);

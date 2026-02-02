@@ -252,11 +252,8 @@ export async function updateSubdomainAction(prevState: any, formData: FormData) 
   const originalSubdomain = formData.get("originalSubdomain") as string
   const newIcon = formData.get("icon") as string
 
-  if (!newIcon) {
-    return { success: false, error: "Icon is required" }
-  }
-
-  if (!isValidIcon(newIcon)) {
+  // Icon is optional - only validate if provided
+  if (newIcon && !isValidIcon(newIcon)) {
     return {
       success: false,
       error: "Please enter a valid emoji (maximum 10 characters)",
@@ -267,7 +264,7 @@ export async function updateSubdomainAction(prevState: any, formData: FormData) 
   if (existingData && existingData.userId === user.id) {
     await redis.set(`subdomain:${originalSubdomain}`, {
       ...existingData,
-      emoji: newIcon,
+      ...(newIcon && { emoji: newIcon }),
     })
   }
 

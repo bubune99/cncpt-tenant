@@ -5,25 +5,23 @@ import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import { ArrowRight, Play, Calendar, Sparkles } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { rootDomain, protocol } from "@/lib/utils"
 
-// Demo redirects to the actual CMS demo subdomain
-// If no demo subdomain is configured, shows a landing page with options
-
-const DEMO_SUBDOMAIN = process.env.NEXT_PUBLIC_DEMO_SUBDOMAIN || null
+// Demo page now directly links to the built-in demo subdomain
+// which provides a read-only view of the CMS backend
 
 export default function DemoPage() {
-  const [loading, setLoading] = useState(true)
+  const [isRedirecting, setIsRedirecting] = useState(false)
 
-  useEffect(() => {
-    // If demo subdomain is configured, redirect there
-    if (DEMO_SUBDOMAIN) {
-      window.location.href = `https://${DEMO_SUBDOMAIN}/admin`
-      return
-    }
-    setLoading(false)
-  }, [])
+  // Build the demo URL
+  const demoUrl = `${protocol}://demo.${rootDomain}/admin`
 
-  if (loading && DEMO_SUBDOMAIN) {
+  const handleDemoClick = () => {
+    setIsRedirecting(true)
+    window.location.href = demoUrl
+  }
+
+  if (isRedirecting) {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
@@ -99,7 +97,7 @@ export default function DemoPage() {
       <section className="relative pb-24 px-6">
         <div className="max-w-4xl mx-auto">
           <div className="grid md:grid-cols-2 gap-6">
-            {/* Start Trial */}
+            {/* Live Demo */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -111,17 +109,17 @@ export default function DemoPage() {
                 <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-800 to-orange-500 flex items-center justify-center mb-6">
                   <Play className="w-6 h-6 text-white" />
                 </div>
-                <h2 className="text-2xl font-bold mb-3 text-gray-900 dark:text-white">Start Free Trial</h2>
+                <h2 className="text-2xl font-bold mb-3 text-gray-900 dark:text-white">Try Live Demo</h2>
                 <p className="text-gray-600 dark:text-white/50 mb-6 leading-relaxed">
-                  Get instant access to the full CMS with your own workspace.
-                  No credit card required. Try all features free for 14 days.
+                  Explore the full CMS experience instantly. No sign-up required.
+                  Browse products, pages, blog, and all features in read-only mode.
                 </p>
                 <ul className="space-y-3 mb-8">
                   {[
-                    "Full CMS access",
-                    "Create your own site",
-                    "AI features included",
-                    "Cancel anytime",
+                    "No sign-up required",
+                    "Explore all CMS features",
+                    "Sample data included",
+                    "Start in seconds",
                   ].map((item) => (
                     <li key={item} className="flex items-center gap-3 text-sm text-gray-600 dark:text-white/70">
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
@@ -129,13 +127,13 @@ export default function DemoPage() {
                     </li>
                   ))}
                 </ul>
-                <Link
-                  href="/register"
+                <button
+                  onClick={handleDemoClick}
                   className="inline-flex items-center gap-2 px-6 py-3 bg-blue-800 dark:bg-white text-white dark:text-gray-900 rounded-xl font-medium hover:bg-blue-700 dark:hover:bg-white/90 transition-colors"
                 >
-                  Start free trial
+                  Open live demo
                   <ArrowRight className="w-4 h-4" />
-                </Link>
+                </button>
               </div>
             </motion.div>
 

@@ -15,9 +15,11 @@ import {
   ShoppingCart,
   ArrowRight,
   Loader2,
-  Shield
+  Shield,
+  Eye
 } from 'lucide-react';
 import Link from 'next/link';
+import { isDemoSubdomain, DEMO_USER } from '@/lib/demo';
 
 interface DashboardStats {
   totalUsers: number;
@@ -32,16 +34,26 @@ export default function AdminDashboard() {
   const params = useParams();
   const subdomain = params?.subdomain as string;
 
+  // Check if this is the demo subdomain
+  const isDemo = isDemoSubdomain(subdomain);
+
   // Use subdomain-based access control - check for admin level access
-  const { hasAccess, accessType, isLoading: accessLoading, error: accessError } = useSubdomainAccess('admin');
+  const { hasAccess, accessType, isLoading: accessLoading, error: accessError, isDemo: isDemoAccess } = useSubdomainAccess('admin');
 
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
 
-  const isLoading = authLoading || accessLoading;
+  // For demo mode, skip auth loading check
+  const isLoading = isDemo ? accessLoading : (authLoading || accessLoading);
 
   useEffect(() => {
     if (!isLoading) {
+      // Demo mode: allow access without authentication
+      if (isDemo || isDemoAccess) {
+        fetchDashboardStats();
+        return;
+      }
+
       if (!user) {
         router.push(`/handler/sign-in?redirect=/admin`);
       } else if (accessError === 'Not authenticated') {
@@ -54,7 +66,7 @@ export default function AdminDashboard() {
         fetchDashboardStats();
       }
     }
-  }, [user, isLoading, hasAccess, accessError, router]);
+  }, [user, isLoading, hasAccess, accessError, router, isDemo, isDemoAccess]);
 
   const fetchDashboardStats = async () => {
     try {
@@ -90,7 +102,10 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!user || !hasAccess) {
+  // Allow demo mode even without user
+  const showDashboard = (isDemo || isDemoAccess) || (user && hasAccess);
+
+  if (!showDashboard) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -107,15 +122,36 @@ export default function AdminDashboard() {
     );
   }
 
+  // Get display name for welcome message
+  const displayName = isDemo ? DEMO_USER.displayName : (user?.displayName || 'Admin');
+
   return (
     <div className="p-6 lg:p-8">
+      {/* Demo Mode Banner */}
+      {(isDemo || isDemoAccess) && (
+        <div className="mb-6 p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg flex items-center gap-3">
+          <Eye className="h-5 w-5 text-orange-500 flex-shrink-0" />
+          <div>
+            <p className="font-medium text-orange-700 dark:text-orange-400">Demo Mode</p>
+            <p className="text-sm text-orange-600 dark:text-orange-400/80">
+              You&apos;re viewing a read-only demo of the CNCPT CMS. Explore all features freely!
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Dashboard</h1>
         <p className="text-sm text-muted-foreground">
-          Welcome back, {user.displayName || 'Admin'}
-          {accessType && (
+          Welcome back, {displayName}
+          {accessType && !isDemo && (
             <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
               {accessType === 'owner' ? 'Owner' : 'Team Admin'}
+            </span>
+          )}
+          {(isDemo || isDemoAccess) && (
+            <span className="ml-2 text-xs bg-orange-500/10 text-orange-500 px-2 py-0.5 rounded">
+              Demo Viewer
             </span>
           )}
         </p>
