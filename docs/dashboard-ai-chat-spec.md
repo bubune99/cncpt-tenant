@@ -165,11 +165,11 @@ components/
 - **Returns**: Deployment history with status, duration, commit info
 - **Use case**: "Show recent deploys" / "What was my last 5 deployments?"
 
-#### `getDokployStatus`
-- **Purpose**: Get Dokploy VPS connection and app status
+#### `getVercelStatus`
+- **Purpose**: Get Vercel project and deployment status
 - **Parameters**: none
-- **Returns**: Connection status, projects, applications
-- **Use case**: "Is my VPS connected?" / "Show my Dokploy projects"
+- **Returns**: Connection status, projects, deployment info
+- **Use case**: "Is my Vercel project connected?" / "Show my deployment status"
 
 #### `troubleshootDeployment`
 - **Purpose**: Diagnose deployment issues

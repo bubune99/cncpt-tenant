@@ -68,9 +68,6 @@ export type AuditAction =
   | 'route.create'
   | 'route.update'
   | 'route.delete'
-  | 'puck_template.create'
-  | 'puck_template.update'
-  | 'puck_template.delete'
 
 // Audit log entry
 export interface AuditLogEntry {

@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
 import { ArrowLeft, Save, Send, Eye, Settings, Clock, Users, TestTube, Mail } from "lucide-react";
 import { Button } from '@/components/cms/ui/button';
 import { Input } from '@/components/cms/ui/input';
@@ -37,15 +36,10 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { useCMSConfig } from '@/contexts/CMSConfigContext';
 
-// Dynamically import Render for email preview (Puck editor is in dedicated /design route)
-const Render = dynamic(
-  () => import("@puckeditor/core").then((mod) => mod.Render),
-  { ssr: false }
-);
-
-// Import email Puck config
-import { emailPuckConfig } from '@/puck/email/config';
-import type { Data } from "@puckeditor/core";
+interface EmailEditorData {
+  content: Array<{ type: string; props: Record<string, unknown> }>;
+  root: { props: Record<string, unknown> };
+}
 
 interface EmailCampaign {
   id: string;
@@ -57,7 +51,7 @@ interface EmailCampaign {
   replyTo: string;
   status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed';
   type: 'campaign' | 'automated' | 'transactional';
-  content: Data;
+  content: EmailEditorData;
   recipients: string[];
   segmentId?: string;
   scheduledAt?: string;
@@ -65,7 +59,7 @@ interface EmailCampaign {
   updatedAt: string;
 }
 
-const emptyPuckData: Data = {
+const emptyEmailData: EmailEditorData = {
   content: [],
   root: { props: {} },
 };
@@ -87,7 +81,7 @@ export default function EmailCampaignEditorPage() {
     replyTo: 'support@yourstore.com',
     status: 'draft',
     type: 'campaign',
-    content: emptyPuckData,
+    content: emptyEmailData,
     recipients: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -121,7 +115,7 @@ export default function EmailCampaignEditorPage() {
         setCampaign({
           ...campaignData,
           previewText: campaignData.preheader || '',
-          content: campaignData.content || emptyPuckData,
+          content: campaignData.content || emptyEmailData,
         });
       } else {
         // Mock data for development
@@ -234,7 +228,7 @@ export default function EmailCampaignEditorPage() {
     }
   };
 
-  const handlePuckPublish = useCallback((data: Data) => {
+  const handleDesignPublish = useCallback((data: EmailEditorData) => {
     setCampaign(prev => ({
       ...prev,
       content: data,
@@ -403,9 +397,9 @@ export default function EmailCampaignEditorPage() {
                       <div className="p-2 bg-gray-50 border-b text-xs text-muted-foreground text-center">
                         Current Design Preview
                       </div>
-                      <div className="max-h-[300px] overflow-hidden relative">
-                        <Render config={emailPuckConfig} data={campaign.content} />
-                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white pointer-events-none" />
+                      <div className="p-8 text-center text-muted-foreground">
+                        <Mail className="h-8 w-8 mx-auto mb-2" />
+                        <p>{campaign.content.content.length} component(s) in this email</p>
                       </div>
                     </div>
                   ) : (
@@ -631,8 +625,9 @@ export default function EmailCampaignEditorPage() {
               <p><strong>From:</strong> {campaign.fromName} &lt;{campaign.fromEmail}&gt;</p>
               <p><strong>Subject:</strong> {campaign.subject}</p>
             </div>
-            <div className="bg-white max-w-[600px] mx-auto">
-              <Render config={emailPuckConfig} data={campaign.content} />
+            <div className="bg-white max-w-[600px] mx-auto p-8 text-center text-muted-foreground">
+              <Mail className="h-12 w-12 mx-auto mb-4" />
+              <p>Email preview not available (editor integration pending)</p>
             </div>
           </div>
         </DialogContent>

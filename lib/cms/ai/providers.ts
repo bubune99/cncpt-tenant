@@ -16,6 +16,15 @@ import { isReasoningModel } from './models';
 // Check if we should use direct API instead of gateway
 const useDirectApi = !process.env.VERCEL && !process.env.AI_GATEWAY_API_KEY;
 
+// Debug logging for provider configuration
+console.log('[AI Providers] Configuration:', {
+  isVercel: !!process.env.VERCEL,
+  hasGatewayKey: !!process.env.AI_GATEWAY_API_KEY,
+  hasAnthropicKey: !!process.env.ANTHROPIC_API_KEY,
+  hasOpenAIKey: !!process.env.OPENAI_API_KEY,
+  useDirectApi,
+});
+
 // Direct provider instances (lazy initialized)
 let anthropicProvider: ReturnType<typeof createAnthropic> | null = null;
 let openaiProvider: ReturnType<typeof createOpenAI> | null = null;
@@ -45,6 +54,8 @@ function getOpenAIProvider() {
  * @returns Language model instance
  */
 export function getLanguageModel(modelId: string) {
+  console.log('[AI Providers] getLanguageModel called with:', modelId);
+
   // Extract provider and model from ID (e.g., "anthropic/claude-sonnet-4.5")
   const [provider, ...modelParts] = modelId.split('/');
   const modelName = modelParts.join('/');
@@ -58,15 +69,21 @@ export function getLanguageModel(modelId: string) {
     ? modelName.replace('-reasoning', '').replace('-thinking', '')
     : modelName;
 
+  console.log('[AI Providers] Provider:', provider, '| Model:', modelName, '| isReasoning:', isReasoning);
+
   // Try direct API if gateway not available
   if (useDirectApi) {
+    console.log('[AI Providers] Using direct API path');
     let model;
 
     if (provider === 'anthropic' && getAnthropicProvider()) {
+      console.log('[AI Providers] ✓ Using direct Anthropic API');
       model = getAnthropicProvider()!(baseModelName);
     } else if (provider === 'openai' && getOpenAIProvider()) {
+      console.log('[AI Providers] ✓ Using direct OpenAI API');
       model = getOpenAIProvider()!(baseModelName);
     } else {
+      console.log('[AI Providers] ⚠ No direct provider available, falling back to gateway');
       // Fallback to gateway anyway (will error if not configured)
       model = gateway.languageModel(baseModelId);
     }
@@ -83,6 +100,7 @@ export function getLanguageModel(modelId: string) {
   }
 
   // Use Vercel AI Gateway (default for Vercel deployment)
+  console.log('[AI Providers] Using Vercel AI Gateway');
   if (isReasoning) {
     return wrapLanguageModel({
       model: gateway.languageModel(baseModelId),

@@ -2,7 +2,7 @@
  * Product Primitives
  *
  * AI-callable primitives for product catalog operations.
- * These enable store owners to build custom product displays via Puck.
+ * These enable store owners to build custom product displays via the visual editor.
  */
 
 import { CreatePrimitiveRequest } from '../types';

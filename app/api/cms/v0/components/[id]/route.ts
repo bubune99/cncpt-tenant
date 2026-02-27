@@ -59,7 +59,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  * - category: string
  * - tags: string[]
  * - sourceCode: string
- * - puckConfig: object
+ * - puckConfig: object (editor component configuration)
  * - status: DRAFT | ACTIVE | DEPRECATED | ARCHIVED
  * - isPublished: boolean
  */
@@ -112,7 +112,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // Increment version if source code or puck config changed
+    // Increment version if source code or editor config changed
     if (body.sourceCode || body.puckConfig) {
       updateData.version = existing.version + 1;
     }

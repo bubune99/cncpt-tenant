@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
       };
     }
 
-    // Save as PuckTemplate if not creating a page
+    // Save as template if not creating a page
     let savedTemplate;
     if (!createPage && result.template) {
       try {
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
           },
         });
       } catch (templateError) {
-        console.warn("Could not save as PuckTemplate:", templateError);
+        console.warn("Could not save as template:", templateError);
         // Non-fatal, continue
       }
     }

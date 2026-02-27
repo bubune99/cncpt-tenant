@@ -283,8 +283,8 @@ export const TOOL_SCOPES: Record<string, string> = {
   // Pages
   list_pages: MCP_SCOPES.PAGES_READ,
   get_page: MCP_SCOPES.PAGES_READ,
-  get_page_puck_data: MCP_SCOPES.PAGES_READ,
-  update_page_puck_content: MCP_SCOPES.PAGES_WRITE,
+  get_page_content: MCP_SCOPES.PAGES_READ,
+  update_page_content: MCP_SCOPES.PAGES_WRITE,
   create_page: MCP_SCOPES.PAGES_WRITE,
   delete_page: MCP_SCOPES.PAGES_WRITE,
 

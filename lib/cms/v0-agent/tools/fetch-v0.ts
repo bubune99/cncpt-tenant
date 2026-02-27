@@ -116,7 +116,7 @@ async function tryV0Api(
         const response = await fetch(apiUrl, {
           headers: {
             Accept: "application/json",
-            "User-Agent": "Mozilla/5.0 (compatible; PuckCMS/1.0)",
+            "User-Agent": "Mozilla/5.0 (compatible; CMS/1.0)",
           },
         });
 

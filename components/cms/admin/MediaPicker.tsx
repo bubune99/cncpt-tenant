@@ -4,7 +4,7 @@
  * Media Picker Component
  *
  * Standalone component for selecting/uploading images from the media library.
- * Can be used in any form, not just Puck editor.
+ * Can be used in any form or editor.
  */
 
 import React, { useState, useCallback } from 'react'

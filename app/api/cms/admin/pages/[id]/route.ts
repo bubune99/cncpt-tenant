@@ -173,7 +173,7 @@ export const PUT = withPermission(
         }
       }
 
-      // Handle content (Puck JSON)
+      // Handle content (editor JSON)
       if (body.content !== undefined) {
         updateData.content = body.content
       }

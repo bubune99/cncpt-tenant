@@ -5,14 +5,6 @@
  * without modifying core code.
  */
 
-// Component registry - add/hide Puck components
-export {
-  getMergedPuckConfig,
-  registerComponent,
-  hideComponent,
-  showComponent,
-} from './component-registry';
-
 // Feature flags - check enabled features
 export {
   isFeatureEnabled,

@@ -1,7 +1,7 @@
 /**
  * v0 Integration
  *
- * Import and convert v0.dev components to Puck components.
+ * Import and convert v0.dev components to editor components.
  */
 
 export * from "./types";

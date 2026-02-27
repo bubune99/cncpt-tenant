@@ -40,14 +40,6 @@ export interface SiteSettings {
   password_protected: boolean
   security_headers_enabled: boolean
 
-  // Frontend VPS (Dokploy)
-  frontend_enabled: boolean
-  frontend_app_id: string | null
-  frontend_domain: string | null
-  frontend_status: "not_deployed" | "deploying" | "running" | "stopped" | "error"
-  frontend_last_deployed_at: string | null
-  frontend_env_vars: Record<string, string>
-
   created_at: string
   updated_at: string
 }
@@ -82,12 +74,6 @@ export interface SecuritySettings {
   security_headers_enabled: boolean
 }
 
-export interface FrontendSettings {
-  frontend_enabled: boolean
-  frontend_domain: string
-  frontend_env_vars: Record<string, string>
-}
-
 // Ensure table exists
 async function ensureSiteSettingsTableExists() {
   await sql`
@@ -113,12 +99,6 @@ async function ensureSiteSettingsTableExists() {
       password_protected BOOLEAN DEFAULT false,
       password_hash TEXT,
       security_headers_enabled BOOLEAN DEFAULT true,
-      frontend_enabled BOOLEAN DEFAULT false,
-      frontend_app_id VARCHAR(255),
-      frontend_domain VARCHAR(255),
-      frontend_status VARCHAR(50) DEFAULT 'not_deployed',
-      frontend_last_deployed_at TIMESTAMP WITH TIME ZONE,
-      frontend_env_vars JSONB DEFAULT '{}'::jsonb,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     )
@@ -305,71 +285,3 @@ export async function updateSecuritySettings(
   }
 }
 
-// Update frontend VPS settings (Dokploy)
-export async function updateFrontendSettings(
-  subdomain: string,
-  settings: FrontendSettings
-): Promise<{ success: boolean; error?: string }> {
-  const user = await getCurrentUser()
-  if (!user) {
-    return { success: false, error: "Not authenticated" }
-  }
-
-  try {
-    await ensureSiteSettingsTableExists()
-
-    await sql`
-      INSERT INTO site_settings (subdomain, frontend_enabled, frontend_domain, frontend_env_vars)
-      VALUES (${subdomain}, ${settings.frontend_enabled}, ${settings.frontend_domain}, ${JSON.stringify(settings.frontend_env_vars)})
-      ON CONFLICT (subdomain) DO UPDATE SET
-        frontend_enabled = ${settings.frontend_enabled},
-        frontend_domain = ${settings.frontend_domain},
-        frontend_env_vars = ${JSON.stringify(settings.frontend_env_vars)},
-        updated_at = NOW()
-    `
-
-    revalidatePath("/dashboard")
-    return { success: true }
-  } catch (error) {
-    console.error("Failed to update frontend settings:", error)
-    return { success: false, error: error instanceof Error ? error.message : "Failed to save settings" }
-  }
-}
-
-// Update frontend deployment status (called by Dokploy webhook or polling)
-export async function updateFrontendStatus(
-  subdomain: string,
-  status: "not_deployed" | "deploying" | "running" | "stopped" | "error",
-  appId?: string
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    await ensureSiteSettingsTableExists()
-
-    if (appId) {
-      await sql`
-        UPDATE site_settings
-        SET
-          frontend_status = ${status},
-          frontend_app_id = ${appId},
-          frontend_last_deployed_at = ${status === "running" ? new Date().toISOString() : null},
-          updated_at = NOW()
-        WHERE subdomain = ${subdomain}
-      `
-    } else {
-      await sql`
-        UPDATE site_settings
-        SET
-          frontend_status = ${status},
-          frontend_last_deployed_at = ${status === "running" ? new Date().toISOString() : null},
-          updated_at = NOW()
-        WHERE subdomain = ${subdomain}
-      `
-    }
-
-    revalidatePath("/dashboard")
-    return { success: true }
-  } catch (error) {
-    console.error("Failed to update frontend status:", error)
-    return { success: false, error: error instanceof Error ? error.message : "Failed to update status" }
-  }
-}

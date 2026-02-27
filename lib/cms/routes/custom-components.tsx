@@ -2,7 +2,7 @@
  * Custom Components Registry
  *
  * Register custom-coded React components that can be used at root-level routes.
- * These are alternatives to Puck pages for routes that need custom functionality.
+ * These are alternatives to CMS-managed pages for routes that need custom functionality.
  *
  * To add a new custom component:
  * 1. Create your component
@@ -22,7 +22,7 @@ function DefaultHomePage() {
         </h1>
         <p className="text-lg text-slate-600 dark:text-slate-300 mb-8">
           This is the default home page. Configure this route in the admin panel
-          to use a Puck page or a different custom component.
+          to use a CMS page or a different custom component.
         </p>
         <div className="flex gap-4 justify-center">
           <a

@@ -1,7 +1,7 @@
 /**
  * v0 Import Agent
  *
- * Exports for the v0-to-Puck conversion agent
+ * Exports for the v0 component conversion agent
  */
 
 export { V0ImportAgent, getV0ImportAgent } from "./agent";

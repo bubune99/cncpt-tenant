@@ -2,7 +2,7 @@
  * v0 Import Agent
  *
  * Uses Claude to intelligently convert v0.dev components
- * into Puck templates.
+ * into editor templates.
  *
  * Supports both official Anthropic SDK and Vercel AI SDK.
  */
@@ -182,7 +182,7 @@ export class V0ImportAgent {
   }
 
   /**
-   * Import a v0 component and convert it to a Puck template
+   * Import a v0 component and convert it to an editor template
    */
   async importComponent(request: V0ImportRequest): Promise<V0ImportResult> {
     const client = await this.ensureClient();
@@ -311,7 +311,7 @@ export class V0ImportAgent {
    * Build the user prompt for the import request
    */
   private buildUserPrompt(request: V0ImportRequest): string {
-    let prompt = `Import this v0.dev component and convert it to a Puck template.\n\n`;
+    let prompt = `Import this v0.dev component and convert it to an editor template.\n\n`;
 
     prompt += `**v0 URL:** ${request.url}\n\n`;
 
@@ -475,7 +475,7 @@ export class V0ImportAgent {
     code: string,
     options: Omit<V0ImportRequest, "url">
   ): string {
-    let prompt = `Convert this React component code to a Puck template.\n\n`;
+    let prompt = `Convert this React component code to an editor template.\n\n`;
 
     prompt += `**Component Code:**\n\`\`\`tsx\n${code}\n\`\`\`\n\n`;
 

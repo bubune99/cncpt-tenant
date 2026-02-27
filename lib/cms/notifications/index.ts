@@ -4,7 +4,7 @@
  * Sends order lifecycle emails by fetching order data and using email templates.
  * Integrates with Stripe/Shippo webhooks for automatic notifications.
  *
- * Supports Puck-editable templates - falls back to hardcoded templates if not found.
+ * Supports editable templates - falls back to hardcoded templates if not found.
  */
 
 import { prisma } from '../db';
@@ -165,20 +165,20 @@ export async function sendOrderConfirmation(orderId: string): Promise<Notificati
 
     const store = await getStoreConfig();
 
-    // Try Puck template first, fall back to hardcoded
+    // Try custom template first, fall back to hardcoded
     let html: string;
     let text: string;
     let subject: string;
 
-    const puckResult = await renderEmailTemplateBySlug('order-confirmation', {
+    const templateResult = await renderEmailTemplateBySlug('order-confirmation', {
       order: data.order,
       customer: data.customer,
     });
 
-    if (puckResult) {
-      html = puckResult.html;
-      text = puckResult.text;
-      subject = puckResult.subject || `Order Confirmation #${data.order.orderNumber}`;
+    if (templateResult) {
+      html = templateResult.html;
+      text = templateResult.text;
+      subject = templateResult.subject || `Order Confirmation #${data.order.orderNumber}`;
     } else {
       const fallback = renderOrderConfirmationEmail(data, store);
       html = fallback.html;
@@ -284,21 +284,21 @@ export async function sendShippingNotification(
 
     const store = await getStoreConfig();
 
-    // Try Puck template first, fall back to hardcoded
+    // Try custom template first, fall back to hardcoded
     let html: string;
     let text: string;
     let subject: string;
 
-    const puckResult = await renderEmailTemplateBySlug('shipping-notification', {
+    const templateResult = await renderEmailTemplateBySlug('shipping-notification', {
       order: data.order,
       shipment: data.shipment,
       customer: data.customer,
     });
 
-    if (puckResult) {
-      html = puckResult.html;
-      text = puckResult.text;
-      subject = puckResult.subject || `Your order #${data.order.orderNumber} has shipped!`;
+    if (templateResult) {
+      html = templateResult.html;
+      text = templateResult.text;
+      subject = templateResult.subject || `Your order #${data.order.orderNumber} has shipped!`;
     } else {
       const fallback = renderShippingNotificationEmail(data, store);
       html = fallback.html;
@@ -400,21 +400,21 @@ export async function sendDeliveryConfirmation(
 
     const store = await getStoreConfig();
 
-    // Try Puck template first, fall back to hardcoded
+    // Try custom template first, fall back to hardcoded
     let html: string;
     let text: string;
     let subject: string;
 
-    const puckResult = await renderEmailTemplateBySlug('delivery-confirmation', {
+    const templateResult = await renderEmailTemplateBySlug('delivery-confirmation', {
       order: data.order,
       delivery: data.delivery,
       customer: data.customer,
     });
 
-    if (puckResult) {
-      html = puckResult.html;
-      text = puckResult.text;
-      subject = puckResult.subject || `Your order #${data.order.orderNumber} has been delivered!`;
+    if (templateResult) {
+      html = templateResult.html;
+      text = templateResult.text;
+      subject = templateResult.subject || `Your order #${data.order.orderNumber} has been delivered!`;
     } else {
       const fallback = renderDeliveryConfirmationEmail(data, store);
       html = fallback.html;
@@ -515,21 +515,21 @@ export async function sendRefundNotification(
 
     const store = await getStoreConfig();
 
-    // Try Puck template first, fall back to hardcoded
+    // Try custom template first, fall back to hardcoded
     let html: string;
     let text: string;
     let subject: string;
 
-    const puckResult = await renderEmailTemplateBySlug('refund-notification', {
+    const templateResult = await renderEmailTemplateBySlug('refund-notification', {
       order: data.order,
       refund: data.refund,
       customer: data.customer,
     });
 
-    if (puckResult) {
-      html = puckResult.html;
-      text = puckResult.text;
-      subject = puckResult.subject || `Refund processed for order #${data.order.orderNumber}`;
+    if (templateResult) {
+      html = templateResult.html;
+      text = templateResult.text;
+      subject = templateResult.subject || `Refund processed for order #${data.order.orderNumber}`;
     } else {
       const fallback = renderRefundNotificationEmail(data, store);
       html = fallback.html;

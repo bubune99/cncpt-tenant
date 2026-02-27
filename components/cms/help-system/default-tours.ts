@@ -119,7 +119,7 @@ export const pageEditorTour: Omit<HelpTour, 'id'> = {
   route: '/editor',
   steps: [
     {
-      target: '[data-help-key="puck.components"]',
+      target: '[data-help-key="editor.components"]',
       content:
         'This is your component library. Drag components from here onto your page canvas.',
       title: 'Component Library',
@@ -127,28 +127,28 @@ export const pageEditorTour: Omit<HelpTour, 'id'> = {
       disableBeacon: true,
     },
     {
-      target: '[data-help-key="puck.canvas"]',
+      target: '[data-help-key="editor.canvas"]',
       content:
         'This is your page canvas. Arrange components here to build your layout.',
       title: 'Page Canvas',
       placement: 'left',
     },
     {
-      target: '[data-help-key="puck.settings"]',
+      target: '[data-help-key="editor.settings"]',
       content:
         'When you select a component, its settings appear here. Customize content, styling, and behavior.',
       title: 'Component Settings',
       placement: 'left',
     },
     {
-      target: '[data-help-key="puck.preview"]',
+      target: '[data-help-key="editor.preview"]',
       content:
         'Preview your page on different device sizes to ensure it looks great everywhere.',
       title: 'Preview',
       placement: 'bottom',
     },
     {
-      target: '[data-help-key="puck.publish"]',
+      target: '[data-help-key="editor.publish"]',
       content:
         "When you're happy with your page, publish it to make it live on your website.",
       title: 'Publish',

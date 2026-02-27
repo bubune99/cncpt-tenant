@@ -3,21 +3,19 @@
 /**
  * Header Editor Page
  *
- * Visual editor for configuring the global site header using Puck.
+ * Visual editor for configuring the global site header.
  */
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useCMSConfig } from '@/contexts/CMSConfigContext';
-import { ArrowLeft, Loader2, Save, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Loader2, Save } from 'lucide-react';
 import { Button } from '@/components/cms/ui/button';
 import { toast } from 'sonner';
-import {
-  Header,
-  type HeaderProps,
-} from '@/puck/layout/components';
 import { defaultHeaderProps } from '@/components/cms/page-wrapper/defaults';
+
+type HeaderProps = typeof defaultHeaderProps;
 import { Input } from '@/components/cms/ui/input';
 import { Label } from '@/components/cms/ui/label';
 import { Switch } from '@/components/cms/ui/switch';
@@ -48,7 +46,6 @@ export default function HeaderEditorPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [showPreview, setShowPreview] = useState(true);
   const [headerProps, setHeaderProps] = useState<HeaderProps>(defaultHeaderProps);
 
   useEffect(() => {
@@ -149,18 +146,6 @@ export default function HeaderEditorPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowPreview(!showPreview)}
-          >
-            {showPreview ? (
-              <EyeOff className="h-4 w-4 mr-2" />
-            ) : (
-              <Eye className="h-4 w-4 mr-2" />
-            )}
-            {showPreview ? 'Hide Preview' : 'Show Preview'}
-          </Button>
           <Button onClick={handleSave} disabled={isSaving}>
             {isSaving ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -171,13 +156,6 @@ export default function HeaderEditorPage() {
           </Button>
         </div>
       </div>
-
-      {/* Preview */}
-      {showPreview && (
-        <div className="border-b">
-          <Header {...headerProps} />
-        </div>
-      )}
 
       {/* Editor */}
       <div className="container mx-auto py-6 px-4 max-w-4xl">
@@ -463,7 +441,7 @@ export default function HeaderEditorPage() {
                   <Select
                     value={headerProps.maxWidth}
                     onValueChange={(value) =>
-                      setHeaderProps({ ...headerProps, maxWidth: value as HeaderProps['maxWidth'] })
+                      setHeaderProps({ ...headerProps, maxWidth: value as typeof defaultHeaderProps['maxWidth'] })
                     }
                   >
                     <SelectTrigger>

@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
 import { Pool } from "pg"
+import { applyTenantMiddleware } from "./tenant-context"
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -58,6 +59,9 @@ function createPrismaClient(): PrismaClient {
         : ["error"],
   })
 
+  // Apply tenant-scoping middleware (adds tenantId to queries automatically)
+  applyTenantMiddleware(client)
+
   // Cache client in all environments
   globalForPrisma.prisma = client
 
@@ -65,5 +69,18 @@ function createPrismaClient(): PrismaClient {
 }
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient()
+
+// Re-export tenant context utilities for convenience
+export {
+  withTenantTransaction,
+  withSuperAdminTransaction,
+  createTenantClient,
+  createSuperAdminClient,
+  setCurrentTenant,
+  getCurrentTenant,
+  setSuperAdmin,
+  runWithTenant,
+  runAsSuperAdmin,
+} from "./tenant-context"
 
 export default prisma

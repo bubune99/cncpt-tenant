@@ -555,7 +555,7 @@ const handler = createMcpHandler(
               }))
             : pages.map(p => ({
                 ...p,
-                // Don't include full Puck content in list
+                // Don't include full page content in list
                 content: undefined,
                 hasContent: !!p.content
               }))
@@ -597,19 +597,19 @@ const handler = createMcpHandler(
     )
 
     // ==========================================
-    // Puck Page Editor Tools
+    // Page Editor Tools
     // ==========================================
     server.tool(
-      "get_page_puck_data",
-      "Get a page's Puck editor data for visual editing. Returns the page content in Puck-compatible JSON format.",
+      "get_page_content",
+      "Get a page's editor data for visual editing. Returns the page content in JSON format.",
       {
         id: z.string().optional().describe("Page ID"),
         slug: z.string().optional().describe("Page slug (alternative to ID)")
       },
       async ({ id, slug }) => {
         try {
-          requireToolScope("get_page_puck_data")
-          trackToolUsage("get_page_puck_data")
+          requireToolScope("get_page_content")
+          trackToolUsage("get_page_content")
           const tenantId = getMcpTenantId()
           if (!id && !slug) {
             return mcpError("Provide either id or slug")
@@ -633,13 +633,13 @@ const handler = createMcpHandler(
 
           if (!page) return mcpError("Page not found")
 
-          // Parse Puck content if it's a string
-          let puckData = page.content
-          if (typeof puckData === "string") {
+          // Parse page content if it's a string
+          let pageData = page.content
+          if (typeof pageData === "string") {
             try {
-              puckData = JSON.parse(puckData)
+              pageData = JSON.parse(pageData)
             } catch {
-              puckData = null
+              pageData = null
             }
           }
 
@@ -651,14 +651,14 @@ const handler = createMcpHandler(
               status: page.status,
               updatedAt: page.updatedAt
             },
-            puckContent: puckData,
+            content: pageData,
             layoutConfig: {
               headerMode: page.headerMode,
               footerMode: page.footerMode,
               customHeader: page.customHeader,
               customFooter: page.customFooter
             },
-            hint: "Use update_page_puck_content to modify the puckContent. The content follows Puck's Data format with 'content' (array of components), 'root' (page-level props), and 'zones' (nested component areas)."
+            hint: "Use update_page_content to modify the content. The content follows the editor Data format with 'content' (array of components), 'root' (page-level props), and 'zones' (nested component areas)."
           })
         } catch (error: unknown) {
           return mcpError(error instanceof Error ? error.message : "Unknown error")
@@ -667,18 +667,18 @@ const handler = createMcpHandler(
     )
 
     server.tool(
-      "update_page_puck_content",
-      "Update a page's visual content using Puck editor data. Accepts Puck-compatible JSON with components and zones.",
+      "update_page_content",
+      "Update a page's visual content using editor data. Accepts JSON with components and zones.",
       {
         id: z.string().describe("Page ID to update"),
-        content: z.any().describe("Puck Data object with 'content' (component array), 'root' (page props), and optional 'zones' (nested areas)"),
+        content: z.any().describe("Page Data object with 'content' (component array), 'root' (page props), and optional 'zones' (nested areas)"),
         status: z.enum(["DRAFT", "PUBLISHED"]).optional().describe("Optionally update page status"),
         title: z.string().optional().describe("Optionally update page title")
       },
       async ({ id, content, status, title }) => {
         try {
-          requireToolScope("update_page_puck_content")
-          trackToolUsage("update_page_puck_content")
+          requireToolScope("update_page_content")
+          trackToolUsage("update_page_content")
           const tenantId = getMcpTenantId()
 
           // Verify page exists and belongs to tenant
@@ -691,12 +691,12 @@ const handler = createMcpHandler(
             return mcpError("Page not found or access denied")
           }
 
-          // Validate Puck content structure
+          // Validate page content structure
           if (!content || typeof content !== "object") {
-            return mcpError("Invalid content: must be a Puck Data object")
+            return mcpError("Invalid content: must be a page Data object")
           }
 
-          // Puck Data typically has: content (array), root (object), zones (object)
+          // Page Data typically has: content (array), root (object), zones (object)
           if (!Array.isArray(content.content) && content.content !== undefined) {
             return mcpError("Invalid content.content: must be an array of components")
           }

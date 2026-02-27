@@ -1,7 +1,7 @@
 /**
  * Validation Tool
  *
- * Validates Puck template structure and provides feedback
+ * Validates template structure and provides feedback
  */
 
 import { AgentToolResult, ComponentNode, PuckPrimitive } from "../types";
@@ -45,11 +45,11 @@ interface SuggestMappingOutput {
 }
 
 /**
- * Tool to validate a Puck template structure
+ * Tool to validate an editor template structure
  */
 export const validateTemplateTool = {
   name: "validate_puck_template",
-  description: `Validates a Puck template structure for correctness.
+  description: `Validates an editor template structure for correctness.
 Checks that all primitives exist, required props are present, and structure is valid.
 Returns validation issues and suggestions for fixes.`,
 
@@ -232,7 +232,7 @@ Returns validation issues and suggestions for fixes.`,
  */
 export const suggestMappingTool = {
   name: "suggest_primitive_mapping",
-  description: `Suggests the best Puck primitive to use for a JSX element.
+  description: `Suggests the best editor primitive to use for a JSX element.
 Analyzes the element tag, attributes, and classes to recommend a mapping.
 Use this when unsure how to map a specific v0 element.`,
 

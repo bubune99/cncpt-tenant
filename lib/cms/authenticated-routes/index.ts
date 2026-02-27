@@ -2,7 +2,7 @@
  * Authenticated Routes Module
  *
  * Provides hardcoded authenticated areas with dynamic
- * Puck page integration and permission-based navigation.
+ * CMS page integration and permission-based navigation.
  */
 
 // Types

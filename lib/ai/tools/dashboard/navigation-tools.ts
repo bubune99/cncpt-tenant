@@ -45,9 +45,9 @@ const DASHBOARD_PAGES = {
     description: "Configure password protection and security headers",
   },
   hosting: {
-    path: "/dashboard/frontend",
+    path: "/dashboard/hosting",
     title: "Hosting",
-    description: "Manage VPS deployments and hosting configuration",
+    description: "Manage Vercel deployments and hosting configuration",
   },
   teams: {
     path: "/dashboard/teams",

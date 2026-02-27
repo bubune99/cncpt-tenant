@@ -47,12 +47,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // If content provided directly (JSON from Puck editor), render it
+    // If content provided directly (JSON from editor), render it
     if (content && typeof content === 'string') {
       html = content
     } else if (content && typeof content === 'object') {
-      // Content is Puck JSON - for now just use the HTML from campaign
-      // In future, we could render Puck content here
+      // Content is editor JSON - for now just use the HTML from campaign
+      // In future, we could render editor content here
     }
 
     if (!html) {

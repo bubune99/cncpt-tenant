@@ -100,7 +100,7 @@ View submission: ${submissionUrl}
 Submission ID: ${submissionId}
 Received: ${new Date().toLocaleString()}`;
 
-  // If we have a custom template with Puck content, render it
+  // If we have a custom template with editor content, render it
   let html = defaultHtml;
   let text = defaultText;
   let subject = `New Submission: ${formName}`;
@@ -111,7 +111,7 @@ Received: ${new Date().toLocaleString()}`;
     }
 
     if (customTemplate.content) {
-      // Render Puck template with merge data
+      // Render custom template with merge data
       try {
         const rendered = await renderEmailTemplate(customTemplate.id, {
           form: { name: formName, id: formId },

@@ -1,7 +1,7 @@
 /**
  * Save Template Tool
  *
- * Saves the converted Puck template to the database
+ * Saves the converted template to the database
  */
 
 import { AgentToolResult, PuckTemplate, ComponentNode } from "../types";
@@ -33,7 +33,7 @@ interface UpdateTemplateInput {
  */
 export const saveTemplateTool = {
   name: "save_puck_template",
-  description: `Saves the converted component as a Puck template in the database.
+  description: `Saves the converted component as a template in the database.
 The template can then be used in the page builder.
 Returns the template ID and URL for accessing it.`,
 
@@ -150,7 +150,7 @@ Returns the template ID and URL for accessing it.`,
  */
 export const updateTemplateTool = {
   name: "update_puck_template",
-  description: `Updates an existing Puck template in the database.
+  description: `Updates an existing template in the database.
 Use this to fix or improve a previously saved template.`,
 
   inputSchema: {

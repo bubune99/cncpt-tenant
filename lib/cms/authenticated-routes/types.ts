@@ -2,7 +2,7 @@
  * Authenticated Routes Types
  *
  * Type definitions for the authenticated route system with
- * configurable sidebars and Puck page integration.
+ * configurable sidebars and CMS page integration.
  */
 
 import { LucideIcon } from 'lucide-react';
@@ -21,9 +21,9 @@ export interface NavItem {
   icon?: string;
   /** Permission required to see this item */
   permission?: string;
-  /** Is this a Puck-managed page? */
+  /** Is this a CMS-managed page? */
   isPuckPage?: boolean;
-  /** Page ID if Puck-managed */
+  /** Page ID if CMS-managed */
   pageId?: string;
   /** Sort order */
   order?: number;
@@ -65,15 +65,15 @@ export interface AuthenticatedAreaConfig {
   name: string;
   /** Base path (e.g., '/dashboard') */
   basePath: string;
-  /** Path prefix for Puck-managed pages (e.g., '/dashboard/pages') */
+  /** Path prefix for CMS-managed pages (e.g., '/dashboard/pages') */
   puckPagesPath?: string;
   /** Hardcoded navigation groups */
   staticNavGroups: NavGroup[];
   /** Permission required to access this area */
   permission?: string;
-  /** Allow Puck to create pages in this area */
+  /** Allow CMS to create pages in this area */
   allowPuckPages?: boolean;
-  /** Where to show Puck pages in nav (group ID) */
+  /** Where to show CMS pages in nav (group ID) */
   puckPagesNavGroup?: string;
   /** Layout configuration */
   layout?: {
@@ -89,7 +89,7 @@ export interface AuthenticatedAreaConfig {
 }
 
 /**
- * Puck page registration for an authenticated area
+ * CMS page registration for an authenticated area
  */
 export interface PuckPageRegistration {
   /** Page ID from database */
@@ -118,7 +118,7 @@ export interface PuckPageRegistration {
 export interface NavigationState {
   /** Static navigation from config */
   staticNav: NavGroup[];
-  /** Dynamic Puck pages */
+  /** Dynamic CMS pages */
   puckPages: PuckPageRegistration[];
   /** Merged navigation */
   mergedNav: NavGroup[];

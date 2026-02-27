@@ -1,7 +1,7 @@
 /**
  * Client Custom Components
  *
- * Add your custom Puck components here. These will be merged with core components.
+ * Add your custom components here. These will be merged with core components.
  *
  * Example:
  * ```
@@ -14,7 +14,7 @@
  * import { CustomHeroBlockConfig } from '@/client/components';
  *
  * export const clientConfig = {
- *   puckComponents: {
+ *   components: {
  *     CustomHeroBlock: CustomHeroBlockConfig,
  *   }
  * };

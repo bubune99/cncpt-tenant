@@ -158,7 +158,7 @@ Use this to provide personalized service and understand your audience.`,
     summary: 'Create and edit website pages using the visual editor.',
     details: `Build custom pages for your website:
 
-- Use the drag-and-drop Puck editor
+- Use the drag-and-drop visual editor
 - Choose from pre-built components
 - Preview on different device sizes
 - Publish or schedule pages
@@ -234,11 +234,11 @@ If you want to preview first, use the Preview button instead.`,
 Deleting will permanently remove this item and any associated data. Make sure you want to proceed before confirming.`,
   },
 
-  // Puck Editor
-  'puck.editor': {
+  // Visual Editor
+  'editor.main': {
     title: 'Visual Editor',
     summary: 'Drag and drop components to build your page.',
-    details: `The Puck editor provides a visual way to build pages:
+    details: `The visual editor provides a way to build pages:
 
 - **Left Panel:** Component library
 - **Center:** Page preview and editing
@@ -247,7 +247,7 @@ Deleting will permanently remove this item and any associated data. Make sure yo
 Drag components from the left panel onto your page. Click any component to edit its content and styling.`,
   },
 
-  'puck.components': {
+  'editor.components': {
     title: 'Component Library',
     summary: 'Available building blocks for your page.',
     details: `Browse and add components to your page:
@@ -795,7 +795,7 @@ Click to view full customer profile.`,
     details: `Build your website:
 
 - Create custom pages
-- Use visual Puck editor
+- Use the visual editor
 - Organize page hierarchy
 - Manage page status`,
   },
@@ -1678,7 +1678,7 @@ Remember to replace \`cms_YOUR_API_KEY_HERE\` with your actual API key!`,
 
 **Write Operations** (requires \`write\` scope)
 - \`create_blog_post\` - Create blog posts
-- \`update_page_puck_content\` - Edit page layouts
+- \`update_page_content\` - Edit page layouts
 
 Tools automatically discover what's available. Your AI will only see tools it has permission to use.`,
   },

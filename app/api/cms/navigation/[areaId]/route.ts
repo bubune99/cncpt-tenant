@@ -2,7 +2,7 @@
  * Navigation API
  *
  * GET /api/navigation/[areaId]
- * Returns navigation for an authenticated area, including Puck pages.
+ * Returns navigation for an authenticated area, including CMS pages.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -39,7 +39,7 @@ export async function GET(
         }
       : undefined;
 
-    // Get navigation with Puck pages
+    // Get navigation with CMS pages
     const { groups, puckPages } = await getAreaNavigation(areaId, userContext);
 
     return NextResponse.json({

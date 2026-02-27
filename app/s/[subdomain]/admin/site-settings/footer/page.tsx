@@ -9,11 +9,12 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCMSConfig } from '@/contexts/CMSConfigContext';
-import { ArrowLeft, Loader2, Save, Eye, EyeOff, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/cms/ui/button';
 import { toast } from 'sonner';
-import { Footer, type FooterProps } from '@/puck/layout/components';
 import { defaultFooterProps } from '@/components/cms/page-wrapper/defaults';
+
+type FooterProps = typeof defaultFooterProps;
 import { Input } from '@/components/cms/ui/input';
 import { Label } from '@/components/cms/ui/label';
 import { Textarea } from '@/components/cms/ui/textarea';
@@ -56,7 +57,6 @@ export default function FooterEditorPage() {
   const { buildPath } = useCMSConfig();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [showPreview, setShowPreview] = useState(true);
   const [footerProps, setFooterProps] = useState<FooterProps>(defaultFooterProps);
 
   useEffect(() => {
@@ -234,18 +234,6 @@ export default function FooterEditorPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowPreview(!showPreview)}
-          >
-            {showPreview ? (
-              <EyeOff className="h-4 w-4 mr-2" />
-            ) : (
-              <Eye className="h-4 w-4 mr-2" />
-            )}
-            {showPreview ? 'Hide Preview' : 'Show Preview'}
-          </Button>
           <Button onClick={handleSave} disabled={isSaving}>
             {isSaving ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -344,7 +332,7 @@ export default function FooterEditorPage() {
                   <Select
                     value={footerProps.layout || 'columns'}
                     onValueChange={(value) =>
-                      setFooterProps({ ...footerProps, layout: value as FooterProps['layout'] })
+                      setFooterProps({ ...footerProps, layout: value as typeof defaultFooterProps['layout'] })
                     }
                   >
                     <SelectTrigger>
@@ -721,7 +709,7 @@ export default function FooterEditorPage() {
                   <Select
                     value={footerProps.maxWidth || 'xl'}
                     onValueChange={(value) =>
-                      setFooterProps({ ...footerProps, maxWidth: value as FooterProps['maxWidth'] })
+                      setFooterProps({ ...footerProps, maxWidth: value as typeof defaultFooterProps['maxWidth'] })
                     }
                   >
                     <SelectTrigger>
@@ -743,12 +731,6 @@ export default function FooterEditorPage() {
         </Tabs>
       </div>
 
-      {/* Preview */}
-      {showPreview && (
-        <div className="mt-6">
-          <Footer {...footerProps} />
-        </div>
-      )}
     </div>
   );
 }

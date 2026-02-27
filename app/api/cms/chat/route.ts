@@ -451,41 +451,66 @@ Keep it under 500 words. Be factual and preserve specific details like IDs, name
 }
 
 export async function POST(request: Request) {
+  console.log('[Chat API] ========== POST Request Started ==========');
+
   try {
     // Parse request
+    console.log('[Chat API] Step 1: Parsing request body...');
     const json = await request.json();
+    console.log('[Chat API] Request keys:', Object.keys(json));
+    console.log('[Chat API] Message count in request:', json.messages?.length || 0);
+
     const parsed = requestSchema.safeParse(json);
 
     if (!parsed.success) {
+      console.error('[Chat API] ❌ Request validation failed:', parsed.error.issues);
       return ChatSDKError.badRequest('Invalid request format').toResponse();
     }
+    console.log('[Chat API] ✓ Request validation passed');
 
     const { messages, context, selectedChatModel, entityContext, lastHelpClick } = parsed.data;
     // Use provided id or generate one
     const id = parsed.data.id || crypto.randomUUID();
+    console.log('[Chat API] Conversation ID:', id);
+    console.log('[Chat API] Selected model:', selectedChatModel);
 
     // Check if AI is available
-    if (!(await isAiAvailable())) {
+    console.log('[Chat API] Step 2: Checking AI availability...');
+    const aiAvailable = await isAiAvailable();
+    console.log('[Chat API] AI available:', aiAvailable);
+
+    if (!aiAvailable) {
+      console.error('[Chat API] ❌ AI is not available');
       return ChatSDKError.aiDisabled().toResponse();
     }
+    console.log('[Chat API] ✓ AI is available');
 
     // Get current user from Stack Auth
+    console.log('[Chat API] Step 3: Getting Stack Auth user...');
     const user = await stackServerApp.getUser();
+    console.log('[Chat API] Stack Auth user:', user ? { id: user.id, email: user.primaryEmail } : null);
 
     if (!user) {
+      console.error('[Chat API] ❌ No Stack Auth user found');
       return ChatSDKError.unauthorized().toResponse();
     }
+    console.log('[Chat API] ✓ Stack Auth user found');
 
     // Find the user in our database
+    console.log('[Chat API] Step 4: Finding user in database...');
     const dbUser = await prisma.user.findFirst({
       where: { stackAuthId: user.id },
     });
+    console.log('[Chat API] Database user:', dbUser ? { id: dbUser.id, email: dbUser.email } : null);
 
     if (!dbUser) {
+      console.error('[Chat API] ❌ User not found in database (stackAuthId:', user.id, ')');
       return ChatSDKError.unauthorized('User not found in database').toResponse();
     }
+    console.log('[Chat API] ✓ Database user found');
 
     // Rate limiting
+    console.log('[Chat API] Step 5: Checking rate limit...');
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const messageCount = await prisma.aiMessage.count({
       where: {
@@ -493,10 +518,13 @@ export async function POST(request: Request) {
         createdAt: { gte: oneDayAgo },
       },
     });
+    console.log('[Chat API] Messages in last 24h:', messageCount, '/ Limit:', RATE_LIMIT_MESSAGES_PER_DAY);
 
     if (messageCount >= RATE_LIMIT_MESSAGES_PER_DAY) {
+      console.error('[Chat API] ❌ Rate limit exceeded');
       return ChatSDKError.rateLimit().toResponse();
     }
+    console.log('[Chat API] ✓ Rate limit OK');
 
     // Get or create conversation
     let conversation = await prisma.aiConversation.findUnique({
@@ -531,24 +559,45 @@ export async function POST(request: Request) {
     }
 
     // Get AI settings
+    console.log('[Chat API] Step 6: Getting AI settings...');
     const settings = await getAiSettings();
+    console.log('[Chat API] AI settings:', {
+      enabledModels: settings.enabledModels,
+      temperature: settings.temperature,
+      maxTokens: settings.maxTokens,
+    });
 
     // Use the model selected in the chat UI, or fall back to first enabled model
     const modelId = selectedChatModel || settings.enabledModels?.[0] || 'anthropic/claude-sonnet-4.5';
-    console.log('[Chat] Using model:', modelId);
-    const model = myProvider.languageModel(modelId);
+    console.log('[Chat API] Step 7: Creating model instance for:', modelId);
+
+    let model;
+    try {
+      model = myProvider.languageModel(modelId);
+      console.log('[Chat API] ✓ Model instance created');
+    } catch (modelError) {
+      console.error('[Chat API] ❌ Failed to create model:', modelError);
+      throw modelError;
+    }
 
     // Convert messages to ModelMessage format for AI SDK v6
+    console.log('[Chat API] Step 8: Converting messages...');
     let modelMessages: ModelMessage[] = messages.map((m) => ({
       role: m.role as 'user' | 'assistant' | 'system',
       content: getMessageContent(m),
     }));
+    console.log('[Chat API] Converted', modelMessages.length, 'messages');
 
     // Apply conversation compaction if needed
+    console.log('[Chat API] Step 9: Checking conversation compaction...');
     modelMessages = await compactConversation(modelMessages, model);
+    console.log('[Chat API] Messages after compaction:', modelMessages.length);
 
     // Get all tools: admin + walkthrough + help management + entity + workflow + VMCP + MCP
+    console.log('[Chat API] Step 10: Loading tools...');
     let allTools = { ...adminTools, ...walkthroughTools, ...helpManagementTools, ...entityTools, ...workflowTools };
+    const builtInToolCount = Object.keys(allTools).length;
+    console.log('[Chat API] Built-in tools loaded:', builtInToolCount);
     let vmcpToolCount = 0;
     let mcpToolCount = 0;
 
@@ -557,9 +606,9 @@ export async function POST(request: Request) {
       const vmcpTools = await getAllVmcpTools();
       vmcpToolCount = Object.keys(vmcpTools).length;
       allTools = { ...allTools, ...vmcpTools };
-      console.log(`[Chat] Loaded ${vmcpToolCount} VMCP tools`);
+      console.log(`[Chat API] ✓ Loaded ${vmcpToolCount} VMCP tools`);
     } catch (vmcpError) {
-      console.warn('[Chat] Failed to load VMCP tools:', vmcpError);
+      console.warn('[Chat API] ⚠ Failed to load VMCP tools:', vmcpError);
     }
 
     // Load MCP tools (external MCP servers)
@@ -567,13 +616,16 @@ export async function POST(request: Request) {
       const mcpTools = await getMcpTools();
       mcpToolCount = Object.keys(mcpTools).length;
       allTools = { ...allTools, ...mcpTools };
-      console.log(`[Chat] Loaded ${mcpToolCount} MCP tools`);
+      console.log(`[Chat API] ✓ Loaded ${mcpToolCount} MCP tools`);
     } catch (mcpError) {
-      console.warn('[Chat] Failed to load MCP tools:', mcpError);
+      console.warn('[Chat API] ⚠ Failed to load MCP tools:', mcpError);
     }
+
+    console.log('[Chat API] Total tools available:', Object.keys(allTools).length);
 
     // Build system prompt with context, tool counts, and entity context
     // Cast entityContext to the expected type (the schema validation ensures it's valid)
+    console.log('[Chat API] Step 11: Building system prompt...');
     const systemPrompt = buildSystemPrompt(
       context,
       vmcpToolCount,
@@ -581,6 +633,7 @@ export async function POST(request: Request) {
       entityContext as Partial<EntityContext> | undefined,
       lastHelpClick
     );
+    console.log('[Chat API] System prompt length:', systemPrompt.length, 'chars');
 
     // Promise to track onFinish completion
     let onFinishResolve: () => void;
@@ -589,8 +642,10 @@ export async function POST(request: Request) {
     });
 
     // Create UI message stream for proper ChatSDK compatibility
+    console.log('[Chat API] Step 12: Creating UI message stream...');
     const stream = createUIMessageStream({
       execute: async ({ writer: dataStream }) => {
+        console.log('[Chat API] Step 13: Inside stream execute, calling streamText...');
         // Cast to any for maxSteps support (AI SDK v6 pattern)
         const result = (streamText as unknown as (...args: unknown[]) => ReturnType<typeof streamText>)({
           model,
@@ -657,16 +712,20 @@ export async function POST(request: Request) {
         );
 
         // Wait for stream to complete
+        console.log('[Chat API] Waiting for stream to complete...');
         await result.consumeStream();
+        console.log('[Chat API] Stream consumed, waiting for onFinish...');
         await onFinishPromise;
+        console.log('[Chat API] ✓ Stream completed successfully');
       },
       generateId: () => nanoid(),
       onError: (error) => {
-        console.error('[Chat] Stream error:', error);
+        console.error('[Chat API] ❌ Stream error:', error);
         return 'An error occurred while processing your request. Please try again.';
       },
     });
 
+    console.log('[Chat API] Step 14: Returning streaming response...');
     return new Response(stream.pipeThrough(new JsonToSseTransformStream()), {
       headers: {
         'X-Conversation-Id': id,
@@ -676,9 +735,11 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error('[Chat API] Error:', error);
+    console.error('[Chat API] ❌ FATAL ERROR:', error);
+    console.error('[Chat API] Error stack:', error instanceof Error ? error.stack : 'No stack');
 
     if (error instanceof ChatSDKError) {
+      console.error('[Chat API] ChatSDKError code:', (error as any).code);
       return error.toResponse();
     }
 

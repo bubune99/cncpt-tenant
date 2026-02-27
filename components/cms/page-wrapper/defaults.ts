@@ -5,7 +5,56 @@
  * without pulling in server-only dependencies like Prisma.
  */
 
-import type { HeaderProps, FooterProps } from '../../puck/layout/components';
+export interface HeaderProps {
+  logo?: {
+    type: 'text' | 'image';
+    text?: string;
+    imageUrl?: string;
+    imageAlt?: string;
+    width?: number;
+    height?: number;
+  };
+  navLinks: Array<{ label: string; href: string; openInNewTab?: boolean }>;
+  showSearch: boolean;
+  showCart: boolean;
+  showAccount?: boolean;
+  sticky: boolean;
+  transparent: boolean;
+  backgroundColor?: string;
+  textColor?: string;
+  maxWidth: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
+}
+
+export interface FooterProps {
+  logo?: {
+    type: 'text' | 'image';
+    text?: string;
+    imageUrl?: string;
+    imageAlt?: string;
+  };
+  tagline?: string;
+  copyrightText?: string;
+  columns?: Array<{
+    title: string;
+    links: Array<{ label: string; href: string; openInNewTab?: boolean }>;
+  }>;
+  socialLinks?: Array<{
+    platform: 'facebook' | 'twitter' | 'instagram' | 'linkedin' | 'youtube' | 'tiktok' | 'github';
+    url: string;
+  }>;
+  newsletter?: {
+    enabled: boolean;
+    title?: string;
+    description?: string;
+    placeholder?: string;
+    buttonLabel?: string;
+  };
+  bottomLinks?: Array<{ label: string; href: string; openInNewTab?: boolean }>;
+  backgroundColor?: string;
+  textColor?: string;
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
+  layout?: 'columns' | 'centered' | 'simple';
+}
 
 /**
  * Default header props for when no configuration exists

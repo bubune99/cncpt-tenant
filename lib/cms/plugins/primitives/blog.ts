@@ -2,7 +2,7 @@
  * Blog/CMS Primitives
  *
  * AI-callable primitives for blog and content management.
- * These enable store owners to build custom blog displays via Puck.
+ * These enable store owners to build custom blog displays via the visual editor.
  */
 
 import { CreatePrimitiveRequest } from '../types';
@@ -515,7 +515,6 @@ export const BLOG_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }> 
           description: true,
           template: true,
           content: includeContent,
-          puckContent: includeContent,
           order: true,
           showInNav: true,
           createdAt: true,
@@ -579,7 +578,6 @@ export const BLOG_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }> 
         slug: page.slug,
         description: page.description,
         content: page.content,
-        puckContent: page.puckContent,
         template: page.template,
         seo: {
           title: page.seoTitle || page.title,

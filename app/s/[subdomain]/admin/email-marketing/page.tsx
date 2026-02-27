@@ -635,7 +635,7 @@ export default function EmailMarketingPage() {
       <div className="mt-8 bg-muted p-6 rounded-lg" data-help-key="admin.email-marketing.features-info">
         <h2 className="text-xl font-semibold mb-4">Email Marketing Features</h2>
         <ul className="space-y-2 text-muted-foreground">
-          <li>- Design beautiful emails with our visual Puck editor</li>
+          <li>- Design beautiful emails with our visual editor</li>
           <li>- Create automated email sequences for customer engagement</li>
           <li>- Track open rates, click rates, and conversions</li>
           <li>- Segment subscribers for targeted campaigns</li>

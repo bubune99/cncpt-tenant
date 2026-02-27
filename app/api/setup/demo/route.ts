@@ -13,8 +13,7 @@ import { redis } from "@/lib/redis";
 import { prisma } from "@/lib/cms/db";
 import { DEMO_CONFIG } from "@/lib/demo";
 
-// Puck content for the demo welcome/home page
-// Uses components from pagesPuckConfig (puck/pages/config.tsx)
+// Content for the demo welcome/home page
 const DEMO_HOME_PAGE_CONTENT = {
   root: { props: {} },
   content: [
@@ -174,7 +173,7 @@ export async function POST(request: NextRequest) {
       isDemo: true,
     });
 
-    // Create the demo home page using Puck content
+    // Create the demo home page using editor content
     try {
       await prisma.page.upsert({
         where: {

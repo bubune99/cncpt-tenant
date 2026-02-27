@@ -2,7 +2,7 @@
  * v0 Import Agent Types
  */
 
-// Puck primitive definition
+// Editor primitive definition
 export interface PuckPrimitive {
   name: string;
   description: string;
@@ -33,7 +33,7 @@ export interface V0ComponentAnalysis {
 
 // Component tree node
 export interface ComponentNode {
-  type: string; // Puck primitive name
+  type: string; // Editor primitive name
   props: Record<string, unknown>;
   slots?: Record<string, ComponentNode[]>;
   sourceElement?: string; // Original JSX element for reference
@@ -49,6 +49,7 @@ export interface ExtractedAsset {
 
 // Template output
 export interface PuckTemplate {
+  // Note: Interface name kept for backward compatibility with v0-agent tools
   id: string;
   name: string;
   description: string;
@@ -56,7 +57,7 @@ export interface PuckTemplate {
   tags: string[];
   thumbnail?: string;
 
-  // The actual Puck configuration
+  // The actual editor configuration
   root: ComponentNode;
 
   // Metadata

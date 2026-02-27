@@ -1,7 +1,7 @@
 /**
- * Puck Email Template Renderer
+ * Email Template Renderer
  *
- * Renders EmailTemplate records that contain Puck JSON content
+ * Renders EmailTemplate records that contain JSON content
  */
 
 import { prisma } from '../../db';
@@ -83,9 +83,9 @@ async function renderEmailTemplateData(
   // Process subject merge tags
   subject = parseMergeTags(subject, mergeData);
 
-  // If we have Puck JSON content, render it
+  // If we have JSON content, render it
   if (template.content && typeof template.content === 'object') {
-    html = renderPuckContent(template.content as PuckContent, mergeData);
+    html = renderEmailContent(template.content as EmailContent, mergeData);
   } else if (template.html) {
     // Use pre-rendered HTML
     html = template.html;
@@ -115,37 +115,37 @@ async function renderEmailTemplateData(
 }
 
 /**
- * Puck content structure
+ * Email content structure
  */
-interface PuckContent {
-  content?: PuckComponent[];
+interface EmailContent {
+  content?: EmailComponent[];
   root?: {
     props?: Record<string, unknown>;
   };
 }
 
-interface PuckComponent {
+interface EmailComponent {
   type: string;
   props?: Record<string, unknown>;
 }
 
 /**
- * Render Puck email content to HTML
+ * Render email content to HTML
  */
-function renderPuckContent(content: PuckContent, mergeData: MergeTagData): string {
+function renderEmailContent(content: EmailContent, mergeData: MergeTagData): string {
   if (!content.content || !Array.isArray(content.content)) {
     return '';
   }
 
   return content.content
-    .map((component) => renderPuckComponent(component, mergeData))
+    .map((component) => renderEmailComponent(component, mergeData))
     .join('\n');
 }
 
 /**
- * Render individual Puck component to HTML
+ * Render individual email component to HTML
  */
-function renderPuckComponent(component: PuckComponent, mergeData: MergeTagData): string {
+function renderEmailComponent(component: EmailComponent, mergeData: MergeTagData): string {
   const props = component.props || {};
 
   switch (component.type) {
@@ -188,7 +188,7 @@ function renderPuckComponent(component: PuckComponent, mergeData: MergeTagData):
 
     case 'Card':
     case 'Box':
-      const cardContent = props.content ? renderPuckContent(props.content as PuckContent, mergeData) : '';
+      const cardContent = props.content ? renderEmailContent(props.content as EmailContent, mergeData) : '';
       return `<div style="background: #f9f9f9; border-radius: 8px; padding: 24px; margin: 16px 0;">${cardContent}</div>`;
 
     case 'Table':

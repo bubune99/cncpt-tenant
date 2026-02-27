@@ -1,7 +1,7 @@
 /**
  * Navigation Service
  *
- * Handles merging static navigation with Puck pages
+ * Handles merging static navigation with CMS pages
  * and filtering by user permissions.
  */
 
@@ -17,7 +17,7 @@ import type {
 } from './types';
 
 /**
- * Get Puck pages registered for an authenticated area
+ * Get CMS pages registered for an authenticated area
  */
 export async function getPuckPagesForArea(areaId: string): Promise<PuckPageRegistration[]> {
   const area = getAreaConfig(areaId);
@@ -27,7 +27,7 @@ export async function getPuckPagesForArea(areaId: string): Promise<PuckPageRegis
 
   try {
     // Query pages that belong to this authenticated area
-    // Pages are identified by their slug starting with the area's puck pages path
+    // Pages are identified by their slug starting with the area's pages path
     const pathPrefix = area.puckPagesPath.replace(/^\//, ''); // Remove leading slash
 
     const pages = await prisma.page.findMany({
@@ -58,13 +58,13 @@ export async function getPuckPagesForArea(areaId: string): Promise<PuckPageRegis
       showInNav: true,
     }));
   } catch (error) {
-    console.error('Error fetching Puck pages for area:', areaId, error);
+    console.error('Error fetching CMS pages for area:', areaId, error);
     return [];
   }
 }
 
 /**
- * Convert Puck page registrations to nav items
+ * Convert CMS page registrations to nav items
  */
 function puckPagesToNavItems(pages: PuckPageRegistration[]): NavItem[] {
   return pages
@@ -83,7 +83,7 @@ function puckPagesToNavItems(pages: PuckPageRegistration[]): NavItem[] {
 }
 
 /**
- * Merge static navigation with Puck pages
+ * Merge static navigation with CMS pages
  */
 export function mergeNavigation(
   staticGroups: NavGroup[],
@@ -98,7 +98,7 @@ export function mergeNavigation(
 
   return staticGroups.map(group => {
     if (group.id === puckPagesNavGroup) {
-      // Merge Puck pages into this group
+      // Merge CMS pages into this group
       const allItems = [...group.items, ...puckNavItems];
       // Sort by order
       allItems.sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
@@ -169,10 +169,10 @@ export async function getAreaNavigation(
     return { groups: [], puckPages: [] };
   }
 
-  // Get Puck pages for this area
+  // Get CMS pages for this area
   const puckPages = await getPuckPagesForArea(areaId);
 
-  // Merge static nav with Puck pages
+  // Merge static nav with CMS pages
   let groups = mergeNavigation(
     area.staticNavGroups,
     puckPages,
@@ -189,8 +189,8 @@ export async function getAreaNavigation(
 }
 
 /**
- * Register a new Puck page in an authenticated area's navigation
- * This is called when a page is created via Puck
+ * Register a new CMS page in an authenticated area's navigation
+ * This is called when a page is created via the editor
  */
 export async function registerPuckPageForArea(
   pageId: string,

@@ -16,9 +16,6 @@ export * from './exports/hooks'
 // Library utilities
 export * from './exports/lib'
 
-// Puck components
-export * from './exports/puck'
-
 // Contexts
 export { WizardProvider, useWizard } from './contexts/WizardContext'
 

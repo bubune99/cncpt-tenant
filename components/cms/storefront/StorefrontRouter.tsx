@@ -409,7 +409,7 @@ async function CMSPage({ subdomain, slug, tenantId }: { subdomain: string; slug:
     notFound()
   }
 
-  const hasPuckContent = page.content && typeof page.content === 'object'
+  const hasEditorContent = page.content && typeof page.content === 'object'
 
   return (
     <div className="min-h-screen bg-background">
@@ -420,11 +420,11 @@ async function CMSPage({ subdomain, slug, tenantId }: { subdomain: string; slug:
       </header>
 
       <main className="container mx-auto px-4 py-12">
-        {hasPuckContent ? (
+        {hasEditorContent ? (
           <div>
             <h1 className="text-4xl font-bold mb-8">{page.title}</h1>
             <p className="text-muted-foreground">
-              Visual editor content - Puck rendering integration coming soon.
+              Visual editor content - rendering integration coming soon.
             </p>
           </div>
         ) : (

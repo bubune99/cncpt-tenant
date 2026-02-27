@@ -100,9 +100,9 @@ export function AuthenticatedAreaShell({ areaId, children, className }: ShellPro
   // Handle create page
   const handleCreatePage = () => {
     if (navData) {
-      // Navigate to editor with the area's puck pages path
-      const puckPath = navData.basePath.replace(/^\//, '') + '/pages/new';
-      router.push(`/editor?path=${encodeURIComponent(puckPath)}&area=${areaId}`);
+      // Navigate to editor with the area's pages path
+      const editorPath = navData.basePath.replace(/^\//, '') + '/pages/new';
+      router.push(`/editor?path=${encodeURIComponent(editorPath)}&area=${areaId}`);
     }
   };
 

@@ -4,7 +4,7 @@
  * Authenticated Area Sidebar
  *
  * Renders navigation for an authenticated area with
- * dynamic Puck pages and collapsible groups.
+ * dynamic CMS pages and collapsible groups.
  */
 
 import { useState, useEffect } from 'react';
@@ -166,7 +166,7 @@ export function AuthenticatedAreaSidebar({
           <div className="space-y-0.5">
             {group.items.map(renderNavItem)}
 
-            {/* Empty state for Puck pages group */}
+            {/* Empty state for CMS pages group */}
             {hasPuckPages === false &&
               group.items.length === 0 &&
               canCreatePages &&

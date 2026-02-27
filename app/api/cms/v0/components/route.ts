@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
  * - category?: string
  * - tags?: string[]
  * - sourceCode: string (required)
- * - puckConfig: object (required)
+ * - puckConfig: object (required) - editor component configuration
  */
 export async function POST(request: NextRequest) {
   try {

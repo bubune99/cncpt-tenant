@@ -2,9 +2,14 @@ import { notFound } from "next/navigation"
 import { getTenantData } from "@/lib/tenant"
 import { StorefrontRouter } from "@/components/cms/storefront"
 import { prisma } from "@/lib/cms/db"
-import type { Data } from "@puckeditor/core"
 import { PageWrapper, getPageLayoutSettings } from "@/components/cms/page-wrapper"
-import { PageRenderer } from "@/components/cms/page-wrapper/page-renderer"
+
+/** Page content data shape */
+interface Data {
+  content: Array<{ type: string; props: Record<string, unknown>; [key: string]: unknown }>;
+  root?: { props?: Record<string, unknown> };
+  zones?: Record<string, unknown[]>;
+}
 
 export const dynamic = "force-dynamic"
 
@@ -67,9 +72,9 @@ function isValidComponent(item: unknown, depth = 0): boolean {
 }
 
 /**
- * Validate Puck content data
+ * Validate page content data
  */
-function validatePuckContent(content: unknown): Data | null {
+function validatePageContent(content: unknown): Data | null {
   if (!content || typeof content !== "object") return null
 
   const data = content as Data
@@ -135,18 +140,23 @@ export default async function SubdomainPage({ params }: SubdomainPageProps) {
     notFound()
   }
 
-  // Check if tenant has a home page with Puck content
+  // Check if tenant has a home page with content
   const homePage = await getHomePage(tenantData.id)
 
   if (homePage && homePage.content) {
-    // Validate and render Puck content
-    const validatedContent = validatePuckContent(homePage.content)
+    // Validate page content
+    const validatedContent = validatePageContent(homePage.content)
 
     if (validatedContent) {
-      // Render the home page with Puck content
+      // Page has content -- custom block editor rendering will be wired in
+      // Custom block editor rendering will be wired in separately
       return (
         <PageWrapper pageSettings={getPageLayoutSettings(homePage)}>
-          <PageRenderer puckContent={validatedContent} />
+          <div className="container mx-auto px-4 py-12">
+            <p className="text-muted-foreground text-center">
+              Page content available. Editor rendering pending migration.
+            </p>
+          </div>
         </PageWrapper>
       )
     }

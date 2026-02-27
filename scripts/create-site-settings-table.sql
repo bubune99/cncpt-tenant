@@ -1,5 +1,5 @@
 -- Site Settings Table
--- Stores configuration for each tenant's site (CMS on Vercel and frontend on VPS)
+-- Stores configuration for each tenant's site (deployed on Vercel)
 -- Uses subdomain name as key (matches Redis subdomain storage)
 
 CREATE TABLE IF NOT EXISTS site_settings (
@@ -33,14 +33,6 @@ CREATE TABLE IF NOT EXISTS site_settings (
   password_hash TEXT,
   security_headers_enabled BOOLEAN DEFAULT true,
 
-  -- Frontend VPS Settings (Dokploy)
-  frontend_enabled BOOLEAN DEFAULT false,
-  frontend_app_id VARCHAR(255),
-  frontend_domain VARCHAR(255),
-  frontend_status VARCHAR(50) DEFAULT 'not_deployed' CHECK (frontend_status IN ('not_deployed', 'deploying', 'running', 'stopped', 'error')),
-  frontend_last_deployed_at TIMESTAMP WITH TIME ZONE,
-  frontend_env_vars JSONB DEFAULT '{}'::jsonb,
-
   -- Timestamps
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -48,7 +40,6 @@ CREATE TABLE IF NOT EXISTS site_settings (
 
 -- Index for faster lookups
 CREATE INDEX IF NOT EXISTS idx_site_settings_subdomain ON site_settings(subdomain);
-CREATE INDEX IF NOT EXISTS idx_site_settings_frontend_status ON site_settings(frontend_status);
 
 -- Trigger to update updated_at
 CREATE OR REPLACE FUNCTION update_site_settings_timestamp()

@@ -119,7 +119,7 @@ export default function NewPagePage() {
       const newPage = await response.json();
       toast.success('Page created successfully');
       // Redirect to the page editor
-      router.push(`/admin/pages/${newPage.id}/puck`);
+      router.push(`/admin/pages/${newPage.id}/editor`);
     } catch (error) {
       console.error('Error creating page:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to create page');
@@ -312,7 +312,7 @@ export default function NewPagePage() {
             </CardHeader>
             <CardContent className="space-y-2">
               <p className="text-sm text-muted-foreground">
-                After creating the page, you&apos;ll be redirected to the visual Puck editor to design your page.
+                After creating the page, you&apos;ll be redirected to the visual editor to design your page.
               </p>
               <ul className="text-sm space-y-2 mt-2">
                 <li className="flex items-center gap-2">

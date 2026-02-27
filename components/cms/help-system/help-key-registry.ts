@@ -66,12 +66,12 @@ export const categoryGuidance: Record<string, {
     difficulty: 'basic',
   },
   pages: {
-    aiGuidance: 'Page building uses Puck editor. Explain the visual editor concept and how to add/arrange components.',
+    aiGuidance: 'Page building uses the visual editor. Explain the visual editor concept and how to add/arrange components.',
     suggestedFormat: 'tutorial',
     difficulty: 'intermediate',
   },
   blog: {
-    aiGuidance: 'Blog supports both simple and visual (Puck) editors. Explain SEO implications of titles, slugs, and categories.',
+    aiGuidance: 'Blog supports both simple and visual editors. Explain SEO implications of titles, slugs, and categories.',
     suggestedFormat: 'detailed',
     difficulty: 'intermediate',
   },
@@ -540,7 +540,7 @@ export const helpKeyRegistry: HelpKeyDefinition[] = [
   {
     key: 'admin.pages.editor',
     category: 'pages',
-    location: 'Page editor (Puck)',
+    location: 'Page editor',
     description: 'Visual page editor',
   },
 
@@ -1390,17 +1390,17 @@ export const helpKeyRegistry: HelpKeyDefinition[] = [
     description: 'Form types information card',
   },
 
-  // Puck Editor
+  // Visual Editor
   {
-    key: 'puck.editor',
-    category: 'puck',
-    location: 'Puck visual editor',
-    description: 'Main Puck editor interface',
+    key: 'editor.main',
+    category: 'editor',
+    location: 'Visual editor',
+    description: 'Main visual editor interface',
   },
   {
-    key: 'puck.components',
-    category: 'puck',
-    location: 'Puck - component library',
+    key: 'editor.components',
+    category: 'editor',
+    location: 'Editor - component library',
     description: 'Component library panel',
   },
 

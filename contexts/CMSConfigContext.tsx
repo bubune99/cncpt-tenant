@@ -2,6 +2,21 @@
 
 import { createContext, useContext, ReactNode } from 'react';
 
+/** Serializable nav item (no React component icons — uses string icon names) */
+export interface ModuleNavItemData {
+  name: string;
+  href: string;
+  icon: string;
+  badgeKey?: string;
+  helpKey?: string;
+}
+
+/** Serializable nav group from module system */
+export interface ModuleNavGroupData {
+  name: string;
+  items: ModuleNavItemData[];
+}
+
 export interface CMSConfig {
   /** Base path prefix for all admin routes (e.g., '/cms/subdomain') */
   basePath?: string;
@@ -19,6 +34,8 @@ export interface CMSConfig {
   showChat?: boolean;
   /** Whether this is demo mode (read-only, public access) */
   isDemo?: boolean;
+  /** Module-driven navigation groups (overrides hardcoded nav when provided) */
+  moduleNavGroups?: ModuleNavGroupData[];
 }
 
 interface CMSConfigContextValue {

@@ -222,9 +222,9 @@ export default function PageEditPage({
             </Link>
           </Button>
           <Button asChild>
-            <Link href={`/admin/pages/${id}/puck`}>
+            <Link href={`/admin/pages/${id}/editor`}>
               <Pencil className="mr-2 h-4 w-4" />
-              Open Puck Editor
+              Open Editor
             </Link>
           </Button>
           <Button onClick={handleSave} disabled={isSaving}>
@@ -362,7 +362,7 @@ export default function PageEditPage({
                 Visual Page Builder
               </CardTitle>
               <CardDescription>
-                Use the Puck visual editor to design your page with drag-and-drop components
+                Use the visual editor to design your page with drag-and-drop components
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -380,9 +380,9 @@ export default function PageEditPage({
                   )}
                 </div>
                 <Button asChild size="lg">
-                  <Link href={`/admin/pages/${id}/puck`}>
+                  <Link href={`/admin/pages/${id}/editor`}>
                     <Pencil className="mr-2 h-4 w-4" />
-                    Open Puck Editor
+                    Open Editor
                   </Link>
                 </Button>
               </div>
@@ -440,7 +440,7 @@ export default function PageEditPage({
                 </Link>
               </Button>
               <Button variant="outline" className="w-full justify-start" asChild>
-                <Link href={`/admin/pages/${id}/puck`}>
+                <Link href={`/admin/pages/${id}/editor`}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Visual Editor
                 </Link>

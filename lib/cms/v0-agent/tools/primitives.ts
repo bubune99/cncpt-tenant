@@ -1,7 +1,7 @@
 /**
- * Puck Primitives Tool
+ * Editor Primitives Tool
  *
- * Provides information about available Puck components/primitives
+ * Provides information about available editor components/primitives
  * that v0 components can be mapped to.
  */
 
@@ -26,7 +26,7 @@ interface GetPrimitiveInput {
  */
 export const listPrimitivesTool = {
   name: "list_puck_primitives",
-  description: `Lists all available Puck primitives (components) that v0 elements can be mapped to.
+  description: `Lists all available editor primitives (components) that v0 elements can be mapped to.
 Returns component names, their props, and what they're used for.
 Use this to understand what building blocks are available for conversion.`,
 
@@ -95,7 +95,7 @@ Use this to understand what building blocks are available for conversion.`,
  */
 export const getPrimitiveTool = {
   name: "get_puck_primitive",
-  description: `Gets detailed information about a specific Puck primitive.
+  description: `Gets detailed information about a specific editor primitive.
 Returns full prop definitions, slots, and usage examples.
 Use this when you need to know exactly how to configure a specific component.`,
 
@@ -139,8 +139,8 @@ Use this when you need to know exactly how to configure a specific component.`,
 };
 
 /**
- * Get all available Puck primitives
- * This should ideally be loaded from the actual Puck config
+ * Get all available editor primitives
+ * This should ideally be loaded from the editor config
  */
 function getAllPrimitives(): PuckPrimitive[] {
   return [

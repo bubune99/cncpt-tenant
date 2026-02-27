@@ -17,7 +17,7 @@ export interface SeedTemplate {
   tags: string[];
   thumbnail?: string;
 
-  // The Puck page content
+  // The page content
   content: PuckPageContent;
 
   // Metadata
@@ -49,7 +49,7 @@ export type TemplateCategory =
   | "custom";
 
 /**
- * Puck page content structure
+ * Page content structure
  */
 export interface PuckPageContent {
   root: {

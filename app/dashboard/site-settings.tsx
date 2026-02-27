@@ -25,12 +25,6 @@ import {
   Image,
   Type,
   Code,
-  Server,
-  Play,
-  Square,
-  RefreshCw,
-  Plus,
-  Trash2,
 } from "lucide-react"
 import { rootDomain, protocol } from "@/lib/utils"
 import {
@@ -39,13 +33,12 @@ import {
   updateAppearanceSettings,
   updateSeoSettings,
   updateSecuritySettings,
-  updateFrontendSettings,
   type SiteSettings as SiteSettingsType,
 } from "@/app/site-settings-actions"
 
 interface SiteSettingsProps {
   selectedSubdomain: string | null
-  activeTab?: "general" | "appearance" | "seo" | "security" | "frontend"
+  activeTab?: "general" | "appearance" | "seo" | "security"
 }
 
 export function SiteSettings({ selectedSubdomain, activeTab = "general" }: SiteSettingsProps) {
@@ -82,13 +75,6 @@ export function SiteSettings({ selectedSubdomain, activeTab = "general" }: SiteS
   const [fontBody, setFontBody] = useState("Inter")
   const [themePreset, setThemePreset] = useState("default")
 
-  // Frontend VPS Settings
-  const [frontendEnabled, setFrontendEnabled] = useState(false)
-  const [frontendDomain, setFrontendDomain] = useState("")
-  const [frontendEnvVars, setFrontendEnvVars] = useState<Record<string, string>>({})
-  const [newEnvKey, setNewEnvKey] = useState("")
-  const [newEnvValue, setNewEnvValue] = useState("")
-
   useEffect(() => {
     if (selectedSubdomain) {
       loadSettings()
@@ -122,9 +108,6 @@ export function SiteSettings({ selectedSubdomain, activeTab = "general" }: SiteS
         setSitemapEnabled(data.sitemap_enabled ?? true)
         setPasswordProtected(data.password_protected ?? false)
         setSecurityHeadersEnabled(data.security_headers_enabled ?? true)
-        setFrontendEnabled(data.frontend_enabled ?? false)
-        setFrontendDomain(data.frontend_domain || "")
-        setFrontendEnvVars(data.frontend_env_vars || {})
       }
     } catch (error) {
       console.error("Failed to load settings:", error)
@@ -233,45 +216,6 @@ export function SiteSettings({ selectedSubdomain, activeTab = "general" }: SiteS
     }
   }
 
-  const handleSaveFrontend = async () => {
-    if (!selectedSubdomain) return
-    setIsSaving(true)
-    setErrorMessage(null)
-    try {
-      const result = await updateFrontendSettings(selectedSubdomain, {
-        frontend_enabled: frontendEnabled,
-        frontend_domain: frontendDomain,
-        frontend_env_vars: frontendEnvVars,
-      })
-      if (result.success) {
-        setSuccessMessage("Frontend settings saved successfully!")
-        setTimeout(() => setSuccessMessage(null), 3000)
-      } else {
-        setErrorMessage(result.error || "Failed to save settings")
-      }
-    } catch (error) {
-      setErrorMessage("Failed to save settings. Please try again.")
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  const addEnvVar = () => {
-    if (newEnvKey && newEnvValue) {
-      setFrontendEnvVars((prev) => ({ ...prev, [newEnvKey]: newEnvValue }))
-      setNewEnvKey("")
-      setNewEnvValue("")
-    }
-  }
-
-  const removeEnvVar = (key: string) => {
-    setFrontendEnvVars((prev) => {
-      const updated = { ...prev }
-      delete updated[key]
-      return updated
-    })
-  }
-
   if (!selectedSubdomain) {
     return (
       <div className="space-y-6">
@@ -345,10 +289,6 @@ export function SiteSettings({ selectedSubdomain, activeTab = "general" }: SiteS
           <TabsTrigger value="security" className="flex items-center gap-2">
             <Shield className="h-4 w-4" />
             Security
-          </TabsTrigger>
-          <TabsTrigger value="frontend" className="flex items-center gap-2">
-            <Server className="h-4 w-4" />
-            Frontend
           </TabsTrigger>
         </TabsList>
 
@@ -803,174 +743,6 @@ export function SiteSettings({ selectedSubdomain, activeTab = "general" }: SiteS
           </div>
         </TabsContent>
 
-        {/* Frontend VPS Settings */}
-        <TabsContent value="frontend" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Server className="h-5 w-5" />
-                Frontend Deployment
-              </CardTitle>
-              <CardDescription>
-                Configure your frontend application hosting
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Enable Frontend</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Deploy a frontend application to display your CMS content
-                  </p>
-                </div>
-                <Switch checked={frontendEnabled} onCheckedChange={setFrontendEnabled} />
-              </div>
-
-              {frontendEnabled && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="frontend-domain">Frontend Domain</Label>
-                    <Input
-                      id="frontend-domain"
-                      placeholder="www.mysite.com"
-                      value={frontendDomain}
-                      onChange={(e) => setFrontendDomain(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      The domain where your frontend will be accessible
-                    </p>
-                  </div>
-
-                  {/* Deployment Management Link */}
-                  <Alert className="bg-blue-50 border-blue-200">
-                    <Server className="h-4 w-4 text-blue-600" />
-                    <AlertDescription className="text-blue-800">
-                      <p className="font-medium mb-2">Full Deployment Controls</p>
-                      <p className="text-sm mb-3">
-                        For full deployment controls including deploy, start, stop, restart,
-                        and custom domain management with SSL, use the dedicated Frontend panel.
-                      </p>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="border-blue-300 text-blue-700 hover:bg-blue-100"
-                        onClick={() => {
-                          // Navigate to the Frontend (VPS) section
-                          const event = new CustomEvent('navigate-to-section', { detail: 'frontend' })
-                          window.dispatchEvent(event)
-                        }}
-                      >
-                        <Server className="h-4 w-4 mr-2" />
-                        Open Frontend Panel
-                      </Button>
-                    </AlertDescription>
-                  </Alert>
-
-                  {/* Quick Status */}
-                  <div className="p-4 bg-muted rounded-lg">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="font-medium">Deployment Status</span>
-                      <Badge
-                        variant={
-                          settings?.frontend_status === "running"
-                            ? "default"
-                            : settings?.frontend_status === "deploying"
-                            ? "secondary"
-                            : settings?.frontend_status === "error"
-                            ? "destructive"
-                            : "outline"
-                        }
-                      >
-                        {settings?.frontend_status || "not_deployed"}
-                      </Badge>
-                    </div>
-                    {settings?.frontend_last_deployed_at && (
-                      <p className="text-xs text-muted-foreground">
-                        Last deployed: {new Date(settings.frontend_last_deployed_at).toLocaleString()}
-                      </p>
-                    )}
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          {frontendEnabled && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Environment Variables</CardTitle>
-                <CardDescription>
-                  Configure environment variables for your frontend application
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Existing env vars */}
-                <div className="space-y-2">
-                  {Object.entries(frontendEnvVars).map(([key, value]) => (
-                    <div key={key} className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                      <code className="flex-1 text-sm font-mono">{key}</code>
-                      <code className="flex-1 text-sm font-mono text-muted-foreground truncate">
-                        {value.substring(0, 20)}...
-                      </code>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => removeEnvVar(key)}
-                        className="h-8 w-8"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Add new env var */}
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="KEY"
-                    value={newEnvKey}
-                    onChange={(e) => setNewEnvKey(e.target.value.toUpperCase())}
-                    className="flex-1 font-mono"
-                  />
-                  <Input
-                    placeholder="value"
-                    value={newEnvValue}
-                    onChange={(e) => setNewEnvValue(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button onClick={addEnvVar} disabled={!newEnvKey || !newEnvValue}>
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                {/* Common env vars hint */}
-                <div className="text-xs text-muted-foreground p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <p className="font-medium text-blue-800 mb-1">Required Variables:</p>
-                  <ul className="list-disc list-inside text-blue-700 space-y-1">
-                    <li>NEXT_PUBLIC_CMS_URL - Your CMS API endpoint</li>
-                    <li>NEXT_PUBLIC_SITE_URL - Your frontend URL</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          <div className="flex justify-end">
-            <Button onClick={handleSaveFrontend} disabled={isSaving}>
-              {isSaving ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Changes
-                </>
-              )}
-            </Button>
-          </div>
-        </TabsContent>
       </Tabs>
     </div>
   )

@@ -49,7 +49,7 @@ model User {
   // API keys for MCP and external integrations
   apiKeys ApiKey[]
 
-  // Puck templates created by this user
+  // Page templates created by this user
   puckTemplates PuckTemplate[]
 
   @@index([stackAuthId], map: "users_stack_auth_id_idx")
@@ -1174,7 +1174,7 @@ model Page {
   tenantId Int?       @map("tenant_id")
   tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  // Puck editor content (JSON)
+  // Visual editor content (JSON)
   content Json?
 
   // SEO
@@ -1188,8 +1188,8 @@ model Page {
   // Header/Footer configuration
   headerMode   PageLayoutMode @default(GLOBAL) // GLOBAL, CUSTOM, NONE
   footerMode   PageLayoutMode @default(GLOBAL) // GLOBAL, CUSTOM, NONE
-  customHeader Json? // Custom header Puck data (when headerMode=CUSTOM)
-  customFooter Json? // Custom footer Puck data (when footerMode=CUSTOM)
+  customHeader Json? // Custom header data (when headerMode=CUSTOM)
+  customFooter Json? // Custom footer data (when footerMode=CUSTOM)
 
   // Announcement bar
   showAnnouncement   Boolean @default(true)
@@ -1230,7 +1230,7 @@ enum PageStatus {
 // =============================================================================
 
 // Configures root-level routes (bypassing /p/ prefix)
-// Allows choosing between Puck pages, custom-coded components, or redirects
+// Allows choosing between CMS pages, custom-coded components, or redirects
 model RouteConfig {
   id   String    @id @default(cuid())
   slug String // The root-level path, e.g., "/", "/about", "/demo"
@@ -1240,7 +1240,7 @@ model RouteConfig {
   tenantId Int?       @map("tenant_id")
   tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  // For PUCK type - which page to render at this route
+  // For PUCK type (CMS page) - which page to render at this route
   pageId String? @unique
   page   Page?   @relation(fields: [pageId], references: [id], onDelete: Cascade)
 
@@ -1266,7 +1266,7 @@ model RouteConfig {
 }
 
 enum RouteType {
-  PUCK // Render a Puck page from the database
+  PUCK // Render a CMS page from the database
   CUSTOM // Render a custom-coded React component
   REDIRECT // Redirect to another URL
 }
@@ -1962,7 +1962,7 @@ enum WorkflowLogLevel {
 }
 
 // =============================================================================
-// EMAIL CAMPAIGNS (for Puck Email Builder)
+// EMAIL CAMPAIGNS
 // =============================================================================
 
 model EmailCampaign {
@@ -1974,8 +1974,8 @@ model EmailCampaign {
   // Template (optional - can use template or custom content)
   templateId String?
 
-  // Puck content (if not using template)
-  content Json? // Puck editor JSON
+  // Editor content (if not using template)
+  content Json? // Visual editor JSON
   html    String? @db.Text // Rendered HTML
 
   // Sender
@@ -2169,7 +2169,7 @@ model EmailTemplate {
   // Content
   subject   String? // Default subject (can use merge tags)
   preheader String?
-  content   Json? // Puck editor JSON
+  content   Json? // Visual editor JSON
   html      String? @db.Text // Pre-rendered HTML
 
   // Preview
@@ -2199,7 +2199,7 @@ enum EmailTemplateCategory {
 }
 
 // =============================================================================
-// PUCK TEMPLATES (Reusable Page Sections & Layouts)
+// PAGE TEMPLATES (Reusable Page Sections & Layouts)
 // =============================================================================
 
 model PuckTemplate {
@@ -2209,7 +2209,7 @@ model PuckTemplate {
   description       String?          @db.Text
   type              PuckTemplateType @default(SECTION)
   compatibleConfigs String[] // ["blog", "pages", "email", "ecommerce", "plugin", "layout", "dashboard"]
-  content           Json // Puck Data: { root, content, zones }
+  content           Json // Page Data: { root, content, zones }
   category          String? // "Hero Sections", "Pricing", "CTAs", etc.
   tags              String[]         @default([])
   isSystem          Boolean          @default(false) // Built-in templates
@@ -3549,10 +3549,10 @@ model EmailQueueItem {
 model SiteSettings {
   id String @id @default("default") // Singleton pattern
 
-  // Global Header configuration (Puck JSON data)
+  // Global Header configuration (JSON data)
   header Json?
 
-  // Global Footer configuration (Puck JSON data)
+  // Global Footer configuration (JSON data)
   footer Json?
 
   // Global Announcement Bar configuration
@@ -3590,7 +3590,7 @@ model SiteSettings {
 }
 
 // =============================================================================
-// PAGE BUNDLES - Track imported .puckbundle files
+// PAGE BUNDLES - Track imported bundle files
 // =============================================================================
 
 model PageBundle {
@@ -3739,8 +3739,8 @@ model CustomComponent {
   sourceCode String  @db.Text // Original React/TSX code
   sourceUrl  String? // Original v0.dev URL if imported
 
-  // Puck configuration (stored as JSON)
-  puckConfig Json // Complete PuckComponentConfig
+  // Editor configuration (stored as JSON)
+  puckConfig Json // Complete component configuration
 
   // Status and versioning
   version     Int             @default(1)
@@ -4214,4 +4214,28 @@ model Feedback {
   @@index([type], map: "idx_feedback_type")
   @@index([createdAt(sort: Desc)], map: "idx_feedback_created")
   @@map("feedback")
+}
+
+// =============================================================================
+// CMS MODULES -- DB-driven feature toggles
+// =============================================================================
+
+model CmsModule {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?  @db.Text
+  icon        String?
+  version     String   @default("1.0.0")
+  manifest    Json     // ModuleManifest -- routes, blocks, settings, permissions
+  enabled     Boolean  @default(true)
+  builtIn     Boolean  @default(true)
+  config      Json?    // User-changeable module config (e.g., commerce provider)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([enabled])
+  @@index([slug])
+  @@map("cms_modules")
 }

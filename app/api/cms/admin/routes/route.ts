@@ -120,7 +120,7 @@ export const POST = withPermission(
 
       if (type === 'PUCK' && !body.pageId) {
         return NextResponse.json(
-          { error: 'Page ID is required for PUCK type' },
+          { error: 'Page ID is required for CMS page type' },
           { status: 400 }
         )
       }
@@ -139,7 +139,7 @@ export const POST = withPermission(
         )
       }
 
-      // Validate page exists if PUCK type
+      // Validate page exists if CMS page type
       if (type === 'PUCK') {
         const page = await prisma.page.findUnique({
           where: { id: body.pageId },

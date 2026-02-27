@@ -9,11 +9,18 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCMSConfig } from '@/contexts/CMSConfigContext';
-import { ArrowLeft, Loader2, Save, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Loader2, Save } from 'lucide-react';
 import { Button } from '@/components/cms/ui/button';
 import { toast } from 'sonner';
-import { AnnouncementBar, type AnnouncementBarProps } from '@/puck/layout/components';
 import { Input } from '@/components/cms/ui/input';
+
+interface AnnouncementBarProps {
+  message: string;
+  link?: { label: string; href: string };
+  dismissible: boolean;
+  backgroundColor?: string;
+  textColor?: string;
+}
 import { Label } from '@/components/cms/ui/label';
 import { Switch } from '@/components/cms/ui/switch';
 import {
@@ -39,7 +46,6 @@ export default function AnnouncementEditorPage() {
   const { buildPath } = useCMSConfig();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [showPreview, setShowPreview] = useState(true);
   const [showAnnouncementBar, setShowAnnouncementBar] = useState(false);
   const [announcementProps, setAnnouncementProps] =
     useState<AnnouncementBarProps>(defaultAnnouncementProps);
@@ -121,18 +127,6 @@ export default function AnnouncementEditorPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowPreview(!showPreview)}
-          >
-            {showPreview ? (
-              <EyeOff className="h-4 w-4 mr-2" />
-            ) : (
-              <Eye className="h-4 w-4 mr-2" />
-            )}
-            {showPreview ? 'Hide Preview' : 'Show Preview'}
-          </Button>
           <Button onClick={handleSave} disabled={isSaving}>
             {isSaving ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -143,11 +137,6 @@ export default function AnnouncementEditorPage() {
           </Button>
         </div>
       </div>
-
-      {/* Preview */}
-      {showPreview && showAnnouncementBar && (
-        <AnnouncementBar {...announcementProps} />
-      )}
 
       {/* Editor */}
       <div className="container mx-auto py-6 px-4 max-w-2xl">

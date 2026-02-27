@@ -2,7 +2,7 @@
  * Authenticated Areas Configuration
  *
  * Defines the hardcoded authenticated areas with their
- * static navigation and Puck page settings.
+ * static navigation and CMS page settings.
  */
 
 import type { AuthenticatedAreaConfig } from './types';
@@ -55,7 +55,7 @@ export const dashboardArea: AuthenticatedAreaConfig = {
       collapsible: true,
       defaultExpanded: true,
       items: [
-        // Puck pages will be dynamically added here
+        // CMS pages will be dynamically added here
       ],
     },
     {
@@ -125,7 +125,7 @@ export const appArea: AuthenticatedAreaConfig = {
       collapsible: true,
       defaultExpanded: true,
       items: [
-        // Puck pages will be added here
+        // CMS pages will be added here
       ],
     },
     {
@@ -184,7 +184,7 @@ export function isAuthenticatedPath(path: string): boolean {
 }
 
 /**
- * Get the Puck pages path for an area
+ * Get the CMS pages path for an area
  */
 export function getPuckPagesPath(areaId: string): string | undefined {
   const area = getAreaConfig(areaId);

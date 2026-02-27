@@ -1,7 +1,7 @@
 /**
  * Dynamic CMS Page Route
  *
- * Renders CMS pages created with Puck visual editor.
+ * Renders CMS pages stored in the database.
  * Pages are wrapped with appropriate header/footer based on settings.
  *
  * Route: /p/[...slug]
@@ -11,12 +11,16 @@
 import { prisma } from '@/lib/cms/db';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import type { Data } from '@puckeditor/core';
 import { PageWrapper, getPageLayoutSettings } from '@/components/cms/page-wrapper';
-import { PageRenderer } from '@/components/cms/page-wrapper/page-renderer';
 import { getTenantContext } from '../../../lib/tenant-context';
 
-// Force dynamic rendering to avoid SSR issues with Puck components
+/** Page content data shape */
+interface Data {
+  content: Array<{ type: string; props: Record<string, unknown>; [key: string]: unknown }>;
+  root?: { props?: Record<string, unknown> };
+  zones?: Record<string, unknown[]>;
+}
+
 export const dynamic = 'force-dynamic';
 
 /**
@@ -68,10 +72,10 @@ function isValidComponent(item: unknown, depth = 0): boolean {
 }
 
 /**
- * Validate and sanitize Puck content data
+ * Validate and sanitize page content data
  * Ensures all component types are strings to prevent rendering errors
  */
-function validatePuckContent(content: unknown): Data | null {
+function validatePageContent(content: unknown): Data | null {
   if (!content || typeof content !== 'object') return null;
 
   const data = content as Data;
@@ -80,7 +84,7 @@ function validatePuckContent(content: unknown): Data | null {
   // Deep validate all components including nested ones
   for (const item of data.content) {
     if (!isValidComponent(item)) {
-      console.warn('Invalid Puck content detected in main content');
+      console.warn('Invalid page content detected in main content');
       return null; // Return null to trigger error page instead of filtering
     }
   }
@@ -91,7 +95,7 @@ function validatePuckContent(content: unknown): Data | null {
       if (Array.isArray(zoneContent)) {
         for (const item of zoneContent) {
           if (!isValidComponent(item)) {
-            console.warn(`Invalid Puck content detected in zone: ${zoneName}`);
+            console.warn(`Invalid page content detected in zone: ${zoneName}`);
             return null;
           }
         }
@@ -204,7 +208,7 @@ export default async function CMSPage({ params }: PageProps) {
     notFound();
   }
 
-  // Check if page has Puck content
+  // Check if page has content
   if (!page.content) {
     // Render empty page placeholder
     return (
@@ -223,27 +227,35 @@ export default async function CMSPage({ params }: PageProps) {
     );
   }
 
-  // Validate and sanitize the Puck content
+  // Validate content
   let validatedContent: Data | null = null;
   try {
-    validatedContent = validatePuckContent(page.content);
+    validatedContent = validatePageContent(page.content);
   } catch (error) {
-    console.error('Error validating Puck content for page:', slugParts?.join('/'), error);
+    console.error('Error validating content for page:', slugParts?.join('/'), error);
     validatedContent = null;
   }
 
   if (!validatedContent) {
-    // Content is invalid, show error page without PageWrapper to avoid potential rendering issues
     return <ContentErrorPage title={page.title} />;
   }
 
-  // Render with Puck
+  // Page has content -- custom block editor rendering will be wired in separately
   return (
     <PageWrapper pageSettings={getPageLayoutSettings(page)}>
-      <PageRenderer puckContent={validatedContent} />
+      <div className="container mx-auto px-4 py-12">
+        <header className="max-w-3xl mx-auto mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold mb-6">{page.title}</h1>
+        </header>
+        <div className="max-w-3xl mx-auto">
+          <p className="text-muted-foreground">
+            Page content available. Editor rendering pending migration.
+          </p>
+        </div>
+      </div>
     </PageWrapper>
   );
 }
 
 // Note: generateStaticParams is disabled because we use dynamic rendering
-// to avoid SSR issues with Puck components. Pages are rendered on-demand.
+// Pages are rendered on-demand.

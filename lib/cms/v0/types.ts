@@ -1,7 +1,7 @@
 /**
  * v0 Integration Types
  *
- * Types for parsing and converting v0.dev components to Puck components.
+ * Types for parsing and converting v0.dev components to editor components.
  */
 
 // Parsed component structure from v0 code
@@ -61,7 +61,7 @@ export interface ParsedImport {
   isRelative: boolean;
 }
 
-// Puck ComponentConfig type (simplified)
+// ComponentConfig type (simplified)
 export interface PuckComponentConfig {
   label: string;
   fields: Record<string, PuckField>;
@@ -104,7 +104,7 @@ export interface CustomComponent {
   sourceCode: string;
   sourceUrl?: string; // Original v0 URL if available
 
-  // Puck configuration
+  // Editor configuration
   puckConfig: string; // JSON stringified PuckComponentConfig
 
   // Metadata

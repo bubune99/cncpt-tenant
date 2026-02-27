@@ -1,7 +1,7 @@
 /**
- * v0 to Puck Component Converter
+ * v0 Component Converter
  *
- * Converts parsed v0 components to Puck ComponentConfig format.
+ * Converts parsed v0 components to ComponentConfig format.
  */
 
 import {
@@ -13,7 +13,7 @@ import {
 } from "./types";
 
 /**
- * Convert parsed v0 component to Puck ComponentConfig
+ * Convert parsed v0 component to ComponentConfig
  */
 export function convertToPuckConfig(
   parsed: ParsedV0Component
@@ -21,7 +21,7 @@ export function convertToPuckConfig(
   const fields: Record<string, PuckField> = {};
   const defaultProps: Record<string, unknown> = {};
 
-  // Convert each prop to a Puck field
+  // Convert each prop to an editor field
   for (const prop of parsed.props) {
     // Skip children and className props - handled specially
     if (prop.name === "children" || prop.name === "className") continue;
@@ -54,7 +54,7 @@ export function convertToPuckConfig(
 }
 
 /**
- * Convert a parsed prop to a Puck field
+ * Convert a parsed prop to an editor field
  */
 function convertPropToField(prop: ParsedProp): PuckField | null {
   const baseField: Partial<PuckField> = {
@@ -149,7 +149,7 @@ function formatLabel(name: string): string {
 }
 
 /**
- * Create the render function for Puck
+ * Create the render function for the editor
  */
 function createRenderFunction(
   parsed: ParsedV0Component
@@ -182,7 +182,7 @@ export function ${componentName}Wrapper(props) {
 }
 
 /**
- * Generate Puck config as a string for storage
+ * Generate editor config as a string for storage
  */
 export function generatePuckConfigString(
   parsed: ParsedV0Component,
@@ -201,7 +201,7 @@ export function generatePuckConfigString(
 }
 
 /**
- * Create a Puck-compatible component from stored config
+ * Create a component from stored config
  */
 export function createPuckComponent(
   storedConfig: string
@@ -224,7 +224,7 @@ export function createPuckComponent(
       render: renderFn,
     };
   } catch (error) {
-    console.error("Failed to create Puck component from config:", error);
+    console.error("Failed to create component from config:", error);
     return null;
   }
 }

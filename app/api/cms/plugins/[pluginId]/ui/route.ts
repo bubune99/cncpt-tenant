@@ -1,7 +1,7 @@
 /**
  * Plugin UI API
  *
- * Store and retrieve Puck UI data for plugins
+ * Store and retrieve UI data for plugins
  */
 
 import { NextResponse } from 'next/server';

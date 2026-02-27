@@ -10,8 +10,8 @@ import { cache } from 'react'
 export type { RouteType } from '@prisma/client'
 
 export interface ResolvedRoute {
-  type: 'PUCK' | 'CUSTOM' | 'REDIRECT' | 'NOT_FOUND'
-  // For PUCK
+  type: 'PUCK' | 'CUSTOM' | 'REDIRECT' | 'NOT_FOUND'  // 'PUCK' is a Prisma enum value for CMS-managed pages
+  // For CMS pages
   pageId?: string
   pageContent?: unknown
   pageTitle?: string

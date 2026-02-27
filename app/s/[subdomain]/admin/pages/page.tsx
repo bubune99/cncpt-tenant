@@ -419,7 +419,7 @@ export default function PagesPage() {
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>
-                            <Link href={buildPath(`/admin/pages/${page.id}/puck`)}>
+                            <Link href={buildPath(`/admin/pages/${page.id}/editor`)}>
                               <Layers className="mr-2 h-4 w-4" />
                               Visual Editor
                             </Link>
@@ -461,7 +461,7 @@ export default function PagesPage() {
         <CardHeader>
           <CardTitle>Getting Started</CardTitle>
           <CardDescription>
-            Create your first page using the visual Puck editor
+            Create your first page using the visual editor
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -479,7 +479,7 @@ export default function PagesPage() {
               <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center mb-3">
                 <Layers className="h-5 w-5 text-green-600" />
               </div>
-              <h3 className="font-semibold">2. Design with Puck</h3>
+              <h3 className="font-semibold">2. Design Your Page</h3>
               <p className="text-sm text-muted-foreground mt-1">
                 Use the visual editor to add components and design your page
               </p>

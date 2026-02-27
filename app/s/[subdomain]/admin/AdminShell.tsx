@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { WizardProvider } from '@/contexts/WizardContext';
-import { CMSConfigProvider, type CMSConfig } from '@/contexts/CMSConfigContext';
+import { CMSConfigProvider, type CMSConfig, type ModuleNavGroupData } from '@/contexts/CMSConfigContext';
 import { HelpProvider, useHelpOptional } from '@/components/cms/help-system';
 import { ModeToggle } from '@/components/cms/mode-toggle';
 import { AdminChat } from '@/components/cms/admin-chat';
@@ -35,9 +35,35 @@ import {
   Key,
   Workflow,
   ClipboardList,
+  CalendarDays,
 } from 'lucide-react';
 import { Input } from '@/components/cms/ui/input';
 import { Logo } from '@/components/cms/branding/Logo';
+
+// Icon name -> Lucide component map for module-driven nav
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ICON_MAP: Record<string, any> = {
+  LayoutDashboard,
+  Users,
+  Package,
+  ShoppingCart,
+  Truck,
+  FileText,
+  Mail,
+  BarChart3,
+  Puzzle,
+  Settings,
+  Layers,
+  GitBranch,
+  Image,
+  Key,
+  Workflow,
+  ClipboardList,
+  CalendarDays,
+  Search,
+  Bell,
+  HelpCircle,
+};
 
 interface NavItem {
   name: string;
@@ -129,45 +155,57 @@ export function AdminShell({
     return path.replace('/admin', `${basePath}/admin`);
   };
 
-  const allNavigationGroups: NavGroup[] = [
-    {
-      name: 'Main',
-      items: [
-        { name: 'Dashboard', href: '/admin', icon: LayoutDashboard, helpKey: 'admin.sidebar.dashboard' },
-        { name: 'Analytics', href: '/admin/analytics', icon: BarChart3, helpKey: 'admin.sidebar.analytics' },
-      ],
-    },
-    {
-      name: 'E-Commerce',
-      items: [
-        { name: 'Products', href: '/admin/products', icon: Package, helpKey: 'admin.sidebar.products' },
-        { name: 'Orders', href: '/admin/orders', icon: ShoppingCart, helpKey: 'admin.sidebar.orders' },
-        { name: 'Order Workflows', href: '/admin/order-workflows', icon: Workflow, helpKey: 'admin.sidebar.order-workflows' },
-        { name: 'Shipping', href: '/admin/shipping', icon: Truck, helpKey: 'admin.sidebar.shipping' },
-        { name: 'Customers', href: '/admin/customers', icon: Users, helpKey: 'admin.sidebar.customers' },
-      ],
-    },
-    {
-      name: 'Content',
-      items: [
-        { name: 'Pages', href: '/admin/pages', icon: Layers, helpKey: 'admin.sidebar.pages' },
-        { name: 'Blog', href: '/admin/blog', icon: FileText, helpKey: 'admin.sidebar.blog' },
-        { name: 'Forms', href: '/admin/forms', icon: ClipboardList, helpKey: 'admin.sidebar.forms' },
-        { name: 'Media', href: '/admin/media', icon: Image, helpKey: 'admin.sidebar.media' },
-        { name: 'Email Marketing', href: '/admin/email-marketing', icon: Mail, helpKey: 'admin.sidebar.email-marketing' },
-      ],
-    },
-    {
-      name: 'System',
-      items: [
-        { name: 'Users', href: '/admin/users', icon: Users, helpKey: 'admin.sidebar.users' },
-        { name: 'Roles & Permissions', href: '/admin/roles', icon: Key, helpKey: 'admin.sidebar.roles' },
-        { name: 'Plugins', href: '/admin/plugins', icon: Puzzle, helpKey: 'admin.sidebar.plugins' },
-        { name: 'Workflows', href: '/admin/workflows', icon: GitBranch, helpKey: 'admin.sidebar.workflows' },
-        { name: 'Settings', href: '/admin/settings', icon: Settings, helpKey: 'admin.sidebar.settings' },
-      ],
-    },
-  ];
+  // Build navigation: use module-driven groups if provided, else fallback to hardcoded
+  const { moduleNavGroups } = config;
+
+  const allNavigationGroups: NavGroup[] = moduleNavGroups
+    ? moduleNavGroups.map(group => ({
+        name: group.name,
+        items: group.items.map(item => ({
+          name: item.name,
+          href: item.href,
+          icon: ICON_MAP[item.icon] || Layers,
+          helpKey: item.helpKey,
+        })),
+      }))
+    : [
+        {
+          name: 'Main',
+          items: [
+            { name: 'Dashboard', href: '/admin', icon: LayoutDashboard, helpKey: 'admin.sidebar.dashboard' },
+            { name: 'Analytics', href: '/admin/analytics', icon: BarChart3, helpKey: 'admin.sidebar.analytics' },
+          ],
+        },
+        {
+          name: 'E-Commerce',
+          items: [
+            { name: 'Products', href: '/admin/products', icon: Package, helpKey: 'admin.sidebar.products' },
+            { name: 'Orders', href: '/admin/orders', icon: ShoppingCart, helpKey: 'admin.sidebar.orders' },
+            { name: 'Order Workflows', href: '/admin/order-workflows', icon: Workflow, helpKey: 'admin.sidebar.order-workflows' },
+            { name: 'Shipping', href: '/admin/shipping', icon: Truck, helpKey: 'admin.sidebar.shipping' },
+            { name: 'Customers', href: '/admin/customers', icon: Users, helpKey: 'admin.sidebar.customers' },
+          ],
+        },
+        {
+          name: 'Content',
+          items: [
+            { name: 'Pages', href: '/admin/pages', icon: Layers, helpKey: 'admin.sidebar.pages' },
+            { name: 'Blog', href: '/admin/blog', icon: FileText, helpKey: 'admin.sidebar.blog' },
+            { name: 'Forms', href: '/admin/forms', icon: ClipboardList, helpKey: 'admin.sidebar.forms' },
+            { name: 'Media', href: '/admin/media', icon: Image, helpKey: 'admin.sidebar.media' },
+            { name: 'Email Marketing', href: '/admin/email-marketing', icon: Mail, helpKey: 'admin.sidebar.email-marketing' },
+          ],
+        },
+        {
+          name: 'System',
+          items: [
+            { name: 'Users', href: '/admin/users', icon: Users, helpKey: 'admin.sidebar.users' },
+            { name: 'Roles & Permissions', href: '/admin/roles', icon: Key, helpKey: 'admin.sidebar.roles' },
+            { name: 'Modules', href: '/admin/modules', icon: Puzzle, helpKey: 'admin.sidebar.modules' },
+            { name: 'Settings', href: '/admin/settings', icon: Settings, helpKey: 'admin.sidebar.settings' },
+          ],
+        },
+      ];
 
   // Filter navigation based on config
   const navigationGroups = allNavigationGroups

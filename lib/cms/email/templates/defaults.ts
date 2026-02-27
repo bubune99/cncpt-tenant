@@ -1,7 +1,7 @@
 /**
  * Default Email Template Definitions
  *
- * These are the default Puck-based email templates that can be seeded
+ * These are the default email templates that can be seeded
  * and customized by users through the admin panel.
  */
 
