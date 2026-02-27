@@ -3,9 +3,29 @@
 import type React from "react"
 
 import { cn } from "@/lib/cms/utils"
+import { getSmartBlock } from "@/lib/cms/block-editor/smart-blocks/registry"
 import type { ElementType } from "./page-builder"
-import { GripVertical, Plus, Trash2, Copy, Settings } from "lucide-react"
+import { GripVertical, Plus, Trash2, Copy, Settings, Component } from "lucide-react"
 import { useState } from "react"
+
+/* ---- Smart Block Placeholder ---- */
+function SmartBlockPlaceholder({ componentName }: { componentName: string }) {
+  const def = getSmartBlock(componentName)
+  if (!def) return null
+
+  return (
+    <div className={cn(
+      "flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-6 py-8",
+      "bg-violet-500/5 border-violet-500/20 text-violet-300"
+    )}>
+      <div className="flex items-center gap-2">
+        <Component size={18} className="text-violet-400" />
+        <span className="text-sm font-semibold text-violet-200">{def.displayName}</span>
+      </div>
+      <span className="text-[10px] text-violet-500/50 mt-1">Smart block — renders with live data on the storefront</span>
+    </div>
+  )
+}
 
 interface CanvasElementProps {
   element: ElementType
@@ -132,6 +152,10 @@ export function CanvasElement({ element, selectedElement, onSelectElement, depth
           </div>
         )
       default:
+        // Check if this element has a componentName matching a registered smart block
+        if (element.props.componentName && getSmartBlock(String(element.props.componentName))) {
+          return <SmartBlockPlaceholder componentName={String(element.props.componentName)} />
+        }
         return (
           <div className="p-4 bg-gray-100 rounded text-gray-500 text-sm">
             {element.type}: {element.label}

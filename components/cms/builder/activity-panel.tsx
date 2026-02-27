@@ -24,6 +24,19 @@ import {
   Type,
   Layers,
   Box,
+  Store,
+  LayoutDashboard,
+  Package,
+  Star,
+  FolderTree,
+  ShoppingCart,
+  ShoppingBag,
+  Hand,
+  ClipboardList,
+  Zap,
+  User,
+  Gift,
+  Component,
 } from "lucide-react"
 import { cn } from "@/lib/cms/utils"
 import type { ActivityView } from "./activity-bar"
@@ -104,6 +117,28 @@ const elementCategories = [
       { name: "Accordion", icon: Layers },
     ],
   },
+  {
+    name: "Smart Commerce",
+    elements: [
+      { name: "Product Grid", icon: Grid3X3 },
+      { name: "Product Card", icon: Package },
+      { name: "Featured Products", icon: Star },
+      { name: "Category Nav", icon: FolderTree },
+      { name: "Product Search", icon: Search },
+      { name: "Add to Cart", icon: ShoppingCart },
+      { name: "Cart Summary", icon: ShoppingBag },
+    ],
+  },
+  {
+    name: "Dashboard Widgets",
+    elements: [
+      { name: "Dashboard Welcome", icon: Hand },
+      { name: "Recent Orders", icon: ClipboardList },
+      { name: "Quick Actions", icon: Zap },
+      { name: "Account Info", icon: User },
+      { name: "Promo Block", icon: Gift },
+    ],
+  },
 ]
 
 export function ActivityPanel({ activeView, elements = [], selectedElement, onSelectElement }: ActivityPanelProps) {
@@ -179,19 +214,30 @@ export function ActivityPanel({ activeView, elements = [], selectedElement, onSe
                     <ChevronRight className="h-4 w-4" />
                   )}
                   {category.name}
+                  {(category.name === "Smart Commerce" || category.name === "Dashboard Widgets") && (
+                    <Component className="h-3 w-3 text-violet-400 ml-auto" />
+                  )}
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <div className="grid grid-cols-2 gap-1.5 py-2 pl-6 pr-2">
-                    {category.elements.map((element) => (
-                      <button
-                        key={element.name}
-                        className="flex flex-col items-center gap-1.5 p-3 rounded-lg border border-border bg-card hover:bg-secondary hover:border-primary/50 transition-all cursor-grab"
-                        draggable
-                      >
-                        <element.icon className="h-5 w-5 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">{element.name}</span>
-                      </button>
-                    ))}
+                    {category.elements.map((element) => {
+                      const isSmartCategory = category.name === "Smart Commerce" || category.name === "Dashboard Widgets"
+                      return (
+                        <button
+                          key={element.name}
+                          className={cn(
+                            "flex flex-col items-center gap-1.5 p-3 rounded-lg border transition-all cursor-grab",
+                            isSmartCategory
+                              ? "border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/10 hover:border-violet-500/40"
+                              : "border-border bg-card hover:bg-secondary hover:border-primary/50"
+                          )}
+                          draggable
+                        >
+                          <element.icon className={cn("h-5 w-5", isSmartCategory ? "text-violet-400" : "text-muted-foreground")} />
+                          <span className={cn("text-xs", isSmartCategory ? "text-violet-300" : "text-muted-foreground")}>{element.name}</span>
+                        </button>
+                      )
+                    })}
                   </div>
                 </CollapsibleContent>
               </Collapsible>

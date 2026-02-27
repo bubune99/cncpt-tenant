@@ -2,6 +2,17 @@
 
 import { useState } from "react"
 import { ScrollArea } from "@/components/cms/ui/scroll-area"
+import { Input } from "@/components/cms/ui/input"
+import { Switch } from "@/components/cms/ui/switch"
+import { Slider } from "@/components/cms/ui/slider"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/cms/ui/select"
+import { Separator } from "@/components/cms/ui/separator"
 import {
   ChevronDown,
   ChevronRight,
@@ -14,8 +25,11 @@ import {
   Layout,
   MousePointer,
   Sparkles,
+  Component,
 } from "lucide-react"
 import { cn } from "@/lib/cms/utils"
+import { getSmartBlock, type EditorField } from "@/lib/cms/block-editor/smart-blocks/registry"
+import type { Block } from "@/lib/cms/block-editor/types"
 import type { ElementType } from "./page-builder"
 
 interface RightPanelProps {
@@ -24,6 +38,107 @@ interface RightPanelProps {
   onSelectElement: (element: ElementType | null) => void
   onCollapse?: () => void
   isCollapsed?: boolean
+}
+
+/* ---- Smart Block Field Renderer ---- */
+function SmartBlockField({ field, block, onUpdate }: {
+  field: EditorField
+  block: Block
+  onUpdate: (value: unknown) => void
+}) {
+  const target = field.target || "attrs"
+  let currentValue: unknown = field.defaultValue
+  if (target === "commerce" && block.commerce) {
+    currentValue = (block.commerce as Record<string, unknown>)[field.key] ?? field.defaultValue
+  } else if (target === "attrs" && block.attrs) {
+    currentValue = block.attrs[field.key] ?? field.defaultValue
+  } else if (target === "root") {
+    currentValue = (block as Record<string, unknown>)[field.key] ?? field.defaultValue
+  }
+
+  switch (field.type) {
+    case "text":
+      return (
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">{field.label}</label>
+          <Input
+            value={String(currentValue ?? "")}
+            onChange={(e) => onUpdate(e.target.value)}
+            className="h-8 bg-input text-foreground text-xs"
+          />
+        </div>
+      )
+    case "number":
+      return (
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">{field.label}</label>
+          <Input
+            type="number"
+            value={Number(currentValue ?? 0)}
+            onChange={(e) => onUpdate(parseInt(e.target.value) || 0)}
+            min={field.min}
+            max={field.max}
+            step={field.step}
+            className="h-8 bg-input text-foreground text-xs"
+          />
+        </div>
+      )
+    case "select":
+      return (
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">{field.label}</label>
+          <Select value={String(currentValue ?? "")} onValueChange={onUpdate}>
+            <SelectTrigger className="h-8 bg-input text-foreground text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {field.options?.map((opt) => (
+                <SelectItem key={String(opt.value)} value={String(opt.value)} className="text-xs">{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )
+    case "toggle":
+      return (
+        <div className="flex items-center justify-between">
+          <label className="text-xs text-muted-foreground">{field.label}</label>
+          <Switch
+            checked={Boolean(currentValue)}
+            onCheckedChange={onUpdate}
+          />
+        </div>
+      )
+    case "slider":
+      return (
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">{field.label}</label>
+          <div className="flex items-center gap-2">
+            <Slider
+              value={[Number(currentValue ?? field.min ?? 0)]}
+              onValueChange={([v]) => onUpdate(v)}
+              min={field.min ?? 0}
+              max={field.max ?? 100}
+              step={field.step ?? 1}
+              className="flex-1"
+            />
+            <span className="text-[10px] text-muted-foreground w-8 text-right">{String(currentValue ?? 0)}</span>
+          </div>
+        </div>
+      )
+    case "color":
+      return (
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">{field.label}</label>
+          <Input
+            value={String(currentValue ?? "")}
+            onChange={(e) => onUpdate(e.target.value)}
+            placeholder="#hex or Tailwind class"
+            className="h-8 bg-input text-foreground text-xs font-mono"
+          />
+        </div>
+      )
+    default:
+      return null
+  }
 }
 
 export function RightPanel({
@@ -260,6 +375,44 @@ export function RightPanel({
                     ))}
                   </div>
                 </div>
+
+                {/* Smart Block Settings */}
+                {selectedElement.props.componentName && getSmartBlock(String(selectedElement.props.componentName)) && (() => {
+                  const smartDef = getSmartBlock(String(selectedElement.props.componentName))!
+                  // Build a Block-like object from element props for the field renderer
+                  const blockProxy: Block = {
+                    id: selectedElement.id,
+                    tag: "div",
+                    className: "",
+                    componentName: String(selectedElement.props.componentName),
+                    commerce: selectedElement.props.commerce as Block["commerce"],
+                    attrs: selectedElement.props.attrs as Block["attrs"],
+                  }
+                  return (
+                    <>
+                      <Separator />
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-2">Smart Block Settings</p>
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-center gap-2 p-2 rounded-md bg-violet-500/10">
+                            <Component size={14} className="text-violet-400" />
+                            <span className="text-xs font-medium text-violet-300">{smartDef.displayName}</span>
+                          </div>
+                          {smartDef.editorConfig.fields.map((field) => (
+                            <SmartBlockField
+                              key={field.key}
+                              field={field}
+                              block={blockProxy}
+                              onUpdate={() => {
+                                // Field updates would be handled via editor context in a full integration
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )
+                })()}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-48 text-center">

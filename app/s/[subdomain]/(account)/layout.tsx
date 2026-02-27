@@ -8,12 +8,18 @@
 import { redirect } from 'next/navigation';
 import { stackServerApp } from '@/lib/cms/stack';
 import { PageWrapper, getPageLayoutSettings } from '@/components/cms/page-wrapper';
+import { features } from '../../../../../client.config';
 
 export default async function AccountLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Check if customer dashboard feature is enabled
+  if (!features.customerDashboard) {
+    redirect('/');
+  }
+
   // Check authentication on the server
   const user = await stackServerApp.getUser();
 

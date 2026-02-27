@@ -15,6 +15,7 @@ export type SettingGroup =
   | 'storage'
   | 'ai'
   | 'security'
+  | 'dashboard'
 
 // Branding settings (white-label)
 export interface BrandingSettings {

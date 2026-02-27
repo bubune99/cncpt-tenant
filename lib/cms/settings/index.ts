@@ -39,6 +39,7 @@ const SENSITIVE_KEYS: Record<SettingGroup, string[]> = {
   analytics: [],
   seo: [],
   security: [],
+  dashboard: [],
 }
 
 // Cache for settings

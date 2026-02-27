@@ -12,13 +12,31 @@ import { prisma } from '@/lib/cms/db';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { PageWrapper, getPageLayoutSettings } from '@/components/cms/page-wrapper';
+import { BlockPageRenderer } from '@/components/cms/page-wrapper/block-page-renderer';
+import type { Block } from '@/lib/cms/block-editor/types';
+import {
+  registerCommerceFetchers,
+  registerDashboardFetchers,
+  resolveSmartBlockData,
+  serializeSmartBlockData,
+} from '@/lib/cms/block-editor/smart-blocks';
 import { getTenantContext } from '../../../lib/tenant-context';
 
-/** Page content data shape */
+/** Page content data shape (legacy Puck format) */
 interface Data {
   content: Array<{ type: string; props: Record<string, unknown>; [key: string]: unknown }>;
   root?: { props?: Record<string, unknown> };
   zones?: Record<string, unknown[]>;
+}
+
+/** Parse block editor v2 content */
+function parseBlockEditorContent(content: unknown): Block[] {
+  if (!content || typeof content !== 'object') return [];
+  const doc = content as Record<string, unknown>;
+  if (doc.version === '2.0' && Array.isArray(doc.blocks)) {
+    return doc.blocks as Block[];
+  }
+  return [];
 }
 
 export const dynamic = 'force-dynamic';
@@ -240,7 +258,23 @@ export default async function CMSPage({ params }: PageProps) {
     return <ContentErrorPage title={page.title} />;
   }
 
-  // Page has content -- custom block editor rendering will be wired in separately
+  // Check if content is block editor v2 format
+  const blocks = parseBlockEditorContent(page.content);
+  if (blocks.length > 0) {
+    // Register smart block fetchers and resolve data
+    registerCommerceFetchers();
+    registerDashboardFetchers();
+    const dataMap = await resolveSmartBlockData(blocks);
+    const smartBlockData = serializeSmartBlockData(dataMap);
+
+    return (
+      <PageWrapper pageSettings={getPageLayoutSettings(page)}>
+        <BlockPageRenderer blocks={blocks} smartBlockData={smartBlockData} />
+      </PageWrapper>
+    );
+  }
+
+  // Legacy content or unrecognized format
   return (
     <PageWrapper pageSettings={getPageLayoutSettings(page)}>
       <div className="container mx-auto px-4 py-12">

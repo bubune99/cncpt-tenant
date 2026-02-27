@@ -38,7 +38,7 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
-    const validGroups: SettingGroup[] = ['branding', 'general', 'email', 'storage', 'ai', 'security']
+    const validGroups: SettingGroup[] = ['branding', 'general', 'email', 'storage', 'ai', 'security', 'dashboard']
     if (!validGroups.includes(group)) {
       return NextResponse.json(
         { success: false, error: 'Invalid settings group' },
