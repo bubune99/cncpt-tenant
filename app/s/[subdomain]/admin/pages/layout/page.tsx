@@ -54,7 +54,7 @@ export default function LayoutSettingsPage() {
   const fetchSettings = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/admin/site-settings');
+      const response = await fetch('/api/cms/admin/site-settings');
       if (response.ok) {
         const data = await response.json();
         setSettings(data);
@@ -72,7 +72,7 @@ export default function LayoutSettingsPage() {
   const toggleAnnouncementBar = async (enabled: boolean) => {
     try {
       setIsSaving(true);
-      const response = await fetch('/api/admin/site-settings', {
+      const response = await fetch('/api/cms/admin/site-settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ showAnnouncementBar: enabled }),

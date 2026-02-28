@@ -76,7 +76,7 @@ export default function PageEditPage({
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/admin/pages/${id}`);
+      const response = await fetch(`/api/cms/admin/pages/${id}`);
       if (!response.ok) {
         if (response.status === 404) {
           setError('Page not found');
@@ -97,7 +97,7 @@ export default function PageEditPage({
 
   const fetchAllPages = async () => {
     try {
-      const response = await fetch('/api/admin/pages?limit=100');
+      const response = await fetch('/api/cms/admin/pages?limit=100');
       if (response.ok) {
         const data = await response.json();
         setAllPages(data.pages.filter((p: { id: string }) => p.id !== id));
@@ -111,7 +111,7 @@ export default function PageEditPage({
     if (!page) return;
     setIsSaving(true);
     try {
-      const response = await fetch(`/api/admin/pages/${id}`, {
+      const response = await fetch(`/api/cms/admin/pages/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -134,7 +134,7 @@ export default function UserPermissionsPage({ params }: PageProps) {
   const fetchUserPermissions = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch(`/api/admin/users/${id}/permissions`)
+      const response = await fetch(`/api/cms/admin/users/${id}/permissions`)
       if (response.ok) {
         const data = await response.json()
         setUserPerms(data)
@@ -154,7 +154,7 @@ export default function UserPermissionsPage({ params }: PageProps) {
 
   const fetchAvailableRoles = async () => {
     try {
-      const response = await fetch('/api/admin/roles')
+      const response = await fetch('/api/cms/admin/roles')
       if (response.ok) {
         const data = await response.json()
         setAvailableRoles(data.roles || [])
@@ -171,7 +171,7 @@ export default function UserPermissionsPage({ params }: PageProps) {
     }
 
     try {
-      const response = await fetch(`/api/admin/users/${id}/roles`, {
+      const response = await fetch(`/api/cms/admin/users/${id}/roles`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roleId: selectedRoleId }),
@@ -195,7 +195,7 @@ export default function UserPermissionsPage({ params }: PageProps) {
   const removeRole = async (roleId: string) => {
     try {
       const response = await fetch(
-        `/api/admin/users/${id}/roles?roleId=${roleId}`,
+        `/api/cms/admin/users/${id}/roles?roleId=${roleId}`,
         { method: 'DELETE' }
       )
 
@@ -221,7 +221,7 @@ export default function UserPermissionsPage({ params }: PageProps) {
     }
 
     try {
-      const response = await fetch(`/api/admin/users/${id}/permissions`, {
+      const response = await fetch(`/api/cms/admin/users/${id}/permissions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -257,7 +257,7 @@ export default function UserPermissionsPage({ params }: PageProps) {
   const removeOverride = async (permission: string) => {
     try {
       const response = await fetch(
-        `/api/admin/users/${id}/permissions?permission=${encodeURIComponent(permission)}`,
+        `/api/cms/admin/users/${id}/permissions?permission=${encodeURIComponent(permission)}`,
         { method: 'DELETE' }
       )
 

@@ -78,7 +78,7 @@ export default function EmailProviderSettings() {
 
   const fetchSettings = async () => {
     try {
-      const response = await fetch('/api/admin/settings')
+      const response = await fetch('/api/cms/admin/settings')
       const data = await response.json()
       if (data.success) {
         if (data.settings.email) {
@@ -102,7 +102,7 @@ export default function EmailProviderSettings() {
   const saveSettings = async () => {
     setSaving(true)
     try {
-      const response = await fetch('/api/admin/settings', {
+      const response = await fetch('/api/cms/admin/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

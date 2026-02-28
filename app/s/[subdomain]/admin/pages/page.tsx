@@ -88,7 +88,7 @@ export default function PagesPage() {
       const params = new URLSearchParams();
       if (searchTerm) params.set('search', searchTerm);
 
-      const response = await fetch(`/api/admin/pages?${params.toString()}`);
+      const response = await fetch(`/api/cms/admin/pages?${params.toString()}`);
       if (!response.ok) {
         throw new Error('Failed to fetch pages');
       }
@@ -119,7 +119,7 @@ export default function PagesPage() {
 
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/admin/pages/${pageToDelete.id}`, {
+      const response = await fetch(`/api/cms/admin/pages/${pageToDelete.id}`, {
         method: 'DELETE',
       });
 
@@ -142,7 +142,7 @@ export default function PagesPage() {
 
   const handleDuplicate = async (page: Page) => {
     try {
-      const response = await fetch(`/api/admin/pages`, {
+      const response = await fetch(`/api/cms/admin/pages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

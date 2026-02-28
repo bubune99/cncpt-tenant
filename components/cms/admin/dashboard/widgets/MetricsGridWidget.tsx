@@ -45,7 +45,7 @@ export default function MetricsGridWidget({ editing }: { editing?: boolean }) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/admin/dashboard/metrics');
+      const res = await fetch('/api/cms/admin/dashboard/metrics');
       if (!res.ok) throw new Error('Failed to fetch');
       setMetrics(await res.json());
     } catch {

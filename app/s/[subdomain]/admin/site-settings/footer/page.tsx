@@ -66,7 +66,7 @@ export default function FooterEditorPage() {
   const fetchFooter = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/admin/site-settings/footer');
+      const response = await fetch('/api/cms/admin/site-settings/footer');
       if (response.ok) {
         const data = await response.json();
         if (data.footer) {
@@ -84,7 +84,7 @@ export default function FooterEditorPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const response = await fetch('/api/admin/site-settings/footer', {
+      const response = await fetch('/api/cms/admin/site-settings/footer', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ footer: footerProps }),

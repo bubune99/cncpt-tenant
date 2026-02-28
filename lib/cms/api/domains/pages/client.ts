@@ -14,7 +14,7 @@ import type {
   ListPagesParams,
 } from "./types"
 
-const BASE = "/api/admin/pages"
+const BASE = "/api/cms/admin/pages"
 
 export const pagesClient = {
   /** List pages with pagination and filters */

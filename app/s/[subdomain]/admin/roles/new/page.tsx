@@ -109,7 +109,7 @@ export default function NewRolePage() {
 
     try {
       setIsSubmitting(true)
-      const response = await fetch('/api/admin/roles', {
+      const response = await fetch('/api/cms/admin/roles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

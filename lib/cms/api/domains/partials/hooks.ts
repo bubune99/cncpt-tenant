@@ -12,7 +12,7 @@ import type { UseApiGetResult, UseApiListResult } from "../../hooks"
 import type { PaginatedResult } from "../../client"
 import type { PartialDto, ListPartialsParams } from "./types"
 
-const BASE = "/api/admin/partials"
+const BASE = "/api/cms/admin/partials"
 
 /**
  * Hook for fetching a paginated list of partials.

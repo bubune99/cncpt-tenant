@@ -13,7 +13,7 @@ import type {
   ListPartialsParams,
 } from "./types"
 
-const BASE = "/api/admin/partials"
+const BASE = "/api/cms/admin/partials"
 
 export const partialsClient = {
   /** List partials with pagination and category filter */

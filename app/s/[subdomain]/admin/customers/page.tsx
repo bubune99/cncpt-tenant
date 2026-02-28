@@ -116,7 +116,7 @@ export default function CustomersPage() {
   // Fetch all business owners for the create customer dialog
   const fetchAllBusinessOwners = async () => {
     try {
-      const response = await fetch('/api/admin/business-owners/v2', {
+      const response = await fetch('/api/cms/admin/business-owners/v2', {
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': 'temp-dev-key'
@@ -141,7 +141,7 @@ export default function CustomersPage() {
       if (statusFilter !== 'all') params.append('status', statusFilter);
       if (accessLevelFilter !== 'all') params.append('accessLevel', accessLevelFilter);
 
-      const response = await fetch(`/api/admin/customers?${params}`);
+      const response = await fetch(`/api/cms/admin/customers?${params}`);
       if (response.ok) {
         const data = await response.json();
         setCustomers(data.customers);
@@ -179,7 +179,7 @@ export default function CustomersPage() {
         return;
       }
       
-      const response = await fetch('/api/admin/customers', {
+      const response = await fetch('/api/cms/admin/customers', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -219,7 +219,7 @@ export default function CustomersPage() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/admin/customers/stats');
+      const response = await fetch('/api/cms/admin/customers/stats');
       if (response.ok) {
         const data = await response.json();
         setStats(data);
@@ -231,7 +231,7 @@ export default function CustomersPage() {
 
   const exportCustomers = async () => {
     try {
-      const response = await fetch('/api/admin/customers/export');
+      const response = await fetch('/api/cms/admin/customers/export');
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);

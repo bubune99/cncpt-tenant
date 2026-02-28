@@ -59,7 +59,7 @@ export default function NewPagePage() {
 
   const fetchParentPages = async () => {
     try {
-      const response = await fetch('/api/admin/pages?limit=100');
+      const response = await fetch('/api/cms/admin/pages?limit=100');
       if (response.ok) {
         const data = await response.json();
         setParentPages(data.pages || []);
@@ -98,7 +98,7 @@ export default function NewPagePage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/admin/pages', {
+      const response = await fetch('/api/cms/admin/pages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

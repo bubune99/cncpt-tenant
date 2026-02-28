@@ -72,7 +72,7 @@ export default function AdminDashboard() {
 
   const fetchDashboardStats = async () => {
     try {
-      const response = await fetch('/api/admin/stats-simple');
+      const response = await fetch('/api/cms/admin/stats-simple');
       if (!response.ok) {
         throw new Error('Failed to fetch stats');
       }

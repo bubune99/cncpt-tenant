@@ -26,7 +26,7 @@ export default function TrafficChartWidget({ editing }: { editing?: boolean }) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/admin/dashboard/time-series?metric=traffic&range=30d');
+      const res = await fetch('/api/cms/admin/dashboard/time-series?metric=traffic&range=30d');
       if (!res.ok) throw new Error('Failed to fetch');
       const json = await res.json();
       setData(json.data || []);

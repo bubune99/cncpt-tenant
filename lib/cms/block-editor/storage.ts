@@ -1,7 +1,7 @@
 /**
  * Persistence layer for the block editor.
  *
- * Pages are stored in the database via `/api/admin/pages` API routes.
+ * Pages are stored in the database via `/api/cms/admin/pages` API routes.
  * Custom templates and uploaded images remain in localStorage (admin convenience).
  */
 
@@ -120,7 +120,7 @@ function apiResponseToSavedPage(data: Record<string, unknown>): SavedPage {
 
 export async function getPagesList(): Promise<SavedPage[]> {
   try {
-    const res = await fetch("/api/admin/pages?limit=100")
+    const res = await fetch("/api/cms/admin/pages?limit=100")
     if (!res.ok) return []
     const data = await res.json()
     return (data.pages || []).map((p: Record<string, unknown>) => apiResponseToSavedPage(p))
@@ -131,7 +131,7 @@ export async function getPagesList(): Promise<SavedPage[]> {
 
 export async function getPage(id: string): Promise<SavedPage | null> {
   try {
-    const res = await fetch(`/api/admin/pages/${id}`)
+    const res = await fetch(`/api/cms/admin/pages/${id}`)
     if (!res.ok) return null
     const data = await res.json()
     return apiResponseToSavedPage(data)
@@ -143,7 +143,7 @@ export async function getPage(id: string): Promise<SavedPage | null> {
 export async function getPageBySlug(slug: string): Promise<SavedPage | null> {
   try {
     const normalizedSlug = slug.startsWith("/") ? slug : `/${slug}`
-    const res = await fetch(`/api/admin/pages?search=${encodeURIComponent(normalizedSlug)}&limit=10`)
+    const res = await fetch(`/api/cms/admin/pages?search=${encodeURIComponent(normalizedSlug)}&limit=10`)
     if (!res.ok) return null
     const data = await res.json()
     const pages = (data.pages || []) as Record<string, unknown>[]
@@ -160,12 +160,12 @@ export async function savePage(page: SavedPage): Promise<SavedPage | null> {
     const isNew = !page.id || page.id.includes("-") // localStorage-style IDs contain dashes
 
     // Check if page exists in the database
-    const checkRes = await fetch(`/api/admin/pages/${page.id}`)
+    const checkRes = await fetch(`/api/cms/admin/pages/${page.id}`)
     const exists = checkRes.ok
 
     if (exists) {
       // Update existing page
-      const res = await fetch(`/api/admin/pages/${page.id}`, {
+      const res = await fetch(`/api/cms/admin/pages/${page.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -180,7 +180,7 @@ export async function savePage(page: SavedPage): Promise<SavedPage | null> {
       return apiResponseToSavedPage(data)
     } else {
       // Create new page
-      const res = await fetch("/api/admin/pages", {
+      const res = await fetch("/api/cms/admin/pages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -201,7 +201,7 @@ export async function savePage(page: SavedPage): Promise<SavedPage | null> {
 
 export async function deletePage(id: string): Promise<boolean> {
   try {
-    const res = await fetch(`/api/admin/pages/${id}`, { method: "DELETE" })
+    const res = await fetch(`/api/cms/admin/pages/${id}`, { method: "DELETE" })
     return res.ok
   } catch {
     return false

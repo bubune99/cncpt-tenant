@@ -181,7 +181,7 @@ export async function seedDefaultTours() {
 
   for (const tour of defaultTours) {
     try {
-      const response = await fetch('/api/help/tours', {
+      const response = await fetch('/api/cms/help/tours', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(tour),

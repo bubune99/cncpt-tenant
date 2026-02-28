@@ -91,7 +91,7 @@ export default function RolesPage() {
   const fetchRoles = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/admin/roles')
+      const response = await fetch('/api/cms/admin/roles')
       if (response.ok) {
         const data = await response.json()
         setRoles(data.roles || [])
@@ -122,7 +122,7 @@ export default function RolesPage() {
   const seedRoles = async () => {
     try {
       setIsSeeding(true)
-      const response = await fetch('/api/admin/roles/seed', {
+      const response = await fetch('/api/cms/admin/roles/seed', {
         method: 'POST',
       })
       if (response.ok) {
@@ -142,7 +142,7 @@ export default function RolesPage() {
 
   const deleteRole = async (roleId: string) => {
     try {
-      const response = await fetch(`/api/admin/roles/${roleId}`, {
+      const response = await fetch(`/api/cms/admin/roles/${roleId}`, {
         method: 'DELETE',
       })
       if (response.ok) {
@@ -162,7 +162,7 @@ export default function RolesPage() {
 
   const duplicateRole = async (role: Role) => {
     try {
-      const response = await fetch('/api/admin/roles', {
+      const response = await fetch('/api/cms/admin/roles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

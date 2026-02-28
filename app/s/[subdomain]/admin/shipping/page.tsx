@@ -127,7 +127,7 @@ export default function ShippingPage() {
 
   async function fetchShipments() {
     try {
-      const response = await fetch('/api/admin/shipments');
+      const response = await fetch('/api/cms/admin/shipments');
       if (response.ok) {
         const data = await response.json();
         setShipments(data.shipments || []);

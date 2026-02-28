@@ -12,7 +12,7 @@ import type { UseApiGetResult, UseApiListResult } from "../../hooks"
 import type { PaginatedResult } from "../../client"
 import type { PageListDto, PageDto, ListPagesParams } from "./types"
 
-const BASE = "/api/admin/pages"
+const BASE = "/api/cms/admin/pages"
 
 /**
  * Hook for fetching a paginated list of pages.

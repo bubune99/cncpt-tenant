@@ -55,7 +55,7 @@ export default function HeaderEditorPage() {
   const fetchHeader = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/admin/site-settings/header');
+      const response = await fetch('/api/cms/admin/site-settings/header');
       if (response.ok) {
         const data = await response.json();
         if (data.header) {
@@ -73,7 +73,7 @@ export default function HeaderEditorPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const response = await fetch('/api/admin/site-settings/header', {
+      const response = await fetch('/api/cms/admin/site-settings/header', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ header: headerProps }),

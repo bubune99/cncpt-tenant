@@ -192,7 +192,7 @@ export default function BusinessOwnerWizard({ isOpen, onClose, onSuccess, isSelS
       // Use different endpoint for self-service vs admin creation
       const endpoint = isSelService 
         ? '/api/user/create-business' 
-        : '/api/admin/business-owners/v2';
+        : '/api/cms/admin/business-owners/v2';
       
       const headers: HeadersInit = {
         'Content-Type': 'application/json'

@@ -101,7 +101,7 @@ export default function NewOrderPage() {
   const fetchCustomers = async () => {
     try {
       setIsLoadingCustomers(true);
-      const response = await fetch('/api/admin/customers');
+      const response = await fetch('/api/cms/admin/customers');
       if (response.ok) {
         const data = await response.json();
         setCustomers(data.customers || []);

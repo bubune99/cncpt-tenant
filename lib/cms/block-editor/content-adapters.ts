@@ -38,7 +38,7 @@ function fromBlockDocument(content: unknown): Block[] {
 export function partialAdapter(partialId: string): ContentAdapter {
   return {
     async load() {
-      const res = await fetch(`/api/admin/partials/${partialId}`)
+      const res = await fetch(`/api/cms/admin/partials/${partialId}`)
       if (!res.ok) throw new Error("Failed to load partial")
       const data = await res.json()
       return {
@@ -48,7 +48,7 @@ export function partialAdapter(partialId: string): ContentAdapter {
       }
     },
     async save(blocks: Block[], title: string) {
-      const res = await fetch(`/api/admin/partials/${partialId}`, {
+      const res = await fetch(`/api/cms/admin/partials/${partialId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -71,7 +71,7 @@ export function partialAdapter(partialId: string): ContentAdapter {
 export function siteHeaderAdapter(): ContentAdapter {
   return {
     async load() {
-      const res = await fetch("/api/admin/site-settings/header")
+      const res = await fetch("/api/cms/admin/site-settings/header")
       if (!res.ok) throw new Error("Failed to load header settings")
       const data = await res.json()
       const blocks = fromBlockDocument(data.header)
@@ -82,7 +82,7 @@ export function siteHeaderAdapter(): ContentAdapter {
       }
     },
     async save(blocks: Block[]) {
-      const res = await fetch("/api/admin/site-settings/header", {
+      const res = await fetch("/api/cms/admin/site-settings/header", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -103,7 +103,7 @@ export function siteHeaderAdapter(): ContentAdapter {
 export function siteFooterAdapter(): ContentAdapter {
   return {
     async load() {
-      const res = await fetch("/api/admin/site-settings/footer")
+      const res = await fetch("/api/cms/admin/site-settings/footer")
       if (!res.ok) throw new Error("Failed to load footer settings")
       const data = await res.json()
       const blocks = fromBlockDocument(data.footer)
@@ -114,7 +114,7 @@ export function siteFooterAdapter(): ContentAdapter {
       }
     },
     async save(blocks: Block[]) {
-      const res = await fetch("/api/admin/site-settings/footer", {
+      const res = await fetch("/api/cms/admin/site-settings/footer", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

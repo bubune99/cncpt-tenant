@@ -20,7 +20,7 @@ export default function ContentStatsWidget({ editing }: { editing?: boolean }) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/admin/stats-simple');
+      const res = await fetch('/api/cms/admin/stats-simple');
       if (!res.ok) throw new Error('Failed to fetch');
       const json = await res.json();
       setStats(json.stats);

@@ -110,7 +110,7 @@ export default function CustomerDetailPage() {
     if (!customerId) return;
 
     try {
-      const response = await fetch(`/api/admin/customers/${customerId}`);
+      const response = await fetch(`/api/cms/admin/customers/${customerId}`);
       if (response.ok) {
         const data = await response.json();
         setCustomer(data);
@@ -138,7 +138,7 @@ export default function CustomerDetailPage() {
 
   const updateCustomer = async () => {
     try {
-      const response = await fetch(`/api/admin/customers/${customerId}`, {
+      const response = await fetch(`/api/cms/admin/customers/${customerId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editForm)
@@ -155,7 +155,7 @@ export default function CustomerDetailPage() {
 
   const deleteCustomer = async () => {
     try {
-      const response = await fetch(`/api/admin/customers/${customerId}`, {
+      const response = await fetch(`/api/cms/admin/customers/${customerId}`, {
         method: 'DELETE',
       });
 
@@ -169,7 +169,7 @@ export default function CustomerDetailPage() {
 
   const syncToStripe = async () => {
     try {
-      const response = await fetch(`/api/admin/customers/${customerId}/sync-stripe`, {
+      const response = await fetch(`/api/cms/admin/customers/${customerId}/sync-stripe`, {
         method: 'POST',
       });
 

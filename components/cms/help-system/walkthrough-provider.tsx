@@ -123,7 +123,7 @@ export function WalkthroughProvider({ children }: WalkthroughProviderProps) {
       if (finishedStatuses.includes(status)) {
         // Mark tour as completed
         if (currentTour && status === 'finished') {
-          fetch('/api/help/tours', {
+          fetch('/api/cms/help/tours', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

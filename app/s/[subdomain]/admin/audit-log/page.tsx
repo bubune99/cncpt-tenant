@@ -236,7 +236,7 @@ export default function AuditLogPage() {
       if (dateFrom) params.set('dateFrom', dateFrom);
       if (dateTo) params.set('dateTo', dateTo);
 
-      const response = await fetch(`/api/admin/audit-log?${params.toString()}`);
+      const response = await fetch(`/api/cms/admin/audit-log?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
         setEntries(data.entries || []);

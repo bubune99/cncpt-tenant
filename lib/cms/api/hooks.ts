@@ -48,7 +48,7 @@ export interface UseApiGetResult<T> {
  * Hook for fetching a single item from an API endpoint.
  *
  * ```tsx
- * const { data: page, isLoading } = useApiGet<PageDto>(`/api/admin/pages/${id}`)
+ * const { data: page, isLoading } = useApiGet<PageDto>(`/api/cms/admin/pages/${id}`)
  * ```
  */
 export function useApiGet<T>(
@@ -89,7 +89,7 @@ export interface UseApiListResult<T> {
  *
  * ```tsx
  * const { data: pages, total, isLoading } = useApiList<PageDto>(
- *   '/api/admin/pages',
+ *   '/api/cms/admin/pages',
  *   { limit: 20, offset: 0 },
  *   'pages' // legacy data key
  * )

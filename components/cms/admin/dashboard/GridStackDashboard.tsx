@@ -50,7 +50,7 @@ export default function GridStackDashboard() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch('/api/admin/dashboard/layout');
+        const res = await fetch('/api/cms/admin/dashboard/layout');
         if (res.ok) {
           const data = await res.json();
           setLayout(data);
@@ -69,7 +69,7 @@ export default function GridStackDashboard() {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(async () => {
       try {
-        await fetch('/api/admin/dashboard/layout', {
+        await fetch('/api/cms/admin/dashboard/layout', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newLayout),

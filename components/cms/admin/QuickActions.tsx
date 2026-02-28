@@ -66,7 +66,7 @@ export default function QuickActions() {
 
   const handleExport = async () => {
     try {
-      const response = await fetch('/api/admin/export');
+      const response = await fetch('/api/cms/admin/export');
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);

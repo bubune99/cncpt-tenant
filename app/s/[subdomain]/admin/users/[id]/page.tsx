@@ -119,7 +119,7 @@ export default function BusinessOwnerDetailPage() {
       setLoading(true);
       
       // Fetch business owner details
-      const boResponse = await fetch(`/api/admin/business-owners/${id}`);
+      const boResponse = await fetch(`/api/cms/admin/business-owners/${id}`);
       
       if (!boResponse.ok) {
         throw new Error('Failed to fetch business owner details');
@@ -129,7 +129,7 @@ export default function BusinessOwnerDetailPage() {
       setBusinessOwner(boData);
       
       // Fetch usage limits separately
-      const limitsResponse = await fetch(`/api/admin/business-owners/${id}/usage-limits`);
+      const limitsResponse = await fetch(`/api/cms/admin/business-owners/${id}/usage-limits`);
       
       if (limitsResponse.ok) {
         const limitsData = await limitsResponse.json();
@@ -180,7 +180,7 @@ export default function BusinessOwnerDetailPage() {
         }
       }
       
-      const response = await fetch(`/api/admin/business-owners/${id}`, {
+      const response = await fetch(`/api/cms/admin/business-owners/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -219,7 +219,7 @@ export default function BusinessOwnerDetailPage() {
         formattedDate = new Date(subscriptionForm.subscriptionEndsAt).toISOString();
       }
       
-      const response = await fetch(`/api/admin/business-owners/${id}/subscription`, {
+      const response = await fetch(`/api/cms/admin/business-owners/${id}/subscription`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -249,7 +249,7 @@ export default function BusinessOwnerDetailPage() {
     try {
       setSaving(true);
       
-      const response = await fetch(`/api/admin/business-owners/${id}/extend-trial`, {
+      const response = await fetch(`/api/cms/admin/business-owners/${id}/extend-trial`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ days: 30 })
@@ -282,7 +282,7 @@ export default function BusinessOwnerDetailPage() {
         return;
       }
       
-      const response = await fetch(`/api/admin/business-owners/${id}/deployment`, {
+      const response = await fetch(`/api/cms/admin/business-owners/${id}/deployment`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -325,7 +325,7 @@ export default function BusinessOwnerDetailPage() {
         }
       }
       
-      const response = await fetch(`/api/admin/business-owners/${id}/product-sync`, {
+      const response = await fetch(`/api/cms/admin/business-owners/${id}/product-sync`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -390,7 +390,7 @@ export default function BusinessOwnerDetailPage() {
         }
       ];
       
-      const response = await fetch(`/api/admin/business-owners/${id}/usage-limits`, {
+      const response = await fetch(`/api/cms/admin/business-owners/${id}/usage-limits`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ limits })

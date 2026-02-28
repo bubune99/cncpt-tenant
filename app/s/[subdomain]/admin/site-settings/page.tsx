@@ -105,7 +105,7 @@ export default function SiteSettingsPage() {
   const fetchSettings = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/admin/site-settings?subdomain=${encodeURIComponent(subdomain)}`);
+      const response = await fetch(`/api/cms/admin/site-settings?subdomain=${encodeURIComponent(subdomain)}`);
       if (response.ok) {
         const data = await response.json();
         setSettings(data);
@@ -138,7 +138,7 @@ export default function SiteSettingsPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const response = await fetch(`/api/admin/site-settings?subdomain=${encodeURIComponent(subdomain)}`, {
+      const response = await fetch(`/api/cms/admin/site-settings?subdomain=${encodeURIComponent(subdomain)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...formData, subdomain }),

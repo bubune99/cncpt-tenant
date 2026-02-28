@@ -57,7 +57,7 @@ export default function AnnouncementEditorPage() {
   const fetchAnnouncement = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/admin/site-settings/announcement');
+      const response = await fetch('/api/cms/admin/site-settings/announcement');
       if (response.ok) {
         const data = await response.json();
         setShowAnnouncementBar(data.showAnnouncementBar || false);
@@ -79,7 +79,7 @@ export default function AnnouncementEditorPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const response = await fetch('/api/admin/site-settings/announcement', {
+      const response = await fetch('/api/cms/admin/site-settings/announcement', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

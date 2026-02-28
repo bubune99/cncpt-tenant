@@ -77,7 +77,7 @@ export default function EditRolePage({ params }: PageProps) {
   const fetchRole = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch(`/api/admin/roles/${id}`)
+      const response = await fetch(`/api/cms/admin/roles/${id}`)
       if (response.ok) {
         const data = await response.json()
         setRole(data)
@@ -164,7 +164,7 @@ export default function EditRolePage({ params }: PageProps) {
 
     try {
       setIsSubmitting(true)
-      const response = await fetch(`/api/admin/roles/${id}`, {
+      const response = await fetch(`/api/cms/admin/roles/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
