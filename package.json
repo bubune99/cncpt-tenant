@@ -13,6 +13,7 @@
     ]
   },
   "scripts": {
+    "postinstall": "prisma generate --schema=prisma/cms/schema.prisma",
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
