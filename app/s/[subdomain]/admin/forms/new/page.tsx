@@ -45,7 +45,7 @@ export default function NewFormPage() {
 
     setIsCreating(true);
     try {
-      const response = await fetch('/api/forms', {
+      const response = await fetch('/api/cms/forms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

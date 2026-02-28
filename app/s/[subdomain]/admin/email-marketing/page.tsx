@@ -89,7 +89,7 @@ export default function EmailMarketingPage() {
   const fetchCampaigns = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/emails/campaigns');
+      const response = await fetch('/api/cms/emails/campaigns');
       if (response.ok) {
         const data = await response.json();
         setCampaigns(data.campaigns || []);

@@ -64,7 +64,7 @@ export function ReviewList({
         params.set('sortDir', 'desc');
       }
 
-      const response = await fetch(`/api/reviews/product/${productId}?${params}`);
+      const response = await fetch(`/api/cms/reviews/product/${productId}?${params}`);
       if (!response.ok) throw new Error('Failed to fetch reviews');
 
       const data = await response.json();
@@ -99,7 +99,7 @@ export function ReviewList({
   };
 
   const handleVote = async (reviewId: string, helpful: boolean) => {
-    const response = await fetch(`/api/reviews/${reviewId}/vote`, {
+    const response = await fetch(`/api/cms/reviews/${reviewId}/vote`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ helpful }),

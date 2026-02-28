@@ -73,7 +73,7 @@ export function MediaPicker({
   const loadMedia = useCallback(async () => {
     setIsLoadingMedia(true)
     try {
-      const response = await fetch('/api/media?type=image&limit=50&sortBy=createdAt&sortOrder=desc')
+      const response = await fetch('/api/cms/media?type=image&limit=50&sortBy=createdAt&sortOrder=desc')
       if (response.ok) {
         const data = await response.json()
         setMediaItems(data.media || [])
@@ -92,7 +92,7 @@ export function MediaPicker({
 
     try {
       // Get presigned URL
-      const presignResponse = await fetch('/api/media', {
+      const presignResponse = await fetch('/api/cms/media', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -127,7 +127,7 @@ export function MediaPicker({
       setUploadProgress(75)
 
       // Complete upload
-      const completeResponse = await fetch('/api/media', {
+      const completeResponse = await fetch('/api/cms/media', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

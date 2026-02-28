@@ -43,7 +43,7 @@ export function CanvaPanel({ folders, onImportComplete }: CanvaPanelProps) {
         if (cont) params.set("continuation", cont)
         params.set("limit", "24")
 
-        const response = await fetch(`/api/canva/designs?${params.toString()}`)
+        const response = await fetch(`/api/cms/canva/designs?${params.toString()}`)
         if (!response.ok) {
           const data = await response.json()
           throw new Error(data.error || "Failed to fetch designs")

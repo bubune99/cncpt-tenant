@@ -129,8 +129,8 @@ export default function EnvManager() {
   const loadEnvVars = useCallback(async () => {
     try {
       const [varsRes, healthRes] = await Promise.all([
-        fetch('/api/env'),
-        fetch('/api/env?health=true'),
+        fetch('/api/cms/env'),
+        fetch('/api/cms/env?health=true'),
       ]);
 
       if (varsRes.ok) {
@@ -159,7 +159,7 @@ export default function EnvManager() {
 
     setIsSaving(true);
     try {
-      const response = await fetch('/api/env', {
+      const response = await fetch('/api/cms/env', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -187,7 +187,7 @@ export default function EnvManager() {
 
   const handleDeleteVar = async (key: string) => {
     try {
-      const response = await fetch('/api/env', {
+      const response = await fetch('/api/cms/env', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key }),
@@ -209,7 +209,7 @@ export default function EnvManager() {
 
     setIsImporting(true);
     try {
-      const response = await fetch('/api/env/import', {
+      const response = await fetch('/api/cms/env/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ envString: importText, overwrite: false }),

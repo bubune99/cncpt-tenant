@@ -103,7 +103,7 @@ export default function NewEventPage() {
         eventData.platform = platform || undefined;
       }
 
-      const response = await fetch("/api/events", {
+      const response = await fetch("/api/cms/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(eventData),

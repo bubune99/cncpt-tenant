@@ -52,7 +52,7 @@ export default function InvoiceEditorPage() {
       loadInvoice();
     } else {
       // Get next invoice number for new invoices
-      fetch("/api/invoices?action=next-number")
+      fetch("/api/cms/invoices?action=next-number")
         .then((res) => res.json())
         .then((data) => {
           setInvoice((prev) => ({ ...prev, invoiceNumber: data.invoiceNumber }));
@@ -62,7 +62,7 @@ export default function InvoiceEditorPage() {
 
   async function loadInvoice() {
     try {
-      const response = await fetch(`/api/invoices?id=${invoiceId}`);
+      const response = await fetch(`/api/cms/invoices?id=${invoiceId}`);
       if (response.ok) {
         const data = await response.json();
         setInvoice({
@@ -155,7 +155,7 @@ export default function InvoiceEditorPage() {
         dueDate: invoice.dueDate?.toISOString(),
       };
 
-      const response = await fetch("/api/invoices", {
+      const response = await fetch("/api/cms/invoices", {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

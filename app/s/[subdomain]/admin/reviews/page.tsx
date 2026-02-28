@@ -132,7 +132,7 @@ export default function ReviewsPage() {
         params.set('search', searchTerm);
       }
 
-      const response = await fetch(`/api/reviews?${params}`);
+      const response = await fetch(`/api/cms/reviews?${params}`);
       const data = await response.json();
 
       if (response.ok) {
@@ -150,7 +150,7 @@ export default function ReviewsPage() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/reviews/stats');
+      const response = await fetch('/api/cms/reviews/stats');
       const data = await response.json();
       if (response.ok) {
         setStats(data);
@@ -168,7 +168,7 @@ export default function ReviewsPage() {
 
   const handleAction = async (reviewId: string, action: 'approve' | 'reject' | 'flag') => {
     try {
-      const response = await fetch(`/api/reviews/${reviewId}`, {
+      const response = await fetch(`/api/cms/reviews/${reviewId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action }),
@@ -193,7 +193,7 @@ export default function ReviewsPage() {
 
     setDeleting(true);
     try {
-      const response = await fetch(`/api/reviews/${deleteDialog.review.id}`, {
+      const response = await fetch(`/api/cms/reviews/${deleteDialog.review.id}`, {
         method: 'DELETE',
       });
 
@@ -218,7 +218,7 @@ export default function ReviewsPage() {
     if (!bulkAction || selectedReviews.length === 0) return;
 
     try {
-      const response = await fetch('/api/reviews/bulk', {
+      const response = await fetch('/api/cms/reviews/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

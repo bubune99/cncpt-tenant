@@ -85,7 +85,7 @@ export default function FormsPage() {
       const params = new URLSearchParams();
       if (searchTerm) params.set('search', searchTerm);
 
-      const response = await fetch('/api/forms?' + params.toString());
+      const response = await fetch('/api/cms/forms?' + params.toString());
       if (!response.ok) {
         throw new Error('Failed to fetch forms');
       }
@@ -116,7 +116,7 @@ export default function FormsPage() {
 
     setIsDeleting(true);
     try {
-      const response = await fetch('/api/forms/' + formToDelete.id, {
+      const response = await fetch('/api/cms/forms/' + formToDelete.id, {
         method: 'DELETE',
       });
 
@@ -139,7 +139,7 @@ export default function FormsPage() {
 
   const handleDuplicate = async (form: Form) => {
     try {
-      const response = await fetch('/api/forms', {
+      const response = await fetch('/api/cms/forms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

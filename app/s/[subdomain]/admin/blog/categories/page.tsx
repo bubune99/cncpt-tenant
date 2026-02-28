@@ -90,7 +90,7 @@ export default function BlogCategoriesPage() {
   const fetchCategories = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/blog/categories");
+      const response = await fetch("/api/cms/blog/categories");
       if (response.ok) {
         const data = await response.json();
         setCategories(data.categories || []);
@@ -137,8 +137,8 @@ export default function BlogCategoriesPage() {
       };
 
       const url = editCategory
-        ? `/api/blog/categories/${editCategory.id}`
-        : "/api/blog/categories";
+        ? `/api/cms/blog/categories/${editCategory.id}`
+        : "/api/cms/blog/categories";
       const method = editCategory ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -171,7 +171,7 @@ export default function BlogCategoriesPage() {
 
     try {
       const response = await fetch(
-        `/api/blog/categories/${deleteCategory.id}`,
+        `/api/cms/blog/categories/${deleteCategory.id}`,
         {
           method: "DELETE",
         }

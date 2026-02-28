@@ -120,7 +120,7 @@ export function OrderProgress({
             variant="outline"
             onClick={async () => {
               try {
-                const response = await fetch(`/api/orders/${orderId}/progress`, {
+                const response = await fetch(`/api/cms/orders/${orderId}/progress`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ action: 'initialize' }),
@@ -147,7 +147,7 @@ export function OrderProgress({
   async function advanceToNext() {
     try {
       setIsAdvancing(true)
-      const response = await fetch(`/api/orders/${orderId}/progress`, {
+      const response = await fetch(`/api/cms/orders/${orderId}/progress`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'advance' }),
@@ -170,7 +170,7 @@ export function OrderProgress({
   async function syncWithShipment() {
     try {
       setIsSyncing(true)
-      const response = await fetch(`/api/orders/${orderId}/progress`, {
+      const response = await fetch(`/api/cms/orders/${orderId}/progress`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'syncShipment' }),
@@ -199,7 +199,7 @@ export function OrderProgress({
     }
 
     try {
-      const response = await fetch(`/api/orders/${orderId}/progress`, {
+      const response = await fetch(`/api/cms/orders/${orderId}/progress`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -233,7 +233,7 @@ export function OrderProgress({
     }
 
     try {
-      const response = await fetch(`/api/orders/${orderId}/progress`, {
+      const response = await fetch(`/api/cms/orders/${orderId}/progress`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -262,7 +262,7 @@ export function OrderProgress({
 
   async function toggleAutoSync(enabled: boolean) {
     try {
-      const response = await fetch(`/api/orders/${orderId}/progress`, {
+      const response = await fetch(`/api/cms/orders/${orderId}/progress`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

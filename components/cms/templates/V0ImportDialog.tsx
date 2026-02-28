@@ -106,7 +106,7 @@ export function V0ImportDialog({ open, onOpenChange, onImport }: V0ImportDialogP
         body.code = code;
       }
 
-      const response = await fetch("/api/v0", {
+      const response = await fetch("/api/cms/v0", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

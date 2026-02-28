@@ -167,8 +167,8 @@ export default function EditWorkflowPage({ params }: PageProps) {
 
         // Fetch workflow and primitives in parallel
         const [workflowRes, primitivesRes] = await Promise.all([
-          fetch(`/api/plugins/workflows/${id}`),
-          fetch('/api/plugins/primitives'),
+          fetch(`/api/cms/plugins/workflows/${id}`),
+          fetch('/api/cms/plugins/primitives'),
         ]);
 
         if (!workflowRes.ok) {
@@ -211,7 +211,7 @@ export default function EditWorkflowPage({ params }: PageProps) {
   const handleSave = async (workflowDef: WorkflowDefinition) => {
     setIsSaving(true);
     try {
-      const response = await fetch(`/api/plugins/workflows/${id}`, {
+      const response = await fetch(`/api/cms/plugins/workflows/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -245,7 +245,7 @@ export default function EditWorkflowPage({ params }: PageProps) {
     await handleSave(workflowDef);
 
     try {
-      const response = await fetch(`/api/plugins/workflows/${id}/execute`, {
+      const response = await fetch(`/api/cms/plugins/workflows/${id}/execute`, {
         method: 'POST',
       });
 

@@ -89,7 +89,7 @@ export function V0ZipImportDialog({
       const formData = new FormData();
       formData.append("file", zipFile);
 
-      const res = await fetch("/api/v0/zip", {
+      const res = await fetch("/api/cms/v0/zip", {
         method: "POST",
         body: formData,
       });
@@ -134,7 +134,7 @@ export function V0ZipImportDialog({
       );
       formData.append("createFullPage", String(createFullPage));
 
-      const res = await fetch("/api/v0/zip/import", {
+      const res = await fetch("/api/cms/v0/zip/import", {
         method: "POST",
         body: formData,
       });

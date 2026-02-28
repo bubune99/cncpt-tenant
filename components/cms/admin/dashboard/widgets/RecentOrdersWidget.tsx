@@ -31,7 +31,7 @@ export default function RecentOrdersWidget({ editing }: { editing?: boolean }) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/orders?limit=10&sort=createdAt&order=desc');
+      const res = await fetch('/api/cms/orders?limit=10&sort=createdAt&order=desc');
       if (!res.ok) throw new Error('Failed to fetch');
       const json = await res.json();
       setOrders(json.orders || json.data || []);

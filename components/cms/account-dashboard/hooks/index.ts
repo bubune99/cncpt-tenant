@@ -72,7 +72,7 @@ export function useCustomerOrders(options?: { limit?: number; offset?: number; s
   if (options?.status) params.set('status', options.status);
 
   const queryString = params.toString();
-  const url = `/api/customer/orders${queryString ? `?${queryString}` : ''}`;
+  const url = `/api/cms/customer/orders${queryString ? `?${queryString}` : ''}`;
 
   const { data, error, isLoading, mutate } = useSWR<OrdersResponse>(url, fetcher, {
     revalidateOnFocus: false,
@@ -135,7 +135,7 @@ export interface CustomerAddress {
 
 export function useCustomerProfile() {
   const { data, error, isLoading, mutate } = useSWR<CustomerProfile>(
-    '/api/customer/profile',
+    '/api/cms/customer/profile',
     fetcher,
     {
       revalidateOnFocus: false,
@@ -163,7 +163,7 @@ interface AddressesResponse {
 
 export function useCustomerAddresses() {
   const { data, error, isLoading, mutate } = useSWR<AddressesResponse>(
-    '/api/customer/addresses',
+    '/api/cms/customer/addresses',
     fetcher,
     {
       revalidateOnFocus: false,
@@ -193,7 +193,7 @@ export async function updateProfile(data: Partial<{
   taxId: string;
   acceptsMarketing: boolean;
 }>) {
-  const res = await fetch('/api/customer/profile', {
+  const res = await fetch('/api/cms/customer/profile', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -222,7 +222,7 @@ export async function createAddress(data: {
   isDefaultShipping?: boolean;
   isDefaultBilling?: boolean;
 }) {
-  const res = await fetch('/api/customer/addresses', {
+  const res = await fetch('/api/cms/customer/addresses', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -237,7 +237,7 @@ export async function createAddress(data: {
 }
 
 export async function updateAddress(id: string, data: Partial<CustomerAddress>) {
-  const res = await fetch(`/api/customer/addresses/${id}`, {
+  const res = await fetch(`/api/cms/customer/addresses/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -252,7 +252,7 @@ export async function updateAddress(id: string, data: Partial<CustomerAddress>) 
 }
 
 export async function deleteAddress(id: string) {
-  const res = await fetch(`/api/customer/addresses/${id}`, {
+  const res = await fetch(`/api/cms/customer/addresses/${id}`, {
     method: 'DELETE',
   });
 
@@ -315,7 +315,7 @@ export interface OrderTracking {
 
 export function useOrderTracking(orderId: string | null) {
   const { data, error, isLoading, mutate } = useSWR<OrderTracking>(
-    orderId ? `/api/customer/orders/${orderId}/tracking` : null,
+    orderId ? `/api/cms/customer/orders/${orderId}/tracking` : null,
     fetcher,
     {
       revalidateOnFocus: false,
@@ -375,7 +375,7 @@ export interface DashboardConfig {
 
 export function useDashboardConfig() {
   const { data, error, isLoading, mutate } = useSWR<DashboardConfig>(
-    '/api/customer/dashboard-config',
+    '/api/cms/customer/dashboard-config',
     fetcher,
     {
       revalidateOnFocus: false,

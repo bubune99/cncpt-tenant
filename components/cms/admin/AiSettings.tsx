@@ -51,7 +51,7 @@ export default function AiSettings() {
 
   const loadSettings = async () => {
     try {
-      const response = await fetch('/api/settings/ai');
+      const response = await fetch('/api/cms/settings/ai');
       if (response.ok) {
         const data = await response.json();
         setSettings(data.settings);
@@ -67,7 +67,7 @@ export default function AiSettings() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const response = await fetch('/api/settings/ai', {
+      const response = await fetch('/api/cms/settings/ai', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings),
@@ -95,7 +95,7 @@ export default function AiSettings() {
     try {
       // Use first enabled model for testing
       const testModel = settings.enabledModels[0] || 'anthropic/claude-sonnet-4.5';
-      const response = await fetch('/api/settings/ai/test', {
+      const response = await fetch('/api/cms/settings/ai/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: testModel }),

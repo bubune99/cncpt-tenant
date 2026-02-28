@@ -114,7 +114,7 @@ export function rewriteLinksForTracking(
     }
 
     // Skip already-tracked URLs
-    if (url.includes('/api/email/track/')) {
+    if (url.includes('/api/cms/email/track/')) {
       return match
     }
 
@@ -341,7 +341,7 @@ export async function rewriteLinksWithTracking(
       }
     }
 
-    if (!shouldExclude && !url.includes('/api/email/track/')) {
+    if (!shouldExclude && !url.includes('/api/cms/email/track/')) {
       links.push(url)
     }
   }

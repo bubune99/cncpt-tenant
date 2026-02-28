@@ -16,7 +16,7 @@ export default function CartSummary({ block, className }: SmartBlockProps) {
 
   const fetchCart = useCallback(async () => {
     try {
-      const res = await fetch('/api/cart')
+      const res = await fetch('/api/cms/cart')
       if (res.ok) {
         const data = await res.json()
         const items = data.items || []

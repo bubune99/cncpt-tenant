@@ -110,7 +110,7 @@ Use this for each external asset found in a v0 component.`,
       const storageKey = `v0-imports/${Date.now()}/${filename}`;
 
       // Upload to storage via API
-      const uploadResponse = await fetch("/api/storage/upload", {
+      const uploadResponse = await fetch("/api/cms/storage/upload", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

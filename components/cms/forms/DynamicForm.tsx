@@ -117,7 +117,7 @@ export function DynamicForm({
       }
 
       // Submit to API
-      const response = await fetch(`/api/forms/${form.id}/submit`, {
+      const response = await fetch(`/api/cms/forms/${form.id}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

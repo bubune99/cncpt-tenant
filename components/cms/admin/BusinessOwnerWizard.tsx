@@ -99,7 +99,7 @@ export default function BusinessOwnerWizard({ isOpen, onClose, onSuccess, isSelS
   // Get user email for self-service mode
   useEffect(() => {
     if (isSelService) {
-      fetch('/api/user/profile')
+      fetch('/api/cms/user/profile')
         .then(res => res.json())
         .then(data => {
           if (data.email) {
@@ -191,7 +191,7 @@ export default function BusinessOwnerWizard({ isOpen, onClose, onSuccess, isSelS
     try {
       // Use different endpoint for self-service vs admin creation
       const endpoint = isSelService 
-        ? '/api/user/create-business' 
+        ? '/api/cms/user/create-business' 
         : '/api/cms/admin/business-owners/v2';
       
       const headers: HeadersInit = {

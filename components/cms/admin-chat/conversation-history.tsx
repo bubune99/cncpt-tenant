@@ -73,7 +73,7 @@ export function ConversationHistory({ onSelectConversation, onClose }: Conversat
 
   // Fetch conversation history from API
   const { data, error, isLoading, mutate } = useSWR<{ conversations: ConversationItem[] }>(
-    '/api/chat',
+    '/api/cms/chat',
     fetcher,
     { refreshInterval: 5000 } // Refresh every 5 seconds
   );
@@ -83,7 +83,7 @@ export function ConversationHistory({ onSelectConversation, onClose }: Conversat
   // Delete a conversation
   const handleDelete = async (id: string) => {
     try {
-      await fetch(`/api/chat?id=${id}`, { method: 'DELETE' });
+      await fetch(`/api/cms/chat?id=${id}`, { method: 'DELETE' });
       mutate(); // Refresh the list
     } catch (error) {
       console.error('Failed to delete conversation:', error);
@@ -97,7 +97,7 @@ export function ConversationHistory({ onSelectConversation, onClose }: Conversat
     try {
       // Delete each conversation
       await Promise.all(conversations.map((c) =>
-        fetch(`/api/chat?id=${c.id}`, { method: 'DELETE' })
+        fetch(`/api/cms/chat?id=${c.id}`, { method: 'DELETE' })
       ));
       mutate(); // Refresh the list
       onClose();

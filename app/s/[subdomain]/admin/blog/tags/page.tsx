@@ -73,7 +73,7 @@ export default function BlogTagsPage() {
   const fetchTags = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/blog/tags");
+      const response = await fetch("/api/cms/blog/tags");
       if (response.ok) {
         const data = await response.json();
         setTags(data.tags || []);
@@ -116,7 +116,7 @@ export default function BlogTagsPage() {
         description: description.trim() || undefined,
       };
 
-      const url = editTag ? `/api/blog/tags/${editTag.id}` : "/api/blog/tags";
+      const url = editTag ? `/api/cms/blog/tags/${editTag.id}` : "/api/cms/blog/tags";
       const method = editTag ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -146,7 +146,7 @@ export default function BlogTagsPage() {
     if (!deleteTag) return;
 
     try {
-      const response = await fetch(`/api/blog/tags/${deleteTag.id}`, {
+      const response = await fetch(`/api/cms/blog/tags/${deleteTag.id}`, {
         method: "DELETE",
       });
 

@@ -72,7 +72,7 @@ export function MediaPreviewSheet({
 
       // Fetch usage
       setLoadingUsage(true)
-      fetch(`/api/media/${media.id}/usage`)
+      fetch(`/api/cms/media/${media.id}/usage`)
         .then((res) => res.json())
         .then((data) => setUsage(data.usages || []))
         .catch(console.error)

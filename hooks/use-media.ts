@@ -108,7 +108,7 @@ export function useMedia(): UseMediaState & UseMediaActions {
       if (filters.sortBy) params.set('sortBy', filters.sortBy)
       if (filters.sortOrder) params.set('sortOrder', filters.sortOrder)
 
-      const response = await fetch(`/api/media?${params}`)
+      const response = await fetch(`/api/cms/media?${params}`)
 
       if (!response.ok) {
         throw new Error('Failed to fetch media')
@@ -136,7 +136,7 @@ export function useMedia(): UseMediaState & UseMediaActions {
 
   const fetchFolders = useCallback(async () => {
     try {
-      const response = await fetch('/api/media/folders?tree=true')
+      const response = await fetch('/api/cms/media/folders?tree=true')
 
       if (!response.ok) {
         throw new Error('Failed to fetch folders')
@@ -153,7 +153,7 @@ export function useMedia(): UseMediaState & UseMediaActions {
 
   const fetchTags = useCallback(async () => {
     try {
-      const response = await fetch('/api/media/tags')
+      const response = await fetch('/api/cms/media/tags')
 
       if (!response.ok) {
         throw new Error('Failed to fetch tags')
@@ -197,7 +197,7 @@ export function useMedia(): UseMediaState & UseMediaActions {
       if (selectedIds.size === 0) return
 
       try {
-        const response = await fetch('/api/media/bulk', {
+        const response = await fetch('/api/cms/media/bulk', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -225,7 +225,7 @@ export function useMedia(): UseMediaState & UseMediaActions {
       if (selectedIds.size === 0) return
 
       try {
-        const response = await fetch('/api/media/bulk', {
+        const response = await fetch('/api/cms/media/bulk', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -253,7 +253,7 @@ export function useMedia(): UseMediaState & UseMediaActions {
       if (selectedIds.size === 0 || tagIds.length === 0) return
 
       try {
-        const response = await fetch('/api/media/bulk', {
+        const response = await fetch('/api/cms/media/bulk', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

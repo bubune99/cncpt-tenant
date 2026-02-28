@@ -54,7 +54,7 @@ export function MediaManager() {
   useEffect(() => {
     async function checkStorage() {
       try {
-        const response = await fetch('/api/media/storage-status')
+        const response = await fetch('/api/cms/media/storage-status')
         if (response.ok) {
           const status = await response.json()
           setStorageStatus(status)
@@ -112,7 +112,7 @@ export function MediaManager() {
   )
 
   const handleCreateFolder = useCallback(async (data: any) => {
-    const response = await fetch('/api/media/folders', {
+    const response = await fetch('/api/cms/media/folders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -126,7 +126,7 @@ export function MediaManager() {
   }, [refreshAll])
 
   const handleUpdateFolder = useCallback(async (id: string, data: any) => {
-    const response = await fetch(`/api/media/folders/${id}`, {
+    const response = await fetch(`/api/cms/media/folders/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -141,7 +141,7 @@ export function MediaManager() {
 
   const handleMoveMedia = useCallback(
     async (mediaId: string, folderId: string | null) => {
-      const response = await fetch('/api/media/bulk', {
+      const response = await fetch('/api/cms/media/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -162,7 +162,7 @@ export function MediaManager() {
 
   const handleAddTag = useCallback(
     async (mediaId: string, tagId: string) => {
-      const response = await fetch('/api/media/bulk', {
+      const response = await fetch('/api/cms/media/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -194,7 +194,7 @@ export function MediaManager() {
 
     if (deleteConfirm.ids.length === 1) {
       const response = await fetch(
-        `/api/media/${deleteConfirm.ids[0]}?hard=${deleteConfirm.hard}`,
+        `/api/cms/media/${deleteConfirm.ids[0]}?hard=${deleteConfirm.hard}`,
         { method: 'DELETE' }
       )
       if (!response.ok) {
@@ -216,7 +216,7 @@ export function MediaManager() {
   const handleSaveRename = useCallback(async () => {
     if (!renameMedia || !renameName.trim()) return
 
-    const response = await fetch(`/api/media/${renameMedia.id}`, {
+    const response = await fetch(`/api/cms/media/${renameMedia.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: renameName.trim() }),
@@ -232,7 +232,7 @@ export function MediaManager() {
 
   const handleSaveMediaDetails = useCallback(
     async (id: string, data: any) => {
-      const response = await fetch(`/api/media/${id}`, {
+      const response = await fetch(`/api/cms/media/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),

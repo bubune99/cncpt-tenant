@@ -116,7 +116,7 @@ export default function BlogPostsPage() {
       }
       params.set("limit", "50");
 
-      const response = await fetch(`/api/blog/posts?${params}`);
+      const response = await fetch(`/api/cms/blog/posts?${params}`);
       if (response.ok) {
         const data = await response.json();
         setPosts(data.posts || []);
@@ -134,7 +134,7 @@ export default function BlogPostsPage() {
     if (!deletePost) return;
 
     try {
-      const response = await fetch(`/api/blog/posts/${deletePost.id}`, {
+      const response = await fetch(`/api/cms/blog/posts/${deletePost.id}`, {
         method: "DELETE",
       });
 

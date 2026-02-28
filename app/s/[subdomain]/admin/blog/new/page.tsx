@@ -109,7 +109,7 @@ export default function NewBlogPostPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch("/api/blog/categories");
+      const response = await fetch("/api/cms/blog/categories");
       if (response.ok) {
         const data = await response.json();
         setCategories(data.categories || []);
@@ -121,7 +121,7 @@ export default function NewBlogPostPage() {
 
   const fetchTags = async () => {
     try {
-      const response = await fetch("/api/blog/tags");
+      const response = await fetch("/api/cms/blog/tags");
       if (response.ok) {
         const data = await response.json();
         setTags(data.tags || []);
@@ -156,7 +156,7 @@ export default function NewBlogPostPage() {
         metaDescription: metaDescription.trim() || undefined,
       };
 
-      const response = await fetch("/api/blog/posts", {
+      const response = await fetch("/api/cms/blog/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(postData),

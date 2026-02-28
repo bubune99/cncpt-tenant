@@ -114,7 +114,7 @@ export default function InvitationStatusBadge({
   const resendInvitation = async () => {
     setIsResending(true);
     try {
-      const response = await fetch('/api/invitation/resend', {
+      const response = await fetch('/api/cms/invitation/resend', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

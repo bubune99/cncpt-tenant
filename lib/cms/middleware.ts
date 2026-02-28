@@ -19,7 +19,7 @@ const PROTECTED_PREFIXES = [
 // Public routes within protected areas (like auth callbacks)
 const PUBLIC_ROUTES = [
   '/handler',
-  '/api/auth',
+  '/api/cms/auth',
 ];
 
 // Routes that should redirect to dashboard if already authenticated

@@ -143,7 +143,7 @@ export default function FormEditorPage({ params }: { params: Promise<{ id: strin
 
   const fetchForm = async () => {
     try {
-      const response = await fetch('/api/forms/' + id);
+      const response = await fetch('/api/cms/forms/' + id);
       if (!response.ok) {
         if (response.status === 404) {
           toast.error('Form not found');
@@ -166,7 +166,7 @@ export default function FormEditorPage({ params }: { params: Promise<{ id: strin
     if (!form) return;
     setIsLoadingSubmissions(true);
     try {
-      const response = await fetch('/api/forms/' + id + '/submissions');
+      const response = await fetch('/api/cms/forms/' + id + '/submissions');
       if (response.ok) {
         const data = await response.json();
         setSubmissions(data.submissions || []);
@@ -192,7 +192,7 @@ export default function FormEditorPage({ params }: { params: Promise<{ id: strin
     if (!form) return;
     setIsSaving(true);
     try {
-      const response = await fetch('/api/forms/' + id, {
+      const response = await fetch('/api/cms/forms/' + id, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -271,7 +271,7 @@ export default function FormEditorPage({ params }: { params: Promise<{ id: strin
 
   const updateSubmission = async (submissionId: string, updates: { read?: boolean; starred?: boolean }) => {
     try {
-      const response = await fetch('/api/forms/' + id + '/submissions/' + submissionId, {
+      const response = await fetch('/api/cms/forms/' + id + '/submissions/' + submissionId, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),

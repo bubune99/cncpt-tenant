@@ -75,7 +75,7 @@ export function PureMessageActions({
         data-testid="message-upvote"
         disabled={vote?.isUpvoted}
         onClick={() => {
-          const upvote = fetch("/api/vote", {
+          const upvote = fetch("/api/cms/vote", {
             method: "PATCH",
             body: JSON.stringify({
               chatId,
@@ -88,7 +88,7 @@ export function PureMessageActions({
             loading: "Upvoting Response...",
             success: () => {
               mutate<Vote[]>(
-                `/api/vote?chatId=${chatId}`,
+                `/api/cms/vote?chatId=${chatId}`,
                 (currentVotes) => {
                   if (!currentVotes) {
                     return [];
@@ -124,7 +124,7 @@ export function PureMessageActions({
         data-testid="message-downvote"
         disabled={vote && !vote.isUpvoted}
         onClick={() => {
-          const downvote = fetch("/api/vote", {
+          const downvote = fetch("/api/cms/vote", {
             method: "PATCH",
             body: JSON.stringify({
               chatId,
@@ -137,7 +137,7 @@ export function PureMessageActions({
             loading: "Downvoting Response...",
             success: () => {
               mutate<Vote[]>(
-                `/api/vote?chatId=${chatId}`,
+                `/api/cms/vote?chatId=${chatId}`,
                 (currentVotes) => {
                   if (!currentVotes) {
                     return [];

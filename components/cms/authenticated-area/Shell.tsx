@@ -44,7 +44,7 @@ export function AuthenticatedAreaShell({ areaId, children, className }: ShellPro
   // Fetch navigation data
   const fetchNavigation = useCallback(async () => {
     try {
-      const response = await fetch(`/api/navigation/${areaId}`);
+      const response = await fetch(`/api/cms/navigation/${areaId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch navigation');
       }

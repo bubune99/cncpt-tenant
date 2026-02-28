@@ -69,7 +69,7 @@ export default function WorkflowsPage() {
 
   async function fetchWorkflows() {
     try {
-      const response = await fetch('/api/plugins/workflows');
+      const response = await fetch('/api/cms/plugins/workflows');
       if (!response.ok) {
         throw new Error('Failed to fetch workflows');
       }
@@ -84,7 +84,7 @@ export default function WorkflowsPage() {
 
   async function toggleWorkflow(id: string, enabled: boolean) {
     try {
-      const response = await fetch(`/api/plugins/workflows/${id}`, {
+      const response = await fetch(`/api/cms/plugins/workflows/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled: !enabled }),
@@ -103,7 +103,7 @@ export default function WorkflowsPage() {
     if (!confirm('Are you sure you want to delete this workflow?')) return;
 
     try {
-      const response = await fetch(`/api/plugins/workflows/${id}`, {
+      const response = await fetch(`/api/cms/plugins/workflows/${id}`, {
         method: 'DELETE',
       });
       if (response.ok) {
@@ -116,7 +116,7 @@ export default function WorkflowsPage() {
 
   async function executeWorkflow(id: string) {
     try {
-      const response = await fetch(`/api/plugins/workflows/${id}/execute`, {
+      const response = await fetch(`/api/cms/plugins/workflows/${id}/execute`, {
         method: 'POST',
       });
       const data = await response.json();

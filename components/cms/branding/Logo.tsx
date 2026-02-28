@@ -51,7 +51,7 @@ export function Logo({
 
   const fetchBranding = async () => {
     try {
-      const response = await fetch("/api/settings?group=branding");
+      const response = await fetch("/api/cms/settings?group=branding");
       if (response.ok) {
         const data = await response.json();
         if (data.branding) {

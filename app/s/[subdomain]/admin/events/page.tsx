@@ -122,7 +122,7 @@ export default function EventsPage() {
       }
       params.set("limit", "50");
 
-      const response = await fetch(`/api/events?${params}`);
+      const response = await fetch(`/api/cms/events?${params}`);
       if (response.ok) {
         const data = await response.json();
         setEvents(data.events || []);
@@ -140,7 +140,7 @@ export default function EventsPage() {
     if (!deleteEvent) return;
 
     try {
-      const response = await fetch(`/api/events/${deleteEvent.id}`, {
+      const response = await fetch(`/api/cms/events/${deleteEvent.id}`, {
         method: "DELETE",
       });
 

@@ -124,7 +124,7 @@ export default function CreateDiscountPage() {
         data.expiresAt = new Date(formData.expiresAt).toISOString();
       }
 
-      const response = await fetch('/api/discounts', {
+      const response = await fetch('/api/cms/discounts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -139,7 +139,7 @@ export default function CreateDiscountPage() {
         if (formData.stripeSyncEnabled) {
           setSyncing(true);
           try {
-            await fetch(`/api/discounts/${result.id}/sync`, { method: 'POST' });
+            await fetch(`/api/cms/discounts/${result.id}/sync`, { method: 'POST' });
             sonnerToast.success('Synced with Stripe');
           } catch {
             sonnerToast.error('Created but failed to sync with Stripe');

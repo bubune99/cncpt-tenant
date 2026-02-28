@@ -27,7 +27,7 @@ export default function InvoicePreviewPage() {
       return;
     }
 
-    fetch(`/api/invoices?id=${invoiceId}`)
+    fetch(`/api/cms/invoices?id=${invoiceId}`)
       .then((res) => res.json())
       .then((data) => {
         setInvoice({
@@ -93,7 +93,7 @@ export default function InvoicePreviewPage() {
             Edit
           </button>
           <button
-            onClick={() => window.open(`/api/invoices/pdf?id=${invoiceId}`, "_blank")}
+            onClick={() => window.open(`/api/cms/invoices/pdf?id=${invoiceId}`, "_blank")}
             className="download-btn"
           >
             Download PDF

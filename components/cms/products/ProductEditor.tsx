@@ -170,7 +170,7 @@ export function ProductEditor({ mode, productId }: ProductEditorProps) {
     if (!currentProductId || isCreateMode) return;
 
     try {
-      const response = await fetch(`/api/products/${currentProductId}?includeDigitalAsset=true`);
+      const response = await fetch(`/api/cms/products/${currentProductId}?includeDigitalAsset=true`);
       if (response.ok) {
         const data = await response.json();
         setProduct(data);
@@ -207,7 +207,7 @@ export function ProductEditor({ mode, productId }: ProductEditorProps) {
       if (isCreateMode && !currentProductId) {
         // CREATE: POST new product
         const slug = product.slug || generateSlug(product.title);
-        const response = await fetch('/api/products', {
+        const response = await fetch('/api/cms/products', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -230,7 +230,7 @@ export function ProductEditor({ mode, productId }: ProductEditorProps) {
         }
       } else {
         // UPDATE: PUT existing product
-        const response = await fetch(`/api/products/${currentProductId}`, {
+        const response = await fetch(`/api/cms/products/${currentProductId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(product),
@@ -262,7 +262,7 @@ export function ProductEditor({ mode, productId }: ProductEditorProps) {
     setSyncing(true);
 
     try {
-      const response = await fetch(`/api/products/${currentProductId}/sync-stripe`, {
+      const response = await fetch(`/api/cms/products/${currentProductId}/sync-stripe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ syncVariants: true }),

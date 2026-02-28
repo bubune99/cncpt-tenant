@@ -28,7 +28,7 @@ export function getChatHistoryPaginationKey(
   }
 
   if (pageIndex === 0) {
-    return `/api/chat/history?limit=${PAGE_SIZE}`;
+    return `/api/cms/chat/history?limit=${PAGE_SIZE}`;
   }
 
   const firstChatFromPage = previousPageData.chats.at(-1);
@@ -37,7 +37,7 @@ export function getChatHistoryPaginationKey(
     return null;
   }
 
-  return `/api/chat/history?ending_before=${firstChatFromPage.id}&limit=${PAGE_SIZE}`;
+  return `/api/cms/chat/history?ending_before=${firstChatFromPage.id}&limit=${PAGE_SIZE}`;
 }
 
 /**

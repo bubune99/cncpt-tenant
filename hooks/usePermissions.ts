@@ -63,7 +63,7 @@ export function usePermissions(): UsePermissionsReturn {
       setIsLoading(true)
       setError(null)
 
-      const response = await fetch('/api/auth/permissions')
+      const response = await fetch('/api/cms/auth/permissions')
 
       if (!response.ok) {
         if (response.status === 401) {

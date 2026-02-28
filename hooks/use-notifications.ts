@@ -32,7 +32,7 @@ export function useNotifications() {
   const fetchNotifications = useCallback(async () => {
     if (!dbUser?.id) return;
     try {
-      const res = await fetch('/api/notifications?limit=20');
+      const res = await fetch('/api/cms/notifications?limit=20');
       if (res.ok) {
         const data = await res.json();
         setNotifications(data.items);
@@ -48,7 +48,7 @@ export function useNotifications() {
   const fetchSidebarCounts = useCallback(async () => {
     if (!dbUser?.id) return;
     try {
-      const res = await fetch('/api/notifications/unread-counts');
+      const res = await fetch('/api/cms/notifications/unread-counts');
       if (res.ok) {
         const data = await res.json();
         setSidebarCounts(data.counts);
@@ -99,7 +99,7 @@ export function useNotifications() {
     }
 
     try {
-      await fetch(`/api/notifications/${id}`, { method: 'PATCH' });
+      await fetch(`/api/cms/notifications/${id}`, { method: 'PATCH' });
     } catch {
       // Revert on error
       fetchAll();
@@ -113,7 +113,7 @@ export function useNotifications() {
     setSidebarCounts({});
 
     try {
-      await fetch('/api/notifications/mark-all-read', { method: 'POST' });
+      await fetch('/api/cms/notifications/mark-all-read', { method: 'POST' });
     } catch {
       fetchAll();
     }
@@ -140,7 +140,7 @@ export function useNotifications() {
     }
 
     try {
-      await fetch(`/api/notifications/${id}`, { method: 'DELETE' });
+      await fetch(`/api/cms/notifications/${id}`, { method: 'DELETE' });
     } catch {
       fetchAll();
     }

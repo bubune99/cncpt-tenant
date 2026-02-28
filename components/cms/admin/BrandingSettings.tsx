@@ -52,7 +52,7 @@ export default function BrandingSettings() {
   const fetchBranding = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/settings?group=branding");
+      const response = await fetch("/api/cms/settings?group=branding");
       if (response.ok) {
         const data = await response.json();
         if (data.branding) {
@@ -69,7 +69,7 @@ export default function BrandingSettings() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const response = await fetch("/api/settings", {
+      const response = await fetch("/api/cms/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

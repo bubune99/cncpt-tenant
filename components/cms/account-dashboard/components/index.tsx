@@ -821,7 +821,7 @@ export function PaymentMethodsList({
 
       setIsLoadingMethods(true);
       try {
-        const res = await fetch('/api/customer/payment-methods');
+        const res = await fetch('/api/cms/customer/payment-methods');
         if (res.ok) {
           const data = await res.json();
           setMethods(data.methods || []);

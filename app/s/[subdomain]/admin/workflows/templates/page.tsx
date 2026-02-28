@@ -98,7 +98,7 @@ export default function WorkflowTemplatesPage() {
   const fetchTemplates = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/plugins/workflows/templates');
+      const response = await fetch('/api/cms/plugins/workflows/templates');
       if (!response.ok) throw new Error('Failed to fetch templates');
       const data = await response.json();
       setTemplates(data.templates);
@@ -127,7 +127,7 @@ export default function WorkflowTemplatesPage() {
     setInstallDialog((prev) => ({ ...prev, installing: true, error: null }));
 
     try {
-      const response = await fetch('/api/plugins/workflows/templates', {
+      const response = await fetch('/api/cms/plugins/workflows/templates', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

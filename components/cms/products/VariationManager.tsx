@@ -135,7 +135,7 @@ export function VariationManager({
       setLoading(true);
 
       // Fetch variations from API
-      const response = await fetch(`/api/products/${productId}/variations`);
+      const response = await fetch(`/api/cms/products/${productId}/variations`);
       if (response.ok) {
         const data = await response.json();
         setVariations(data.variations || []);
@@ -162,7 +162,7 @@ export function VariationManager({
       setSaving(true);
 
       // API call to save variations
-      const response = await fetch(`/api/products/${productId}/variations`, {
+      const response = await fetch(`/api/cms/products/${productId}/variations`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ variations: dirtyVariations })

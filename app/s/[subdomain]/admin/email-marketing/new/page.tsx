@@ -74,7 +74,7 @@ export default function NewCampaignPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/emails/campaigns', {
+      const response = await fetch('/api/cms/emails/campaigns', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -339,7 +339,7 @@ export default function NewCampaignPage() {
                     // Save the campaign first, then redirect to designer
                     setIsSubmitting(true);
                     try {
-                      const response = await fetch('/api/emails/campaigns', {
+                      const response = await fetch('/api/cms/emails/campaigns', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(formData),

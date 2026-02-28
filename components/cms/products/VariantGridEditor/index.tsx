@@ -98,7 +98,7 @@ export function VariantGridEditor({
         setIsLoading(true)
         setError(null)
 
-        const response = await fetch(`/api/products/${productId}/variants`)
+        const response = await fetch(`/api/cms/products/${productId}/variants`)
         if (!response.ok) {
           throw new Error('Failed to load variants')
         }
@@ -223,7 +223,7 @@ export function VariantGridEditor({
         deleteIds: state.rows.filter((row) => row.isDeleted && !row.isNew).map((row) => row.id),
       }
 
-      const response = await fetch(`/api/products/${productId}/variants`, {
+      const response = await fetch(`/api/cms/products/${productId}/variants`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(saveRequest),
@@ -264,14 +264,14 @@ export function VariantGridEditor({
     async (fieldId: string) => {
       try {
         // Add field to product
-        await fetch(`/api/products/${productId}/custom-fields`, {
+        await fetch(`/api/cms/products/${productId}/custom-fields`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ fieldIds: [fieldId] }),
         })
 
         // Refresh data
-        const response = await fetch(`/api/products/${productId}/variants`)
+        const response = await fetch(`/api/cms/products/${productId}/variants`)
         if (response.ok) {
           const data: VariantApiResponse = await response.json()
 

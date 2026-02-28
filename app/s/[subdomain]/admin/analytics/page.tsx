@@ -87,6 +87,18 @@ interface AnalyticsData {
     visitors: number;
     percentage: number;
   }>;
+  topPages: Array<{
+    page: string;
+    views: number;
+  }>;
+  customerMetrics: {
+    newCustomers: number;
+    newCustomersChange: number;
+    returningCustomers: number;
+    returningCustomersChange: number;
+    lifetimeValue: number;
+    lifetimeValueChange: number;
+  };
 }
 
 export default function AnalyticsPage() {
@@ -113,6 +125,15 @@ export default function AnalyticsPage() {
     salesByChannel: [],
     recentActivity: [],
     trafficSources: [],
+    topPages: [],
+    customerMetrics: {
+      newCustomers: 0,
+      newCustomersChange: 0,
+      returningCustomers: 0,
+      returningCustomersChange: 0,
+      lifetimeValue: 0,
+      lifetimeValueChange: 0,
+    },
   });
 
   useEffect(() => {
@@ -122,7 +143,7 @@ export default function AnalyticsPage() {
   const fetchAnalytics = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/analytics?range=${dateRange}`);
+      const response = await fetch(`/api/cms/analytics?range=${dateRange}`);
       if (response.ok) {
         const result = await response.json();
         // Transform API response to expected format
@@ -150,54 +171,17 @@ export default function AnalyticsPage() {
             visitors: r.count,
             percentage: 0,
           })) ?? [],
+          topPages: result.topPages ?? [],
+          customerMetrics: result.customerMetrics ?? {
+            newCustomers: 0,
+            newCustomersChange: 0,
+            returningCustomers: 0,
+            returningCustomersChange: 0,
+            lifetimeValue: 0,
+            lifetimeValueChange: 0,
+          },
         };
         setData(transformedData);
-      } else {
-        // Mock data for development
-        setData({
-          overview: {
-            revenue: 48592.45,
-            revenueChange: 12.5,
-            orders: 324,
-            ordersChange: 8.3,
-            customers: 1245,
-            customersChange: 15.2,
-            avgOrderValue: 149.98,
-            avgOrderValueChange: 3.8,
-            conversionRate: 3.24,
-            conversionRateChange: -0.5,
-            pageViews: 45820,
-            pageViewsChange: 22.1,
-          },
-          topProducts: [
-            { id: '1', name: 'Premium T-Shirt', sales: 156, revenue: 4678.44, image: 'https://placehold.co/40x40?text=TS' },
-            { id: '2', name: 'Classic Hoodie', sales: 98, revenue: 5880.02, image: 'https://placehold.co/40x40?text=HD' },
-            { id: '3', name: 'Canvas Print 24x36', sales: 87, revenue: 4347.13, image: 'https://placehold.co/40x40?text=CP' },
-            { id: '4', name: 'Custom Mug', sales: 234, revenue: 3509.66, image: 'https://placehold.co/40x40?text=MG' },
-            { id: '5', name: 'Phone Case', sales: 189, revenue: 2834.11, image: 'https://placehold.co/40x40?text=PC' },
-          ],
-          salesByChannel: [
-            { channel: 'Direct', sales: 15420, percentage: 42 },
-            { channel: 'Organic Search', sales: 9850, percentage: 27 },
-            { channel: 'Social Media', sales: 6230, percentage: 17 },
-            { channel: 'Email', sales: 3650, percentage: 10 },
-            { channel: 'Referral', sales: 1450, percentage: 4 },
-          ],
-          recentActivity: [
-            { id: '1', type: 'order', description: 'New order #1234 from John D.', timestamp: new Date(Date.now() - 300000).toISOString(), amount: 149.99 },
-            { id: '2', type: 'signup', description: 'New customer registered', timestamp: new Date(Date.now() - 900000).toISOString() },
-            { id: '3', type: 'order', description: 'New order #1233 from Sarah M.', timestamp: new Date(Date.now() - 1800000).toISOString(), amount: 89.50 },
-            { id: '4', type: 'review', description: '5-star review on Premium T-Shirt', timestamp: new Date(Date.now() - 3600000).toISOString() },
-            { id: '5', type: 'refund', description: 'Refund processed for order #1220', timestamp: new Date(Date.now() - 7200000).toISOString(), amount: -45.00 },
-          ],
-          trafficSources: [
-            { source: 'Google', visitors: 18500, percentage: 45 },
-            { source: 'Direct', visitors: 12300, percentage: 30 },
-            { source: 'Facebook', visitors: 4100, percentage: 10 },
-            { source: 'Instagram', visitors: 3280, percentage: 8 },
-            { source: 'Other', visitors: 2870, percentage: 7 },
-          ],
-        });
       }
     } catch (error) {
       console.error('Error fetching analytics:', error);
@@ -590,20 +574,18 @@ export default function AnalyticsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {[
-                    { page: '/products', views: 12450 },
-                    { page: '/collections/new', views: 8920 },
-                    { page: '/product/premium-tshirt', views: 6540 },
-                    { page: '/cart', views: 4230 },
-                    { page: '/checkout', views: 2180 },
-                  ].map((page) => (
-                    <div key={page.page} className="flex items-center justify-between">
-                      <span className="text-sm font-mono">{page.page}</span>
-                      <span className="text-sm text-muted-foreground">
-                        {formatNumber(page.views)} views
-                      </span>
-                    </div>
-                  ))}
+                  {data.topPages.length > 0 ? (
+                    data.topPages.map((page) => (
+                      <div key={page.page} className="flex items-center justify-between">
+                        <span className="text-sm font-mono">{page.page}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {formatNumber(page.views)} views
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No page data available yet</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -617,10 +599,14 @@ export default function AnalyticsPage() {
                 <CardTitle className="text-sm font-medium">New Customers</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">245</div>
-                <p className="text-xs text-green-500 flex items-center">
-                  <ArrowUpRight className="h-3 w-3 mr-1" />
-                  +12.5% from last period
+                <div className="text-3xl font-bold">{formatNumber(data.customerMetrics.newCustomers)}</div>
+                <p className={`text-xs flex items-center ${data.customerMetrics.newCustomersChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {data.customerMetrics.newCustomersChange >= 0 ? (
+                    <ArrowUpRight className="h-3 w-3 mr-1" />
+                  ) : (
+                    <ArrowDownRight className="h-3 w-3 mr-1" />
+                  )}
+                  {formatPercentage(data.customerMetrics.newCustomersChange)} from last period
                 </p>
               </CardContent>
             </Card>
@@ -630,10 +616,14 @@ export default function AnalyticsPage() {
                 <CardTitle className="text-sm font-medium">Returning Customers</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">1,000</div>
-                <p className="text-xs text-green-500 flex items-center">
-                  <ArrowUpRight className="h-3 w-3 mr-1" />
-                  +18.2% from last period
+                <div className="text-3xl font-bold">{formatNumber(data.customerMetrics.returningCustomers)}</div>
+                <p className={`text-xs flex items-center ${data.customerMetrics.returningCustomersChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {data.customerMetrics.returningCustomersChange >= 0 ? (
+                    <ArrowUpRight className="h-3 w-3 mr-1" />
+                  ) : (
+                    <ArrowDownRight className="h-3 w-3 mr-1" />
+                  )}
+                  {formatPercentage(data.customerMetrics.returningCustomersChange)} from last period
                 </p>
               </CardContent>
             </Card>
@@ -643,10 +633,14 @@ export default function AnalyticsPage() {
                 <CardTitle className="text-sm font-medium">Customer Lifetime Value</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{formatCurrency(285.50)}</div>
-                <p className="text-xs text-green-500 flex items-center">
-                  <ArrowUpRight className="h-3 w-3 mr-1" />
-                  +5.8% from last period
+                <div className="text-3xl font-bold">{formatCurrency(data.customerMetrics.lifetimeValue)}</div>
+                <p className={`text-xs flex items-center ${data.customerMetrics.lifetimeValueChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {data.customerMetrics.lifetimeValueChange >= 0 ? (
+                    <ArrowUpRight className="h-3 w-3 mr-1" />
+                  ) : (
+                    <ArrowDownRight className="h-3 w-3 mr-1" />
+                  )}
+                  {formatPercentage(data.customerMetrics.lifetimeValueChange)} from last period
                 </p>
               </CardContent>
             </Card>

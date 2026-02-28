@@ -19,7 +19,7 @@ export function CanvaConnectButton({ onStatusChange }: CanvaConnectButtonProps) 
 
   async function checkStatus() {
     try {
-      const response = await fetch("/api/canva/auth/status")
+      const response = await fetch("/api/cms/canva/auth/status")
       if (response.ok) {
         const data = await response.json()
         setConnected(data.connected)
@@ -34,13 +34,13 @@ export function CanvaConnectButton({ onStatusChange }: CanvaConnectButtonProps) 
 
   function handleConnect() {
     // Navigate to OAuth flow
-    window.location.href = "/api/canva/auth/connect"
+    window.location.href = "/api/cms/canva/auth/connect"
   }
 
   async function handleDisconnect() {
     setDisconnecting(true)
     try {
-      const response = await fetch("/api/canva/auth/disconnect", {
+      const response = await fetch("/api/cms/canva/auth/disconnect", {
         method: "POST",
       })
       if (response.ok) {

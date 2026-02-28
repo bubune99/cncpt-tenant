@@ -57,7 +57,7 @@ export function CreditPacks({
         const params = new URLSearchParams()
         if (onboardingMode) params.set("onboarding", "true")
 
-        const response = await fetch(`/api/dashboard/credits/purchase?${params}`)
+        const response = await fetch(`/api/cms/dashboard/credits/purchase?${params}`)
         if (!response.ok) throw new Error("Failed to fetch credit packs")
 
         const data = await response.json()
@@ -81,7 +81,7 @@ export function CreditPacks({
       setPurchasing(pack.id)
       setError(null)
 
-      const response = await fetch("/api/dashboard/credits/purchase", {
+      const response = await fetch("/api/cms/dashboard/credits/purchase", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

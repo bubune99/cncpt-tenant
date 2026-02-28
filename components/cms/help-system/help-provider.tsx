@@ -187,7 +187,7 @@ export function HelpProvider({
           params.set('storeId', storeId)
         }
 
-        const response = await fetch(`/api/help/content?${params}`)
+        const response = await fetch(`/api/cms/help/content?${params}`)
         if (response.ok) {
           const data = await response.json()
           if (data) return data
@@ -299,7 +299,7 @@ export function HelpProvider({
           params.set('storeId', storeId)
         }
 
-        const response = await fetch(`/api/help/tours?${params}`)
+        const response = await fetch(`/api/cms/help/tours?${params}`)
         if (response.ok) {
           const data = await response.json()
           setAvailableTours(data || [])

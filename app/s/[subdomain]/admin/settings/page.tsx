@@ -170,7 +170,7 @@ export default function SettingsPage() {
 
   const loadSettings = async () => {
     try {
-      const response = await fetch('/api/settings');
+      const response = await fetch('/api/cms/settings');
       if (response.ok) {
         const data = await response.json();
         setSettings(prev => ({
@@ -186,7 +186,7 @@ export default function SettingsPage() {
   const handleSaveSettings = async () => {
     setIsSaving(true);
     try {
-      const response = await fetch('/api/settings', {
+      const response = await fetch('/api/cms/settings', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

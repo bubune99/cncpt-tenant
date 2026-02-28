@@ -127,7 +127,7 @@ export default function EditOrderWorkflowPage() {
 
   const fetchWorkflow = useCallback(async () => {
     try {
-      const response = await fetch(`/api/workflows/${workflowId}`)
+      const response = await fetch(`/api/cms/workflows/${workflowId}`)
       if (!response.ok) {
         throw new Error('Workflow not found')
       }
@@ -164,7 +164,7 @@ export default function EditOrderWorkflowPage() {
       setIsSaving(true)
 
       if (isNew) {
-        const response = await fetch('/api/workflows', {
+        const response = await fetch('/api/cms/workflows', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -199,7 +199,7 @@ export default function EditOrderWorkflowPage() {
         toast.success('Workflow created')
         router.push(`/admin/order-workflows/${data.workflow.id}`)
       } else {
-        const response = await fetch(`/api/workflows/${workflowId}`, {
+        const response = await fetch(`/api/cms/workflows/${workflowId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -282,7 +282,7 @@ export default function EditOrderWorkflowPage() {
     try {
       if (editingStage.id && !editingStage.id.startsWith('temp-')) {
         // Update existing stage
-        const response = await fetch(`/api/workflows/${workflowId}/stages`, {
+        const response = await fetch(`/api/cms/workflows/${workflowId}/stages`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -307,7 +307,7 @@ export default function EditOrderWorkflowPage() {
         toast.success('Stage updated')
       } else {
         // Add new stage
-        const response = await fetch(`/api/workflows/${workflowId}/stages`, {
+        const response = await fetch(`/api/cms/workflows/${workflowId}/stages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -355,7 +355,7 @@ export default function EditOrderWorkflowPage() {
 
     try {
       const response = await fetch(
-        `/api/workflows/${workflowId}/stages?stageId=${deleteStageId}`,
+        `/api/cms/workflows/${workflowId}/stages?stageId=${deleteStageId}`,
         { method: 'DELETE' }
       )
 
@@ -389,7 +389,7 @@ export default function EditOrderWorkflowPage() {
 
     if (!isNew) {
       try {
-        await fetch(`/api/workflows/${workflowId}/stages`, {
+        await fetch(`/api/cms/workflows/${workflowId}/stages`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

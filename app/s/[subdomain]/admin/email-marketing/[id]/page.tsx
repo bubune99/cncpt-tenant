@@ -107,7 +107,7 @@ export default function EmailCampaignEditorPage() {
   const fetchCampaign = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/emails/campaigns/${campaignId}`);
+      const response = await fetch(`/api/cms/emails/campaigns/${campaignId}`);
       if (response.ok) {
         const data = await response.json();
         // API returns { success: true, campaign: {...} }
@@ -199,8 +199,8 @@ export default function EmailCampaignEditorPage() {
     try {
       setSaving(true);
       const url = isNew
-        ? '/api/emails/campaigns'
-        : `/api/emails/campaigns/${campaignId}`;
+        ? '/api/cms/emails/campaigns'
+        : `/api/cms/emails/campaigns/${campaignId}`;
       const method = isNew ? 'POST' : 'PATCH';
 
       const response = await fetch(url, {
@@ -245,7 +245,7 @@ export default function EmailCampaignEditorPage() {
     }
 
     try {
-      const response = await fetch('/api/emails/send-test', {
+      const response = await fetch('/api/cms/emails/send-test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

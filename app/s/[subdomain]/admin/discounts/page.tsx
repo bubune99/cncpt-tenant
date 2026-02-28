@@ -121,7 +121,7 @@ export default function DiscountsPage() {
       if (typeFilter !== 'all') params.append('type', typeFilter);
       if (searchTerm) params.append('search', searchTerm);
 
-      const response = await fetch(`/api/discounts?${params}`);
+      const response = await fetch(`/api/cms/discounts?${params}`);
       if (response.ok) {
         const data = await response.json();
         setDiscounts(data.discounts);
@@ -143,7 +143,7 @@ export default function DiscountsPage() {
   const handleSync = async (discountId: string) => {
     setSyncingId(discountId);
     try {
-      const response = await fetch(`/api/discounts/${discountId}/sync`, {
+      const response = await fetch(`/api/cms/discounts/${discountId}/sync`, {
         method: 'POST',
       });
       const data = await response.json();
@@ -162,7 +162,7 @@ export default function DiscountsPage() {
 
   const handleToggleEnabled = async (discount: DiscountCode) => {
     try {
-      const response = await fetch(`/api/discounts/${discount.id}`, {
+      const response = await fetch(`/api/cms/discounts/${discount.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled: !discount.enabled }),
@@ -181,7 +181,7 @@ export default function DiscountsPage() {
     setDeleteDialog((prev) => ({ ...prev, deleting: true }));
 
     try {
-      const response = await fetch(`/api/discounts/${deleteDialog.discount.id}`, {
+      const response = await fetch(`/api/cms/discounts/${deleteDialog.discount.id}`, {
         method: 'DELETE',
       });
       const data = await response.json();

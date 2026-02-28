@@ -100,7 +100,7 @@ export default function ReviewDetailPage({ params }: PageProps) {
   const fetchReview = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/reviews/${id}`);
+      const response = await fetch(`/api/cms/reviews/${id}`);
       if (!response.ok) {
         if (response.status === 404) {
           sonnerToast.error('Review not found');
@@ -123,7 +123,7 @@ export default function ReviewDetailPage({ params }: PageProps) {
   const handleAction = async (action: 'approve' | 'reject' | 'flag') => {
     try {
       setActionLoading(action);
-      const response = await fetch(`/api/reviews/${id}`, {
+      const response = await fetch(`/api/cms/reviews/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action }),
@@ -158,7 +158,7 @@ export default function ReviewDetailPage({ params }: PageProps) {
 
     try {
       setActionLoading('response');
-      const response = await fetch(`/api/reviews/${id}/respond`, {
+      const response = await fetch(`/api/cms/reviews/${id}/respond`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ response: storeResponse }),
@@ -183,7 +183,7 @@ export default function ReviewDetailPage({ params }: PageProps) {
   const handleDelete = async () => {
     try {
       setActionLoading('delete');
-      const response = await fetch(`/api/reviews/${id}`, {
+      const response = await fetch(`/api/cms/reviews/${id}`, {
         method: 'DELETE',
       });
 

@@ -498,7 +498,7 @@ export const MEDIA_PRIMITIVES: Array<CreatePrimitiveRequest & { builtIn: true }>
 
       // For now, return placeholder - actual implementation would use S3/R2/local storage
       return {
-        uploadUrl: '/api/media/upload',
+        uploadUrl: '/api/cms/media/upload',
         method: 'POST',
         key,
         fields: {

@@ -87,7 +87,7 @@ export async function initSocketServer(httpServer: HTTPServer) {
   const { Server } = await import('socket.io')
 
   io = new Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>(httpServer, {
-    path: '/api/socketio',
+    path: '/api/cms/socketio',
     cors: {
       origin: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
       credentials: true,

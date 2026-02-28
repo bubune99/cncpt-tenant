@@ -59,7 +59,7 @@ export function FeedbackWidget({ position = 'bottom-right', tenantId, className 
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/feedback', {
+      const response = await fetch('/api/cms/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

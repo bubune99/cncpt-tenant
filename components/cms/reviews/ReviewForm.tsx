@@ -93,7 +93,7 @@ export function ReviewForm({
     try {
       setSubmitting(true);
 
-      const response = await fetch('/api/reviews', {
+      const response = await fetch('/api/cms/reviews', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -146,7 +146,7 @@ export function ReviewForm({
         const formDataUpload = new FormData();
         formDataUpload.append('file', file);
 
-        const response = await fetch('/api/media/upload', {
+        const response = await fetch('/api/cms/media/upload', {
           method: 'POST',
           body: formDataUpload,
         });

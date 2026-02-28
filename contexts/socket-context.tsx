@@ -61,7 +61,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         const { io } = await import('socket.io-client')
 
         socketInstance = io({
-          path: '/api/socketio',
+          path: '/api/cms/socketio',
           transports: ['websocket', 'polling'],
           reconnection: true,
           reconnectionAttempts: maxReconnectAttempts,

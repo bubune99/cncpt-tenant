@@ -139,7 +139,7 @@ export default function EditDiscountPage({ params }: PageProps) {
   const fetchDiscount = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/discounts/${id}`);
+      const response = await fetch(`/api/cms/discounts/${id}`);
       if (!response.ok) {
         if (response.status === 404) {
           sonnerToast.error('Discount not found');
@@ -214,7 +214,7 @@ export default function EditDiscountPage({ params }: PageProps) {
       data.startsAt = formData.startsAt ? new Date(formData.startsAt).toISOString() : undefined;
       data.expiresAt = formData.expiresAt ? new Date(formData.expiresAt).toISOString() : null;
 
-      const response = await fetch(`/api/discounts/${id}`, {
+      const response = await fetch(`/api/cms/discounts/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -238,7 +238,7 @@ export default function EditDiscountPage({ params }: PageProps) {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      const response = await fetch(`/api/discounts/${id}/sync`, { method: 'POST' });
+      const response = await fetch(`/api/cms/discounts/${id}/sync`, { method: 'POST' });
       const data = await response.json();
       if (response.ok) {
         sonnerToast.success('Synced with Stripe');
@@ -256,7 +256,7 @@ export default function EditDiscountPage({ params }: PageProps) {
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      const response = await fetch(`/api/discounts/${id}`, { method: 'DELETE' });
+      const response = await fetch(`/api/cms/discounts/${id}`, { method: 'DELETE' });
       if (response.ok) {
         sonnerToast.success('Discount deleted');
         router.push('/admin/discounts');

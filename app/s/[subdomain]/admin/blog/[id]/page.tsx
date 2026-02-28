@@ -126,7 +126,7 @@ export default function EditBlogPostPage({
   const fetchPost = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/blog/posts/${id}`);
+      const response = await fetch(`/api/cms/blog/posts/${id}`);
       if (response.ok) {
         const data = await response.json();
         setPost(data);
@@ -157,7 +157,7 @@ export default function EditBlogPostPage({
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch("/api/blog/categories");
+      const response = await fetch("/api/cms/blog/categories");
       if (response.ok) {
         const data = await response.json();
         setCategories(data.categories || []);
@@ -169,7 +169,7 @@ export default function EditBlogPostPage({
 
   const fetchTags = async () => {
     try {
-      const response = await fetch("/api/blog/tags");
+      const response = await fetch("/api/cms/blog/tags");
       if (response.ok) {
         const data = await response.json();
         setTags(data.tags || []);
@@ -204,7 +204,7 @@ export default function EditBlogPostPage({
         metaDescription: metaDescription.trim() || undefined,
       };
 
-      const response = await fetch(`/api/blog/posts/${id}`, {
+      const response = await fetch(`/api/cms/blog/posts/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(postData),
@@ -229,7 +229,7 @@ export default function EditBlogPostPage({
 
   const handleDelete = async () => {
     try {
-      const response = await fetch(`/api/blog/posts/${id}`, {
+      const response = await fetch(`/api/cms/blog/posts/${id}`, {
         method: "DELETE",
       });
 

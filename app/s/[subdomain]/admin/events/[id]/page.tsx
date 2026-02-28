@@ -254,7 +254,7 @@ export default function EditEventPage({
   const fetchEvent = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/events/${id}`);
+      const response = await fetch(`/api/cms/events/${id}`);
       if (response.ok) {
         const data = await response.json();
         setEvent(data);
@@ -288,7 +288,7 @@ export default function EditEventPage({
 
   const fetchTicketTypes = async () => {
     try {
-      const response = await fetch(`/api/events/${id}/ticket-types`);
+      const response = await fetch(`/api/cms/events/${id}/ticket-types`);
       if (response.ok) {
         const data = await response.json();
         setTicketTypes(data.ticketTypes || data || []);
@@ -300,7 +300,7 @@ export default function EditEventPage({
 
   const fetchSchedule = async () => {
     try {
-      const response = await fetch(`/api/events/${id}/schedule`);
+      const response = await fetch(`/api/cms/events/${id}/schedule`);
       if (response.ok) {
         const data = await response.json();
         setScheduleItems(data.scheduleItems || data || []);
@@ -312,7 +312,7 @@ export default function EditEventPage({
 
   const fetchSpeakers = async () => {
     try {
-      const response = await fetch(`/api/events/${id}/speakers`);
+      const response = await fetch(`/api/cms/events/${id}/speakers`);
       if (response.ok) {
         const data = await response.json();
         setSpeakers(data.speakers || data || []);
@@ -324,7 +324,7 @@ export default function EditEventPage({
 
   const fetchRegistrations = async () => {
     try {
-      const response = await fetch(`/api/events/${id}/registrations`);
+      const response = await fetch(`/api/cms/events/${id}/registrations`);
       if (response.ok) {
         const data = await response.json();
         setRegistrations(data.registrations || data || []);
@@ -354,7 +354,7 @@ export default function EditEventPage({
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`/api/events/${id}`, {
+      const response = await fetch(`/api/cms/events/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -388,7 +388,7 @@ export default function EditEventPage({
   const handleSaveVenue = async () => {
     setIsSubmitting(true);
     try {
-      const response = await fetch(`/api/events/${id}`, {
+      const response = await fetch(`/api/cms/events/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -468,8 +468,8 @@ export default function EditEventPage({
       };
 
       const url = editingTicket
-        ? `/api/events/${id}/ticket-types/${editingTicket.id}`
-        : `/api/events/${id}/ticket-types`;
+        ? `/api/cms/events/${id}/ticket-types/${editingTicket.id}`
+        : `/api/cms/events/${id}/ticket-types`;
       const method = editingTicket ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -496,7 +496,7 @@ export default function EditEventPage({
   const handleDeleteTicket = async () => {
     if (!deleteTicket) return;
     try {
-      const response = await fetch(`/api/events/${id}/ticket-types/${deleteTicket.id}`, {
+      const response = await fetch(`/api/cms/events/${id}/ticket-types/${deleteTicket.id}`, {
         method: "DELETE",
       });
       if (response.ok) {
@@ -515,7 +515,7 @@ export default function EditEventPage({
 
   const handleToggleTicketActive = async (ticket: TicketType) => {
     try {
-      const response = await fetch(`/api/events/${id}/ticket-types/${ticket.id}`, {
+      const response = await fetch(`/api/cms/events/${id}/ticket-types/${ticket.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ active: !ticket.active }),
@@ -576,8 +576,8 @@ export default function EditEventPage({
       };
 
       const url = editingScheduleItem
-        ? `/api/events/${id}/schedule/${editingScheduleItem.id}`
-        : `/api/events/${id}/schedule`;
+        ? `/api/cms/events/${id}/schedule/${editingScheduleItem.id}`
+        : `/api/cms/events/${id}/schedule`;
       const method = editingScheduleItem ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -604,7 +604,7 @@ export default function EditEventPage({
   const handleDeleteScheduleItem = async () => {
     if (!deleteScheduleItem) return;
     try {
-      const response = await fetch(`/api/events/${id}/schedule/${deleteScheduleItem.id}`, {
+      const response = await fetch(`/api/cms/events/${id}/schedule/${deleteScheduleItem.id}`, {
         method: "DELETE",
       });
       if (response.ok) {
@@ -672,8 +672,8 @@ export default function EditEventPage({
       };
 
       const url = editingSpeaker
-        ? `/api/events/${id}/speakers/${editingSpeaker.id}`
-        : `/api/events/${id}/speakers`;
+        ? `/api/cms/events/${id}/speakers/${editingSpeaker.id}`
+        : `/api/cms/events/${id}/speakers`;
       const method = editingSpeaker ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -700,7 +700,7 @@ export default function EditEventPage({
   const handleDeleteSpeaker = async () => {
     if (!deleteSpeaker) return;
     try {
-      const response = await fetch(`/api/events/${id}/speakers/${deleteSpeaker.id}`, {
+      const response = await fetch(`/api/cms/events/${id}/speakers/${deleteSpeaker.id}`, {
         method: "DELETE",
       });
       if (response.ok) {
@@ -721,7 +721,7 @@ export default function EditEventPage({
 
   const handleDeleteEvent = async () => {
     try {
-      const response = await fetch(`/api/events/${id}`, {
+      const response = await fetch(`/api/cms/events/${id}`, {
         method: "DELETE",
       });
       if (response.ok) {
@@ -1794,7 +1794,7 @@ export default function EditEventPage({
                               checked={reg.checkedIn}
                               onCheckedChange={async (checked) => {
                                 try {
-                                  await fetch(`/api/events/${id}/registrations/${reg.id}`, {
+                                  await fetch(`/api/cms/events/${id}/registrations/${reg.id}`, {
                                     method: "PUT",
                                     headers: { "Content-Type": "application/json" },
                                     body: JSON.stringify({ checkedIn: checked }),

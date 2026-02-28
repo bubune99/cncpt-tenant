@@ -117,7 +117,7 @@ export default function DashboardSettingsPage() {
   const loadTheme = async () => {
     setIsLoading(true)
     try {
-      const res = await fetch('/api/settings?group=dashboard.theme')
+      const res = await fetch('/api/cms/settings?group=dashboard.theme')
       if (res.ok) {
         const data = await res.json()
         const loaded = data['dashboard.theme']
@@ -137,7 +137,7 @@ export default function DashboardSettingsPage() {
   const handleSave = async () => {
     setIsSaving(true)
     try {
-      const res = await fetch('/api/settings', {
+      const res = await fetch('/api/cms/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

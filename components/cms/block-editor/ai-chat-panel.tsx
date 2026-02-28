@@ -350,7 +350,7 @@ export function AIChatPanel() {
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
-        api: "/api/block-editor-chat",
+        api: "/api/cms/block-editor-chat",
         prepareSendMessagesRequest: ({ id, messages }) => ({
           body: {
             messages,

@@ -123,7 +123,7 @@ export default function WorkflowDetailPage({ params }: PageProps) {
   async function fetchWorkflow() {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/plugins/workflows/${id}`);
+      const response = await fetch(`/api/cms/plugins/workflows/${id}`);
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error('Workflow not found');
@@ -144,7 +144,7 @@ export default function WorkflowDetailPage({ params }: PageProps) {
 
     try {
       setIsExecuting(true);
-      const response = await fetch(`/api/plugins/workflows/${id}/execute`, {
+      const response = await fetch(`/api/cms/plugins/workflows/${id}/execute`, {
         method: 'POST',
       });
       const data = await response.json();
@@ -166,7 +166,7 @@ export default function WorkflowDetailPage({ params }: PageProps) {
     if (!workflow) return;
 
     try {
-      const response = await fetch(`/api/plugins/workflows/${id}`, {
+      const response = await fetch(`/api/cms/plugins/workflows/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled: !workflow.enabled }),
@@ -183,7 +183,7 @@ export default function WorkflowDetailPage({ params }: PageProps) {
     if (!confirm('Are you sure you want to delete this workflow? This cannot be undone.')) return;
 
     try {
-      const response = await fetch(`/api/plugins/workflows/${id}`, {
+      const response = await fetch(`/api/cms/plugins/workflows/${id}`, {
         method: 'DELETE',
       });
       if (response.ok) {

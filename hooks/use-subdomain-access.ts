@@ -46,7 +46,7 @@ export function useSubdomainAccess(
     const checkAccess = async () => {
       try {
         const response = await fetch(
-          `/api/subdomains/${subdomain}/access?level=${requiredAccessLevel}`
+          `/api/cms/subdomains/${subdomain}/access?level=${requiredAccessLevel}`
         );
 
         if (!response.ok) {

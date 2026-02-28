@@ -51,7 +51,7 @@ export function usePaymentIntent(): UsePaymentIntentReturn {
       setError(null);
 
       try {
-        const response = await fetch('/api/payments/intent', {
+        const response = await fetch('/api/cms/payments/intent', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(params),
@@ -181,7 +181,7 @@ export function useCheckout(): UseCheckoutReturn {
       setError(null);
 
       try {
-        const response = await fetch('/api/checkout/session', {
+        const response = await fetch('/api/cms/checkout/session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

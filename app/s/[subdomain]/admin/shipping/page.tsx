@@ -112,7 +112,7 @@ export default function ShippingPage() {
 
   async function fetchSettings() {
     try {
-      const response = await fetch('/api/shipping/settings');
+      const response = await fetch('/api/cms/shipping/settings');
       if (response.ok) {
         const data = await response.json();
         // API returns settings directly, not wrapped
@@ -141,7 +141,7 @@ export default function ShippingPage() {
     setIsSaving(true);
     setSaveMessage(null);
     try {
-      const response = await fetch('/api/shipping/settings', {
+      const response = await fetch('/api/cms/shipping/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings),

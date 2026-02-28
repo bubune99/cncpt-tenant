@@ -140,7 +140,7 @@ export default function NewWorkflowPage() {
   useEffect(() => {
     async function fetchPrimitives() {
       try {
-        const response = await fetch('/api/plugins/primitives');
+        const response = await fetch('/api/cms/plugins/primitives');
         if (response.ok) {
           const data = await response.json();
           if (data.primitives?.length > 0) {
@@ -169,7 +169,7 @@ export default function NewWorkflowPage() {
   const handleSave = async (workflow: WorkflowDefinition) => {
     setIsSaving(true);
     try {
-      const response = await fetch('/api/plugins/workflows', {
+      const response = await fetch('/api/cms/plugins/workflows', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -195,7 +195,7 @@ export default function NewWorkflowPage() {
 
   const handleExecute = async (workflow: WorkflowDefinition) => {
     try {
-      const response = await fetch('/api/plugins/workflows/execute', {
+      const response = await fetch('/api/cms/plugins/workflows/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

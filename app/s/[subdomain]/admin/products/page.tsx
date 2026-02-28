@@ -60,7 +60,7 @@ export default function ProductsPage() {
   const fetchProducts = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/products?includeImages=true&includeCategories=true');
+      const response = await fetch('/api/cms/products?includeImages=true&includeCategories=true');
       if (response.ok) {
         const data = await response.json();
         // Transform API data to match expected format

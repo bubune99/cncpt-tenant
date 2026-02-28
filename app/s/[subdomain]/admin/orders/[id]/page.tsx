@@ -151,7 +151,7 @@ export default function OrderDetailPage() {
   const fetchOrder = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/orders/${orderId}`);
+      const response = await fetch(`/api/cms/orders/${orderId}`);
       if (response.ok) {
         const data = await response.json();
         setOrder(data.order);
@@ -170,7 +170,7 @@ export default function OrderDetailPage() {
   const updateOrderStatus = async (newStatus: string) => {
     setUpdating(true);
     try {
-      const response = await fetch(`/api/orders/${orderId}/status`, {
+      const response = await fetch(`/api/cms/orders/${orderId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
@@ -194,7 +194,7 @@ export default function OrderDetailPage() {
 
   const saveNotes = async () => {
     try {
-      await fetch(`/api/orders/${orderId}/notes`, {
+      await fetch(`/api/cms/orders/${orderId}/notes`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ notes }),

@@ -25,7 +25,7 @@ export default function InvoicesPage() {
 
   async function loadInvoices() {
     try {
-      const response = await fetch("/api/invoices");
+      const response = await fetch("/api/cms/invoices");
       if (response.ok) {
         const data = await response.json();
         setInvoices(data.map((inv: InvoiceData) => ({
@@ -46,7 +46,7 @@ export default function InvoicesPage() {
     if (!confirm("Are you sure you want to delete this invoice?")) return;
 
     try {
-      await fetch(`/api/invoices?id=${id}`, { method: "DELETE" });
+      await fetch(`/api/cms/invoices?id=${id}`, { method: "DELETE" });
       setInvoices(invoices.filter((inv) => inv.id !== id));
     } catch (error) {
       console.error("Failed to delete invoice:", error);
@@ -57,10 +57,10 @@ export default function InvoicesPage() {
     e.stopPropagation();
     try {
       // Get next invoice number
-      const numResponse = await fetch("/api/invoices?action=next-number");
+      const numResponse = await fetch("/api/cms/invoices?action=next-number");
       const { invoiceNumber } = await numResponse.json();
 
-      const response = await fetch("/api/invoices", {
+      const response = await fetch("/api/cms/invoices", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

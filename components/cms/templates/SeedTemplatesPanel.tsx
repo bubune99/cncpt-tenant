@@ -82,14 +82,14 @@ export function SeedTemplatesPanel({ onPageCreated }: SeedTemplatesPanelProps) {
         setIsLoading(true);
 
         // Fetch categories
-        const catRes = await fetch("/api/templates?categories=true");
+        const catRes = await fetch("/api/cms/templates?categories=true");
         const catData = await catRes.json();
         if (catData.categories) {
           setCategories(catData.categories);
         }
 
         // Fetch all templates
-        const templatesRes = await fetch("/api/templates");
+        const templatesRes = await fetch("/api/cms/templates");
         const templatesData = await templatesRes.json();
         if (templatesData.templates) {
           setTemplates(templatesData.templates);
@@ -144,7 +144,7 @@ export function SeedTemplatesPanel({ onPageCreated }: SeedTemplatesPanelProps) {
     setError(null);
 
     try {
-      const response = await fetch("/api/templates", {
+      const response = await fetch("/api/cms/templates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

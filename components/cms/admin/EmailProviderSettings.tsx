@@ -135,7 +135,7 @@ export default function EmailProviderSettings() {
   const sendTestEmail = async () => {
     setTesting(true)
     try {
-      const response = await fetch('/api/emails/send-test', {
+      const response = await fetch('/api/cms/emails/send-test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

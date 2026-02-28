@@ -90,7 +90,7 @@ export default function OrderWorkflowsPage() {
   const fetchWorkflows = useCallback(async () => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/workflows?includeInactive=true')
+      const response = await fetch('/api/cms/workflows?includeInactive=true')
       if (!response.ok) {
         throw new Error('Failed to fetch workflows')
       }
@@ -110,7 +110,7 @@ export default function OrderWorkflowsPage() {
   async function seedDefaultWorkflows() {
     try {
       setIsSeeding(true)
-      const response = await fetch('/api/workflows', {
+      const response = await fetch('/api/cms/workflows', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'seed' }),
@@ -131,7 +131,7 @@ export default function OrderWorkflowsPage() {
 
   async function toggleWorkflowActive(id: string, isActive: boolean) {
     try {
-      const response = await fetch(`/api/workflows/${id}`, {
+      const response = await fetch(`/api/cms/workflows/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive: !isActive }),
@@ -149,7 +149,7 @@ export default function OrderWorkflowsPage() {
 
   async function setAsDefault(id: string) {
     try {
-      const response = await fetch(`/api/workflows/${id}`, {
+      const response = await fetch(`/api/cms/workflows/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isDefault: true }),
@@ -170,7 +170,7 @@ export default function OrderWorkflowsPage() {
 
   async function duplicateWorkflow(id: string, name: string) {
     try {
-      const response = await fetch(`/api/workflows/${id}`, {
+      const response = await fetch(`/api/cms/workflows/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -192,7 +192,7 @@ export default function OrderWorkflowsPage() {
     if (!deleteId) return
 
     try {
-      const response = await fetch(`/api/workflows/${deleteId}`, {
+      const response = await fetch(`/api/cms/workflows/${deleteId}`, {
         method: 'DELETE',
       })
       if (response.ok) {

@@ -166,7 +166,7 @@ export function ShippingElements({
       await loadShippoScript();
 
       // Get JWT token
-      const authResponse = await fetch('/api/shipping/elements/auth', {
+      const authResponse = await fetch('/api/cms/shipping/elements/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });

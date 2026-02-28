@@ -55,7 +55,7 @@ export function AddFieldDialog({
     const fetchFields = async () => {
       setIsLoading(true)
       try {
-        const response = await fetch('/api/custom-fields?enabled=true')
+        const response = await fetch('/api/cms/custom-fields?enabled=true')
         if (response.ok) {
           const data = await response.json()
           setFields(data.fields || [])

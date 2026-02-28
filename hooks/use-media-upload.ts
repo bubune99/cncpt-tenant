@@ -45,7 +45,7 @@ export function useMediaUpload(options: UseMediaUploadOptions = {}) {
         updateUpload(uploadId, { status: 'uploading', progress: 10 })
 
         // Step 1: Get presigned URL
-        const presignResponse = await fetch('/api/media', {
+        const presignResponse = await fetch('/api/cms/media', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -80,7 +80,7 @@ export function useMediaUpload(options: UseMediaUploadOptions = {}) {
         updateUpload(uploadId, { progress: 70 })
 
         // Step 3: Create media record
-        const completeResponse = await fetch('/api/media', {
+        const completeResponse = await fetch('/api/cms/media', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

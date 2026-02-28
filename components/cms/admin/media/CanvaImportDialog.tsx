@@ -73,7 +73,7 @@ export function CanvaImportDialog({
 
       setStatus("downloading")
 
-      const response = await fetch("/api/canva/import", {
+      const response = await fetch("/api/cms/canva/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

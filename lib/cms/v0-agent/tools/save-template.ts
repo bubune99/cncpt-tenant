@@ -95,7 +95,7 @@ Returns the template ID and URL for accessing it.`,
       const slug = generateSlug(input.name);
 
       // Save to database via API
-      const response = await fetch("/api/templates", {
+      const response = await fetch("/api/cms/templates", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -184,7 +184,7 @@ Use this to fix or improve a previously saved template.`,
       }
 
       // Update via API
-      const response = await fetch(`/api/templates/${input.id}`, {
+      const response = await fetch(`/api/cms/templates/${input.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

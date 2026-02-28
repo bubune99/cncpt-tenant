@@ -136,7 +136,7 @@ export async function saveDashboardTheme(theme: Partial<DashboardTheme>): Promis
 /** Fetch theme from the client side via API */
 export async function fetchDashboardTheme(): Promise<DashboardTheme> {
   try {
-    const res = await fetch('/api/settings?group=dashboard.theme')
+    const res = await fetch('/api/cms/settings?group=dashboard.theme')
     if (res.ok) {
       const data = await res.json()
       if (data['dashboard.theme']) {

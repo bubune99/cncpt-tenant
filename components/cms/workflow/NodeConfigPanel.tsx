@@ -211,7 +211,7 @@ export default function NodeConfigPanel({
           <input
             type="text"
             value={data.config.webhookPath || ''}
-            placeholder="/api/webhook/my-workflow"
+            placeholder="/api/cms/webhook/my-workflow"
             onChange={e =>
               setLocalData({ ...data, config: { ...data.config, webhookPath: e.target.value } })
             }
