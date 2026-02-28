@@ -407,7 +407,7 @@ export default function PagesPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
-                            <Link href={`/p${page.slug === '/' ? '' : page.slug}`} target="_blank">
+                            <Link href={page.slug === '/' ? '/' : page.slug} target="_blank">
                               <Eye className="mr-2 h-4 w-4" />
                               Preview
                             </Link>
@@ -429,7 +429,7 @@ export default function PagesPage() {
                             Duplicate
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>
-                            <Link href={`/p${page.slug === '/' ? '' : page.slug}`} target="_blank">
+                            <Link href={page.slug === '/' ? '/' : page.slug} target="_blank">
                               <ExternalLink className="mr-2 h-4 w-4" />
                               View Live
                             </Link>
@@ -490,7 +490,7 @@ export default function PagesPage() {
               </div>
               <h3 className="font-semibold">3. Publish</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Set status to &quot;Published&quot; to make it live at /p/your-slug
+                Set status to &quot;Published&quot; to make it live at /your-slug
               </p>
             </div>
           </div>

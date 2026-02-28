@@ -28,10 +28,8 @@ export default async function AccountLayout({
     redirect('/handler/sign-in?after_auth_return_to=/account');
   }
 
-  // Default page settings for account pages - use GLOBAL mode for header/footer
+  // Account pages use default layout (header/footer from SiteSettings)
   const pageSettings = getPageLayoutSettings({
-    headerMode: 'GLOBAL',
-    footerMode: 'GLOBAL',
     showAnnouncement: false,
   });
 

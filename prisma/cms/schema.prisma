@@ -1232,8 +1232,7 @@ enum PageStatus {
 // ROUTE CONFIGURATION
 // =============================================================================
 
-// Configures root-level routes (bypassing /p/ prefix)
-// Allows choosing between CMS pages, custom-coded components, or redirects
+// Configures root-level routes for CMS pages, custom components, or redirects
 model RouteConfig {
   id   String    @id @default(cuid())
   slug String // The root-level path, e.g., "/", "/about", "/demo"

@@ -60,7 +60,7 @@ export function CreditBalance({
       const params = new URLSearchParams()
       if (subdomainId) params.set("subdomain_id", subdomainId)
 
-      const response = await fetch(`/api/cms/dashboard/credits?${params}`)
+      const response = await fetch(`/api/dashboard/credits?${params}`)
       if (!response.ok) throw new Error("Failed to fetch balance")
 
       const result = await response.json()
@@ -223,7 +223,7 @@ export function CreditBalanceInline({
         const params = new URLSearchParams()
         if (subdomainId) params.set("subdomain_id", subdomainId)
 
-        const response = await fetch(`/api/cms/dashboard/credits?${params}`)
+        const response = await fetch(`/api/dashboard/credits?${params}`)
         if (response.ok) {
           const data = await response.json()
           setBalance(data.balance.totalAvailable)

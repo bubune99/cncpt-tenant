@@ -91,7 +91,7 @@ export function SubdomainInput({
 
     setChecking(true)
     try {
-      const response = await fetch(`/api/cms/dashboard/subdomain/check?subdomain=${encodeURIComponent(subdomain)}`)
+      const response = await fetch(`/api/dashboard/subdomain/check?subdomain=${encodeURIComponent(subdomain)}`)
       const data = await response.json()
 
       // Simple check - if we get a 409 or the response says it's taken

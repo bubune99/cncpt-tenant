@@ -131,7 +131,7 @@ export function ChatPanel({ className }: ChatPanelProps) {
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
-        api: "/api/cms/dashboard-chat",
+        api: "/api/dashboard-chat",
         fetch: async (url, options) => {
           const response = await fetch(url, options)
           if (!response.ok) {

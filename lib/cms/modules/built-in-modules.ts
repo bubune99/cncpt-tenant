@@ -107,7 +107,7 @@ export const BUILT_IN_MODULES: BuiltInModuleDefinition[] = [
       apiPrefixes: ["products", "orders", "checkout", "cart", "shipping", "customers"],
       blockCategories: ["commerce", "smart-commerce"],
       permissionNamespaces: ["products", "orders", "shipping", "customers"],
-      storefrontPaths: ["/p/*", "/cart", "/checkout", "/shop", "/shop/*"],
+      storefrontPaths: ["/cart", "/checkout", "/shop", "/shop/*"],
       dependencies: [],
     },
   },

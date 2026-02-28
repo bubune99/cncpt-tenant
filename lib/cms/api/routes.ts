@@ -118,7 +118,7 @@ export const routes = {
   storefront: {
     home: "/",
     page: (slug: string) => `/${slug.replace(/^\//, "")}` as const,
-    product: (slug: string) => `/p/${slug}` as const,
+    product: (slug: string) => `/shop/${slug}` as const,
     post: (slug: string) => `/posts/${slug}` as const,
     category: (slug: string) => `/categories/${slug}` as const,
     tag: (slug: string) => `/tags/${slug}` as const,

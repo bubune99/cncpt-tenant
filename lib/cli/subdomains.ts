@@ -417,18 +417,19 @@ export async function handleSubdomains(action: string, args: ParsedArgs) {
 
       await runWithTenant(tenantId, async () => {
         for (const page of templatePages) {
-          const existing = await prisma.page.findFirst({ where: { slug: page.slug } })
+          const existing = await prisma.page.findFirst({
+            where: { OR: [{ slug: page.slug }, { slug: page.slug.replace(/^\//, '') }] },
+          })
 
           if (existing) {
             await prisma.page.update({
               where: { id: existing.id },
               data: {
                 title: page.title,
+                slug: page.slug,
                 content: page.content,
                 status: status as any,
                 publishedAt,
-                headerMode: 'GLOBAL',
-                footerMode: 'GLOBAL',
               },
             })
             updated++
@@ -440,14 +441,12 @@ export async function handleSubdomains(action: string, args: ParsedArgs) {
                 content: page.content,
                 status: status as any,
                 publishedAt,
-                headerMode: 'GLOBAL',
-                footerMode: 'GLOBAL',
               },
             })
             created++
           }
 
-          console.log(`  ${c.green}${sym.check}${c.reset} ${page.title} ${dim(`(/${page.slug})`)}`)
+          console.log(`  ${c.green}${sym.check}${c.reset} ${page.title} ${dim(`(${page.slug})`)}`)
         }
       })
 
@@ -500,9 +499,10 @@ export async function handleSubdomains(action: string, args: ParsedArgs) {
       let failed = 0
 
       for (const page of pages) {
-        const pageUrl = page.slug === 'home'
+        const cleanSlug = page.slug.replace(/^\//, '')
+        const pageUrl = cleanSlug === 'home'
           ? appUrl
-          : `${appUrl}/${page.slug}`
+          : `${appUrl}/${cleanSlug}`
 
         process.stdout.write(`  ${dim('Scraping')} ${page.title} ${dim(`(${pageUrl})`)} ... `)
 
@@ -573,7 +573,7 @@ function getSeedPages(): Array<{ title: string; slug: string; content: any }> {
   return [
     {
       title: 'Home',
-      slug: 'home',
+      slug: '/home',
       content: {
         version: '2.0',
         blocks: [
@@ -643,12 +643,11 @@ function getSeedPages(): Array<{ title: string; slug: string; content: any }> {
             ],
           },
         ],
-        layout: { header: 'global', footer: 'global' },
       },
     },
     {
       title: 'About',
-      slug: 'about',
+      slug: '/about',
       content: {
         version: '2.0',
         blocks: [
@@ -707,12 +706,11 @@ function getSeedPages(): Array<{ title: string; slug: string; content: any }> {
             ],
           },
         ],
-        layout: { header: 'global', footer: 'global' },
       },
     },
     {
       title: 'Contact',
-      slug: 'contact',
+      slug: '/contact',
       content: {
         version: '2.0',
         blocks: [
@@ -765,12 +763,11 @@ function getSeedPages(): Array<{ title: string; slug: string; content: any }> {
             ],
           },
         ],
-        layout: { header: 'global', footer: 'global' },
       },
     },
     {
       title: 'Pricing',
-      slug: 'pricing',
+      slug: '/pricing',
       content: {
         version: '2.0',
         blocks: [
@@ -798,12 +795,11 @@ function getSeedPages(): Array<{ title: string; slug: string; content: any }> {
             ],
           },
         ],
-        layout: { header: 'global', footer: 'global' },
       },
     },
     {
       title: 'Terms of Service',
-      slug: 'terms',
+      slug: '/terms',
       content: {
         version: '2.0',
         blocks: [
@@ -828,12 +824,11 @@ function getSeedPages(): Array<{ title: string; slug: string; content: any }> {
             ],
           },
         ],
-        layout: { header: 'global', footer: 'global' },
       },
     },
     {
       title: 'Privacy Policy',
-      slug: 'privacy',
+      slug: '/privacy',
       content: {
         version: '2.0',
         blocks: [
@@ -858,7 +853,6 @@ function getSeedPages(): Array<{ title: string; slug: string; content: any }> {
             ],
           },
         ],
-        layout: { header: 'global', footer: 'global' },
       },
     },
   ]
