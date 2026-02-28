@@ -76,6 +76,7 @@ export const GET = withPermission(
           title: page.title,
           slug: page.slug,
           status: page.status.toLowerCase(),
+          content: page.content,
           metaTitle: page.metaTitle,
           metaDescription: page.metaDescription,
           featuredImage: page.featuredImage,
