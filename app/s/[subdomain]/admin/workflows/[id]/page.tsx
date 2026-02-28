@@ -6,10 +6,10 @@
  * View workflow details, execution history, and logs
  */
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCMSConfig } from '@/contexts/CMSConfigContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import {
   ArrowLeft,
   Play,
@@ -79,10 +79,6 @@ interface Workflow {
   };
 }
 
-interface PageProps {
-  params: Promise<{ id: string }>;
-}
-
 const statusColors: Record<string, string> = {
   PENDING: 'bg-yellow-100 text-yellow-700',
   RUNNING: 'bg-blue-100 text-blue-700',
@@ -106,8 +102,8 @@ const logLevelColors: Record<string, string> = {
   ERROR: 'text-red-600',
 };
 
-export default function WorkflowDetailPage({ params }: PageProps) {
-  const { id } = use(params);
+export default function WorkflowDetailPage() {
+  const { id } = useParams<{ id: string }>();
   const { buildPath } = useCMSConfig();
   const router = useRouter();
   const [workflow, setWorkflow] = useState<Workflow | null>(null);

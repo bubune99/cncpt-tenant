@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { Button } from '@/components/cms/ui/button';
 import {
@@ -54,12 +55,8 @@ interface Page {
   publishedAt: string | null;
 }
 
-export default function PageEditPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
+export default function PageEditPage() {
+  const { id } = useParams<{ id: string }>();
   const { buildPath } = useCMSConfig();
   const [page, setPage] = useState<Page | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -216,7 +213,7 @@ export default function PageEditPage({
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" asChild>
-            <Link href={`/p${page.slug === '/' ? '' : page.slug}`} target="_blank">
+            <Link href={`${page.slug === '/' ? '/' : page.slug}`} target="_blank">
               <Eye className="mr-2 h-4 w-4" />
               Preview
             </Link>
@@ -266,7 +263,7 @@ export default function PageEditPage({
                   onChange={(e) => setPage({ ...page, slug: e.target.value })}
                 />
                 <p className="text-xs text-muted-foreground">
-                  The URL path for this page. Published pages are accessible at /p{page.slug}
+                  The URL path for this page. Published pages are accessible at {page.slug}
                 </p>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
@@ -434,7 +431,7 @@ export default function PageEditPage({
             </CardHeader>
             <CardContent className="space-y-2">
               <Button variant="outline" className="w-full justify-start" asChild>
-                <Link href={`/p${page.slug === '/' ? '' : page.slug}`} target="_blank">
+                <Link href={`${page.slug === '/' ? '/' : page.slug}`} target="_blank">
                   <Eye className="mr-2 h-4 w-4" />
                   View Live Page
                 </Link>
@@ -491,11 +488,11 @@ export default function PageEditPage({
                 {page.status === 'published' ? 'This page is live at:' : 'When published, this page will be at:'}
               </p>
               <code className="text-sm bg-muted px-2 py-1 rounded block">
-                /p{page.slug}
+                {page.slug}
               </code>
               {page.status === 'published' && (
                 <Button variant="link" className="p-0 h-auto mt-2" asChild>
-                  <Link href={`/p${page.slug === '/' ? '' : page.slug}`} target="_blank">
+                  <Link href={`${page.slug === '/' ? '/' : page.slug}`} target="_blank">
                     <ExternalLink className="h-3 w-3 mr-1" />
                     Open in new tab
                   </Link>

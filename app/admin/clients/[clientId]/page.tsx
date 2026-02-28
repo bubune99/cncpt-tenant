@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, use } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -38,14 +38,10 @@ import type {
 } from "@/types/admin"
 import { CLIENT_STATUS_COLORS, CLIENT_STATUS_LABELS, getTrialDaysRemaining } from "@/types/admin"
 
-interface ClientDetailPageProps {
-  params: Promise<{ clientId: string }>
-}
-
 type DialogType = "approve" | "suspend" | "extend" | "reactivate" | "changeTier" | null
 
-export default function ClientDetailPage({ params }: ClientDetailPageProps) {
-  const resolvedParams = use(params)
+export default function ClientDetailPage() {
+  const resolvedParams = useParams<{ clientId: string }>()
   const router = useRouter()
   const [client, setClient] = useState<PlatformClient | null>(null)
   const [tiers, setTiers] = useState<SubscriptionTier[]>([])

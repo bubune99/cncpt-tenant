@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, use } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Building2, Loader2, CheckCircle, XCircle, Clock } from "lucide-react"
@@ -22,12 +22,8 @@ type InvitationInfo = {
   } | null
 }
 
-export default function AcceptInvitationPage({
-  params,
-}: {
-  params: Promise<{ token: string }>
-}) {
-  const resolvedParams = use(params)
+export default function AcceptInvitationPage() {
+  const resolvedParams = useParams<{ token: string }>()
   const router = useRouter()
   const user = useUser()
   const [invitation, setInvitation] = useState<InvitationInfo | null>(null)

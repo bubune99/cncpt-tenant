@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useCMSConfig } from '@/contexts/CMSConfigContext'
 import {
@@ -51,13 +51,9 @@ interface Role {
   updatedAt: string
 }
 
-interface PageProps {
-  params: Promise<{ id: string }>
-}
-
-export default function EditRolePage({ params }: PageProps) {
+export default function EditRolePage() {
   const { buildPath } = useCMSConfig()
-  const { id } = use(params)
+  const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const [role, setRole] = useState<Role | null>(null)
   const [isLoading, setIsLoading] = useState(true)

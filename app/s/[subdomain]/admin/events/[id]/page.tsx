@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import {
   ArrowLeft,
   Save,
@@ -158,12 +158,8 @@ const registrationStatusColors: Record<string, "default" | "secondary" | "destru
 
 // ---- Component ----
 
-export default function EditEventPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
+export default function EditEventPage() {
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);

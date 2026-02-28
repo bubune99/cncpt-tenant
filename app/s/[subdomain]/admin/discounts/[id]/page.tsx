@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/cms/ui/card';
@@ -80,10 +80,6 @@ interface DiscountCode {
   updatedAt: string;
 }
 
-interface PageProps {
-  params: Promise<{ id: string }>;
-}
-
 interface FormData {
   code: string;
   description: string;
@@ -102,9 +98,9 @@ interface FormData {
   stripeSyncEnabled: boolean;
 }
 
-export default function EditDiscountPage({ params }: PageProps) {
+export default function EditDiscountPage() {
   const { buildPath } = useCMSConfig();
-  const { id } = use(params);
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [discount, setDiscount] = useState<DiscountCode | null>(null);
   const [loading, setLoading] = useState(true);

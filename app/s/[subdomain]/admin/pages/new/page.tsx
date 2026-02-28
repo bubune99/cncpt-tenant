@@ -195,7 +195,7 @@ export default function NewPagePage() {
                   }
                 />
                 <p className="text-xs text-muted-foreground">
-                  The URL path for this page. Published pages are accessible at /p{formData.slug || '/your-slug'}
+                  The URL path for this page. Published pages are accessible at {formData.slug || '/your-slug'}
                 </p>
               </div>
             </CardContent>

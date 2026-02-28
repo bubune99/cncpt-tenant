@@ -1,14 +1,10 @@
 "use client";
 
-import { use } from "react";
+import { useParams } from "next/navigation";
 import { PageBuilder } from "@/components/cms/block-editor/page-builder";
 
-interface PageProps {
-  params: Promise<{ id: string }>;
-}
-
-export default function BlockEditorPage({ params }: PageProps) {
-  const { id } = use(params);
+export default function BlockEditorPage() {
+  const { id } = useParams<{ id: string }>();
 
   return <PageBuilder pageId={id} />;
 }

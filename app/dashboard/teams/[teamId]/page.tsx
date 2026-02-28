@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, use } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -88,12 +88,8 @@ type Membership = {
   role: TeamRole
 }
 
-export default function TeamDashboardPage({
-  params,
-}: {
-  params: Promise<{ teamId: string }>
-}) {
-  const resolvedParams = use(params)
+export default function TeamDashboardPage() {
+  const resolvedParams = useParams<{ teamId: string }>()
   const router = useRouter()
   const [team, setTeam] = useState<Team | null>(null)
   const [membership, setMembership] = useState<Membership | null>(null)

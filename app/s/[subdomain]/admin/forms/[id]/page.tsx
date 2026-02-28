@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { Button } from '@/components/cms/ui/button';
@@ -124,8 +124,8 @@ const FIELD_TYPES = [
   { type: 'toggle', label: 'Toggle', icon: ToggleLeft },
 ];
 
-export default function FormEditorPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function FormEditorPage() {
+  const { id } = useParams<{ id: string }>();
   const { buildPath } = useCMSConfig();
   const router = useRouter();
   const searchParams = useSearchParams();

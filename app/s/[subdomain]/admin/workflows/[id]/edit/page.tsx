@@ -6,9 +6,9 @@
  * Edit an existing workflow using the visual workflow builder
  */
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { WorkflowBuilder } from '@/components/cms/workflow';
 import type { WorkflowDefinition, AvailablePrimitive } from '@/components/cms/workflow';
@@ -146,12 +146,8 @@ interface Workflow {
   variables: Record<string, unknown> | null;
 }
 
-interface PageProps {
-  params: Promise<{ id: string }>;
-}
-
-export default function EditWorkflowPage({ params }: PageProps) {
-  const { id } = use(params);
+export default function EditWorkflowPage() {
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [workflow, setWorkflow] = useState<Workflow | null>(null);
   const [workflowName, setWorkflowName] = useState('');
