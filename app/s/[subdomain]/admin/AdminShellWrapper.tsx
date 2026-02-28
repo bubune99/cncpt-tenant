@@ -126,7 +126,7 @@ export function AdminShellWrapper({
   // Build config
   const config = {
     basePath: `/s/${subdomain}`,
-    siteUrl: `/${subdomain}`,
+    siteUrl: '/',
     siteName: isDemo ? DEMO_CONFIG.siteName : subdomain,
     hiddenItems: [] as string[],
     showChat: true,

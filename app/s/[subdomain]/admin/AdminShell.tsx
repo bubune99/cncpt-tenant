@@ -148,11 +148,15 @@ export function AdminShell({
     isDemo = false,
   } = config;
 
-  // Helper to build paths with basePath prefix
-  const buildPath = (path: string): string => {
-    if (!basePath) return path;
-    // Replace /admin with basePath/admin
-    return path.replace('/admin', `${basePath}/admin`);
+  // Normalize pathname by stripping the /s/[subdomain] prefix that middleware adds internally.
+  // usePathname() returns the internal rewritten path (e.g. /s/test/admin/products),
+  // but links should use plain paths (e.g. /admin/products) since middleware handles rewriting.
+  const normalizePath = (p: string | null): string => {
+    if (!p) return '';
+    if (basePath && p.startsWith(basePath)) {
+      return p.slice(basePath.length) || '/';
+    }
+    return p;
   };
 
   // Build navigation: use module-driven groups if provided, else fallback to hardcoded
@@ -224,12 +228,13 @@ export function AdminShell({
     );
   };
 
+  const normalizedPathname = normalizePath(pathname);
+
   const isActiveLink = (href: string) => {
-    const fullHref = buildPath(href);
     if (href === '/admin') {
-      return pathname === fullHref;
+      return normalizedPathname === '/admin';
     }
-    return pathname?.startsWith(fullHref);
+    return normalizedPathname.startsWith(href);
   };
 
   // Show admin layout for authenticated users OR demo mode
@@ -265,7 +270,7 @@ export function AdminShell({
           <div className="flex flex-col h-full">
             {/* Logo */}
             <div className="px-4 py-4 border-b border-border">
-              <Logo href={buildPath('/admin')} size="sm" />
+              <Logo href="/admin" size="sm" />
               <p className="text-xs text-muted-foreground mt-1 pl-8">
                 {siteName ? `${siteName} Admin` : 'Admin Panel'}
               </p>
@@ -308,7 +313,7 @@ export function AdminShell({
                         return (
                             <li key={item.name}>
                               <Link
-                                href={buildPath(item.href)}
+                                href={item.href}
                                 data-help-key={item.helpKey}
                                 className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                                   isActive

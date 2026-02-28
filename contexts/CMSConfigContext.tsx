@@ -65,11 +65,11 @@ export function CMSConfigProvider({
   const userRole = config.userRole || 'Super Admin';
   const isDemo = config.isDemo || false;
 
-  // Helper to prefix paths with basePath
+  // In multi-tenant mode, the middleware handles rewriting /admin/... to /s/[subdomain]/admin/...
+  // so buildPath should return the path as-is. Links use plain /admin/... paths and the middleware
+  // transparently rewrites them to the correct internal route.
   const buildPath = (path: string): string => {
-    if (!basePath) return path;
-    // Replace /admin with basePath/admin
-    return path.replace('/admin', `${basePath}/admin`);
+    return path;
   };
 
   // Helper to build API paths for multi-tenant
