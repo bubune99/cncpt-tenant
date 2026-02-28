@@ -142,9 +142,9 @@ export const routes = {
         byId: (id: string) => `/api/cms/admin/pages/${id}` as const,
       },
       products: {
-        root: "/api/cms/admin/products",
-        byId: (id: string) => `/api/cms/admin/products/${id}` as const,
-        syncStripe: (id: string) => `/api/cms/admin/products/${id}/sync-stripe` as const,
+        root: "/api/cms/products",
+        byId: (id: string) => `/api/cms/products/${id}` as const,
+        syncStripe: (id: string) => `/api/cms/products/${id}/sync-stripe` as const,
       },
       roles: {
         root: "/api/cms/admin/roles",

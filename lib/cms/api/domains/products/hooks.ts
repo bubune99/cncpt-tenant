@@ -12,7 +12,7 @@ import type { UseApiGetResult, UseApiListResult } from "../../hooks"
 import type { PaginatedResult } from "../../client"
 import type { ProductDto, ListProductsParams } from "./types"
 
-const BASE = "/api/cms/admin/products"
+const BASE = "/api/cms/products"
 
 /**
  * Hook for fetching a paginated list of products.

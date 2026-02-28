@@ -28,16 +28,16 @@ async function fetchEntityTitle(
     let endpoint = '';
     switch (type) {
       case 'product':
-        endpoint = `/api/cms/admin/products/${id}`;
+        endpoint = `/api/cms/products/${id}`;
         break;
       case 'order':
-        endpoint = `/api/cms/admin/orders/${id}`;
+        endpoint = `/api/cms/orders/${id}`;
         break;
       case 'page':
         endpoint = `/api/cms/admin/pages/${id}`;
         break;
       case 'blog':
-        endpoint = `/api/cms/admin/blog/${id}`;
+        endpoint = `/api/cms/blog/posts/${id}`;
         break;
       case 'user':
         endpoint = `/api/cms/admin/customers/${id}`;

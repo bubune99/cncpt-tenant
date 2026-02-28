@@ -13,7 +13,7 @@ import type {
   ListProductsParams,
 } from "./types"
 
-const BASE = "/api/cms/admin/products"
+const BASE = "/api/cms/products"
 
 export const productsClient = {
   /** List products with pagination and filters */
