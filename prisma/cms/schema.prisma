@@ -52,6 +52,9 @@ model User {
   // Page templates created by this user
   puckTemplates PuckTemplate[]
 
+  // Canva integration
+  canvaConnection CanvaConnection?
+
   @@index([stackAuthId], map: "users_stack_auth_id_idx")
   @@map("users")
 }
@@ -4238,4 +4241,253 @@ model CmsModule {
   @@index([enabled])
   @@index([slug])
   @@map("cms_modules")
+}
+
+// =============================================================================
+// PARTIALS (Headers, Footers, Sidebars, etc.)
+// =============================================================================
+
+enum PartialCategory {
+  HEADER
+  FOOTER
+  ANNOUNCEMENT
+  SIDEBAR
+  SECTION
+}
+
+model Partial {
+  id          String          @id @default(cuid())
+  name        String
+  slug        String          @unique
+  description String?
+  category    PartialCategory
+  content     Json            // { version: "2.0", blocks: Block[] }
+  thumbnail   String?         // Preview screenshot URL
+  isDefault   Boolean         @default(false)   // Active default for this category
+  status      String          @default("DRAFT") // DRAFT | PUBLISHED
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([category])
+  @@index([category, isDefault])
+  @@map("partials")
+}
+
+// =============================================================================
+// EVENTS
+// =============================================================================
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+  COMPLETED
+}
+
+enum EventType {
+  IN_PERSON
+  VIRTUAL
+  HYBRID
+}
+
+enum RegistrationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  REFUNDED
+  WAITLISTED
+}
+
+model Event {
+  id               String      @id @default(cuid())
+  title            String
+  slug             String      @unique
+  description      String?     @db.Text
+  shortDescription String?
+  eventType        EventType   @default(IN_PERSON)
+  status           EventStatus @default(DRAFT)
+
+  startDate DateTime
+  endDate   DateTime
+  timezone  String   @default("UTC")
+
+  // Location (in-person / hybrid)
+  venueName    String?
+  venueAddress String?
+  venueCity    String?
+  venueState   String?
+  venueCountry String?
+  venueZip     String?
+  latitude     Float?
+  longitude    Float?
+
+  // Virtual
+  virtualUrl      String?
+  virtualPlatform String? // zoom, meet, teams, custom
+
+  // Media
+  featuredImageUrl String?
+  coverImageUrl    String?
+
+  // Capacity
+  maxAttendees      Int @default(0) // 0 = unlimited
+  registrationCount Int @default(0)
+
+  // Organizer
+  organizerName  String?
+  organizerEmail String?
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  ticketTypes   EventTicketType[]
+  scheduleItems EventScheduleItem[]
+  speakers      EventSpeaker[]
+  registrations EventRegistration[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([startDate])
+  @@index([eventType])
+  @@map("events")
+}
+
+model EventTicketType {
+  id          String  @id @default(cuid())
+  eventId     String
+  name        String
+  description String?
+  price       Int     @default(0) // cents, 0 = free
+  currency    String  @default("usd")
+  quantity    Int?    // null = unlimited
+  sold        Int     @default(0)
+  maxPerOrder Int     @default(10)
+  salesStart  DateTime?
+  salesEnd    DateTime?
+  isActive    Boolean @default(true)
+  position    Int     @default(0)
+
+  // Stripe
+  stripeProductId String?
+  stripePriceId   String?
+
+  event         Event               @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  registrations EventRegistration[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([eventId])
+  @@map("event_ticket_types")
+}
+
+model EventScheduleItem {
+  id          String   @id @default(cuid())
+  eventId     String
+  title       String
+  description String?  @db.Text
+  startTime   DateTime
+  endTime     DateTime
+  location    String?
+  day         Int      @default(1)
+  position    Int      @default(0)
+
+  speakerId String?
+  speaker   EventSpeaker? @relation(fields: [speakerId], references: [id], onDelete: SetNull)
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([eventId])
+  @@index([day])
+  @@map("event_schedule_items")
+}
+
+model EventSpeaker {
+  id        String  @id @default(cuid())
+  eventId   String
+  name      String
+  title     String?
+  bio       String? @db.Text
+  avatarUrl String?
+  company   String?
+  website   String?
+  twitter   String?
+  linkedin  String?
+  position  Int     @default(0)
+
+  event         Event               @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  scheduleItems EventScheduleItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([eventId])
+  @@map("event_speakers")
+}
+
+model EventRegistration {
+  id           String             @id @default(cuid())
+  eventId      String
+  ticketTypeId String?
+  status       RegistrationStatus @default(PENDING)
+
+  // Attendee info
+  attendeeName  String
+  attendeeEmail String
+  attendeePhone String?
+
+  // Payment
+  amount          Int    @default(0) // cents
+  currency        String @default("usd")
+  stripePaymentId String?
+  stripeSessionId String?
+
+  // Check-in
+  checkedIn   Boolean   @default(false)
+  checkedInAt DateTime?
+
+  // Metadata
+  notes String?
+
+  event      Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  ticketType EventTicketType? @relation(fields: [ticketTypeId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([eventId])
+  @@index([attendeeEmail])
+  @@index([status])
+  @@map("event_registrations")
+}
+
+// =============================================================================
+// CANVA INTEGRATION
+// =============================================================================
+
+model CanvaConnection {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  accessToken    String   @db.Text // Encrypted via src/lib/encryption
+  refreshToken   String   @db.Text // Encrypted
+  tokenExpiresAt DateTime
+  canvaUserId    String?
+  canvaTeamId    String?
+  scopes         String[] // Granted OAuth scopes
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("canva_connections")
 }

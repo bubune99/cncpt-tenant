@@ -177,74 +177,80 @@ const TENANT_SCOPED_MODELS = new Set([
 
 /**
  * Apply the tenant-scoping middleware to a Prisma client.
- * This injects tenantId into all queries for tenant-scoped models.
+ * Returns an extended client that injects tenantId into all queries for tenant-scoped models.
+ *
+ * Uses Prisma Client Extensions ($extends) instead of the deprecated $use middleware.
  */
-export function applyTenantMiddleware(prisma: PrismaClient): void {
-  prisma.$use(async (params, next) => {
-    const tenantId = getCurrentTenant()
+export function applyTenantMiddleware(prisma: PrismaClient) {
+  return prisma.$extends({
+    query: {
+      $allOperations({ model, operation, args, query }) {
+        const tenantId = getCurrentTenant()
 
-    // Skip if no tenant context is set (platform-level operations)
-    if (tenantId === null || isSuperAdmin) {
-      return next(params)
-    }
-
-    // Only apply to tenant-scoped models
-    if (!params.model || !TENANT_SCOPED_MODELS.has(params.model)) {
-      return next(params)
-    }
-
-    // Inject tenantId into queries
-    switch (params.action) {
-      case "findMany":
-      case "findFirst":
-      case "findUnique":
-      case "count":
-      case "aggregate":
-      case "groupBy":
-        params.args = params.args || {}
-        params.args.where = params.args.where || {}
-        params.args.where.tenantId = tenantId
-        break
-
-      case "create":
-        params.args = params.args || {}
-        params.args.data = params.args.data || {}
-        if (!params.args.data.tenantId) {
-          params.args.data.tenantId = tenantId
+        // Skip if no tenant context is set (platform-level operations)
+        if (tenantId === null || isSuperAdmin) {
+          return query(args)
         }
-        break
 
-      case "createMany":
-        params.args = params.args || {}
-        if (Array.isArray(params.args.data)) {
-          params.args.data = params.args.data.map((d: any) => ({
-            ...d,
-            tenantId: d.tenantId || tenantId,
-          }))
+        // Only apply to tenant-scoped models
+        if (!model || !TENANT_SCOPED_MODELS.has(model)) {
+          return query(args)
         }
-        break
 
-      case "update":
-      case "updateMany":
-      case "delete":
-      case "deleteMany":
-        params.args = params.args || {}
-        params.args.where = params.args.where || {}
-        params.args.where.tenantId = tenantId
-        break
+        // Inject tenantId into queries
+        switch (operation) {
+          case "findMany":
+          case "findFirst":
+          case "findUnique":
+          case "count":
+          case "aggregate":
+          case "groupBy":
+            args = args || {} as any
+            ;(args as any).where = (args as any).where || {}
+            ;(args as any).where.tenantId = tenantId
+            break
 
-      case "upsert":
-        params.args = params.args || {}
-        params.args.where = params.args.where || {}
-        params.args.where.tenantId = tenantId
-        params.args.create = params.args.create || {}
-        if (!params.args.create.tenantId) {
-          params.args.create.tenantId = tenantId
+          case "create":
+            args = args || {} as any
+            ;(args as any).data = (args as any).data || {}
+            if (!(args as any).data.tenantId) {
+              ;(args as any).data.tenantId = tenantId
+            }
+            break
+
+          case "createMany":
+            args = args || {} as any
+            if (Array.isArray((args as any).data)) {
+              ;(args as any).data = (args as any).data.map((d: any) => ({
+                ...d,
+                tenantId: d.tenantId || tenantId,
+              }))
+            }
+            break
+
+          case "update":
+          case "updateMany":
+          case "delete":
+          case "deleteMany":
+            args = args || {} as any
+            ;(args as any).where = (args as any).where || {}
+            ;(args as any).where.tenantId = tenantId
+            break
+
+          case "upsert":
+            args = args || {} as any
+            ;(args as any).where = (args as any).where || {}
+            ;(args as any).where.tenantId = tenantId
+            ;(args as any).create = (args as any).create || {}
+            if (!(args as any).create.tenantId) {
+              ;(args as any).create.tenantId = tenantId
+            }
+            break
         }
-        break
-    }
 
-    return next(params)
+        return query(args)
+      },
+    },
   })
 }
 

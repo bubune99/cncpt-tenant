@@ -59,13 +59,13 @@ function createPrismaClient(): PrismaClient {
         : ["error"],
   })
 
-  // Apply tenant-scoping middleware (adds tenantId to queries automatically)
-  applyTenantMiddleware(client)
+  // Apply tenant-scoping extension (adds tenantId to queries automatically)
+  const extendedClient = applyTenantMiddleware(client) as unknown as PrismaClient
 
   // Cache client in all environments
-  globalForPrisma.prisma = client
+  globalForPrisma.prisma = extendedClient
 
-  return client
+  return extendedClient
 }
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient()
