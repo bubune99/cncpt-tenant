@@ -57,9 +57,19 @@ function serializeBlockForEditor(block: Block, indent: number): string {
   attrs.push(`className="${block.className}"`)
 
   // Regular HTML attributes
+  // Boolean HTML attributes rendered without a value in JSX
+  const jsxBooleanAttrs = new Set([
+    "controls", "autoplay", "muted", "loop", "playsinline",
+    "disabled", "checked", "readonly", "required", "multiple",
+    "hidden", "novalidate", "allowfullscreen",
+  ])
   if (block.attrs) {
     for (const [key, val] of Object.entries(block.attrs)) {
-      if (val !== undefined && val !== null && val !== "") {
+      if (val === undefined || val === null) continue
+      if (val === "" && jsxBooleanAttrs.has(key)) {
+        // Boolean attribute: render as bare attribute (JSX treats as true)
+        attrs.push(key)
+      } else if (val !== "") {
         if (val.includes('"') || val.includes("'") || val.includes("{") || val.includes("}")) {
           attrs.push(`${key}={\`${val.replace(/`/g, "\\`")}\`}`)
         } else {
@@ -479,10 +489,22 @@ function frameToBlockFromEditor(frame: ParseFrame): Block {
     "data-partial-id", "data-partial-overrides",
     "initial", "animate", "whileInView", "whileHover", "transition", "viewport", "exit",
   ]
+  // Boolean HTML attributes that are valid with empty string value
+  const booleanAttrSet = new Set([
+    "controls", "autoplay", "muted", "loop", "playsinline",
+    "disabled", "checked", "readonly", "required", "multiple",
+    "hidden", "novalidate", "allowfullscreen",
+  ])
   for (const [key, val] of Object.entries(parsedAttrs)) {
-    if (!specialKeys.includes(key) && val !== undefined && val !== "") {
-      htmlAttrs[key] = val
+    if (specialKeys.includes(key)) continue
+    if (val === undefined) continue
+    if (booleanAttrSet.has(key)) {
+      // Normalize boolean attrs to "" (our internal representation)
+      htmlAttrs[key] = ""
+      continue
     }
+    if (val === "") continue
+    htmlAttrs[key] = val
   }
 
   let tag: BlockTag = resolvedTag as BlockTag
@@ -995,9 +1017,17 @@ function blockToJSX(block: Block, indent: number, framework: ExportFramework = "
   // Build attributes
   const attrParts: string[] = []
   if (block.className) attrParts.push(`className="${block.className}"`)
+  const exportBooleanAttrs = new Set([
+    "controls", "autoplay", "muted", "loop", "playsinline",
+    "disabled", "checked", "readonly", "required", "multiple",
+    "hidden", "novalidate", "allowfullscreen",
+  ])
   if (block.attrs) {
     for (const [key, val] of Object.entries(block.attrs)) {
-      if (val !== undefined && val !== null && val !== "") {
+      if (val === undefined || val === null) continue
+      if (val === "" && exportBooleanAttrs.has(key)) {
+        attrParts.push(key)
+      } else if (val !== "") {
         attrParts.push(`${key}="${val}"`)
       }
     }
@@ -1175,7 +1205,7 @@ interface StackFrame {
  * - Rich inline text (preserves <strong>, <em>, <a>)
  * - Unknown elements fall back to div containers
  */
-function parseJSX(source: string): Block[] {
+export function parseJSX(source: string): Block[] {
   const root: Block[] = []
   const stack: StackFrame[] = []
 

@@ -152,3 +152,30 @@ export const LEAF_TAGS: BlockTag[] = [
 export function isContainerTag(tag: BlockTag): boolean {
   return CONTAINER_TAGS.includes(tag)
 }
+
+export interface DragState {
+  blockId: string | null
+  sourceParentId: string | null
+  targetParentId: string | null
+  targetIndex: number
+  isPaletteItem: boolean
+  paletteTag?: BlockTag
+}
+
+/** Global layout configuration for header/footer */
+export interface PageLayout {
+  header: "global" | "custom" | "none"
+  footer: "global" | "custom" | "none"
+  customHeader?: Block[]
+  customFooter?: Block[]
+}
+
+export interface PageDocument {
+  version: string
+  blocks: Block[]
+  layout?: PageLayout
+  /** Global header blocks (shared across pages) */
+  globalHeader?: Block[]
+  /** Global footer blocks (shared across pages) */
+  globalFooter?: Block[]
+}
