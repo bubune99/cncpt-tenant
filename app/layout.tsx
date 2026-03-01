@@ -13,9 +13,18 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: "Platforms Starter Kit",
-  description: "Next.js template for building a multi-tenant SaaS.",
-    generator: 'v0.app'
+  title: {
+    default: "CNCPT Web",
+    template: "%s | CNCPT Web",
+  },
+  description: "Build, manage, and scale your web presence with CNCPT Web.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/CNCPT_Web_logo_navy.png",
+  },
 }
 
 export default function RootLayout({

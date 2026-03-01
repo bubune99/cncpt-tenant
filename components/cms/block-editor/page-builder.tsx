@@ -60,6 +60,7 @@ import {
 import { useState, useCallback, useEffect, useRef } from "react"
 import { BlockRenderer } from "./block-renderer"
 import { ScreenshotDialog } from "./screenshot-dialog"
+import { DesignBrowserDialog } from "./design-browser-dialog"
 import type { Block } from "@/lib/cms/block-editor/types"
 import { cn } from "@/lib/cms/utils"
 import { toast } from "sonner"
@@ -100,6 +101,9 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
   const [viewport, setViewport] = useState<"desktop" | "tablet" | "mobile">("desktop")
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [titleInput, setTitleInput] = useState("")
+
+  // Design browser state
+  const [designBrowserOpen, setDesignBrowserOpen] = useState(false)
 
   // Screenshot state
   const [screenshotOpen, setScreenshotOpen] = useState(false)
@@ -487,11 +491,9 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                       Import / Export
                     </DropdownMenuItem>
                   </ImportExportDialog>
-                  <DropdownMenuItem
-                    onClick={() => window.open("/admin/marketplace", "_blank")}
-                  >
+                  <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setDesignBrowserOpen(true) }}>
                     <Store size={14} className="mr-2" />
-                    Template Marketplace
+                    Design Browser
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleScreenshot} disabled={isCapturing}>
@@ -691,6 +693,12 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
         diffResult={diffResult}
         baseline={state.currentPage?.baseline}
         onSaveBaseline={handleSaveBaseline}
+      />
+
+      {/* Design browser dialog */}
+      <DesignBrowserDialog
+        open={designBrowserOpen}
+        onOpenChange={setDesignBrowserOpen}
       />
     </div>
   )

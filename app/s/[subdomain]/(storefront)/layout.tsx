@@ -135,7 +135,7 @@ export default async function StorefrontLayout({
                   rel="noopener noreferrer"
                   className="hover:text-muted-foreground transition-colors"
                 >
-                  CNCPT
+                  CNCPT Web
                 </a>
               </p>
             )}

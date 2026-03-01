@@ -415,15 +415,15 @@ export default function BrandingSettings() {
         <CardHeader>
           <CardTitle>White Label</CardTitle>
           <CardDescription>
-            Control CNCPT branding visibility and add custom CSS
+            Control CNCPT Web branding visibility and add custom CSS
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Hide &quot;Powered by CNCPT&quot;</Label>
+              <Label>Hide &quot;Powered by CNCPT Web&quot;</Label>
               <p className="text-sm text-muted-foreground">
-                Remove the CNCPT branding from the storefront footer
+                Remove the CNCPT Web branding from the storefront footer
               </p>
             </div>
             <Switch

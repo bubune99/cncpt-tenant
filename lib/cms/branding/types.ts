@@ -43,12 +43,12 @@ export interface TenantBranding {
 
 /** Default branding values for new tenants */
 export const DEFAULT_TENANT_BRANDING: TenantBranding = {
-  siteName: 'My Site',
-  siteTagline: 'Welcome to our platform',
+  siteName: 'CNCPT Web',
+  siteTagline: 'Build, manage, and scale your web presence',
   primaryColor: '#0066cc',
   accentColor: '#6366f1',
   themeColor: '#0891b2',
-  titleTemplate: '%s | My Site',
+  titleTemplate: '%s | CNCPT Web',
   metaDescription: '',
   hidePoweredBy: false,
 }

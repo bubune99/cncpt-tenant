@@ -126,7 +126,7 @@ function AdminSidebar({
             <Shield className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-white">CNCPT Admin</h2>
+            <h2 className="text-lg font-semibold text-white">CNCPT Web Admin</h2>
             <p className="text-xs text-slate-400">{rootDomain}</p>
           </div>
         </div>

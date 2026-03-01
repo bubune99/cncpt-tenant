@@ -37,7 +37,7 @@ export function Navigation() {
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2">
           <Palette className="h-6 w-6" />
-          <span className="font-bold text-lg">CNCPT Designer</span>
+          <span className="font-bold text-lg">CNCPT Web</span>
         </Link>
 
         {/* Desktop Navigation */}
