@@ -2,14 +2,14 @@
 // Content-Security-Policy
 // ---------------------------------------------------------------------------
 // Block editor inline styles require 'unsafe-inline' in style-src.
-// No react-live in tenant — no 'unsafe-eval' needed.
+// react-live JSX preview requires 'unsafe-eval' in script-src.
 // ---------------------------------------------------------------------------
 const cspDirectives = [
   // Fallback for directives not explicitly listed
   "default-src 'self'",
 
-  // Scripts: self + Stripe + Shippo + analytics + Vercel
-  "script-src 'self' 'unsafe-inline' https://js.stripe.com https://js.goshippo.com https://www.googletagmanager.com https://www.google-analytics.com https://plausible.io https://vercel.live",
+  // Scripts: self + unsafe-eval (react-live) + Stripe + Shippo + analytics + Vercel
+  "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://js.goshippo.com https://www.googletagmanager.com https://www.google-analytics.com https://plausible.io https://vercel.live",
 
   // Styles: self + inline (required by block editor and inline style props)
   "style-src 'self' 'unsafe-inline'",
