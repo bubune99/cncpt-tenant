@@ -14,10 +14,25 @@ import { useEditor } from "@/lib/cms/block-editor/editor-context"
 import { PAGE_TEMPLATES, type PageTemplate } from "@/lib/cms/block-editor/page-templates"
 import { FEATURE_PRESETS, type FeaturePreset } from "@/lib/cms/features/presets"
 import { generateThemeCss } from "@/lib/cms/theme/color-utils"
-import {
-  DEFAULT_DASHBOARD_THEME,
-  type DashboardTheme,
-} from "@/lib/cms/dashboard/theme"
+// Inlined to avoid importing server-only lib/cms/dashboard/theme.ts (pulls in prisma/pg)
+interface DashboardTheme {
+  primaryColor: string
+  accentColor: string
+  backgroundColor: string
+  cardStyle: "flat" | "bordered" | "elevated" | "glass"
+  borderRadius: "none" | "sm" | "md" | "lg" | "xl"
+  fontFamily?: string
+  darkMode: boolean
+}
+
+const DEFAULT_DASHBOARD_THEME: DashboardTheme = {
+  primaryColor: "#0066cc",
+  accentColor: "#6366f1",
+  backgroundColor: "#f9fafb",
+  cardStyle: "bordered",
+  borderRadius: "md",
+  darkMode: false,
+}
 import type { MarketplaceTemplate, MarketplacePageData } from "@/components/cms/marketplace/types"
 import type { Block } from "@/lib/cms/block-editor/types"
 import { cn } from "@/lib/cms/utils"
