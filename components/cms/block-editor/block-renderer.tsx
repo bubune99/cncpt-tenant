@@ -38,6 +38,24 @@ function containsHtml(text: string): boolean {
 }
 
 /**
+ * Convert a CSS string like "color: red; font-size: 14px" to a React style object.
+ * React's createElement requires style to be an object, not a string.
+ */
+function parseCssString(css: string): React.CSSProperties {
+  const style: Record<string, string> = {}
+  for (const decl of css.split(";")) {
+    const colon = decl.indexOf(":")
+    if (colon < 1) continue
+    const prop = decl.slice(0, colon).trim()
+    const val = decl.slice(colon + 1).trim()
+    if (!prop || !val) continue
+    const camel = prop.replace(/-([a-z])/g, (_, c) => c.toUpperCase())
+    style[camel] = val
+  }
+  return style as React.CSSProperties
+}
+
+/**
  * Renders a block as its native HTML tag with its Tailwind className.
  * The new architecture means every block is just: <tag className={...}>content</tag>
  */
@@ -66,7 +84,15 @@ export function BlockRenderer({ block, renderChildren, isPreview = false }: Bloc
   if (block.attrs) {
     for (const [key, val] of Object.entries(block.attrs)) {
       if (val !== undefined && val !== null && val !== "") {
-        htmlAttrs[key] = val
+        // React requires style to be an object, not a CSS string
+        if (key === "style" && typeof val === "string") {
+          const parsed = parseCssString(val)
+          htmlAttrs.style = htmlAttrs.style
+            ? { ...(htmlAttrs.style as Record<string, string>), ...parsed }
+            : parsed
+        } else {
+          htmlAttrs[key] = val
+        }
       }
     }
   }

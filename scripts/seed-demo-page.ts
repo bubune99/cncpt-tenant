@@ -191,21 +191,21 @@ function buildDemoPage(): Block[] {
                   'HyperUI',
                   '271',
                   'Static Tailwind components — navbars, footers, CTAs, forms, cards, and marketing sections.',
-                  '#3b82f6',
+                  'bg-blue-500/10', 'text-blue-500', 'border-blue-500/20',
                   0
                 ),
                 sourceCard(
                   'Aceternity UI',
                   '98',
                   'Animated React components with framer-motion — 3D cards, parallax, hero effects, and text animations.',
-                  '#8b5cf6',
+                  'bg-violet-500/10', 'text-violet-500', 'border-violet-500/20',
                   1
                 ),
                 sourceCard(
                   'Magic UI',
                   '66',
                   'Animated building blocks — gradient text, orbit circles, shimmer buttons, beam effects, and more.',
-                  '#ec4899',
+                  'bg-pink-500/10', 'text-pink-500', 'border-pink-500/20',
                   2
                 ),
               ],
@@ -395,16 +395,14 @@ function templateCard(title: string, count: string, desc: string, gradient: stri
   })
 }
 
-function sourceCard(name: string, count: string, desc: string, color: string, index: number): Block {
+function sourceCard(name: string, count: string, desc: string, bgClass: string, textClass: string, borderClass: string, index: number): Block {
   return b('div', 'rounded-xl border border-white/10 bg-white/[0.03] p-8 text-center hover:bg-white/[0.06] transition-all', {
     animation: { type: 'slideUp', trigger: 'inView', duration: 0.5, delay: index * 0.15 },
     children: [
-      b('div', 'w-16 h-16 rounded-2xl mx-auto mb-6 flex items-center justify-center', {
-        attrs: { style: `background: ${color}15; border: 1px solid ${color}30` },
+      b('div', `w-16 h-16 rounded-2xl mx-auto mb-6 flex items-center justify-center ${bgClass} border ${borderClass}`, {
         children: [
-          b('span', 'text-2xl font-bold', {
+          b('span', `text-2xl font-bold ${textClass}`, {
             text: count,
-            attrs: { style: `color: ${color}` },
           }),
         ],
       }),
