@@ -1,8 +1,9 @@
 "use client"
 
-import type { Block, BlockBackground } from "@/lib/cms/block-editor/types"
+import type { Block, BlockAnimation, BlockBackground } from "@/lib/cms/block-editor/types"
 import { isContainerTag } from "@/lib/cms/block-editor/types"
 import { createElement } from "react"
+import { motion } from "framer-motion"
 
 interface BlockRendererProps {
   block: Block
@@ -57,8 +58,58 @@ function parseCssString(css: string): React.CSSProperties {
 }
 
 /**
+ * Build framer-motion props from BlockAnimation data.
+ * Returns props to spread onto a motion component (initial, animate/whileInView/whileHover, transition, viewport).
+ */
+function buildAnimationProps(anim: BlockAnimation): Record<string, unknown> {
+  const { type = "fadeIn", trigger = "onMount", duration = 0.5, delay = 0 } = anim
+
+  // Custom animation — pass through raw motion props
+  if (type === "custom" && anim.custom) {
+    const props: Record<string, unknown> = {}
+    if (anim.custom.initial) props.initial = anim.custom.initial
+    if (anim.custom.animate) props.animate = anim.custom.animate
+    if (anim.custom.whileInView) props.whileInView = anim.custom.whileInView
+    if (anim.custom.whileHover) props.whileHover = anim.custom.whileHover
+    if (anim.custom.transition) props.transition = anim.custom.transition
+    return props
+  }
+
+  // Preset initial states
+  const presets: Record<string, Record<string, number>> = {
+    fadeIn:     { opacity: 0 },
+    slideUp:    { opacity: 0, y: 30 },
+    slideDown:  { opacity: 0, y: -30 },
+    slideLeft:  { opacity: 0, x: -30 },
+    slideRight: { opacity: 0, x: 30 },
+    scale:      { opacity: 0, scale: 0.9 },
+  }
+
+  const initial = presets[type] || presets.fadeIn
+  const animate = Object.fromEntries(Object.keys(initial).map((k) => [k, k === "scale" ? 1 : k === "opacity" ? 1 : 0]))
+  const transition = { duration, delay, ease: "easeOut" as const }
+
+  if (trigger === "inView") {
+    return {
+      initial,
+      whileInView: animate,
+      viewport: { once: true, margin: "-50px" },
+      transition,
+    }
+  }
+
+  if (trigger === "hover") {
+    return { whileHover: animate, transition }
+  }
+
+  // onMount
+  return { initial, animate, transition }
+}
+
+/**
  * Renders a block as its native HTML tag with its Tailwind className.
  * The new architecture means every block is just: <tag className={...}>content</tag>
+ * When block.animation is present, renders as a framer-motion component.
  */
 export function BlockRenderer({ block, renderChildren, isPreview = false }: BlockRendererProps) {
   // Skip rendering hidden blocks in preview/export
@@ -66,7 +117,11 @@ export function BlockRenderer({ block, renderChildren, isPreview = false }: Bloc
     return null
   }
 
-  const Tag = block.tag
+  // Use motion component when animation is present, plain tag otherwise
+  const hasAnimation = !!block.animation
+  const Tag = hasAnimation
+    ? ((motion as Record<string, unknown>)[block.tag] || block.tag)
+    : block.tag
   const isContainer = isContainerTag(block.tag) || !!block.children
   const isSelfClosing = ["img", "hr", "input"].includes(block.tag)
   const hasBackground = block.background?.url
@@ -101,6 +156,11 @@ export function BlockRenderer({ block, renderChildren, isPreview = false }: Bloc
   // Special: images need crossOrigin
   if (block.tag === "img") {
     htmlAttrs.crossOrigin = "anonymous"
+  }
+
+  // Apply framer-motion animation props
+  if (hasAnimation && block.animation) {
+    Object.assign(htmlAttrs, buildAnimationProps(block.animation))
   }
 
   // Self-closing tags
