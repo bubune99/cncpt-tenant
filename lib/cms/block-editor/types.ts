@@ -77,10 +77,14 @@ export interface Block {
   commerce?: CommerceBinding
   componentName?: string
   frameworkRequirement?: ExportFramework
+  /** ID of the shared Partial record this block references */
+  partialId?: string
+  /** Per-block overrides applied on top of the partial's blocks (keyed by block ID) */
+  partialOverrides?: Record<string, Partial<Pick<Block, 'textContent' | 'className' | 'attrs'>>>
 }
 
 /** Categories for the block palette */
-export type BlockCategory = "layout" | "typography" | "media" | "interactive" | "form" | "commerce" | "smart-commerce" | "smart-dashboard"
+export type BlockCategory = "layout" | "typography" | "media" | "interactive" | "form" | "commerce" | "smart-commerce" | "smart-dashboard" | "partials"
 
 /** Supported export frameworks */
 export type ExportFramework = "react" | "hydrogen" | "nextjs"

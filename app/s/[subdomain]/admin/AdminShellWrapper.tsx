@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { AdminShell } from './AdminShell';
 import { isDemoSubdomain, DEMO_CONFIG } from '@/lib/demo';
 import type { ModuleNavGroupData } from '@/contexts/CMSConfigContext';
+import { FeatureProvider } from '@/lib/cms/features/feature-context';
 
 /**
  * Serializable module data from API (no React components)
@@ -21,6 +22,20 @@ interface ModuleData {
     adminNav?: ModuleNavContribution[];
   };
 }
+
+/** Feature definitions: which nav items are gated by which feature */
+const FEATURE_NAV_GATES: Record<string, string[]> = {
+  // Module-level gating: feature key -> nav item names
+  commerce: ['Products', 'Orders', 'Order Workflows', 'Shipping', 'Customers'],
+  blog: ['Blog'],
+  forms: ['Forms'],
+  media: ['Media'],
+  events: ['Events'],
+  'email-marketing': ['Email Marketing'],
+  analytics: ['Analytics'],
+  lms: ['Courses'],
+  workflows: ['Workflows'],
+};
 
 /** Desired display order for nav groups */
 const GROUP_ORDER: Record<string, number> = {
@@ -84,10 +99,40 @@ function assembleModuleNavigation(modules: ModuleData[]): ModuleNavGroupData[] {
 }
 
 /**
+ * Filter navigation groups based on feature config.
+ * Removes nav items whose parent module/feature is disabled.
+ */
+function filterNavByFeatures(
+  groups: ModuleNavGroupData[],
+  featureConfig: Record<string, boolean>
+): ModuleNavGroupData[] {
+  // Build a set of nav item names to hide
+  const hiddenNames = new Set<string>();
+
+  for (const [featureKey, navItems] of Object.entries(FEATURE_NAV_GATES)) {
+    if (featureConfig[featureKey] === false) {
+      for (const name of navItems) {
+        hiddenNames.add(name);
+      }
+    }
+  }
+
+  if (hiddenNames.size === 0) return groups;
+
+  return groups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !hiddenNames.has(item.name)),
+    }))
+    .filter((group) => group.items.length > 0);
+}
+
+/**
  * AdminShellWrapper
  *
  * Wraps the admin shell with subdomain-specific configuration.
- * Fetches module data to build dynamic navigation from the CmsModule system.
+ * Fetches module data and feature config to build dynamic,
+ * feature-gated navigation from the CmsModule and feature systems.
  */
 export function AdminShellWrapper({
   children,
@@ -97,29 +142,53 @@ export function AdminShellWrapper({
   const params = useParams();
   const subdomain = params?.subdomain as string;
   const [moduleNavGroups, setModuleNavGroups] = useState<ModuleNavGroupData[] | undefined>(undefined);
+  const [featureConfig, setFeatureConfig] = useState<Record<string, boolean>>({});
 
   // Check if this is demo mode
   const isDemo = isDemoSubdomain(subdomain);
 
-  // Fetch modules on mount to build module-driven navigation
+  // Fetch modules and features on mount
   useEffect(() => {
     let cancelled = false;
 
-    async function fetchModules() {
+    async function fetchData() {
       try {
-        const res = await fetch('/api/cms/admin/modules');
-        if (!res.ok) return;
-        const json = await res.json();
-        if (json.ok && !cancelled) {
-          const navGroups = assembleModuleNavigation(json.data);
-          setModuleNavGroups(navGroups);
+        // Fetch modules and features in parallel
+        const [modulesRes, featuresRes] = await Promise.all([
+          fetch('/api/cms/admin/modules'),
+          fetch('/api/cms/admin/features'),
+        ]);
+
+        if (cancelled) return;
+
+        // Process modules
+        if (modulesRes.ok) {
+          const modulesJson = await modulesRes.json();
+          if (modulesJson.ok && !cancelled) {
+            const navGroups = assembleModuleNavigation(modulesJson.data);
+
+            // Process features and filter nav
+            if (featuresRes.ok) {
+              const featuresJson = await featuresRes.json();
+              if (featuresJson.ok && !cancelled) {
+                const config = featuresJson.data.config as Record<string, boolean>;
+                setFeatureConfig(config);
+                const filteredGroups = filterNavByFeatures(navGroups, config);
+                setModuleNavGroups(filteredGroups);
+                return;
+              }
+            }
+
+            // If features fetch failed, use unfiltered nav
+            setModuleNavGroups(navGroups);
+          }
         }
       } catch {
         // Silently fall back to hardcoded navigation
       }
     }
 
-    fetchModules();
+    fetchData();
     return () => { cancelled = true; };
   }, []);
 
@@ -135,8 +204,10 @@ export function AdminShellWrapper({
   };
 
   return (
-    <AdminShell config={config}>
-      {children}
-    </AdminShell>
+    <FeatureProvider initialConfig={Object.keys(featureConfig).length > 0 ? featureConfig : undefined}>
+      <AdminShell config={config}>
+        {children}
+      </AdminShell>
+    </FeatureProvider>
   );
 }

@@ -1,68 +1,13 @@
 /**
  * API Rate Limiter
  *
- * In-memory sliding window rate limiter for API route protection.
- * Returns standardized 429 responses with Retry-After header.
- *
- * NOTE: This is an in-memory implementation suitable for single-server deployments.
- * For multi-server / horizontally scaled deployments, replace with a Redis-backed
- * implementation (e.g. using the existing src/lib/redis connection).
+ * Redis-backed sliding window rate limiter using @upstash/ratelimit.
+ * Works across serverless instances and survives deploys.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-
-// ---------------------------------------------------------------------------
-// Core limiter (reused from vmcp pattern)
-// ---------------------------------------------------------------------------
-
-class SlidingWindowLimiter {
-  private windows: Map<string, number[]> = new Map();
-  private cleanupInterval: ReturnType<typeof setInterval> | null = null;
-
-  constructor() {
-    // Periodically prune stale keys to prevent memory leaks
-    this.cleanupInterval = setInterval(() => this.cleanup(), 60_000);
-  }
-
-  check(
-    key: string,
-    windowMs: number,
-    maxRequests: number,
-  ): { allowed: boolean; retryAfterMs?: number; remaining: number } {
-    const now = Date.now();
-    const windowStart = now - windowMs;
-
-    let timestamps = this.windows.get(key) ?? [];
-    timestamps = timestamps.filter((t) => t > windowStart);
-
-    if (timestamps.length >= maxRequests) {
-      const oldest = timestamps[0];
-      const retryAfterMs = oldest + windowMs - now;
-      this.windows.set(key, timestamps);
-      return { allowed: false, retryAfterMs, remaining: 0 };
-    }
-
-    timestamps.push(now);
-    this.windows.set(key, timestamps);
-    return { allowed: true, remaining: maxRequests - timestamps.length };
-  }
-
-  private cleanup() {
-    const now = Date.now();
-    // Remove keys where all timestamps are older than 24 hours
-    const cutoff = now - 86_400_000;
-    for (const [key, timestamps] of this.windows) {
-      const recent = timestamps.filter((t) => t > cutoff);
-      if (recent.length === 0) {
-        this.windows.delete(key);
-      } else {
-        this.windows.set(key, recent);
-      }
-    }
-  }
-}
-
-const limiter = new SlidingWindowLimiter();
+import { Ratelimit } from '@upstash/ratelimit';
+import { redis } from '@/lib/redis';
 
 // ---------------------------------------------------------------------------
 // IP extraction helper
@@ -103,7 +48,32 @@ export const RATE_LIMIT_PRESETS = {
   forms: { maxRequests: 10, windowMs: 60_000 } satisfies RateLimitConfig,
   /** Data export: 1 req / 24h */
   dataExport: { maxRequests: 1, windowMs: 86_400_000 } satisfies RateLimitConfig,
+  /** Media upload: 20 req / 60s */
+  upload: { maxRequests: 20, windowMs: 60_000, keyPrefix: 'media-upload' } satisfies RateLimitConfig,
+  /** Presigned URL generation: 30 req / 60s */
+  presign: { maxRequests: 30, windowMs: 60_000, keyPrefix: 'media-presign' } satisfies RateLimitConfig,
 } as const;
+
+// ---------------------------------------------------------------------------
+// Limiter cache — one Ratelimit instance per unique config
+// ---------------------------------------------------------------------------
+
+const limiterCache = new Map<string, Ratelimit>();
+
+function getLimiter(config: RateLimitConfig): Ratelimit {
+  const cacheKey = `${config.maxRequests}:${config.windowMs}`;
+  let limiter = limiterCache.get(cacheKey);
+  if (!limiter) {
+    const windowSec = Math.max(1, Math.ceil(config.windowMs / 1000));
+    limiter = new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(config.maxRequests, `${windowSec} s`),
+      prefix: '@upstash/ratelimit',
+    });
+    limiterCache.set(cacheKey, limiter);
+  }
+  return limiter;
+}
 
 // ---------------------------------------------------------------------------
 // Main helper — call at the top of any route handler
@@ -118,24 +88,25 @@ export const RATE_LIMIT_PRESETS = {
  * Usage:
  * ```ts
  * export async function POST(request: NextRequest) {
- *   const limited = rateLimitCheck(request, RATE_LIMIT_PRESETS.auth);
+ *   const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.auth);
  *   if (limited) return limited;
  *   // ... rest of handler
  * }
  * ```
  */
-export function rateLimitCheck(
+export async function rateLimitCheck(
   request: NextRequest,
   config: RateLimitConfig,
-): NextResponse | null {
+): Promise<NextResponse | null> {
   const ip = getClientIp(request);
   const prefix = config.keyPrefix ?? new URL(request.url).pathname;
-  const key = `rl:${prefix}:${ip}`;
+  const key = `${prefix}:${ip}`;
 
-  const result = limiter.check(key, config.windowMs, config.maxRequests);
+  const limiter = getLimiter(config);
+  const { success, remaining, reset } = await limiter.limit(key);
 
-  if (!result.allowed) {
-    const retryAfterSec = Math.ceil((result.retryAfterMs ?? config.windowMs) / 1000);
+  if (!success) {
+    const retryAfterSec = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
     return NextResponse.json(
       {
         error: 'Too many requests. Please try again later.',
@@ -147,9 +118,7 @@ export function rateLimitCheck(
           'Retry-After': String(retryAfterSec),
           'X-RateLimit-Limit': String(config.maxRequests),
           'X-RateLimit-Remaining': '0',
-          'X-RateLimit-Reset': String(
-            Math.ceil((Date.now() + (result.retryAfterMs ?? config.windowMs)) / 1000),
-          ),
+          'X-RateLimit-Reset': String(Math.ceil(reset / 1000)),
         },
       },
     );

@@ -36,6 +36,14 @@ export interface MediaBase {
   deletedAt: Date | null
   createdAt: Date
   updatedAt: Date
+
+  // Video-specific fields (null for non-video media)
+  /** Duration in seconds (rounded to nearest integer) */
+  duration: number | null
+  /** URL of auto-generated video thumbnail stored in R2 */
+  thumbnailUrl: string | null
+  /** Extended metadata JSON (codec, bitrate, format, etc.) */
+  metadata: Record<string, any> | null
 }
 
 export interface MediaFolderBase {
@@ -130,6 +138,11 @@ export interface MediaCreateInput {
   key?: string
   uploadedById?: string
   tagIds?: string[]
+
+  // Video metadata fields
+  duration?: number
+  thumbnailUrl?: string | null
+  metadata?: Record<string, any> | null
 }
 
 export interface MediaUpdateInput {
@@ -140,6 +153,13 @@ export interface MediaUpdateInput {
   description?: string
   folderId?: string | null
   tagIds?: string[]
+
+  // Video metadata fields
+  duration?: number
+  width?: number
+  height?: number
+  thumbnailUrl?: string | null
+  metadata?: Record<string, any> | null
 }
 
 // =============================================================================
@@ -380,9 +400,31 @@ export const DEFAULT_ALLOWED_TYPES = [
 ]
 
 /**
- * Default max file size (50MB)
+ * Default max file size (500MB — general limit)
  */
-export const DEFAULT_MAX_FILE_SIZE = 50 * 1024 * 1024
+export const DEFAULT_MAX_FILE_SIZE = 500 * 1024 * 1024
+
+/**
+ * Per-type file size limits
+ */
+export const MAX_IMAGE_FILE_SIZE = 50 * 1024 * 1024 // 50MB
+export const MAX_VIDEO_FILE_SIZE = 2 * 1024 * 1024 * 1024 // 2GB
+export const MAX_AUDIO_FILE_SIZE = 500 * 1024 * 1024 // 500MB
+
+/**
+ * Get the max file size for a given MIME type
+ */
+export function getMaxFileSizeForType(mimeType: string): number {
+  if (mimeType.startsWith('image/')) return MAX_IMAGE_FILE_SIZE
+  if (mimeType.startsWith('video/')) return MAX_VIDEO_FILE_SIZE
+  if (mimeType.startsWith('audio/')) return MAX_AUDIO_FILE_SIZE
+  return DEFAULT_MAX_FILE_SIZE
+}
+
+/**
+ * Multipart upload threshold — files above this size use chunked upload
+ */
+export const MULTIPART_THRESHOLD = 50 * 1024 * 1024 // 50MB
 
 // =============================================================================
 // R2/S3 CORS CONFIGURATION

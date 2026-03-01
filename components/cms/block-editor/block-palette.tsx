@@ -48,9 +48,13 @@ import {
   Store,
 } from "lucide-react"
 import { BLOCK_TEMPLATES, BLOCK_CATEGORIES, COMMERCE_PROVIDERS } from "@/lib/cms/block-editor/block-templates"
-import type { CommerceProvider } from "@/lib/cms/block-editor/types"
+import type { Block, CommerceProvider } from "@/lib/cms/block-editor/types"
 import { useEditor } from "@/lib/cms/block-editor/editor-context"
 import { cn } from "@/lib/cms/utils"
+import { usePartials } from "@/lib/cms/api/domains/partials/hooks"
+import type { PartialDto } from "@/lib/cms/api/domains/partials/types"
+import { generateId } from "@/lib/cms/block-editor/tree-utils"
+import { Layers } from "lucide-react"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- lucide-react multi-version type conflict in pnpm
 const iconMap: Record<string, any> = {
@@ -85,7 +89,8 @@ export function BlockPalette({
 }: {
   enabledCategories?: Set<string> | null
 } = {}) {
-  const { addBlockFromTemplate, state } = useEditor()
+  const { addBlockFromTemplate, addBlockRaw, state } = useEditor()
+  const { data: partialsList } = usePartials({ status: "PUBLISHED" as any })
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(BLOCK_CATEGORIES.map((c) => c.id))
   )
@@ -281,45 +286,176 @@ export function BlockPalette({
             </div>
           ) : (
             /* Categories mode — filter by enabled modules */
-            (enabledCategories
-              ? BLOCK_CATEGORIES.filter((c) => enabledCategories.has(c.id))
-              : BLOCK_CATEGORIES
-            ).map((category) => {
-              const isExpanded = expandedCategories.has(category.id)
-              const templates = BLOCK_TEMPLATES.filter((t) => t.category === category.id)
-              const CategoryIcon = categoryIconMap[category.icon] || LayoutGrid
+            <>
+              {(enabledCategories
+                ? BLOCK_CATEGORIES.filter((c) => enabledCategories.has(c.id))
+                : BLOCK_CATEGORIES
+              ).map((category) => {
+                const isExpanded = expandedCategories.has(category.id)
+                const templates = BLOCK_TEMPLATES.filter((t) => t.category === category.id)
+                const CategoryIcon = categoryIconMap[category.icon] || LayoutGrid
 
-              return (
-                <div key={category.id}>
-                  <button
-                    onClick={() => toggleCategory(category.id)}
-                    className="flex w-full items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    <ChevronRight
-                      size={12}
-                      className={cn(
-                        "transition-transform duration-200",
-                        isExpanded && "rotate-90"
-                      )}
-                    />
-                    <CategoryIcon size={12} />
-                    {category.label}
-                    <span className="ml-auto text-[10px] font-normal opacity-60">
-                      {templates.length}
-                    </span>
-                  </button>
+                return (
+                  <div key={category.id}>
+                    <button
+                      onClick={() => toggleCategory(category.id)}
+                      className="flex w-full items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      <ChevronRight
+                        size={12}
+                        className={cn(
+                          "transition-transform duration-200",
+                          isExpanded && "rotate-90"
+                        )}
+                      />
+                      <CategoryIcon size={12} />
+                      {category.label}
+                      <span className="ml-auto text-[10px] font-normal opacity-60">
+                        {templates.length}
+                      </span>
+                    </button>
 
-                  {isExpanded && (
-                    <div className="flex flex-col gap-0.5 px-2 pb-2">
-                      {templates.map(renderBlockButton)}
-                    </div>
-                  )}
-                </div>
-              )
-            })
+                    {isExpanded && (
+                      <div className="flex flex-col gap-0.5 px-2 pb-2">
+                        {templates.map(renderBlockButton)}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+
+              {/* Dynamic Partials section */}
+              <PartialsPaletteSection
+                partials={partialsList ?? []}
+                expandedCategories={expandedCategories}
+                toggleCategory={toggleCategory}
+                addBlockRaw={addBlockRaw}
+                currentPageId={state.currentPage?.id}
+              />
+            </>
           )}
         </div>
       </div>
     </aside>
+  )
+}
+
+/* ---- Partials Palette Section ---- */
+
+interface PartialsPaletteSectionProps {
+  partials: PartialDto[]
+  expandedCategories: Set<string>
+  toggleCategory: (id: string) => void
+  addBlockRaw: (block: Block, parentId?: string | null, index?: number) => void
+  currentPageId?: string
+}
+
+function PartialsPaletteSection({
+  partials,
+  expandedCategories,
+  toggleCategory,
+  addBlockRaw,
+  currentPageId,
+}: PartialsPaletteSectionProps) {
+  // Filter out the partial being edited (prevent circular reference)
+  const available = partials.filter((p) => p.id !== currentPageId)
+
+  const isExpanded = expandedCategories.has("partials")
+
+  const handleDragStart = useCallback((e: React.DragEvent, partial: PartialDto) => {
+    e.dataTransfer.setData("application/partial-id", partial.id)
+    e.dataTransfer.effectAllowed = "copy"
+  }, [])
+
+  const handleInsert = useCallback((partial: PartialDto) => {
+    addBlockRaw({
+      id: generateId(),
+      tag: "div",
+      className: "",
+      componentName: "PartialReference",
+      partialId: partial.id,
+    })
+  }, [addBlockRaw])
+
+  return (
+    <div>
+      <button
+        onClick={() => toggleCategory("partials")}
+        className="flex w-full items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <ChevronRight
+          size={12}
+          className={cn(
+            "transition-transform duration-200",
+            isExpanded && "rotate-90"
+          )}
+        />
+        <Layers size={12} />
+        Partials
+        <span className="ml-auto text-[10px] font-normal opacity-60">
+          {available.length}
+        </span>
+      </button>
+
+      {isExpanded && (
+        <div className="flex flex-col gap-0.5 px-2 pb-2">
+          {available.length === 0 ? (
+            <p className="px-2 py-4 text-center text-[10px] text-muted-foreground">
+              No published partials.
+              <br />
+              Create one in Admin → Partials.
+            </p>
+          ) : (
+            available.map((partial) => (
+              <div
+                key={partial.id}
+                draggable
+                onDragStart={(e) => handleDragStart(e, partial)}
+                className={cn(
+                  "group flex items-center gap-2 rounded-md px-2 py-1.5",
+                  "text-sm text-card-foreground",
+                  "transition-all duration-150",
+                  "hover:bg-accent",
+                  "cursor-grab active:cursor-grabbing",
+                  "select-none"
+                )}
+                title={partial.description || partial.name}
+              >
+                <div className="flex items-center text-muted-foreground/40 group-hover:text-muted-foreground transition-colors">
+                  <GripVertical size={12} />
+                </div>
+
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-cyan-500/10">
+                  <Layers size={14} className="text-cyan-400" />
+                </div>
+
+                <div className="flex flex-col items-start flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-medium truncate">{partial.name}</span>
+                    <span className="px-1 py-0.5 text-[8px] font-medium rounded bg-cyan-500/10 text-cyan-400 uppercase">
+                      {partial.category}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    &lt;PartialRef&gt;
+                  </span>
+                </div>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleInsert(partial)
+                  }}
+                  className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-primary hover:text-primary-foreground text-muted-foreground transition-all"
+                  title="Quick add to page"
+                >
+                  <Plus size={12} />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
   )
 }

@@ -7,6 +7,7 @@
 import { getStorageSettings } from '../settings'
 import type { StorageSettings } from '../settings/types'
 import type { StorageProvider, PresignedUrlResponse, UploadOptions } from './types'
+import { getMaxFileSizeForType } from './types'
 import { createMedia } from './index'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -339,7 +340,9 @@ export function validateFile(
     allowedTypes?: string[]
   } = {}
 ): { valid: boolean; error?: string } {
-  const { maxSize = 50 * 1024 * 1024, allowedTypes } = options
+  // Use per-type size limits if no explicit maxSize is provided
+  const maxSize = options.maxSize ?? getMaxFileSizeForType(file.type)
+  const { allowedTypes } = options
 
   // Check size
   if (file.size > maxSize) {

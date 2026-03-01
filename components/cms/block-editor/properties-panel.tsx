@@ -35,8 +35,10 @@ import {
   Database,
   Link2,
   Component,
+  ExternalLink,
 } from "lucide-react"
 import type { Block, BlockTag, BlockAnimation, BlockBackground, CommerceBinding, CommerceProvider } from "@/lib/cms/block-editor/types"
+import { usePartials, usePartial } from "@/lib/cms/api/domains/partials/hooks"
 import { COMMERCE_PROVIDERS } from "@/lib/cms/block-editor/block-templates"
 import { isContainerTag, CONTAINER_TAGS, LEAF_TAGS } from "@/lib/cms/block-editor/types"
 import { getSmartBlock, type EditorField } from "@/lib/cms/block-editor/smart-blocks/registry"
@@ -1029,6 +1031,14 @@ export function PropertiesPanel() {
             )
           })()}
 
+          {/* Partial Reference Settings */}
+          {block.componentName === "PartialReference" && block.partialId && (
+            <>
+              <PartialReferenceSection block={block} updateBlock={updateBlock} />
+              <Separator />
+            </>
+          )}
+
           {/* Commerce / CMS Binding (for commerce blocks) */}
           {block.commerce && (
             <>
@@ -1336,5 +1346,165 @@ export function PropertiesPanel() {
         </div>
       </div>
     </aside>
+  )
+}
+
+/* ---- Partial Reference Section ---- */
+
+function PartialReferenceSection({ block, updateBlock }: { block: Block; updateBlock: (id: string, updates: Partial<Block>) => void }) {
+  const { data: partials } = usePartials({ status: "PUBLISHED" as any })
+  const { data: currentPartial } = usePartial(block.partialId ?? null)
+
+  const overrides = block.partialOverrides ?? {}
+  const overrideCount = Object.keys(overrides).length
+
+  return (
+    <PropertySection title="Partial Reference" icon={Layers} defaultOpen={true}>
+      <div className="flex flex-col gap-3">
+        {/* Current partial info */}
+        <div className="flex items-center gap-2 p-2 rounded-md bg-cyan-500/10">
+          <Layers size={14} className="text-cyan-400" />
+          <span className="text-xs font-medium text-cyan-300">
+            {currentPartial?.name ?? "Loading..."}
+          </span>
+          {currentPartial?.category && (
+            <span className="px-1.5 py-0.5 text-[8px] font-medium rounded bg-cyan-500/20 text-cyan-400 uppercase">
+              {currentPartial.category}
+            </span>
+          )}
+        </div>
+
+        {/* Partial selector */}
+        <PropertyField label="Partial">
+          <Select
+            value={block.partialId ?? ""}
+            onValueChange={(v) => updateBlock(block.id, { partialId: v, partialOverrides: {} })}
+          >
+            <SelectTrigger className="h-8 bg-input text-foreground text-xs">
+              <SelectValue placeholder="Select a partial" />
+            </SelectTrigger>
+            <SelectContent>
+              {(partials ?? []).map((p) => (
+                <SelectItem key={p.id} value={p.id} className="text-xs">
+                  {p.name} ({p.category})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </PropertyField>
+
+        {/* Edit partial link */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 text-xs gap-1.5"
+          onClick={() => window.open(`/admin/partials/${block.partialId}/editor`, "_blank")}
+        >
+          <ExternalLink size={12} />
+          Edit Partial
+        </Button>
+
+        {/* Overrides summary */}
+        {overrideCount > 0 && (
+          <div className="flex items-center justify-between p-2 rounded-md bg-accent/50">
+            <span className="text-[10px] text-muted-foreground">
+              {overrideCount} override{overrideCount !== 1 ? "s" : ""} active
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-5 px-1.5 text-[10px] text-destructive hover:text-destructive"
+              onClick={() => updateBlock(block.id, { partialOverrides: {} })}
+            >
+              Clear all
+            </Button>
+          </div>
+        )}
+
+        {/* Per-block overrides editor */}
+        {currentPartial?.content && (
+          <PartialOverridesEditor
+            content={currentPartial.content}
+            overrides={overrides}
+            onChange={(newOverrides) => updateBlock(block.id, { partialOverrides: newOverrides })}
+          />
+        )}
+      </div>
+    </PropertySection>
+  )
+}
+
+/* ---- Partial Overrides Editor ---- */
+
+function PartialOverridesEditor({
+  content,
+  overrides,
+  onChange,
+}: {
+  content: unknown
+  overrides: Record<string, Partial<Pick<Block, 'textContent' | 'className' | 'attrs'>>>
+  onChange: (overrides: Record<string, Partial<Pick<Block, 'textContent' | 'className' | 'attrs'>>>) => void
+}) {
+  // Parse the partial's blocks and collect leaf nodes with overridable fields
+  const leafNodes = useMemo(() => {
+    const doc = content as Record<string, unknown>
+    const blocks: Block[] = (doc?.version === '2.0' && Array.isArray(doc.blocks))
+      ? doc.blocks as Block[]
+      : Array.isArray(content) ? content as Block[] : []
+
+    const leaves: Block[] = []
+    const walk = (items: Block[]) => {
+      for (const b of items) {
+        if (b.textContent || (b.attrs && Object.keys(b.attrs).length > 0)) {
+          leaves.push(b)
+        }
+        if (b.children) walk(b.children)
+      }
+    }
+    walk(blocks)
+    return leaves
+  }, [content])
+
+  if (leafNodes.length === 0) return null
+
+  return (
+    <div className="flex flex-col gap-2 mt-1">
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        Overridable Content
+      </span>
+      {leafNodes.map((node) => {
+        const override = overrides[node.id] ?? {}
+        const nodeLabel = node.label || node.textContent?.slice(0, 20) || node.tag
+        return (
+          <div key={node.id} className="flex flex-col gap-1 p-2 rounded border border-border/50 bg-accent/30">
+            <span className="text-[10px] font-mono text-muted-foreground truncate" title={node.id}>
+              {nodeLabel}
+            </span>
+            {node.textContent !== undefined && (
+              <Input
+                value={override.textContent ?? ""}
+                onChange={(e) => {
+                  const val = e.target.value
+                  const newOverrides = { ...overrides }
+                  if (val) {
+                    newOverrides[node.id] = { ...override, textContent: val }
+                  } else {
+                    const { textContent: _, ...rest } = override
+                    if (Object.keys(rest).length > 0) {
+                      newOverrides[node.id] = rest
+                    } else {
+                      delete newOverrides[node.id]
+                    }
+                  }
+                  onChange(newOverrides)
+                }}
+                placeholder={node.textContent?.slice(0, 40) || "Text override..."}
+                className="h-7 bg-input text-foreground text-xs"
+              />
+            )}
+          </div>
+        )
+      })}
+    </div>
   )
 }

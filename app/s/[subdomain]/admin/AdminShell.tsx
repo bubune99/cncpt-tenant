@@ -36,9 +36,11 @@ import {
   Workflow,
   ClipboardList,
   CalendarDays,
+  Store,
+  ToggleLeft,
 } from 'lucide-react';
 import { Input } from '@/components/cms/ui/input';
-import { Logo } from '@/components/cms/branding/Logo';
+import { TenantAdminLogo } from '@/components/cms/branding/TenantAdminLogo';
 
 // Icon name -> Lucide component map for module-driven nav
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -60,6 +62,8 @@ const ICON_MAP: Record<string, any> = {
   Workflow,
   ClipboardList,
   CalendarDays,
+  Store,
+  ToggleLeft,
   Search,
   Bell,
   HelpCircle,
@@ -197,6 +201,7 @@ export function AdminShell({
             { name: 'Blog', href: '/admin/blog', icon: FileText, helpKey: 'admin.sidebar.blog' },
             { name: 'Forms', href: '/admin/forms', icon: ClipboardList, helpKey: 'admin.sidebar.forms' },
             { name: 'Media', href: '/admin/media', icon: Image, helpKey: 'admin.sidebar.media' },
+            { name: 'Marketplace', href: '/admin/marketplace', icon: Store, helpKey: 'admin.sidebar.marketplace' },
             { name: 'Email Marketing', href: '/admin/email-marketing', icon: Mail, helpKey: 'admin.sidebar.email-marketing' },
           ],
         },
@@ -268,12 +273,9 @@ export function AdminShell({
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0`}>
           <div className="flex flex-col h-full">
-            {/* Logo */}
+            {/* Logo — shows tenant logo if configured, falls back to global Logo */}
             <div className="px-4 py-4 border-b border-border">
-              <Logo href="/admin" size="sm" />
-              <p className="text-xs text-muted-foreground mt-1 pl-8">
-                {siteName ? `${siteName} Admin` : 'Admin Panel'}
-              </p>
+              <TenantAdminLogo fallbackSiteName={siteName} />
             </div>
 
             {/* Admin info */}

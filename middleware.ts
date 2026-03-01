@@ -61,6 +61,13 @@ export async function middleware(request: NextRequest) {
   // First try to extract subdomain from the root domain
   const subdomain = extractSubdomain(request)
 
+  // For non-subdomain requests, skip static file paths
+  // (e.g., /robots.txt, /sitemap.xml, /logo.png from /public)
+  // Subdomain requests still proceed so favicon.ico/manifest.json get rewritten
+  if (!subdomain && /^\/[\w-]+\.\w+$/.test(pathname)) {
+    return NextResponse.next()
+  }
+
   // Stack Auth will handle authentication redirects through its own system
 
   if (subdomain) {
@@ -68,10 +75,19 @@ export async function middleware(request: NextRequest) {
     // The route structure at app/s/[subdomain]/ handles:
     // - /admin/* -> CMS admin pages
     // - /handler/* -> Stack Auth handler
+    // - /favicon.ico -> Per-tenant favicon
+    // - /icon -> Per-tenant icon variants
+    // - /manifest.json -> Per-tenant PWA manifest
     // - /* -> Storefront pages
 
     if (pathname === "/") {
       return NextResponse.rewrite(new URL(`/s/${subdomain}`, request.url))
+    }
+
+    // Rewrite tenant-scoped asset routes (favicon, icons, manifest)
+    const tenantAssetPaths = ['/favicon.ico', '/icon', '/manifest.json']
+    if (tenantAssetPaths.some(p => pathname === p || pathname.startsWith(p + '/'))) {
+      return NextResponse.rewrite(new URL(`/s/${subdomain}${pathname}`, request.url))
     }
 
     // Rewrite all non-API paths to the subdomain namespace
@@ -128,8 +144,9 @@ export const config = {
      * Match all paths except for:
      * 1. /api routes
      * 2. /_next (Next.js internals)
-     * 3. all root files inside /public (e.g. /favicon.ico)
+     * 3. root files inside /public EXCEPT favicon.ico, manifest.json, icon
+     *    (those need rewriting for per-tenant branding on subdomains)
      */
-    "/((?!api|_next|[\\w-]+\\.\\w+).*)",
+    "/((?!api|_next).*)",
   ],
 }

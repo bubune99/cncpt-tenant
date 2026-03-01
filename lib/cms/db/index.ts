@@ -44,6 +44,9 @@ function createPrismaClient(): PrismaClient {
     new Pool({
       connectionString: DATABASE_URL,
       ssl: true, // Neon requires SSL
+      max: 25,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
     })
 
   // Cache pool to prevent connection exhaustion

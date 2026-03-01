@@ -8,7 +8,8 @@
  * ├── media/
  * │   ├── images/       # General images
  * │   ├── documents/    # PDFs, docs
- * │   └── videos/       # Video files
+ * │   ├── videos/       # Video files
+ * │   └── thumbnails/   # Auto-generated video thumbnails
  * ├── products/         # Product images
  * ├── blog/             # Blog post images
  * ├── pages/            # Page builder assets
@@ -33,3 +34,20 @@ export {
 } from "./client";
 
 export type { R2Media, MediaCategory } from "./client";
+
+// Multipart upload exports
+export {
+  initiateMultipartUpload,
+  generatePartPresignedUrl,
+  completeMultipartUpload,
+  abortMultipartUpload,
+  DEFAULT_CHUNK_SIZE,
+  MIN_CHUNK_SIZE,
+  MAX_PARTS,
+} from "./multipart";
+
+export type {
+  MultipartUploadInit,
+  CompletedPart,
+  MultipartPresignedUrl,
+} from "./multipart";

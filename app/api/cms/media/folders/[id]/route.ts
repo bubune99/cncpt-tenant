@@ -4,11 +4,14 @@
  * GET /api/media/folders/[id] - Get single folder
  * PUT /api/media/folders/[id] - Update folder
  * DELETE /api/media/folders/[id] - Delete folder
+ *
+ * All endpoints require authentication.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getFolder, updateFolder, deleteFolder, reorderFolders } from '@/lib/cms/media/folders'
 import type { FolderUpdateInput } from '@/lib/cms/media/types'
+import { stackServerApp } from '@/lib/cms/stack'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +20,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Auth check
+    const user = await stackServerApp.getUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const { id } = await params
     const folder = await getFolder(id)
 
@@ -39,6 +51,15 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Auth check
+    const user = await stackServerApp.getUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const { id } = await params
     const body = await request.json()
 
@@ -76,6 +97,15 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Auth check
+    const user = await stackServerApp.getUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const { id } = await params
     const { searchParams } = new URL(request.url)
 

@@ -116,10 +116,21 @@ function serializeBlockForEditor(block: Block, indent: number): string {
   if (block.componentName) attrs.push(`data-component="${block.componentName}"`)
   if (block.frameworkRequirement) attrs.push(`data-framework="${block.frameworkRequirement}"`)
 
+  // Partial reference data
+  if (block.partialId) attrs.push(`data-partial-id="${block.partialId}"`)
+  if (block.partialOverrides && Object.keys(block.partialOverrides).length > 0) {
+    attrs.push(`data-partial-overrides={${JSON.stringify(JSON.stringify(block.partialOverrides))}}`)
+  }
+
   const attrStr = attrs.length > 0 ? " " + attrs.join(" ") : ""
 
   // Label comment emitted before the element
   const labelComment = block.label ? `${pad}{/* ${block.label} */}\n` : ""
+
+  // Partial reference blocks emit as self-closing PartialRef
+  if (block.partialId && block.componentName === "PartialReference") {
+    return `${labelComment}${pad}<PartialRef${attrStr} />`
+  }
 
   if (isSelfClosing) return `${labelComment}${pad}<${tagName}${attrStr} />`
 
@@ -448,6 +459,16 @@ function frameToBlockFromEditor(frame: ParseFrame): Block {
     try { commerce = JSON.parse(parsedAttrs["data-commerce"]) } catch { /* ignore */ }
   }
 
+  // Partial reference fields
+  const partialId = parsedAttrs["data-partial-id"]
+  let partialOverrides: Record<string, Partial<Pick<Block, 'textContent' | 'className' | 'attrs'>>> | undefined
+  if (parsedAttrs["data-partial-overrides"]) {
+    try { partialOverrides = JSON.parse(parsedAttrs["data-partial-overrides"]) } catch { /* ignore */ }
+  }
+
+  // Handle PartialRef pseudo-tag
+  const isPartialRef = frame.tag === "PartialRef"
+
   // Remove special attrs, keep the rest as HTML attrs
   const htmlAttrs: Record<string, string> = {}
   const specialKeys = [
@@ -455,6 +476,7 @@ function frameToBlockFromEditor(frame: ParseFrame): Block {
     "data-editor-hidden", "data-editor-locked", "data-editor-label",
     "data-animation", "data-background", "data-commerce",
     "data-component", "data-framework",
+    "data-partial-id", "data-partial-overrides",
     "initial", "animate", "whileInView", "whileHover", "transition", "viewport", "exit",
   ]
   for (const [key, val] of Object.entries(parsedAttrs)) {
@@ -464,7 +486,8 @@ function frameToBlockFromEditor(frame: ParseFrame): Block {
   }
 
   let tag: BlockTag = resolvedTag as BlockTag
-  if (!ALL_TAGS_SET.has(resolvedTag)) tag = "div"
+  if (!ALL_TAGS_SET.has(resolvedTag) && !isPartialRef) tag = "div"
+  if (isPartialRef) tag = "div" as BlockTag
 
   const isContainer = CONTAINER_TAGS.includes(tag)
 
@@ -480,7 +503,10 @@ function frameToBlockFromEditor(frame: ParseFrame): Block {
   if (locked) block.locked = true
   if (label) block.label = label
   if (componentName) block.componentName = componentName
+  if (isPartialRef && !componentName) block.componentName = "PartialReference"
   if (frameworkRequirement) block.frameworkRequirement = frameworkRequirement
+  if (partialId) block.partialId = partialId
+  if (partialOverrides) block.partialOverrides = partialOverrides
 
   return block
 }
@@ -604,6 +630,12 @@ const BlockSchema: z.ZodType<any> = z.lazy(() =>
     children: z.array(BlockSchema).optional(),
     parentId: z.string().nullable().optional(),
     animation: AnimationSchema,
+    partialId: z.string().optional(),
+    partialOverrides: z.record(z.string(), z.object({
+      textContent: z.string().optional(),
+      className: z.string().optional(),
+      attrs: z.record(z.string(), z.string()).optional(),
+    })).optional(),
   })
 )
 

@@ -16,6 +16,21 @@ export interface TenantSettings {
   site_description: string
   theme_color: string
   custom_css?: string
+  // White-label branding fields
+  site_name?: string
+  site_tagline?: string
+  logo_url?: string
+  logo_dark_url?: string
+  logo_alt?: string
+  favicon_url?: string
+  favicon_svg_url?: string
+  apple_touch_icon_url?: string
+  og_image_url?: string
+  primary_color?: string
+  accent_color?: string
+  title_template?: string
+  meta_description?: string
+  hide_powered_by?: boolean
 }
 
 export interface TenantPost {
@@ -75,6 +90,20 @@ export async function getTenantSettings(tenantId: number): Promise<TenantSetting
       siteDescription: true,
       themeColor: true,
       customCss: true,
+      siteName: true,
+      siteTagline: true,
+      logoUrl: true,
+      logoDarkUrl: true,
+      logoAlt: true,
+      faviconUrl: true,
+      faviconSvgUrl: true,
+      appleTouchIconUrl: true,
+      ogImageUrl: true,
+      primaryColor: true,
+      accentColor: true,
+      titleTemplate: true,
+      metaDescription: true,
+      hidePoweredBy: true,
     },
   })
 
@@ -85,6 +114,20 @@ export async function getTenantSettings(tenantId: number): Promise<TenantSetting
     site_description: result.siteDescription || '',
     theme_color: result.themeColor,
     custom_css: result.customCss || undefined,
+    site_name: result.siteName || undefined,
+    site_tagline: result.siteTagline || undefined,
+    logo_url: result.logoUrl || undefined,
+    logo_dark_url: result.logoDarkUrl || undefined,
+    logo_alt: result.logoAlt || undefined,
+    favicon_url: result.faviconUrl || undefined,
+    favicon_svg_url: result.faviconSvgUrl || undefined,
+    apple_touch_icon_url: result.appleTouchIconUrl || undefined,
+    og_image_url: result.ogImageUrl || undefined,
+    primary_color: result.primaryColor || undefined,
+    accent_color: result.accentColor || undefined,
+    title_template: result.titleTemplate || undefined,
+    meta_description: result.metaDescription || undefined,
+    hide_powered_by: result.hidePoweredBy ?? undefined,
   }
 }
 
@@ -231,15 +274,25 @@ export async function getTenantBySubdomain(subdomain: string) {
 
   if (!result) return null
 
+  const s = result.tenantSettings
+
   return {
     id: result.id,
     subdomain: result.subdomain,
     emoji: result.emoji,
     user_id: result.userId,
     created_at: result.createdAt,
-    site_title: result.tenantSettings?.siteTitle || null,
-    site_description: result.tenantSettings?.siteDescription || null,
-    theme_color: result.tenantSettings?.themeColor || '#0891b2',
+    site_title: s?.siteTitle || null,
+    site_description: s?.siteDescription || null,
+    theme_color: s?.themeColor || '#0891b2',
+    // White-label branding
+    site_name: s?.siteName || s?.siteTitle || null,
+    logo_url: s?.logoUrl || null,
+    logo_dark_url: s?.logoDarkUrl || null,
+    favicon_url: s?.faviconUrl || null,
+    primary_color: s?.primaryColor || null,
+    accent_color: s?.accentColor || null,
+    hide_powered_by: s?.hidePoweredBy ?? false,
   }
 }
 

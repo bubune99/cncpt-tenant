@@ -3,16 +3,28 @@
  *
  * GET /api/media/folders - List folders (tree or flat)
  * POST /api/media/folders - Create new folder
+ *
+ * All endpoints require authentication.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { listFolders, getFolderTree, createFolder } from '@/lib/cms/media/folders'
 import type { FolderCreateInput } from '@/lib/cms/media/types'
+import { stackServerApp } from '@/lib/cms/stack'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
+    // Auth check
+    const user = await stackServerApp.getUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const tree = searchParams.get('tree') === 'true'
     const parentId = searchParams.get('parentId')
@@ -40,6 +52,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Auth check
+    const user = await stackServerApp.getUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
 
     const input: FolderCreateInput = {

@@ -46,6 +46,7 @@ export const BUILT_IN_MODULES: BuiltInModuleDefinition[] = [
             { name: "Roles & Permissions", href: "/admin/roles", icon: "Key", helpKey: "admin.roles" },
             { name: "Audit Log", href: "/admin/audit-log", icon: "ClipboardList" },
             { name: "Modules", href: "/admin/modules", icon: "Puzzle", helpKey: "admin.sidebar.modules" },
+            { name: "Features", href: "/admin/features", icon: "ToggleLeft", helpKey: "admin.sidebar.features" },
             { name: "Settings", href: "/admin/settings", icon: "Settings", badgeKey: "system", helpKey: "admin.sidebar.settings" },
           ],
         },

@@ -4,12 +4,15 @@
  * GET /api/media/[id] - Get single media with details
  * PUT /api/media/[id] - Update media metadata
  * DELETE /api/media/[id] - Delete media (soft or hard)
+ *
+ * All endpoints require authentication.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getMedia, updateMedia, deleteMedia, restoreMedia } from '@/lib/cms/media'
 import { deleteFromStorage } from '@/lib/cms/media/upload'
 import type { MediaUpdateInput } from '@/lib/cms/media/types'
+import { stackServerApp } from '@/lib/cms/stack'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,6 +21,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Auth check
+    const user = await stackServerApp.getUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const { id } = await params
     const { searchParams } = new URL(request.url)
     const includeUsage = searchParams.get('includeUsage') === 'true'
@@ -43,6 +55,15 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Auth check
+    const user = await stackServerApp.getUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const { id } = await params
     const body = await request.json()
 
@@ -80,6 +101,15 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Auth check
+    const user = await stackServerApp.getUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const { id } = await params
     const { searchParams } = new URL(request.url)
     const hard = searchParams.get('hard') === 'true'

@@ -13,12 +13,8 @@ import { stackServerApp } from '@/lib/cms/stack';
 import { prisma } from '@/lib/cms/db';
 import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit';
 
-// Simple in-memory rate limit tracker (per-process; good enough for single-instance)
-const exportTimestamps = new Map<string, number>();
-const EXPORT_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours
-
 export async function GET(request: NextRequest) {
-  const limited = rateLimitCheck(request, RATE_LIMIT_PRESETS.dataExport);
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.dataExport);
   if (limited) return limited;
 
   try {

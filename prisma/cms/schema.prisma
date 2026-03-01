@@ -3917,6 +3917,10 @@ model Subdomain {
   maintenanceMode Boolean  @default(false) @map("maintenance_mode")
   maintenanceMsg  String?  @map("maintenance_message") @db.Text
 
+  // Feature enablement config (per-tenant overrides)
+  // JSON: Record<featureKey, boolean> e.g. { "commerce": true, "commerce.reviews": false }
+  featureConfig   Json?    @map("feature_config")
+
   // Relations to tenant tables (legacy)
   tenantPosts    TenantPost[]
   tenantPages    TenantPage[]
@@ -4023,6 +4027,22 @@ model TenantSetting {
   customCss       String?  @map("custom_css") @db.Text
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @default(now()) @map("updated_at")
+
+  // White-label branding
+  siteName        String?  @map("site_name") @db.VarChar(255)
+  siteTagline     String?  @map("site_tagline") @db.VarChar(500)
+  logoUrl         String?  @map("logo_url") @db.VarChar(2048)
+  logoDarkUrl     String?  @map("logo_dark_url") @db.VarChar(2048)
+  logoAlt         String?  @map("logo_alt") @db.VarChar(255)
+  faviconUrl      String?  @map("favicon_url") @db.VarChar(2048)
+  faviconSvgUrl   String?  @map("favicon_svg_url") @db.VarChar(2048)
+  appleTouchIconUrl String? @map("apple_touch_icon_url") @db.VarChar(2048)
+  ogImageUrl      String?  @map("og_image_url") @db.VarChar(2048)
+  primaryColor    String?  @map("primary_color") @db.VarChar(7)
+  accentColor     String?  @map("accent_color") @db.VarChar(7)
+  titleTemplate   String?  @map("title_template") @db.VarChar(255) // e.g. "%s | My Brand"
+  metaDescription String?  @map("meta_description") @db.Text
+  hidePoweredBy   Boolean  @default(false) @map("hide_powered_by")
 
   // Relations
   tenant Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -4489,4 +4509,49 @@ model CanvaConnection {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("canva_connections")
+}
+
+// =============================================================================
+// TEMPLATE MARKETPLACE
+// =============================================================================
+
+// Global marketplace templates — browsable gallery of full site templates
+// and component sections. Not tenant-scoped; all tenants see the same templates.
+// Content stored as Block[] JSON, same format as Page.content blocks.
+model MarketplaceTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String   @default("")
+  type        String   @default("component") // 'site' or 'component'
+  category    String                          // e.g. 'hero', 'pricing', 'landing-page', 'saas'
+  tags        String[] @default([])
+
+  // Content — same Block[] format as Page.content
+  blocks      Json     // Block[] JSON array
+  jsx         String?  @db.Text // Original JSX source (for code preview)
+
+  // Display
+  thumbnail   String?  // Preview image URL (R2/S3)
+  previewUrl  String?  // URL for live preview iframe
+
+  // Provenance
+  source      String   @default("custom") // 'hyperui', 'tailblocks', 'meraki', 'custom', etc.
+  sourceUrl   String?                      // Original URL where this was scraped/imported from
+  license     String   @default("MIT")     // SPDX license identifier
+  author      String?                      // Original author or contributor name
+
+  // Status & popularity
+  isPublished Boolean  @default(true)
+  isFeatured  Boolean  @default(false)
+  usageCount  Int      @default(0)         // Incremented when a user inserts this template
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([type, category])
+  @@index([isPublished, isFeatured])
+  @@index([source])
+  @@index([usageCount])
+  @@map("marketplace_templates")
 }

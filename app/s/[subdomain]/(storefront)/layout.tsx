@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { Logo } from '@/components/cms/branding/Logo';
+import Image from "next/image";
 import { getTenantContext, shouldShowMaintenance } from '../lib/tenant-context';
+import { getTenantBranding } from '@/lib/cms/branding';
 import { MaintenancePage } from '@/components/cms/storefront';
 
 export default async function StorefrontLayout({
@@ -25,12 +26,46 @@ export default async function StorefrontLayout({
     );
   }
 
+  // Load tenant branding (server-side, no client fetch needed)
+  const branding = await getTenantBranding(subdomain);
+
+  const renderLogo = (size: 'sm' | 'md') => {
+    const dimensions = size === 'sm' ? { w: 24, h: 24 } : { w: 32, h: 32 };
+    if (branding.logoUrl) {
+      return (
+        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <Image
+            src={branding.logoUrl}
+            alt={branding.logoAlt || branding.siteName}
+            width={dimensions.w}
+            height={dimensions.h}
+            className={`${size === 'sm' ? 'h-6' : 'h-8'} w-auto object-contain`}
+            priority={size === 'md'}
+          />
+          <span className={`font-semibold ${size === 'sm' ? 'text-lg' : 'text-xl'}`}>
+            {branding.siteName}
+          </span>
+        </Link>
+      );
+    }
+    return (
+      <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+        <div className={`${size === 'sm' ? 'h-6 w-6 text-sm' : 'h-8 w-8 text-base'} rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold`}>
+          {branding.siteName.charAt(0).toUpperCase()}
+        </div>
+        <span className={`font-semibold ${size === 'sm' ? 'text-lg' : 'text-xl'}`}>
+          {branding.siteName}
+        </span>
+      </Link>
+    );
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
       <header className="border-b sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Logo href="/" size="md" />
+          {renderLogo('md')}
           <nav className="flex items-center gap-6">
             <Link
               href="/posts"
@@ -56,9 +91,9 @@ export default async function StorefrontLayout({
         <div className="container mx-auto px-4 py-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
-              <Logo href="/" size="sm" className="mb-4" />
+              <div className="mb-4">{renderLogo('sm')}</div>
               <p className="text-sm text-muted-foreground">
-                A modern content platform powered by Next.js.
+                {branding.siteTagline || 'A modern content platform.'}
               </p>
             </div>
             <div>
@@ -90,7 +125,20 @@ export default async function StorefrontLayout({
             </div>
           </div>
           <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} All rights reserved.
+            <p>&copy; {new Date().getFullYear()} {branding.siteName}. All rights reserved.</p>
+            {!branding.hidePoweredBy && (
+              <p className="mt-1 text-xs text-muted-foreground/60">
+                Powered by{' '}
+                <a
+                  href="https://cncpt.dev"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-muted-foreground transition-colors"
+                >
+                  CNCPT
+                </a>
+              </p>
+            )}
           </div>
         </div>
       </footer>

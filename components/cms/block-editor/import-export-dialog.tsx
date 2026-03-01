@@ -24,6 +24,7 @@ import {
 import type { ExportFramework } from "@/lib/cms/block-editor/types"
 import { PAGE_TEMPLATES } from "@/lib/cms/block-editor/page-templates"
 import { rehydrateParentIds } from "@/lib/cms/block-editor/tree-utils"
+import { normalizeBlocks } from "@/lib/cms/block-editor/normalize"
 import {
   Download,
   Upload,
@@ -40,6 +41,7 @@ import {
   Atom,
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/cms/ui/select"
+import { Switch } from "@/components/cms/ui/switch"
 import { Label } from "@/components/cms/ui/label"
 import { ShopifySettingsDialog, isShopifyConnected } from "./shopify-settings"
 
@@ -51,6 +53,7 @@ export function ImportExportDialog({ children }: { children: React.ReactNode }) 
   const [copied, setCopied] = useState(false)
   const [open, setOpen] = useState(false)
   const [exportFramework, setExportFramework] = useState<ExportFramework>("react")
+  const [normalizeOnImport, setNormalizeOnImport] = useState(true)
 
   const jsonExport = exportToJSON(state.blocks)
   const frameworkExport = exportToFramework(state.blocks, {
@@ -75,23 +78,25 @@ export function ImportExportDialog({ children }: { children: React.ReactNode }) 
     const result = importFromJSON(importText)
     if (result.errors.length > 0) setErrors(result.errors)
     if (result.blocks.length > 0) {
-      setBlocks(result.blocks)
+      const blocks = normalizeOnImport ? normalizeBlocks(result.blocks) : result.blocks
+      setBlocks(blocks)
       setErrors([])
       setImportText("")
       setOpen(false)
     }
-  }, [importText, setBlocks])
+  }, [importText, setBlocks, normalizeOnImport])
 
   const handleImportReact = useCallback(() => {
     const result = importFromReact(importText)
     if (result.errors.length > 0) setErrors(result.errors)
     if (result.blocks.length > 0) {
-      setBlocks(result.blocks)
+      const blocks = normalizeOnImport ? normalizeBlocks(result.blocks) : result.blocks
+      setBlocks(blocks)
       setErrors([])
       setImportText("")
       setOpen(false)
     }
-  }, [importText, setBlocks])
+  }, [importText, setBlocks, normalizeOnImport])
 
   const handleUseTemplate = useCallback(
     (templateId: string, append: boolean) => {
@@ -191,9 +196,15 @@ export function ImportExportDialog({ children }: { children: React.ReactNode }) 
             <Textarea value={jsonExport} readOnly className="flex-1 min-h-[200px] max-h-[300px] font-mono text-xs bg-input text-foreground resize-none" />
 
             <div className="border-t pt-4" style={{ borderColor: "var(--border)" }}>
-              <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
-                <Upload size={14} /> Import JSON
-              </h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                  <Upload size={14} /> Import JSON
+                </h3>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="normalize-json" className="text-[10px] text-muted-foreground">Normalize to primitives</Label>
+                  <Switch id="normalize-json" checked={normalizeOnImport} onCheckedChange={setNormalizeOnImport} />
+                </div>
+              </div>
               <Textarea
                 value={importText}
                 onChange={(e) => { setImportText(e.target.value); setErrors([]) }}
@@ -284,9 +295,15 @@ export function ImportExportDialog({ children }: { children: React.ReactNode }) 
             <Textarea value={frameworkExport} readOnly className="flex-1 min-h-[200px] max-h-[300px] font-mono text-xs bg-input text-foreground resize-none" />
 
             <div className="border-t pt-4" style={{ borderColor: "var(--border)" }}>
-              <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
-                <Upload size={14} /> Import React / JSX
-              </h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                  <Upload size={14} /> Import React / JSX
+                </h3>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="normalize-react" className="text-[10px] text-muted-foreground">Normalize to primitives</Label>
+                  <Switch id="normalize-react" checked={normalizeOnImport} onCheckedChange={setNormalizeOnImport} />
+                </div>
+              </div>
               <p className="text-xs text-muted-foreground mb-2">
                 Paste any React/JSX or HTML with Tailwind. Supports motion.div, deeply nested elements, and rich text with inline tags.
               </p>

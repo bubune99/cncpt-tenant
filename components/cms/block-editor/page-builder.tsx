@@ -53,12 +53,17 @@ import {
   ExternalLink,
   ChevronDown,
   FolderTree,
+  Camera,
+  GitCompareArrows,
+  Store,
 } from "lucide-react"
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { BlockRenderer } from "./block-renderer"
+import { ScreenshotDialog } from "./screenshot-dialog"
 import type { Block } from "@/lib/cms/block-editor/types"
 import { cn } from "@/lib/cms/utils"
 import { toast } from "sonner"
+import { captureScreenshot, compareScreenshots, type DiffResult } from "@/lib/cms/block-editor/screenshot"
 
 function PreviewRenderer({ blocks }: { blocks: Block[] }) {
   const renderChildren = (children: Block[]) => {
@@ -95,6 +100,13 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
   const [viewport, setViewport] = useState<"desktop" | "tablet" | "mobile">("desktop")
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [titleInput, setTitleInput] = useState("")
+
+  // Screenshot state
+  const [screenshotOpen, setScreenshotOpen] = useState(false)
+  const [screenshotData, setScreenshotData] = useState<string | null>(null)
+  const [diffResult, setDiffResult] = useState<DiffResult | null>(null)
+  const [isCapturing, setIsCapturing] = useState(false)
+  const screenshotContainerRef = useRef<HTMLDivElement>(null)
 
   // Viewport width mapping
   const viewportWidth = viewport === "mobile" ? "375px" : viewport === "tablet" ? "768px" : "100%"
@@ -137,6 +149,53 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
       },
     })
   }, [publishPage, pageSlug])
+
+  // Handle screenshot capture
+  const handleScreenshot = useCallback(async () => {
+    if (isCapturing || !screenshotContainerRef.current) return
+    setIsCapturing(true)
+    try {
+      const dataUrl = await captureScreenshot(screenshotContainerRef.current)
+      setScreenshotData(dataUrl)
+      setDiffResult(null)
+      setScreenshotOpen(true)
+    } catch (err) {
+      console.error("Screenshot capture failed:", err)
+      toast.error("Failed to capture screenshot")
+    } finally {
+      setIsCapturing(false)
+    }
+  }, [isCapturing])
+
+  // Handle visual diff comparison
+  const handleCompare = useCallback(async () => {
+    const baseline = state.currentPage?.baseline
+    if (!baseline || isCapturing || !screenshotContainerRef.current) return
+    setIsCapturing(true)
+    try {
+      const currentDataUrl = await captureScreenshot(screenshotContainerRef.current)
+      const diff = await compareScreenshots(baseline, currentDataUrl)
+      setScreenshotData(currentDataUrl)
+      setDiffResult(diff)
+      setScreenshotOpen(true)
+    } catch (err) {
+      console.error("Visual diff failed:", err)
+      toast.error("Failed to compare screenshots")
+    } finally {
+      setIsCapturing(false)
+    }
+  }, [isCapturing, state.currentPage?.baseline])
+
+  // Save current screenshot as baseline (stored in localStorage for now)
+  const handleSaveBaseline = useCallback((dataUrl: string) => {
+    if (!state.currentPage?.id) return
+    const key = `block-editor:baseline:${state.currentPage.id}`
+    try {
+      localStorage.setItem(key, dataUrl)
+    } catch {
+      // localStorage may be full for large data URLs
+    }
+  }, [state.currentPage?.id])
 
   // Handle Ctrl+S
   useEffect(() => {
@@ -428,6 +487,23 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                       Import / Export
                     </DropdownMenuItem>
                   </ImportExportDialog>
+                  <DropdownMenuItem
+                    onClick={() => window.open("/admin/marketplace", "_blank")}
+                  >
+                    <Store size={14} className="mr-2" />
+                    Template Marketplace
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleScreenshot} disabled={isCapturing}>
+                    <Camera size={14} className="mr-2" />
+                    {isCapturing ? "Capturing..." : "Capture Screenshot"}
+                  </DropdownMenuItem>
+                  {state.currentPage?.baseline && (
+                    <DropdownMenuItem onClick={handleCompare} disabled={isCapturing}>
+                      <GitCompareArrows size={14} className="mr-2" />
+                      Compare with Baseline
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={clearAll} className="text-destructive">
                     <Trash2 size={14} className="mr-2" />
@@ -585,6 +661,37 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
           {rightPanel === "ai" ? <AIChatPanel /> : <PropertiesPanel />}
         </div>
       )}
+
+      {/* Hidden render container for screenshot capture (off-screen) */}
+      {state.blocks.length > 0 && (
+        <div
+          ref={screenshotContainerRef}
+          aria-hidden
+          style={{
+            position: "fixed",
+            left: "-9999px",
+            top: 0,
+            width: "1280px",
+            background: "#ffffff",
+            zIndex: -1,
+            pointerEvents: "none",
+          }}
+        >
+          <PreviewRenderer blocks={state.blocks} />
+        </div>
+      )}
+
+      {/* Screenshot dialog */}
+      <ScreenshotDialog
+        open={screenshotOpen}
+        onOpenChange={setScreenshotOpen}
+        screenshot={screenshotData}
+        pageTitle={pageTitle}
+        pageSlug={pageSlug}
+        diffResult={diffResult}
+        baseline={state.currentPage?.baseline}
+        onSaveBaseline={handleSaveBaseline}
+      />
     </div>
   )
 }

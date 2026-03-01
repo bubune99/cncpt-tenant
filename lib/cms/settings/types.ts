@@ -79,7 +79,10 @@ export interface StorageSettings {
   secretAccessKey?: string
   endpoint?: string // For R2 or S3-compatible
   publicUrl?: string
-  maxFileSize: number // in MB
+  maxFileSize: number // in MB (general limit, used as fallback)
+  maxImageSize?: number // in MB (default: 50MB)
+  maxVideoSize?: number // in MB (default: 2048MB / 2GB)
+  maxAudioSize?: number // in MB (default: 500MB)
   allowedFileTypes: string[]
 }
 
@@ -153,8 +156,11 @@ export const DEFAULT_EMAIL_SETTINGS: EmailSettings = {
 
 export const DEFAULT_STORAGE_SETTINGS: StorageSettings = {
   provider: 's3',
-  maxFileSize: 10, // 10MB
-  allowedFileTypes: ['image/*', 'application/pdf'],
+  maxFileSize: 500, // 500MB general limit
+  maxImageSize: 50, // 50MB for images
+  maxVideoSize: 2048, // 2GB for videos
+  maxAudioSize: 500, // 500MB for audio
+  allowedFileTypes: ['image/*', 'video/*', 'audio/*', 'application/pdf'],
 }
 
 export const DEFAULT_AI_SETTINGS: AiSettings = {

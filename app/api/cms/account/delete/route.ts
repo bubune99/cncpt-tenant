@@ -27,7 +27,7 @@ function anonymize(value: string): string {
 }
 
 export async function POST(request: NextRequest) {
-  const limited = rateLimitCheck(request, RATE_LIMIT_PRESETS.auth);
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.auth);
   if (limited) return limited;
 
   const csrfError = validateCsrf(request);

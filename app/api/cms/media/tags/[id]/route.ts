@@ -4,11 +4,14 @@
  * GET /api/media/tags/[id] - Get single tag
  * PUT /api/media/tags/[id] - Update tag
  * DELETE /api/media/tags/[id] - Delete tag
+ *
+ * All endpoints require authentication.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getTag, updateTag, deleteTag } from '@/lib/cms/media/tags'
 import type { TagUpdateInput } from '@/lib/cms/media/types'
+import { stackServerApp } from '@/lib/cms/stack'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +20,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Auth check
+    const user = await stackServerApp.getUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const { id } = await params
     const tag = await getTag(id)
 
@@ -39,6 +51,15 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Auth check
+    const user = await stackServerApp.getUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const { id } = await params
     const body = await request.json()
 
@@ -65,6 +86,15 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Auth check
+    const user = await stackServerApp.getUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const { id } = await params
     await deleteTag(id)
     return NextResponse.json({ success: true })

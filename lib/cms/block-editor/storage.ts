@@ -22,6 +22,8 @@ export interface SavedPage {
   updatedAt: string
   publishedAt?: string
   thumbnail?: string
+  /** Visual diff baseline screenshot (data URL) */
+  baseline?: string
 }
 
 export interface CustomTemplate {

@@ -2,10 +2,13 @@
  * Media Usage API
  *
  * GET /api/media/[id]/usage - Get all places where media is used
+ *
+ * Requires authentication.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getMediaUsage, getUsageCount, isMediaInUse } from '@/lib/cms/media/usage'
+import { stackServerApp } from '@/lib/cms/stack'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,6 +17,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Auth check
+    const user = await stackServerApp.getUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const { id } = await params
     const { searchParams } = new URL(request.url)
     const countOnly = searchParams.get('countOnly') === 'true'

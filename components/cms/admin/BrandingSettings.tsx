@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import { useParams } from "next/navigation";
+import { Loader2, Info } from "lucide-react";
 import { Button } from '../ui/button';
 import {
   Card,
@@ -12,6 +13,8 @@ import {
 } from '../ui/card';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
+import { Switch } from '../ui/switch';
 import { toast } from "sonner";
 import { MediaPicker } from "./MediaPicker";
 
@@ -22,13 +25,22 @@ interface BrandingData {
   logoAlt?: string;
   logoDarkUrl?: string;
   faviconUrl?: string;
+  faviconSvgUrl?: string;
   appleTouchIconUrl?: string;
   ogImageUrl?: string;
   primaryColor?: string;
   accentColor?: string;
+  themeColor?: string;
+  titleTemplate?: string;
+  metaDescription?: string;
+  hidePoweredBy?: boolean;
+  customCss?: string;
 }
 
 export default function BrandingSettings() {
+  const params = useParams();
+  const subdomain = params?.subdomain as string;
+
   const [branding, setBranding] = useState<BrandingData>({
     siteName: "",
     siteTagline: "",
@@ -36,10 +48,16 @@ export default function BrandingSettings() {
     logoAlt: "",
     logoDarkUrl: "",
     faviconUrl: "",
+    faviconSvgUrl: "",
     appleTouchIconUrl: "",
     ogImageUrl: "",
     primaryColor: "#0066cc",
     accentColor: "#6366f1",
+    themeColor: "#0891b2",
+    titleTemplate: "",
+    metaDescription: "",
+    hidePoweredBy: false,
+    customCss: "",
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -47,11 +65,28 @@ export default function BrandingSettings() {
 
   useEffect(() => {
     fetchBranding();
-  }, []);
+  }, [subdomain]);
 
   const fetchBranding = async () => {
     try {
       setIsLoading(true);
+
+      // Try tenant-scoped branding API first
+      if (subdomain) {
+        const response = await fetch(
+          `/api/cms/admin/branding?subdomain=${encodeURIComponent(subdomain)}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          if (data.branding) {
+            setBranding((prev) => ({ ...prev, ...data.branding }));
+            setIsLoading(false);
+            return;
+          }
+        }
+      }
+
+      // Fallback to global settings API
       const response = await fetch("/api/cms/settings?group=branding");
       if (response.ok) {
         const data = await response.json();
@@ -69,14 +104,29 @@ export default function BrandingSettings() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const response = await fetch("/api/cms/settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          group: "branding",
-          settings: branding,
-        }),
-      });
+      let response: Response;
+
+      if (subdomain) {
+        // Save via tenant-scoped branding API
+        response = await fetch("/api/cms/admin/branding", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subdomain,
+            branding,
+          }),
+        });
+      } else {
+        // Fallback to global settings API
+        response = await fetch("/api/cms/settings", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            group: "branding",
+            settings: branding,
+          }),
+        });
+      }
 
       if (response.ok) {
         toast.success("Branding settings saved successfully");
@@ -91,7 +141,7 @@ export default function BrandingSettings() {
     }
   };
 
-  const updateField = (field: keyof BrandingData, value: string) => {
+  const updateField = (field: keyof BrandingData, value: string | boolean) => {
     setBranding((prev) => ({ ...prev, [field]: value }));
     setHasChanges(true);
   };
@@ -111,7 +161,7 @@ export default function BrandingSettings() {
         <CardHeader>
           <CardTitle>Site Identity</CardTitle>
           <CardDescription>
-            Your site name and tagline appear in headers and metadata
+            Your site name and tagline appear in headers, metadata, and emails
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -187,15 +237,15 @@ export default function BrandingSettings() {
         <CardHeader>
           <CardTitle>Favicon & Icons</CardTitle>
           <CardDescription>
-            Browser tab icon and mobile app icons
+            Browser tab icon and mobile app icons. Each tenant gets their own favicon.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {/* Favicon */}
             <div className="space-y-2">
               <MediaPicker
-                label="Favicon"
+                label="Favicon (PNG/ICO)"
                 value={branding.faviconUrl || ""}
                 onChange={(value) => updateField("faviconUrl", value)}
                 placeholder="Select or upload favicon"
@@ -203,6 +253,20 @@ export default function BrandingSettings() {
               />
               <p className="text-xs text-muted-foreground">
                 Recommended: 32x32px .ico or .png
+              </p>
+            </div>
+
+            {/* SVG Favicon */}
+            <div className="space-y-2">
+              <MediaPicker
+                label="Favicon (SVG)"
+                value={branding.faviconSvgUrl || ""}
+                onChange={(value) => updateField("faviconSvgUrl", value)}
+                placeholder="Select or upload SVG icon"
+                previewSize="small"
+              />
+              <p className="text-xs text-muted-foreground">
+                Scalable SVG favicon for modern browsers
               </p>
             </div>
 
@@ -223,15 +287,43 @@ export default function BrandingSettings() {
         </CardContent>
       </Card>
 
-      {/* Social Sharing */}
+      {/* SEO & Metadata */}
       <Card>
         <CardHeader>
-          <CardTitle>Social Sharing</CardTitle>
+          <CardTitle>SEO & Metadata</CardTitle>
           <CardDescription>
-            Default image for social media shares
+            Control how your site appears in search results and when shared on social media
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="titleTemplate">Title Template</Label>
+            <Input
+              id="titleTemplate"
+              value={branding.titleTemplate || ""}
+              onChange={(e) => updateField("titleTemplate", e.target.value)}
+              placeholder="%s | My Brand"
+            />
+            <p className="text-xs text-muted-foreground">
+              Use <code className="bg-muted px-1 rounded">%s</code> as a placeholder for the page title.
+              Example: &quot;%s | My Brand&quot; becomes &quot;About Us | My Brand&quot;
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="metaDescription">Default Meta Description</Label>
+            <Textarea
+              id="metaDescription"
+              value={branding.metaDescription || ""}
+              onChange={(e) => updateField("metaDescription", e.target.value)}
+              placeholder="A brief description of your site for search engines..."
+              rows={3}
+            />
+            <p className="text-xs text-muted-foreground">
+              Used when individual pages do not have their own description. Max 160 characters recommended.
+            </p>
+          </div>
+
           <div className="space-y-2">
             <MediaPicker
               label="Default Open Graph Image"
@@ -252,11 +344,11 @@ export default function BrandingSettings() {
         <CardHeader>
           <CardTitle>Brand Colors</CardTitle>
           <CardDescription>
-            Primary colors used throughout the site
+            Primary colors used throughout the site. These override CSS variables globally.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-3">
             <div className="space-y-3">
               <Label htmlFor="primaryColor">Primary Color</Label>
               <div className="flex gap-3">
@@ -292,6 +384,70 @@ export default function BrandingSettings() {
                   className="flex-1"
                 />
               </div>
+            </div>
+            <div className="space-y-3">
+              <Label htmlFor="themeColor">Theme Color (Browser/PWA)</Label>
+              <div className="flex gap-3">
+                <input
+                  type="color"
+                  id="themeColor"
+                  value={branding.themeColor || "#0891b2"}
+                  onChange={(e) => updateField("themeColor", e.target.value)}
+                  className="h-10 w-14 rounded border cursor-pointer"
+                />
+                <Input
+                  value={branding.themeColor || "#0891b2"}
+                  onChange={(e) => updateField("themeColor", e.target.value)}
+                  placeholder="#0891b2"
+                  className="flex-1"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Colors the browser address bar and PWA splash screen
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Advanced / White Label */}
+      <Card>
+        <CardHeader>
+          <CardTitle>White Label</CardTitle>
+          <CardDescription>
+            Control CNCPT branding visibility and add custom CSS
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Hide &quot;Powered by CNCPT&quot;</Label>
+              <p className="text-sm text-muted-foreground">
+                Remove the CNCPT branding from the storefront footer
+              </p>
+            </div>
+            <Switch
+              checked={branding.hidePoweredBy || false}
+              onCheckedChange={(checked) => updateField("hidePoweredBy", checked)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="customCss">Custom CSS</Label>
+            <Textarea
+              id="customCss"
+              value={branding.customCss || ""}
+              onChange={(e) => updateField("customCss", e.target.value)}
+              placeholder={`.my-class { color: var(--primary); }\n\n/* Override any storefront styles */`}
+              rows={6}
+              className="font-mono text-sm"
+            />
+            <div className="flex items-start gap-2 text-xs text-muted-foreground">
+              <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+              <span>
+                Custom CSS is sanitized for security. Dangerous constructs like
+                @import, expression(), and javascript: URLs are automatically removed.
+              </span>
             </div>
           </div>
         </CardContent>

@@ -2,6 +2,8 @@
  * Bulk Operations API
  *
  * POST /api/media/bulk - Execute bulk operations on media
+ *
+ * Requires authentication. Rate-limited for destructive operations.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -13,11 +15,26 @@ import {
   bulkRestoreMedia,
 } from '@/lib/cms/media'
 import type { BulkOperationInput } from '@/lib/cms/media/types'
+import { stackServerApp } from '@/lib/cms/stack'
+import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
+    // Auth check
+    const user = await stackServerApp.getUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Rate limit bulk operations (same as upload limit)
+    const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.upload)
+    if (limited) return limited
+
     const body = await request.json()
     const { operation, mediaIds, folderId, tagIds, hard } = body as BulkOperationInput & {
       hard?: boolean

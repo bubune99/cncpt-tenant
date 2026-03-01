@@ -465,3 +465,19 @@ export async function getMediaStats() {
 
 // Re-export types
 export * from './types'
+
+// Re-export video utilities
+export {
+  extractVideoMetadata,
+  generateVideoThumbnail,
+  extractVideoMetadataWithThumbnail,
+  parseVideoFormat,
+  formatDuration,
+  isVideoMimeType,
+  getThumbnailFilename,
+} from './video-utils'
+export type {
+  VideoMetadata,
+  ThumbnailResult,
+  VideoMetadataWithThumbnail,
+} from './video-utils'

@@ -35,6 +35,9 @@ export type { SerializedProduct, SerializedCategory } from './commerce-data'
 export { registerDashboardFetchers } from './dashboard-data'
 export type { DashboardStats, RecentOrder } from './dashboard-data'
 
+// Partial Data
+export { registerPartialFetchers } from './partial-data'
+
 // Default Templates
 export {
   defaultShopPageBlocks,

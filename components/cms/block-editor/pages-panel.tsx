@@ -188,6 +188,21 @@ function PageCard({
       )}
       onClick={onSelect}
     >
+      {/* Thumbnail preview */}
+      {page.thumbnail ? (
+        <div className="mb-2 rounded-md overflow-hidden border border-border/50 bg-muted/30">
+          <img
+            src={page.thumbnail}
+            alt={`Preview of ${page.title}`}
+            className="w-full h-24 object-cover object-top"
+          />
+        </div>
+      ) : (
+        <div className="mb-2 rounded-md overflow-hidden border border-border/50 bg-gradient-to-br from-muted/30 to-muted/10 h-16 flex items-center justify-center">
+          <FileText size={16} className="text-muted-foreground/30" />
+        </div>
+      )}
+
       <div className="flex flex-col gap-1.5">
         <div className="flex items-start justify-between gap-2">
           <span className="text-xs font-medium text-foreground line-clamp-1 flex-1">

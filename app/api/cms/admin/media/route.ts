@@ -3,6 +3,9 @@
  *
  * Handles media uploads, listing, and deletion for multi-tenant storage.
  * All operations are scoped to the authenticated user's subdomain.
+ *
+ * Requires authentication. Upload/delete operations are rate-limited.
+ * Tenant scoping is validated against the authenticated user's ownership.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -16,6 +19,9 @@ import {
   R2_CONFIG,
   type MediaCategory,
 } from '@/lib/cms/r2/client';
+import { stackServerApp } from '@/lib/cms/stack';
+import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit';
+import { sql } from '@/lib/neon';
 
 // Get subdomain from request headers (set by middleware)
 async function getSubdomain(req: NextRequest): Promise<string | null> {
@@ -30,6 +36,27 @@ async function getSubdomain(req: NextRequest): Promise<string | null> {
 }
 
 /**
+ * Validate that the authenticated user owns the given subdomain.
+ * Returns true if the user owns it, false otherwise.
+ */
+async function validateTenantOwnership(
+  userId: string,
+  subdomain: string
+): Promise<boolean> {
+  try {
+    const result = await sql`
+      SELECT id FROM subdomains
+      WHERE subdomain = ${subdomain} AND user_id = ${userId}
+      LIMIT 1
+    `;
+    return result.length > 0;
+  } catch (error) {
+    console.error('Tenant ownership validation error:', error);
+    return false;
+  }
+}
+
+/**
  * GET /api/cms/admin/media
  * List media for the current tenant
  *
@@ -41,6 +68,15 @@ async function getSubdomain(req: NextRequest): Promise<string | null> {
  */
 export async function GET(req: NextRequest) {
   try {
+    // Auth check
+    const user = await stackServerApp.getUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     if (!R2_CONFIG.isConfigured) {
       return NextResponse.json(
         { error: 'R2 storage is not configured' },
@@ -53,6 +89,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(
         { error: 'Subdomain required' },
         { status: 400 }
+      );
+    }
+
+    // Validate tenant ownership — prevent cross-tenant access
+    const ownsSubdomain = await validateTenantOwnership(user.id, subdomain);
+    if (!ownsSubdomain) {
+      return NextResponse.json(
+        { error: 'Access denied: you do not own this subdomain' },
+        { status: 403 }
       );
     }
 
@@ -104,6 +149,19 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
+    // Auth check
+    const user = await stackServerApp.getUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Rate limit uploads
+    const limited = await rateLimitCheck(req, RATE_LIMIT_PRESETS.upload);
+    if (limited) return limited;
+
     if (!R2_CONFIG.isConfigured) {
       return NextResponse.json(
         { error: 'R2 storage is not configured' },
@@ -116,6 +174,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: 'Subdomain required' },
         { status: 400 }
+      );
+    }
+
+    // Validate tenant ownership — prevent cross-tenant uploads
+    const ownsSubdomain = await validateTenantOwnership(user.id, subdomain);
+    if (!ownsSubdomain) {
+      return NextResponse.json(
+        { error: 'Access denied: you do not own this subdomain' },
+        { status: 403 }
       );
     }
 
@@ -200,6 +267,15 @@ export async function POST(req: NextRequest) {
  */
 export async function DELETE(req: NextRequest) {
   try {
+    // Auth check
+    const user = await stackServerApp.getUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     if (!R2_CONFIG.isConfigured) {
       return NextResponse.json(
         { error: 'R2 storage is not configured' },
@@ -212,6 +288,15 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json(
         { error: 'Subdomain required' },
         { status: 400 }
+      );
+    }
+
+    // Validate tenant ownership — prevent cross-tenant deletion
+    const ownsSubdomain = await validateTenantOwnership(user.id, subdomain);
+    if (!ownsSubdomain) {
+      return NextResponse.json(
+        { error: 'Access denied: you do not own this subdomain' },
+        { status: 403 }
       );
     }
 

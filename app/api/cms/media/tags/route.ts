@@ -3,6 +3,8 @@
  *
  * GET /api/media/tags - List all tags
  * POST /api/media/tags - Create new tag
+ *
+ * All endpoints require authentication.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -14,11 +16,21 @@ import {
   getOrCreateTag,
 } from '@/lib/cms/media/tags'
 import type { TagCreateInput } from '@/lib/cms/media/types'
+import { stackServerApp } from '@/lib/cms/stack'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
+    // Auth check
+    const user = await stackServerApp.getUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')
     const popular = searchParams.get('popular') === 'true'
@@ -48,6 +60,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Auth check
+    const user = await stackServerApp.getUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
 
     // Support getOrCreate pattern

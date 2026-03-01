@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -39,6 +40,8 @@ export function Logo({
   showText = true,
 }: LogoProps) {
   const { resolvedTheme } = useTheme();
+  const params = useParams();
+  const subdomain = params?.subdomain as string | undefined;
   const [branding, setBranding] = useState<BrandingData>({
     siteName: "My Site",
   });
@@ -47,15 +50,21 @@ export function Logo({
   useEffect(() => {
     setMounted(true);
     fetchBranding();
-  }, []);
+  }, [subdomain]);
 
   const fetchBranding = async () => {
     try {
-      const response = await fetch("/api/cms/settings?group=branding");
+      // Use tenant-scoped API if subdomain is available
+      const url = subdomain
+        ? `/api/cms/admin/branding?subdomain=${encodeURIComponent(subdomain)}`
+        : "/api/cms/settings?group=branding";
+
+      const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
-        if (data.branding) {
-          setBranding(data.branding);
+        const b = data.branding;
+        if (b) {
+          setBranding(b);
         }
       }
     } catch (error) {

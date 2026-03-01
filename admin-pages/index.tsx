@@ -179,6 +179,11 @@ const OrderWorkflowsPage = dynamic(() => import("../app/s/[subdomain]/admin/orde
   ssr: false,
 })
 
+const MarketplacePage = dynamic(() => import("../app/s/[subdomain]/admin/marketplace/page"), {
+  loading: () => <PageLoading />,
+  ssr: false,
+})
+
 // Page registry - maps URL paths to components
 // Path patterns: exact matches first, then parameterized routes
 interface PageRoute {
@@ -270,6 +275,9 @@ const pageRoutes: PageRoute[] = [
 
   // Email Marketing
   { pattern: /^email-marketing$/, component: EmailMarketingPage },
+
+  // Marketplace
+  { pattern: /^marketplace$/, component: MarketplacePage },
 ]
 
 export interface AdminPageProps {
@@ -340,4 +348,5 @@ export {
   RolesPage,
   AdminUsersPage,
   OrderWorkflowsPage,
+  MarketplacePage,
 }

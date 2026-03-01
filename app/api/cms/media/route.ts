@@ -3,17 +3,30 @@
  *
  * GET /api/media - List media with filters
  * POST /api/media - Upload new media
+ *
+ * All endpoints require authentication. Upload endpoints are rate-limited.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { listMedia, createMedia, getMediaStats } from '@/lib/cms/media'
 import { processUpload, generatePresignedUrl, validateFile } from '@/lib/cms/media/upload'
 import type { MediaFilters, MediaType } from '@/lib/cms/media/types'
+import { stackServerApp } from '@/lib/cms/stack'
+import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
+    // Auth check
+    const user = await stackServerApp.getUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
 
     // Parse filters from query params
@@ -60,6 +73,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Auth check
+    const user = await stackServerApp.getUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const contentType = request.headers.get('content-type') || ''
 
     // Handle presigned URL request
@@ -67,6 +89,10 @@ export async function POST(request: NextRequest) {
       const body = await request.json()
 
       if (body.action === 'presign') {
+        // Rate limit presign requests
+        const presignLimited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.presign)
+        if (presignLimited) return presignLimited
+
         const { filename, mimeType, size } = body
 
         if (!filename || !mimeType || !size) {
@@ -89,6 +115,10 @@ export async function POST(request: NextRequest) {
 
       // Handle direct metadata creation (after upload to storage)
       if (body.action === 'complete') {
+        // Rate limit upload completion requests
+        const uploadLimited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.upload)
+        if (uploadLimited) return uploadLimited
+
         const {
           filename,
           originalName,
@@ -105,7 +135,6 @@ export async function POST(request: NextRequest) {
           caption,
           title,
           tagIds,
-          uploadedById,
         } = body
 
         const media = await createMedia({
@@ -124,7 +153,7 @@ export async function POST(request: NextRequest) {
           caption,
           title,
           tagIds,
-          uploadedById,
+          uploadedById: user.id,
         })
 
         return NextResponse.json(media, { status: 201 })
@@ -135,6 +164,10 @@ export async function POST(request: NextRequest) {
 
     // Handle multipart form data upload (for local storage or small files)
     if (contentType.includes('multipart/form-data')) {
+      // Rate limit upload requests
+      const uploadLimited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.upload)
+      if (uploadLimited) return uploadLimited
+
       const formData = await request.formData()
       const file = formData.get('file') as File
 
@@ -159,7 +192,6 @@ export async function POST(request: NextRequest) {
       const caption = formData.get('caption') as string | null
       const title = formData.get('title') as string | null
       const tagIds = (formData.get('tagIds') as string)?.split(',').filter(Boolean)
-      const uploadedById = formData.get('uploadedById') as string | null
 
       // Generate presigned URL and upload
       const presignedData = await generatePresignedUrl(file.name, file.type, file.size)
@@ -179,7 +211,7 @@ export async function POST(request: NextRequest) {
         throw new Error('Failed to upload file to storage')
       }
 
-      // Create media record
+      // Create media record — use authenticated user ID, not client-supplied value
       const media = await processUpload(
         presignedData.key.split('/').pop()!,
         file.name,
@@ -196,7 +228,7 @@ export async function POST(request: NextRequest) {
           title: title || undefined,
           tagIds,
         },
-        uploadedById || undefined
+        user.id
       )
 
       return NextResponse.json(media, { status: 201 })

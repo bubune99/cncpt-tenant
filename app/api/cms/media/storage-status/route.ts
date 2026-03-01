@@ -2,16 +2,28 @@
  * Storage Status API
  *
  * GET /api/media/storage-status - Check if storage is configured
+ *
+ * Requires authentication (exposes infrastructure details).
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { checkStorageConfig } from '@/lib/cms/media/upload'
 import { getCorsConfigJson } from '@/lib/cms/media/types'
+import { stackServerApp } from '@/lib/cms/stack'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
+    // Auth check
+    const user = await stackServerApp.getUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const status = await checkStorageConfig()
 
     // Get the app URL for CORS configuration

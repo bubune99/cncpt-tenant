@@ -29,7 +29,8 @@ import {
   Truck,
   Receipt,
   Server,
-  Bot
+  Bot,
+  ToggleLeft,
 } from "lucide-react";
 
 import { Button } from '@/components/cms/ui/button';
@@ -59,6 +60,7 @@ import BrandingSettings from '@/components/cms/admin/BrandingSettings';
 import EmailProviderSettings from '@/components/cms/admin/EmailProviderSettings';
 import AiSettings from '@/components/cms/admin/AiSettings';
 import McpApiKeysSettings from '@/components/cms/admin/McpApiKeysSettings';
+import FeatureSettings from '@/components/cms/admin/settings/feature-settings';
 
 interface StoreSettings {
   general: {
@@ -269,7 +271,11 @@ export default function SettingsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-10 lg:w-[1150px]" data-help-key="admin.settings.tabs">
+        <TabsList className="grid w-full grid-cols-11 lg:w-[1250px]" data-help-key="admin.settings.tabs">
+          <TabsTrigger value="features">
+            <ToggleLeft className="mr-2 h-4 w-4" />
+            Features
+          </TabsTrigger>
           <TabsTrigger value="branding">
             <Palette className="mr-2 h-4 w-4" />
             Branding
@@ -311,6 +317,10 @@ export default function SettingsPage() {
             Security
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="features" className="space-y-4" data-help-key="admin.settings.features-tab">
+          <FeatureSettings />
+        </TabsContent>
 
         <TabsContent value="branding" className="space-y-4" data-help-key="admin.settings.branding-tab">
           <BrandingSettings />

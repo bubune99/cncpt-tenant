@@ -82,7 +82,7 @@ async function generateOrderNumber(): Promise<string> {
 // =============================================================================
 
 export async function POST(request: NextRequest) {
-  const limited = rateLimitCheck(request, RATE_LIMIT_PRESETS.checkout);
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.checkout);
   if (limited) return limited;
 
   const csrfError = validateCsrf(request);

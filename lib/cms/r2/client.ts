@@ -8,7 +8,8 @@
  * ├── media/
  * │   ├── images/       # General images
  * │   ├── documents/    # PDFs, docs
- * │   └── videos/       # Video files
+ * │   ├── videos/       # Video files
+ * │   └── thumbnails/   # Auto-generated video thumbnails
  * ├── products/         # Product images
  * ├── blog/             # Blog post images
  * ├── pages/            # Page builder assets
@@ -45,6 +46,7 @@ export type MediaCategory =
   | 'media/images'
   | 'media/documents'
   | 'media/videos'
+  | 'media/thumbnails'
   | 'products'
   | 'blog'
   | 'pages'

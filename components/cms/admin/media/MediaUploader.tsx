@@ -5,15 +5,16 @@ import { useDropzone } from 'react-dropzone'
 import { cn } from '@/lib/cms/utils'
 import { Button } from '../../ui/button'
 import { Progress } from '../../ui/progress'
-import { Upload, X, Check, AlertCircle, FileIcon } from 'lucide-react'
+import { Upload, X, Check, AlertCircle, FileIcon, Layers } from 'lucide-react'
 import type { UploadProgress } from '@/lib/cms/media/types'
-import { formatFileSize } from '@/lib/cms/media/types'
+import { formatFileSize, MULTIPART_THRESHOLD } from '@/lib/cms/media/types'
 
 interface MediaUploaderProps {
   folderId?: string | null
   uploads: UploadProgress[]
   isUploading: boolean
   onUpload: (files: File[]) => Promise<void> | Promise<unknown[]>
+  onAbortUpload?: (id: string) => Promise<void>
   onClearCompleted: () => void
   className?: string
 }
@@ -23,6 +24,7 @@ export function MediaUploader({
   uploads,
   isUploading,
   onUpload,
+  onAbortUpload,
   onClearCompleted,
   className,
 }: MediaUploaderProps) {
@@ -87,7 +89,10 @@ export function MediaUploader({
             </p>
           </div>
           <p className="text-xs text-muted-foreground">
-            Images, videos, audio, and documents up to 50MB
+            Images up to 50MB, videos up to 2GB, audio and docs up to 500MB
+          </p>
+          <p className="text-xs text-muted-foreground/60">
+            Large files upload in chunks with automatic resume
           </p>
         </div>
       </div>
@@ -132,10 +137,23 @@ export function MediaUploader({
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{upload.filename}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-medium truncate">{upload.filename}</p>
+                    {upload.size && upload.size > MULTIPART_THRESHOLD && upload.status === 'uploading' && (
+                      <span className="inline-flex items-center gap-0.5 text-[10px] text-blue-600 bg-blue-50 rounded px-1 py-0.5 flex-shrink-0">
+                        <Layers className="h-2.5 w-2.5" />
+                        chunked
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2">
-                    {upload.status === 'uploading' ? (
-                      <Progress value={upload.progress} className="h-1 flex-1" />
+                    {upload.status === 'uploading' || upload.status === 'processing' ? (
+                      <>
+                        <Progress value={upload.progress} className="h-1 flex-1" />
+                        <span className="text-xs text-muted-foreground flex-shrink-0">
+                          {upload.progress}%
+                        </span>
+                      </>
                     ) : upload.status === 'error' ? (
                       <p className="text-xs text-red-600 truncate">{upload.error}</p>
                     ) : upload.status === 'complete' ? (
@@ -150,6 +168,18 @@ export function MediaUploader({
                     )}
                   </div>
                 </div>
+
+                {/* Cancel button for in-progress uploads */}
+                {(upload.status === 'uploading' || upload.status === 'processing') && onAbortUpload && (
+                  <button
+                    type="button"
+                    onClick={() => onAbortUpload(upload.id)}
+                    className="flex-shrink-0 p-1 rounded hover:bg-muted transition-colors"
+                    title="Cancel upload"
+                  >
+                    <X className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                )}
               </div>
             ))}
           </div>
