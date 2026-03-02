@@ -68,8 +68,8 @@ export function DashboardSidebar({
       items: [
         { id: "visibility", label: "Site Visibility", icon: Eye, helpKey: "dashboard.sidebar.visibility" },
         { id: "domains", label: "Custom Domains", icon: Link, helpKey: "dashboard.sidebar.domains" },
+        { id: "branding", label: "Branding", icon: Palette, helpKey: "dashboard.sidebar.branding" },
         { id: "settings", label: "Site Settings", icon: Settings, helpKey: "dashboard.sidebar.settings" },
-        { id: "appearance", label: "Appearance", icon: Palette, helpKey: "dashboard.sidebar.appearance" },
         { id: "frontend", label: "Hosting", icon: Server, helpKey: "dashboard.sidebar.frontend" },
       ],
     },

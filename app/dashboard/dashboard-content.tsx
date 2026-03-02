@@ -4,6 +4,7 @@ import { SubdomainList } from "./subdomain-list"
 import { DomainManagement } from "./domain-management"
 import { SiteSettings } from "./site-settings"
 import { SiteVisibility } from "./site-visibility"
+import { BrandingSettings } from "./branding-settings"
 import { Analytics } from "./analytics"
 import { Billing } from "./billing"
 import { Credits } from "./credits"
@@ -78,10 +79,10 @@ export function DashboardContent({
         return <SiteVisibility selectedSubdomain={selectedSubdomain} />
       case "domains":
         return <DomainManagement subdomains={subdomains} selectedSubdomain={selectedSubdomain} />
+      case "branding":
+        return <BrandingSettings selectedSubdomain={selectedSubdomain} />
       case "settings":
         return <SiteSettings selectedSubdomain={selectedSubdomain} />
-      case "appearance":
-        return <SiteSettings selectedSubdomain={selectedSubdomain} activeTab="appearance" />
       case "frontend":
         return <FrontendDeployment selectedSubdomain={selectedSubdomain} />
       case "analytics":
