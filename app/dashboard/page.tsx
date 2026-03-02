@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { getUserSubdomains } from "@/app/actions"
 import { DashboardSidebar } from "./dashboard-sidebar"
 import { DashboardContent } from "./dashboard-content"
@@ -11,20 +11,15 @@ import { FeedbackWidget } from "@/components/feedback"
 
 export const dynamic = "force-dynamic"
 
-interface DashboardPageProps {
-  user?: any
-  subdomains?: any[]
-}
-
-export default function DashboardPage({ user: initialUser, subdomains: initialSubdomains }: DashboardPageProps = {}) {
+export default function DashboardPage() {
   const [activeSection, setActiveSection] = useState("overview")
   const [selectedSubdomain, setSelectedSubdomain] = useState<string | null>(null)
-  const [isClient, setIsClient] = useState(false)
   const [stackAuthError, setStackAuthError] = useState<string | null>(null)
   const [user, setUser] = useState<any>(null)
-  const [subdomains, setSubdomains] = useState(initialSubdomains || [])
+  const [subdomains, setSubdomains] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const hasLoadedSubdomains = useRef(false)
 
   const stackUser = useUser()
 
@@ -35,10 +30,6 @@ export default function DashboardPage({ user: initialUser, subdomains: initialSu
       setStackAuthError(null)
     }
   }, [stackUser])
-
-  useEffect(() => {
-    setIsClient(true)
-  }, [])
 
   // Listen for navigation events from child components
   useEffect(() => {
@@ -51,39 +42,29 @@ export default function DashboardPage({ user: initialUser, subdomains: initialSu
     }
   }, [])
 
+  // Load subdomains once we have a user — loading stays true until fetch completes
   useEffect(() => {
-    if (isClient && user && !initialSubdomains) {
-      loadSubdomains()
-    } else if (initialSubdomains) {
-      setSelectedSubdomain(initialSubdomains && initialSubdomains.length > 0 ? initialSubdomains[0]?.subdomain : null)
-    }
-    if (isClient && (user || stackAuthError)) {
-      setLoading(false)
-    }
-  }, [user, initialSubdomains, isClient, stackAuthError])
+    if (!user || hasLoadedSubdomains.current) return
+    hasLoadedSubdomains.current = true
+    loadSubdomains()
+  }, [user])
 
   const loadSubdomains = async () => {
     try {
-      if (!user?.id) {
-        console.log("[v0] No user ID available, skipping subdomain load")
-        setSubdomains([])
-        setSelectedSubdomain(null)
-        return
-      }
-
       const userSubdomains = await getUserSubdomains()
-      console.log("[v0] Loaded subdomains:", userSubdomains)
       setSubdomains(Array.isArray(userSubdomains) ? userSubdomains : [])
       setSelectedSubdomain(userSubdomains && userSubdomains.length > 0 ? userSubdomains[0].subdomain : null)
     } catch (err) {
-      console.error("[v0] Dashboard subdomain loading error:", err)
+      console.error("Dashboard subdomain loading error:", err)
       setError("Failed to load subdomains")
       setSubdomains([])
       setSelectedSubdomain(null)
+    } finally {
+      setLoading(false)
     }
   }
 
-  if (!isClient || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
