@@ -263,7 +263,7 @@ export default function ReviewDetailPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Review Details</h1>
+            <h1 className="text-xl sm:text-2xl font-bold">Review Details</h1>
             <p className="text-muted-foreground">
               Review for {review.product.name}
             </p>

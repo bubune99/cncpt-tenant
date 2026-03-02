@@ -139,7 +139,7 @@ export default function PluginsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-8">
         <div>

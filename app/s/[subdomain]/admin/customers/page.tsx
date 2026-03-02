@@ -305,7 +305,7 @@ export default function CustomersPage() {
   }
 
   return (
-    <div className="p-4 sm:p-4 sm:p-6 lg:p-8 space-y-6" data-help-key="admin.customers.page">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6" data-help-key="admin.customers.page">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 customers-header">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">Customers</h1>

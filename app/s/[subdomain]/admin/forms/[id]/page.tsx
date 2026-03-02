@@ -321,7 +321,7 @@ export default function FormEditorPage() {
           </Button>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold">{form.name}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold">{form.name}</h1>
               <Badge variant={form.status === 'ACTIVE' ? 'default' : 'secondary'}>
                 {form.status}
               </Badge>

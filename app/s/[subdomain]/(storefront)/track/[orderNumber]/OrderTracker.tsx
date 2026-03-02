@@ -104,11 +104,11 @@ export function OrderTracker({
   // Email verification gate
   if (!isVerified) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border p-8">
-        <div className="text-center mb-8">
-          <Package className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Track Order {orderNumber}</h1>
-          <p className="text-gray-600">
+      <div className="bg-white rounded-xl shadow-sm border p-4 sm:p-6 lg:p-8">
+        <div className="text-center mb-6 sm:mb-8">
+          <Package className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-gray-400 mb-3 sm:mb-4" />
+          <h1 className="text-xl sm:text-2xl font-bold mb-2">Track Order {orderNumber}</h1>
+          <p className="text-sm sm:text-base text-gray-600">
             Please enter your email address to view order details
           </p>
         </div>
@@ -123,21 +123,21 @@ export function OrderTracker({
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
               placeholder="Enter your email"
             />
           </div>
 
           {verificationError && (
-            <div className="flex items-center gap-2 text-red-600 text-sm">
-              <AlertCircle className="h-4 w-4" />
-              {verificationError}
+            <div className="flex items-start gap-2 text-red-600 text-sm">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>{verificationError}</span>
             </div>
           )}
 
           <button
             onClick={handleVerify}
-            className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
             View Order Status
           </button>
@@ -147,13 +147,13 @@ export function OrderTracker({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Order Header */}
-      <div className="bg-white rounded-xl shadow-sm border p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">Order {orderNumber}</h1>
+      <div className="bg-white rounded-xl shadow-sm border p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mb-4">
+          <h1 className="text-xl sm:text-2xl font-bold">Order {orderNumber}</h1>
           <span
-            className={`px-3 py-1 rounded-full text-sm font-medium ${
+            className={`self-start px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
               orderStatus === 'DELIVERED'
                 ? 'bg-green-100 text-green-800'
                 : orderStatus === 'CANCELLED'
@@ -165,57 +165,57 @@ export function OrderTracker({
           </span>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 text-sm">
           <div>
-            <p className="text-gray-500">Order Date</p>
-            <p className="font-medium">{formatDate(orderDate)}</p>
+            <p className="text-gray-500 text-xs sm:text-sm">Order Date</p>
+            <p className="font-medium text-xs sm:text-sm">{formatDate(orderDate)}</p>
           </div>
           <div>
-            <p className="text-gray-500">Items</p>
-            <p className="font-medium">{itemCount} item{itemCount !== 1 ? 's' : ''}</p>
+            <p className="text-gray-500 text-xs sm:text-sm">Items</p>
+            <p className="font-medium text-xs sm:text-sm">{itemCount} item{itemCount !== 1 ? 's' : ''}</p>
           </div>
           <div>
-            <p className="text-gray-500">Total</p>
-            <p className="font-medium">{formatCurrency(orderTotal)}</p>
+            <p className="text-gray-500 text-xs sm:text-sm">Total</p>
+            <p className="font-medium text-xs sm:text-sm">{formatCurrency(orderTotal)}</p>
           </div>
-          <div>
-            <p className="text-gray-500">Email</p>
-            <p className="font-medium truncate">{orderEmail}</p>
+          <div className="min-w-0">
+            <p className="text-gray-500 text-xs sm:text-sm">Email</p>
+            <p className="font-medium text-xs sm:text-sm truncate">{orderEmail}</p>
           </div>
         </div>
       </div>
 
       {/* Progress Tracker */}
       {progress && progress.stages.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border p-6">
-          <h2 className="text-lg font-semibold mb-6">Order Progress</h2>
+        <div className="bg-white rounded-xl shadow-sm border p-4 sm:p-6">
+          <h2 className="text-base sm:text-lg font-semibold mb-4 sm:mb-6">Order Progress</h2>
 
           {/* Current Stage Message */}
           {progress.currentStage && (
             <div
-              className="mb-8 p-4 rounded-lg"
+              className="mb-6 sm:mb-8 p-3 sm:p-4 rounded-lg"
               style={{
                 backgroundColor: progress.currentStage.color
                   ? `${progress.currentStage.color}20`
                   : '#EBF5FF',
               }}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <div
-                  className="p-2 rounded-full"
+                  className="p-1.5 sm:p-2 rounded-full shrink-0"
                   style={{
                     backgroundColor: progress.currentStage.color || '#3B82F6',
                   }}
                 >
                   {(() => {
                     const Icon = getIconComponent(progress.currentStage.icon)
-                    return <Icon className="h-5 w-5 text-white" />
+                    return <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                   })()}
                 </div>
-                <div>
-                  <p className="font-semibold">{progress.currentStage.displayName}</p>
+                <div className="min-w-0">
+                  <p className="font-semibold text-sm sm:text-base">{progress.currentStage.displayName}</p>
                   {progress.currentStage.customerMessage && (
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1">
                       {progress.currentStage.customerMessage}
                     </p>
                   )}
@@ -224,9 +224,10 @@ export function OrderTracker({
             </div>
           )}
 
-          {/* Progress Timeline */}
+          {/* Progress Timeline - horizontal on desktop, vertical on mobile */}
           <div className="relative">
-            <div className="flex items-start justify-between">
+            {/* Desktop: Horizontal timeline */}
+            <div className="hidden sm:flex items-start justify-between">
               {progress.stages.map((stage, index) => {
                 const Icon = getIconComponent(stage.icon)
                 const isLast = index === progress.stages.length - 1
@@ -289,13 +290,72 @@ export function OrderTracker({
                 )
               })}
             </div>
+
+            {/* Mobile: Vertical timeline */}
+            <div className="sm:hidden space-y-0">
+              {progress.stages.map((stage, index) => {
+                const Icon = getIconComponent(stage.icon)
+                const isLast = index === progress.stages.length - 1
+
+                return (
+                  <div key={index} className="flex items-start gap-3 relative">
+                    {/* Vertical connector */}
+                    {!isLast && (
+                      <div
+                        className={`absolute left-4 top-8 w-0.5 h-[calc(100%-0.5rem)] ${
+                          stage.isCompleted ? 'bg-green-500' : 'bg-gray-200'
+                        }`}
+                      />
+                    )}
+
+                    {/* Stage Circle */}
+                    <div
+                      className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-full shrink-0 transition-all ${
+                        stage.isCurrent ? 'ring-4 ring-blue-100' : ''
+                      }`}
+                      style={{
+                        backgroundColor: stage.isCompleted || stage.isCurrent
+                          ? stage.color || '#22C55E'
+                          : '#E5E7EB',
+                      }}
+                    >
+                      {stage.isCompleted ? (
+                        <Check className="h-4 w-4 text-white" />
+                      ) : stage.isCurrent ? (
+                        <Clock className="h-4 w-4 text-white animate-pulse" />
+                      ) : (
+                        <Icon className="h-4 w-4 text-gray-400" />
+                      )}
+                    </div>
+
+                    {/* Stage Info */}
+                    <div className="pb-6 pt-1">
+                      <p
+                        className={`text-sm font-medium ${
+                          stage.isCurrent || stage.isCompleted
+                            ? 'text-gray-900'
+                            : 'text-gray-400'
+                        }`}
+                      >
+                        {stage.displayName}
+                      </p>
+                      {stage.completedAt && (
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {new Date(stage.completedAt).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </div>
 
           {/* Estimated Delivery */}
           {progress.estimatedDelivery && (
-            <div className="mt-8 pt-6 border-t">
-              <div className="flex items-center gap-2 text-gray-600">
-                <Truck className="h-5 w-5" />
+            <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t">
+              <div className="flex items-center gap-2 text-gray-600 text-sm sm:text-base">
+                <Truck className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
                 <span>
                   Estimated Delivery:{' '}
                   <strong>{formatDate(progress.estimatedDelivery.toISOString())}</strong>
@@ -308,21 +368,21 @@ export function OrderTracker({
 
       {/* Shipment Tracking */}
       {shipment && shipment.trackingNumber && (
-        <div className="bg-white rounded-xl shadow-sm border p-6">
-          <h2 className="text-lg font-semibold mb-4">Shipment Details</h2>
+        <div className="bg-white rounded-xl shadow-sm border p-4 sm:p-6">
+          <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Shipment Details</h2>
 
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-500">Carrier</span>
-              <span className="font-medium">{shipment.carrier || 'N/A'}</span>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-gray-500 text-sm">Carrier</span>
+              <span className="font-medium text-sm">{shipment.carrier || 'N/A'}</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-500">Tracking Number</span>
-              <span className="font-mono text-sm">{shipment.trackingNumber}</span>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-gray-500 text-sm shrink-0">Tracking Number</span>
+              <span className="font-mono text-xs sm:text-sm truncate ml-2">{shipment.trackingNumber}</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-500">Status</span>
-              <span className="font-medium">{shipment.status}</span>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-gray-500 text-sm">Status</span>
+              <span className="font-medium text-sm">{shipment.status}</span>
             </div>
           </div>
 
@@ -331,7 +391,7 @@ export function OrderTracker({
             href={getCarrierTrackingUrl(shipment.carrier, shipment.trackingNumber)}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-4 inline-flex items-center gap-2 text-blue-600 hover:text-blue-800"
+            className="mt-4 inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm sm:text-base py-1"
           >
             <Truck className="h-4 w-4" />
             Track on Carrier Website
@@ -341,10 +401,10 @@ export function OrderTracker({
 
       {/* No Progress Available */}
       {(!progress || progress.stages.length === 0) && (
-        <div className="bg-white rounded-xl shadow-sm border p-6 text-center">
-          <Package className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-          <h2 className="text-lg font-semibold mb-2">Order Received</h2>
-          <p className="text-gray-600">
+        <div className="bg-white rounded-xl shadow-sm border p-4 sm:p-6 text-center">
+          <Package className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-gray-400 mb-3 sm:mb-4" />
+          <h2 className="text-base sm:text-lg font-semibold mb-2">Order Received</h2>
+          <p className="text-sm sm:text-base text-gray-600">
             Your order is being processed. Check back later for detailed tracking updates.
           </p>
         </div>

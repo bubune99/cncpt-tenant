@@ -128,7 +128,7 @@ export default function AdminDashboard() {
   const displayName = isDemo ? DEMO_USER.displayName : (user?.displayName || 'Admin');
 
   return (
-    <div className="p-4 sm:p-4 sm:p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       {/* Demo Mode Banner */}
       {(isDemo || isDemoAccess) && (
         <div className="mb-6 p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg flex items-center gap-3">

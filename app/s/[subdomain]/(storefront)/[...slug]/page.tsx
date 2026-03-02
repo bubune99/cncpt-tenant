@@ -109,12 +109,12 @@ export default async function CatchAllPage({ params }: PageProps) {
   if (!page.content) {
     return (
       <PageWrapper pageSettings={getPageLayoutSettings(page)}>
-        <div className="container mx-auto px-4 py-12">
-          <header className="max-w-3xl mx-auto mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">{page.title}</h1>
+        <div className="container mx-auto px-4 py-6 sm:py-8 lg:py-12">
+          <header className="max-w-3xl mx-auto mb-8 sm:mb-12">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">{page.title}</h1>
           </header>
           <div className="max-w-3xl mx-auto">
-            <p className="text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               This page has no content yet. Open it in the editor to add blocks.
             </p>
           </div>
@@ -142,12 +142,12 @@ export default async function CatchAllPage({ params }: PageProps) {
   // Empty blocks — show placeholder
   return (
     <PageWrapper pageSettings={getPageLayoutSettings(page)}>
-      <div className="container mx-auto px-4 py-12">
-        <header className="max-w-3xl mx-auto mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">{page.title}</h1>
+      <div className="container mx-auto px-4 py-6 sm:py-8 lg:py-12">
+        <header className="max-w-3xl mx-auto mb-8 sm:mb-12">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">{page.title}</h1>
         </header>
         <div className="max-w-3xl mx-auto">
-          <p className="text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground">
             This page has no content yet. Open it in the editor to add blocks.
           </p>
         </div>

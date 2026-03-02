@@ -77,7 +77,7 @@ export default async function ShopPage({ params }: PageProps) {
   const { subdomain } = await params;
   const tenantContext = await getTenantContext(subdomain);
   if (!tenantContext) {
-    return <div className="py-12 text-center text-gray-500">Site not found</div>;
+    return <div className="py-8 sm:py-12 text-center text-sm sm:text-base text-gray-500 px-4">Site not found</div>;
   }
 
   const page = await getShopPage(tenantContext.id);

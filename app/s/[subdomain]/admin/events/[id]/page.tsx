@@ -793,7 +793,7 @@ export default function EditEventPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">{event.title}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold">{event.title}</h1>
             <p className="text-sm text-muted-foreground">
               Last updated {format(new Date(event.updatedAt), "MMM d, yyyy")}
             </p>

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function RefundPolicyPage() {
   return (
     <>
-      <h1 className="text-3xl font-bold mb-2">Refund &amp; Return Policy</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold mb-2">Refund &amp; Return Policy</h1>
       <p className="text-muted-foreground mb-8">
         Last updated: February 20, 2026
       </p>

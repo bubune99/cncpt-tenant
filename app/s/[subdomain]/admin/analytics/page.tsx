@@ -243,7 +243,7 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-4 sm:p-6 lg:p-8" data-help-key="admin.analytics.dashboard">
+    <div className="p-4 sm:p-6 lg:p-8" data-help-key="admin.analytics.dashboard">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-8">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Analytics</h1>

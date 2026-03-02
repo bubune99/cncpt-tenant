@@ -137,7 +137,7 @@ export default function NewEventPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">New Event</h1>
+            <h1 className="text-xl sm:text-2xl font-bold">New Event</h1>
             <p className="text-sm text-muted-foreground">
               Create a new event
             </p>

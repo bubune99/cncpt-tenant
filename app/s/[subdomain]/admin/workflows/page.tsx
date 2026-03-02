@@ -145,7 +145,7 @@ export default function WorkflowsPage() {
 
   if (isLoading) {
     return (
-      <div className="p-4 sm:p-4 sm:p-6 lg:p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <div className="flex items-center justify-center h-64">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
@@ -154,7 +154,7 @@ export default function WorkflowsPage() {
   }
 
   return (
-    <div className="p-4 sm:p-4 sm:p-6 lg:p-8" data-help-key="admin.workflows.page">
+    <div className="p-4 sm:p-6 lg:p-8" data-help-key="admin.workflows.page">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-8" data-help-key="admin.workflows.header">
         <div>

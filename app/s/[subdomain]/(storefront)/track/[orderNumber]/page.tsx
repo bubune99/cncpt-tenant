@@ -71,7 +71,7 @@ export default async function OrderTrackingPage({ params, searchParams }: PagePr
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0)
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-gray-50 py-6 sm:py-8 lg:py-12">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <OrderTracker
           orderNumber={order.orderNumber}

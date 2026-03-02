@@ -287,7 +287,7 @@ export default function ReviewsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold">Reviews</h1>
