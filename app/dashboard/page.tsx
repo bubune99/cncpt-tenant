@@ -20,6 +20,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const hasLoadedSubdomains = useRef(false)
+  const [announcements, setAnnouncements] = useState<Array<{ id: number; title: string; message: string; type: string }>>([])
 
   const stackUser = useUser()
 
@@ -40,6 +41,14 @@ export default function DashboardPage() {
     return () => {
       window.removeEventListener('navigate-to-section', handleNavigate as EventListener)
     }
+  }, [])
+
+  // Fetch active announcements
+  useEffect(() => {
+    fetch("/api/admin/announcements")
+      .then(r => r.ok ? r.json() : { announcements: [] })
+      .then(data => setAnnouncements(data.announcements || []))
+      .catch(() => {})
   }, [])
 
   // Load subdomains once we have a user — loading stays true until fetch completes
@@ -139,6 +148,19 @@ export default function DashboardPage() {
 
   return (
     <HelpProvider>
+      {announcements.length > 0 && (
+        <div className="fixed top-0 left-0 right-0 z-50">
+          {announcements.slice(0, 1).map((a) => (
+            <div key={a.id} className={`px-4 py-2 text-center text-sm ${
+              a.type === 'warning' ? 'bg-yellow-500 text-yellow-950' :
+              a.type === 'error' ? 'bg-red-500 text-white' :
+              'bg-blue-500 text-white'
+            }`}>
+              <strong>{a.title}:</strong> {a.message}
+            </div>
+          ))}
+        </div>
+      )}
       <div className="min-h-screen bg-background flex">
         <DashboardSidebar
           user={user}

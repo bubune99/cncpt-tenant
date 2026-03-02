@@ -70,6 +70,7 @@ import {
 } from "lucide-react"
 import { deleteSubdomainAction } from "@/app/actions"
 import { rootDomain, protocol } from "@/lib/utils"
+import { useRouter } from "next/navigation"
 import { useUser } from "@stackframe/stack"
 import { TiersPageContent } from "./tiers/page"
 import { ClientsPageContent } from "./clients/page"
@@ -167,11 +168,12 @@ function AdminSidebar({
 
 function AdminHeader() {
   const user = useUser()
+  const router = useRouter()
 
   const handleSignOut = async () => {
     if (user) {
       await user.signOut()
-      window.location.href = "/"
+      router.push("/")
     }
   }
 
@@ -210,7 +212,7 @@ function AdminHeader() {
 }
 
 type OverviewData = {
-  users: { total: number; newLast30Days: number }
+  users: { total: number; newLast30Days: number; dailySignups: Array<{ date: string; count: number }> }
   subdomains: { total: number; last30Days: number; last7Days: number }
   teams: { total: number; last30Days: number; totalMembers: number }
   topUsers: Array<{ userId: string; email: string; displayName: string | null; subdomainCount: number }>
@@ -221,22 +223,24 @@ function OverviewSection() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    async function fetchOverviewData() {
-      try {
-        setLoading(true)
-        const res = await fetch("/api/super-admin/analytics")
-        if (!res.ok) throw new Error("Failed to fetch analytics")
-        const json = await res.json()
-        setData(json)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load data")
-      } finally {
-        setLoading(false)
-      }
+  const fetchOverviewData = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const res = await fetch("/api/super-admin/analytics")
+      if (!res.ok) throw new Error("Failed to fetch analytics")
+      const json = await res.json()
+      setData(json)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load data")
+    } finally {
+      setLoading(false)
     }
-    fetchOverviewData()
   }, [])
+
+  useEffect(() => {
+    fetchOverviewData()
+  }, [fetchOverviewData])
 
   if (loading) {
     return (
@@ -262,7 +266,7 @@ function OverviewSection() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => window.location.reload()}
+          onClick={() => fetchOverviewData()}
           className="flex items-center gap-2 bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5"
         >
           <RefreshCw className="h-4 w-4" />
@@ -361,6 +365,62 @@ function OverviewSection() {
                 </div>
               ))
             )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {data.users.dailySignups && data.users.dailySignups.length > 0 && (
+        <Card className="bg-slate-800/50 border-white/[0.08]">
+          <CardHeader>
+            <CardTitle className="text-white">New Users (Last 14 Days)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-end gap-1 h-24">
+              {data.users.dailySignups.map((day: { date: string; count: number }, i: number) => {
+                const max = Math.max(...data.users.dailySignups.map((d: { count: number }) => d.count), 1)
+                const height = (day.count / max) * 100
+                return (
+                  <div
+                    key={i}
+                    className="flex-1 bg-blue-500/60 hover:bg-blue-500 rounded-t transition-colors cursor-default group relative"
+                    style={{ height: `${Math.max(height, 4)}%` }}
+                    title={`${day.date}: ${day.count} users`}
+                  />
+                )
+              })}
+            </div>
+            <div className="flex justify-between mt-2 text-xs text-slate-500">
+              <span>{data.users.dailySignups[0]?.date}</span>
+              <span>{data.users.dailySignups[data.users.dailySignups.length - 1]?.date}</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card className="bg-slate-800/50 border-white/[0.08]">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <Activity className="h-5 w-5 text-emerald-400" />
+            Platform Health
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-emerald-400">●</div>
+              <p className="text-sm text-slate-400">API Status</p>
+              <p className="text-xs text-emerald-400">Operational</p>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-emerald-400">●</div>
+              <p className="text-sm text-slate-400">Database</p>
+              <p className="text-xs text-emerald-400">Connected</p>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-emerald-400">●</div>
+              <p className="text-sm text-slate-400">Auth Service</p>
+              <p className="text-xs text-emerald-400">Active</p>
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
+import { useUser } from "@stackframe/stack"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -34,6 +36,7 @@ interface ClientsPageContentProps {
 type DialogType = "approve" | "suspend" | "extend" | "reactivate" | null
 
 export function ClientsPageContent({ adminUserId }: ClientsPageContentProps) {
+  const router = useRouter()
   const [clients, setClients] = useState<PlatformClient[]>([])
   const [stats, setStats] = useState<ClientStats | null>(null)
   const [tiers, setTiers] = useState<SubscriptionTier[]>([])
@@ -227,8 +230,7 @@ export function ClientsPageContent({ adminUserId }: ClientsPageContentProps) {
         selectedIds={selectedIds}
         onSelectionChange={setSelectedIds}
         onViewClient={(client) => {
-          // TODO: Navigate to client detail or open detail dialog
-          console.log("View client:", client.id)
+          router.push(`/admin/clients/${client.id}`)
         }}
         onApprove={(id) => openDialog("approve", id)}
         onSuspend={(id) => openDialog("suspend", id)}
@@ -284,8 +286,8 @@ export function ClientsPageContent({ adminUserId }: ClientsPageContentProps) {
 
 // Default export - standalone page
 export default function ClientsPage() {
-  // In a real app, get adminUserId from auth context
-  const adminUserId = "admin-user-id"
+  const user = useUser()
+  const adminUserId = user?.id || ""
 
   return <ClientsPageContent adminUserId={adminUserId} />
 }

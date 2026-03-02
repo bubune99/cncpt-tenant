@@ -58,6 +58,31 @@ export async function middleware(request: NextRequest) {
   const host = request.headers.get("host") || ""
   const hostname = host.split(":")[0]
 
+  // Maintenance mode check
+  if (process.env.MAINTENANCE_MODE === "true") {
+    // Allow admin, API, and _next routes through
+    if (!pathname.startsWith('/admin') && !pathname.startsWith('/api') && !pathname.startsWith('/_next') && pathname !== '/login') {
+      return new NextResponse(
+        `<!DOCTYPE html>
+<html><head><title>Maintenance</title><style>
+body{font-family:system-ui;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#0f172a;color:#e2e8f0}
+.container{text-align:center;max-width:500px;padding:2rem}
+h1{font-size:2rem;margin-bottom:1rem}p{color:#94a3b8}
+</style></head><body><div class="container">
+<h1>We'll be right back</h1>
+<p>We're performing scheduled maintenance. Please check back shortly.</p>
+</div></body></html>`,
+        {
+          status: 503,
+          headers: {
+            'Content-Type': 'text/html',
+            'Retry-After': '3600',
+          },
+        }
+      )
+    }
+  }
+
   // First try to extract subdomain from the root domain
   const subdomain = extractSubdomain(request)
 

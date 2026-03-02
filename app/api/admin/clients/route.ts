@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getAllClients } from "@/lib/clients"
+import { stackServerApp } from "@/stack"
+import { isSuperAdmin } from "@/lib/super-admin"
 import type { ClientFilters } from "@/types/admin"
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
+    const user = await stackServerApp.getUser()
+    if (!user || !(await isSuperAdmin(user.id))) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const searchParams = request.nextUrl.searchParams
 
     const filters: ClientFilters = {

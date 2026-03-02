@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server"
 import { getClientStats } from "@/lib/clients"
+import { stackServerApp } from "@/stack"
+import { isSuperAdmin } from "@/lib/super-admin"
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
+    const user = await stackServerApp.getUser()
+    if (!user || !(await isSuperAdmin(user.id))) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const stats = await getClientStats()
     return NextResponse.json({ stats })
   } catch (error) {

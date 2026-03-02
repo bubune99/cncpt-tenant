@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
+import { useUser } from "@stackframe/stack"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -49,8 +50,8 @@ export default function ClientDetailPage() {
   const [loading, setLoading] = useState(true)
   const [activeDialog, setActiveDialog] = useState<DialogType>(null)
 
-  // In a real app, get from auth context
-  const adminUserId = "admin-user-id"
+  const user = useUser()
+  const adminUserId = user?.id || ""
 
   useEffect(() => {
     async function loadClient() {
