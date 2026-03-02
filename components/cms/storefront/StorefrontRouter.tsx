@@ -153,11 +153,15 @@ async function getPages(tenantId?: number) {
 }
 
 // Get single page by slug (filtered by tenant)
+// Searches both with and without leading slash since slugs may be stored either way.
 async function getPage(slug: string, tenantId?: number) {
+  const withSlash = slug.startsWith('/') ? slug : `/${slug}`
+  const withoutSlash = slug.startsWith('/') ? slug.slice(1) : slug
+
   try {
     const page = await prisma.page.findFirst({
       where: {
-        slug: slug.startsWith('/') ? slug : `/${slug}`,
+        OR: [{ slug: withSlash }, { slug: withoutSlash }],
         status: 'PUBLISHED',
         ...(tenantId !== undefined && { tenantId }),
       },
