@@ -236,7 +236,7 @@ export default function SettingsPage() {
 
   if (user === undefined) {
     return (
-      <div className="p-6 lg:p-8">
+      <div className="p-4 sm:p-4 sm:p-6 lg:p-8">
         <div className="animate-pulse space-y-6">
           <div className="h-8 bg-muted rounded w-1/3"></div>
           <div className="h-64 bg-muted rounded"></div>
@@ -247,7 +247,7 @@ export default function SettingsPage() {
 
   if (!user && authChecked) {
     return (
-      <div className="p-6 lg:p-8">
+      <div className="p-4 sm:p-4 sm:p-6 lg:p-8">
         <Card>
           <CardHeader>
             <CardTitle>Please Sign In</CardTitle>
@@ -264,9 +264,9 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-6xl" data-help-key="admin.settings.page">
+    <div className="p-4 sm:p-4 sm:p-6 lg:p-8 max-w-6xl" data-help-key="admin.settings.page">
       <div className="mb-8" data-help-key="admin.settings.header">
-        <h1 className="text-3xl font-bold">Settings</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Settings</h1>
         <p className="text-muted-foreground">Manage your store settings and preferences</p>
       </div>
 

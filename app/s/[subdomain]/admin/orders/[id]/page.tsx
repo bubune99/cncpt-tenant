@@ -239,7 +239,7 @@ export default function OrderDetailPage() {
 
   if (loading) {
     return (
-      <div className="p-6 lg:p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
@@ -252,7 +252,7 @@ export default function OrderDetailPage() {
 
   if (!order) {
     return (
-      <div className="p-6 lg:p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <p className="text-lg font-medium">Order not found</p>
@@ -274,7 +274,7 @@ export default function OrderDetailPage() {
   const StatusIcon = statusBadge.icon;
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <Button
@@ -287,7 +287,7 @@ export default function OrderDetailPage() {
           </Button>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold tracking-tight">{order.orderNumber}</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{order.orderNumber}</h1>
               <Badge variant={statusBadge.variant} className="flex items-center gap-1">
                 <StatusIcon className="h-3 w-3" />
                 {statusBadge.label}

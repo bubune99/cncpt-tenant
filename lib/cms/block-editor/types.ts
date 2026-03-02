@@ -52,6 +52,15 @@ export interface BlockAnimation {
   }
 }
 
+/** Device visibility configuration for responsive design */
+export interface BlockResponsive {
+  hidden?: {
+    desktop?: boolean
+    tablet?: boolean
+    mobile?: boolean
+  }
+}
+
 /** Background image configuration for container blocks */
 export interface BlockBackground {
   url: string
@@ -74,6 +83,8 @@ export interface Block {
   label?: string
   hidden?: boolean
   locked?: boolean
+  /** Device visibility — hide block on specific breakpoints */
+  responsive?: BlockResponsive
   commerce?: CommerceBinding
   componentName?: string
   frameworkRequirement?: ExportFramework

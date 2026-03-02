@@ -310,7 +310,7 @@ export default function FormEditorPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       <div className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-4">
           <Button variant="ghost" asChild>

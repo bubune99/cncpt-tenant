@@ -36,8 +36,12 @@ import {
   Link2,
   Component,
   ExternalLink,
+  Monitor,
+  Tablet,
+  Smartphone,
+  Eye,
 } from "lucide-react"
-import type { Block, BlockTag, BlockAnimation, BlockBackground, CommerceBinding, CommerceProvider } from "@/lib/cms/block-editor/types"
+import type { Block, BlockTag, BlockAnimation, BlockBackground, BlockResponsive, CommerceBinding, CommerceProvider } from "@/lib/cms/block-editor/types"
 import { usePartials, usePartial } from "@/lib/cms/api/domains/partials/hooks"
 import { COMMERCE_PROVIDERS } from "@/lib/cms/block-editor/block-templates"
 import { isContainerTag, CONTAINER_TAGS, LEAF_TAGS } from "@/lib/cms/block-editor/types"
@@ -886,6 +890,53 @@ export function PropertiesPanel() {
                 </SelectContent>
               </Select>
             </PropertyField>
+          </PropertySection>
+
+          <Separator />
+
+          {/* Device Visibility */}
+          <PropertySection
+            title="Visibility"
+            icon={Eye}
+            defaultOpen={!!(block.responsive?.hidden?.desktop || block.responsive?.hidden?.tablet || block.responsive?.hidden?.mobile)}
+          >
+            <div className="flex flex-col gap-2.5">
+              <span className="text-[10px] text-muted-foreground">Hide this block on specific devices</span>
+              {([
+                { key: "desktop" as const, label: "Desktop", description: "Large screens (1024px+)", Icon: Monitor },
+                { key: "tablet" as const, label: "Tablet", description: "Medium screens (768-1023px)", Icon: Tablet },
+                { key: "mobile" as const, label: "Mobile", description: "Small screens (<768px)", Icon: Smartphone },
+              ] as const).map(({ key, label, description, Icon }) => (
+                <div key={key} className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <Icon size={14} className={cn(
+                      "transition-colors",
+                      block.responsive?.hidden?.[key] ? "text-destructive" : "text-muted-foreground"
+                    )} />
+                    <div className="flex flex-col">
+                      <span className="text-xs font-medium">{label}</span>
+                      <span className="text-[10px] text-muted-foreground">{description}</span>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={!(block.responsive?.hidden?.[key] ?? false)}
+                    onCheckedChange={(visible) => {
+                      const current = block.responsive ?? {}
+                      const currentHidden = current.hidden ?? {}
+                      const newHidden = { ...currentHidden, [key]: !visible }
+                      // Clean up: remove false values
+                      if (!newHidden.desktop) delete newHidden.desktop
+                      if (!newHidden.tablet) delete newHidden.tablet
+                      if (!newHidden.mobile) delete newHidden.mobile
+                      const hasAny = Object.keys(newHidden).length > 0
+                      updateBlock(block.id, {
+                        responsive: hasAny ? { hidden: newHidden } : undefined,
+                      })
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
           </PropertySection>
 
           <Separator />

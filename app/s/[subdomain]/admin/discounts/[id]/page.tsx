@@ -298,7 +298,7 @@ export default function EditDiscountPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -309,7 +309,7 @@ export default function EditDiscountPage() {
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-bold font-mono">{discount.code}</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold font-mono">{discount.code}</h1>
               {getStatusBadge(discount.status)}
             </div>
             <p className="text-muted-foreground mt-1">
@@ -336,7 +336,7 @@ export default function EditDiscountPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Uses</CardTitle>

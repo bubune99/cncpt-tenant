@@ -189,10 +189,10 @@ export default function FormsPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8" data-help-key="admin.forms.page">
-      <div className="flex justify-between items-center mb-8" data-help-key="admin.forms.header">
+    <div className="p-4 sm:p-4 sm:p-6 lg:p-8" data-help-key="admin.forms.page">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-8" data-help-key="admin.forms.header">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Forms</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Forms</h1>
           <p className="text-muted-foreground mt-2">
             Create and manage contact forms, surveys, and more
           </p>
@@ -212,7 +212,7 @@ export default function FormsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4 mb-8" data-help-key="admin.forms.stats">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4 mb-8" data-help-key="admin.forms.stats">
         <Card data-help-key="admin.forms.stat.total">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Forms</CardTitle>
@@ -272,7 +272,7 @@ export default function FormsPage() {
             A list of all your forms. Click to edit or view submissions.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-x-auto">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

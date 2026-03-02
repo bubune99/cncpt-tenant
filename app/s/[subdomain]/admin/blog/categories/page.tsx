@@ -195,7 +195,7 @@ export default function BlogCategoriesPage() {
   const rootCategories = categories.filter((c) => !c.parentId);
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
@@ -204,7 +204,7 @@ export default function BlogCategoriesPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Categories</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Categories</h1>
             <p className="text-muted-foreground mt-2">
               Organize your blog posts into categories
             </p>

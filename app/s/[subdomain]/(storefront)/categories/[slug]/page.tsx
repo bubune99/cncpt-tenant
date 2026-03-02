@@ -92,30 +92,30 @@ export default async function CategoryPage({ params }: PageProps) {
   const posts = category.posts.map((p: (typeof category.posts)[number]) => p.post);
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div className="container mx-auto px-4 py-6 sm:py-8 lg:py-12">
       {/* Back Link */}
       <Link
         href="/categories"
-        className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8"
+        className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 sm:mb-8 py-1"
       >
         <ArrowLeft className="h-4 w-4" />
         All Categories
       </Link>
 
       {/* Header */}
-      <header className="max-w-4xl mx-auto mb-12">
-        <h1 className="text-4xl font-bold mb-4">{category.name}</h1>
+      <header className="max-w-4xl mx-auto mb-8 sm:mb-12">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-4">{category.name}</h1>
         {category.description && (
-          <p className="text-xl text-muted-foreground">{category.description}</p>
+          <p className="text-base sm:text-lg lg:text-xl text-muted-foreground">{category.description}</p>
         )}
-        <Badge variant="secondary" className="mt-4">
+        <Badge variant="secondary" className="mt-3 sm:mt-4">
           {posts.length} posts
         </Badge>
       </header>
 
       {/* Posts Grid */}
       {posts.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {posts.map((post: (typeof posts)[number]) => (
             <Link key={post.id} href={`/posts/${post.slug}`}>
               <Card className="h-full hover:shadow-lg transition-shadow overflow-hidden group">
@@ -123,25 +123,25 @@ export default async function CategoryPage({ params }: PageProps) {
                   <img
                     src={post.featuredImage.url}
                     alt={post.featuredImage.alt || post.title}
-                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-40 sm:h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
-                  <div className="w-full h-48 bg-gradient-to-br from-muted to-muted/50" />
+                  <div className="w-full h-40 sm:h-48 bg-gradient-to-br from-muted to-muted/50" />
                 )}
-                <CardHeader className="pb-2">
-                  <h3 className="text-xl font-semibold line-clamp-2 group-hover:text-primary transition-colors">
+                <CardHeader className="pb-2 p-3 sm:p-6 sm:pb-2">
+                  <h3 className="text-base sm:text-xl font-semibold line-clamp-2 group-hover:text-primary transition-colors">
                     {post.title}
                   </h3>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-3 sm:px-6">
                   {post.excerpt && (
-                    <p className="text-muted-foreground line-clamp-3">
+                    <p className="text-sm text-muted-foreground line-clamp-2 sm:line-clamp-3">
                       {post.excerpt}
                     </p>
                   )}
                 </CardContent>
-                <CardFooter className="text-sm text-muted-foreground">
-                  <div className="flex items-center gap-4">
+                <CardFooter className="text-xs sm:text-sm text-muted-foreground px-3 sm:px-6 pb-3 sm:pb-6">
+                  <div className="flex items-center gap-3 sm:gap-4">
                     {post.publishedAt && (
                       <span className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
@@ -163,8 +163,8 @@ export default async function CategoryPage({ params }: PageProps) {
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 bg-muted/30 rounded-lg">
-          <p className="text-muted-foreground">
+        <div className="text-center py-8 sm:py-12 bg-muted/30 rounded-lg">
+          <p className="text-muted-foreground text-sm sm:text-base">
             No posts in this category yet.
           </p>
         </div>

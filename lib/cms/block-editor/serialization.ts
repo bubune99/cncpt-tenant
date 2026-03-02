@@ -1,5 +1,5 @@
 import { z } from "zod"
-import type { Block, BlockTag, BlockAnimation, BlockBackground, PageDocument, ExportFramework, CommerceBinding } from "./types"
+import type { Block, BlockTag, BlockAnimation, BlockBackground, BlockResponsive, PageDocument, ExportFramework, CommerceBinding } from "./types"
 import { CONTAINER_TAGS, LEAF_TAGS, isContainerTag } from "./types"
 import { generateId, rehydrateParentIds, stripParentIds } from "./tree-utils"
 
@@ -120,6 +120,11 @@ function serializeBlockForEditor(block: Block, indent: number): string {
   // Commerce binding as JSON data attribute
   if (block.commerce) {
     attrs.push(`data-commerce={${JSON.stringify(JSON.stringify(block.commerce))}}`)
+  }
+
+  // Responsive visibility as JSON data attribute
+  if (block.responsive) {
+    attrs.push(`data-responsive={${JSON.stringify(JSON.stringify(block.responsive))}}`)
   }
 
   // Component name for Hydrogen blocks
@@ -469,6 +474,11 @@ function frameToBlockFromEditor(frame: ParseFrame): Block {
     try { commerce = JSON.parse(parsedAttrs["data-commerce"]) } catch { /* ignore */ }
   }
 
+  let responsive: BlockResponsive | undefined
+  if (parsedAttrs["data-responsive"]) {
+    try { responsive = JSON.parse(parsedAttrs["data-responsive"]) } catch { /* ignore */ }
+  }
+
   // Partial reference fields
   const partialId = parsedAttrs["data-partial-id"]
   let partialOverrides: Record<string, Partial<Pick<Block, 'textContent' | 'className' | 'attrs'>>> | undefined
@@ -484,7 +494,7 @@ function frameToBlockFromEditor(frame: ParseFrame): Block {
   const specialKeys = [
     "data-block-id", "className", "class",
     "data-editor-hidden", "data-editor-locked", "data-editor-label",
-    "data-animation", "data-background", "data-commerce",
+    "data-animation", "data-background", "data-commerce", "data-responsive",
     "data-component", "data-framework",
     "data-partial-id", "data-partial-overrides",
     "initial", "animate", "whileInView", "whileHover", "transition", "viewport", "exit",
@@ -521,6 +531,7 @@ function frameToBlockFromEditor(frame: ParseFrame): Block {
   if (animation) block.animation = animation
   if (background) block.background = background
   if (commerce) block.commerce = commerce
+  if (responsive) block.responsive = responsive
   if (hidden) block.hidden = true
   if (locked) block.locked = true
   if (label) block.label = label
@@ -993,6 +1004,34 @@ function hasAnyAnimation(blocks: Block[]): boolean {
   return false
 }
 
+/**
+ * Build responsive visibility Tailwind classes for framework export.
+ * Converts block.responsive.hidden into the appropriate Tailwind hidden/block classes.
+ */
+function buildResponsiveExportClasses(block: Block): string {
+  const h = block.responsive?.hidden
+  if (!h) return ""
+  const classes: string[] = []
+
+  if (h.mobile && h.tablet && h.desktop) {
+    classes.push("hidden")
+  } else if (h.mobile && h.tablet) {
+    classes.push("hidden", "lg:block")
+  } else if (h.tablet && h.desktop) {
+    classes.push("md:hidden")
+  } else if (h.mobile && h.desktop) {
+    classes.push("hidden", "md:block", "lg:hidden")
+  } else if (h.desktop) {
+    classes.push("lg:hidden")
+  } else if (h.tablet) {
+    classes.push("max-md:block", "md:hidden", "lg:block")
+  } else if (h.mobile) {
+    classes.push("max-md:hidden")
+  }
+
+  return classes.join(" ")
+}
+
 function blockToJSX(block: Block, indent: number, framework: ExportFramework = "react"): string {
   const pad = " ".repeat(indent)
   const isContainer = isContainerTag(block.tag) || !!block.children
@@ -1014,9 +1053,11 @@ function blockToJSX(block: Block, indent: number, framework: ExportFramework = "
     if (block.tag === "a") Tag = "Link"
   }
 
-  // Build attributes
+  // Build attributes — merge responsive visibility classes into className for export
   const attrParts: string[] = []
-  if (block.className) attrParts.push(`className="${block.className}"`)
+  const responsiveExportClasses = buildResponsiveExportClasses(block)
+  const exportClassName = [block.className, responsiveExportClasses].filter(Boolean).join(" ")
+  if (exportClassName) attrParts.push(`className="${exportClassName}"`)
   const exportBooleanAttrs = new Set([
     "controls", "autoplay", "muted", "loop", "playsinline",
     "disabled", "checked", "readonly", "required", "multiple",

@@ -171,7 +171,7 @@ export default function BlogTagsPage() {
   );
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
@@ -180,7 +180,7 @@ export default function BlogTagsPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Tags</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Tags</h1>
             <p className="text-muted-foreground mt-2">
               Manage tags for your blog posts
             </p>

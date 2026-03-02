@@ -1,6 +1,6 @@
 "use client"
 
-import type { Block, BlockAnimation, BlockBackground } from "@/lib/cms/block-editor/types"
+import type { Block, BlockAnimation, BlockBackground, BlockResponsive } from "@/lib/cms/block-editor/types"
 import { isContainerTag } from "@/lib/cms/block-editor/types"
 import { createElement } from "react"
 import { motion } from "framer-motion"
@@ -39,77 +39,106 @@ function containsHtml(text: string): boolean {
 }
 
 /**
- * Convert a CSS string like "color: red; font-size: 14px" to a React style object.
- * React's createElement requires style to be an object, not a string.
+ * Build responsive visibility Tailwind classes from BlockResponsive data.
+ * Returns classes that hide the block on the specified breakpoints.
  */
-function parseCssString(css: string): React.CSSProperties {
-  const style: Record<string, string> = {}
-  for (const decl of css.split(";")) {
-    const colon = decl.indexOf(":")
-    if (colon < 1) continue
-    const prop = decl.slice(0, colon).trim()
-    const val = decl.slice(colon + 1).trim()
-    if (!prop || !val) continue
-    // Convert kebab-case to camelCase (e.g. font-size → fontSize)
-    const camel = prop.replace(/-([a-z])/g, (_, c) => c.toUpperCase())
-    style[camel] = val
+function buildResponsiveClasses(responsive: BlockResponsive): string {
+  const classes: string[] = []
+  const h = responsive.hidden
+  if (!h) return ""
+
+  if (h.mobile && h.tablet && h.desktop) {
+    classes.push("hidden")
+  } else if (h.mobile && h.tablet) {
+    classes.push("hidden", "lg:block")
+  } else if (h.tablet && h.desktop) {
+    classes.push("md:hidden")
+  } else if (h.mobile && h.desktop) {
+    classes.push("hidden", "md:block", "lg:hidden")
+  } else if (h.desktop) {
+    classes.push("lg:hidden")
+  } else if (h.tablet) {
+    classes.push("max-md:block", "md:hidden", "lg:block")
+  } else if (h.mobile) {
+    classes.push("max-md:hidden")
   }
-  return style as React.CSSProperties
+
+  return classes.join(" ")
+}
+
+/**
+ * Animation presets matching the ones defined in serialization.ts.
+ * `initial` = the starting state before animation.
+ * `animate` = the final state after animation.
+ * `hover` = the transform applied on hover (element stays visible, just transforms).
+ */
+const ANIMATION_PRESETS: Record<string, {
+  initial: Record<string, number>
+  animate: Record<string, number>
+  hover: Record<string, number>
+}> = {
+  fadeIn:      { initial: { opacity: 0 },                animate: { opacity: 1 },             hover: { opacity: 0.7 } },
+  slideUp:    { initial: { opacity: 0, y: 40 },         animate: { opacity: 1, y: 0 },       hover: { y: -5 } },
+  slideDown:  { initial: { opacity: 0, y: -40 },        animate: { opacity: 1, y: 0 },       hover: { y: 5 } },
+  slideLeft:  { initial: { opacity: 0, x: 40 },         animate: { opacity: 1, x: 0 },       hover: { x: -5 } },
+  slideRight: { initial: { opacity: 0, x: -40 },        animate: { opacity: 1, x: 0 },       hover: { x: 5 } },
+  scale:      { initial: { opacity: 0, scale: 0.85 },   animate: { opacity: 1, scale: 1 },   hover: { scale: 1.05 } },
 }
 
 /**
  * Build framer-motion props from BlockAnimation data.
- * Returns props to spread onto a motion component (initial, animate/whileInView/whileHover, transition, viewport).
+ *
+ * Trigger behavior:
+ * - onMount: element starts at `initial`, immediately animates to `animate`
+ * - inView:  element starts at `initial`, animates to target when scrolled into view
+ * - hover:   element is fully visible, transforms on hover (no initial hiding)
  */
-function buildAnimationProps(anim: BlockAnimation): Record<string, unknown> {
-  const { type = "fadeIn", trigger = "onMount", duration = 0.5, delay = 0 } = anim
+function buildMotionProps(anim: BlockAnimation): Record<string, unknown> {
+  const props: Record<string, unknown> = {}
 
-  // Custom animation — pass through raw motion props
-  if (type === "custom" && anim.custom) {
-    const props: Record<string, unknown> = {}
-    if (anim.custom.initial) props.initial = anim.custom.initial
-    if (anim.custom.animate) props.animate = anim.custom.animate
-    if (anim.custom.whileInView) props.whileInView = anim.custom.whileInView
-    if (anim.custom.whileHover) props.whileHover = anim.custom.whileHover
-    if (anim.custom.transition) props.transition = anim.custom.transition
-    return props
-  }
+  if (anim.type && anim.type !== "custom") {
+    const preset = ANIMATION_PRESETS[anim.type]
+    if (!preset) return props
 
-  // Preset initial states
-  const presets: Record<string, Record<string, number>> = {
-    fadeIn:     { opacity: 0 },
-    slideUp:    { opacity: 0, y: 30 },
-    slideDown:  { opacity: 0, y: -30 },
-    slideLeft:  { opacity: 0, x: -30 },
-    slideRight: { opacity: 0, x: 30 },
-    scale:      { opacity: 0, scale: 0.9 },
-  }
+    const transition: Record<string, number> = { duration: anim.duration ?? 0.5 }
+    if (anim.delay && anim.delay > 0) transition.delay = anim.delay
 
-  const initial = presets[type] || presets.fadeIn
-  const animate = Object.fromEntries(Object.keys(initial).map((k) => [k, k === "scale" ? 1 : k === "opacity" ? 1 : 0]))
-  const transition = { duration, delay, ease: "easeOut" as const }
-
-  if (trigger === "inView") {
-    return {
-      initial,
-      whileInView: animate,
-      viewport: { once: true, margin: "-50px" },
-      transition,
+    if (anim.trigger === "hover") {
+      // Hover: element is visible, animates transform on hover.
+      // No `initial` hiding — the block should be visible at all times.
+      props.whileHover = preset.hover
+      props.transition = transition
+    } else if (anim.trigger === "inView") {
+      // Scroll-triggered: starts hidden, animates in when scrolled into viewport
+      props.initial = preset.initial
+      props.whileInView = preset.animate
+      props.viewport = { once: true, amount: 0.15 }
+      props.transition = transition
+    } else {
+      // onMount (default): starts hidden, animates in immediately on mount
+      props.initial = preset.initial
+      props.animate = preset.animate
+      props.transition = transition
     }
+  } else if (anim.type === "custom" && anim.custom) {
+    const c = anim.custom
+    if (c.initial) props.initial = c.initial
+    if (c.animate) props.animate = c.animate
+    if (c.whileInView) {
+      props.whileInView = c.whileInView
+      props.viewport = { once: true, amount: 0.15 }
+    }
+    if (c.whileHover) props.whileHover = c.whileHover
+    if (c.transition) props.transition = c.transition
   }
 
-  if (trigger === "hover") {
-    return { whileHover: animate, transition }
-  }
-
-  // onMount
-  return { initial, animate, transition }
+  return props
 }
 
 /**
  * Renders a block as its native HTML tag with its Tailwind className.
+ * Uses framer-motion's motion components when animation data is present.
  * The new architecture means every block is just: <tag className={...}>content</tag>
- * When block.animation is present, renders as a framer-motion component.
  */
 export function BlockRenderer({ block, renderChildren, isPreview = false }: BlockRendererProps) {
   // Skip rendering hidden blocks in preview/export
@@ -117,18 +146,26 @@ export function BlockRenderer({ block, renderChildren, isPreview = false }: Bloc
     return null
   }
 
-  // Use motion component when animation is present, plain tag otherwise
-  const hasAnimation = !!block.animation
-  const Tag = hasAnimation
-    ? ((motion as Record<string, unknown>)[block.tag] || block.tag)
+  const anim = block.animation
+  const hasAnim = !!anim?.type
+
+  // Use motion component when animation data exists, plain tag otherwise
+  // motion["div"], motion["section"], etc. — framer-motion supports all HTML tags
+  const Tag = hasAnim
+    ? (motion as unknown as Record<string, React.ComponentType<Record<string, unknown>>>)[block.tag]
     : block.tag
+
   const isContainer = isContainerTag(block.tag) || !!block.children
   const isSelfClosing = ["img", "hr", "input"].includes(block.tag)
   const hasBackground = block.background?.url
 
+  // Build responsive visibility classes
+  const responsiveClasses = block.responsive ? buildResponsiveClasses(block.responsive) : ""
+  const mergedClassName = [block.className, responsiveClasses].filter(Boolean).join(" ") || undefined
+
   // Build the HTML attributes object
   const htmlAttrs: Record<string, unknown> = {
-    className: block.className || undefined,
+    className: mergedClassName,
   }
 
   // Add background image styles if present
@@ -136,19 +173,27 @@ export function BlockRenderer({ block, renderChildren, isPreview = false }: Bloc
     htmlAttrs.style = buildBackgroundStyle(block.background!)
   }
 
+  // Add framer-motion props when animation data is present
+  if (hasAnim && anim) {
+    Object.assign(htmlAttrs, buildMotionProps(anim))
+  }
+
+  // Boolean HTML attributes that React expects as `true` rather than `""`
+  const BOOLEAN_ATTRS = new Set([
+    "controls", "autoplay", "muted", "loop", "playsinline",
+    "disabled", "checked", "readonly", "required", "multiple",
+    "hidden", "novalidate", "formnovalidate", "allowfullscreen",
+  ])
+
   // Spread any extra attributes (src, href, alt, placeholder, type, etc.)
   if (block.attrs) {
     for (const [key, val] of Object.entries(block.attrs)) {
-      if (val !== undefined && val !== null && val !== "") {
-        // React requires style to be an object, not a CSS string
-        if (key === "style" && typeof val === "string") {
-          const parsed = parseCssString(val)
-          htmlAttrs.style = htmlAttrs.style
-            ? { ...(htmlAttrs.style as Record<string, string>), ...parsed }
-            : parsed
-        } else {
-          htmlAttrs[key] = val
-        }
+      if (val === undefined || val === null) continue
+      if (BOOLEAN_ATTRS.has(key)) {
+        // Boolean attrs: present = true (even if value is "")
+        htmlAttrs[key] = true
+      } else if (val !== "") {
+        htmlAttrs[key] = val
       }
     }
   }
@@ -156,11 +201,6 @@ export function BlockRenderer({ block, renderChildren, isPreview = false }: Bloc
   // Special: images need crossOrigin
   if (block.tag === "img") {
     htmlAttrs.crossOrigin = "anonymous"
-  }
-
-  // Apply framer-motion animation props
-  if (hasAnimation && block.animation) {
-    Object.assign(htmlAttrs, buildAnimationProps(block.animation))
   }
 
   // Self-closing tags

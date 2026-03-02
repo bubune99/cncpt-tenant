@@ -212,7 +212,7 @@ export default function WorkflowDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 lg:p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <div className="flex items-center justify-center h-64">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
@@ -222,7 +222,7 @@ export default function WorkflowDetailPage() {
 
   if (error || !workflow) {
     return (
-      <div className="p-6 lg:p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <div className="text-center py-12">
           <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-lg font-medium mb-2">{error || 'Workflow not found'}</h3>
@@ -242,7 +242,7 @@ export default function WorkflowDetailPage() {
     : 0;
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">

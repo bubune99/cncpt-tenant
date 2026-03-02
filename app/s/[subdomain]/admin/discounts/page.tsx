@@ -273,11 +273,11 @@ export default function DiscountsPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">Discount Codes</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">Discount Codes</h1>
           <p className="text-muted-foreground mt-2">
             Manage discount codes and promotions
           </p>
@@ -293,7 +293,7 @@ export default function DiscountsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Discounts</CardTitle>

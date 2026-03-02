@@ -145,7 +145,7 @@ export default function WorkflowsPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 lg:p-8">
+      <div className="p-4 sm:p-4 sm:p-6 lg:p-8">
         <div className="flex items-center justify-center h-64">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
@@ -154,11 +154,11 @@ export default function WorkflowsPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8" data-help-key="admin.workflows.page">
+    <div className="p-4 sm:p-4 sm:p-6 lg:p-8" data-help-key="admin.workflows.page">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8" data-help-key="admin.workflows.header">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-8" data-help-key="admin.workflows.header">
         <div>
-          <h1 className="text-2xl font-bold">Workflows</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">Workflows</h1>
           <p className="text-muted-foreground mt-1">
             Create and manage automated workflows using visual builder
           </p>
@@ -193,7 +193,7 @@ export default function WorkflowsPage() {
           </Link>
         </div>
       ) : (
-        <div className="bg-card border rounded-lg overflow-hidden" data-help-key="admin.workflows.table">
+        <div className="bg-card border rounded-lg overflow-x-auto" data-help-key="admin.workflows.table">
           <table className="w-full">
             <thead className="bg-muted/50">
               <tr>

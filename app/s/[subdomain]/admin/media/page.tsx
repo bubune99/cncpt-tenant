@@ -5,9 +5,9 @@ import { MediaManager } from '@/components/cms/admin/media'
 
 export default function MediaPage() {
   return (
-    <div className="p-6" data-help-key="admin.media.page">
+    <div className="p-4 sm:p-4 sm:p-6 lg:p-8" data-help-key="admin.media.page">
       <div className="mb-6" data-help-key="admin.media.header">
-        <h1 className="text-2xl font-bold tracking-tight">Media Manager</h1>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Media Manager</h1>
         <p className="text-muted-foreground">
           Manage your files, images, videos, and documents
         </p>

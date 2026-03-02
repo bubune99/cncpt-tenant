@@ -84,10 +84,10 @@ export default function PartialsListPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-6xl">
-      <div className="flex items-center justify-between mb-8">
+    <div className="container mx-auto py-4 sm:py-8 px-4 max-w-6xl">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-8">
         <div>
-          <h1 className="text-2xl font-bold">Partials</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">Partials</h1>
           <p className="text-muted-foreground mt-1">
             Reusable block compositions for headers, footers, sidebars, and more.
           </p>

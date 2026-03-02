@@ -243,10 +243,10 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8" data-help-key="admin.analytics.dashboard">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-4 sm:p-4 sm:p-6 lg:p-8" data-help-key="admin.analytics.dashboard">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Analytics</h1>
           <p className="text-muted-foreground mt-2">
             Track your store performance and customer insights
           </p>
@@ -735,8 +735,8 @@ export default function AnalyticsPage() {
         </CardContent>
       </Card>
 
-      <div className="mt-8 bg-muted p-6 rounded-lg">
-        <h2 className="text-xl font-semibold mb-4">Analytics Features</h2>
+      <div className="mt-8 bg-muted p-4 sm:p-6 rounded-lg">
+        <h2 className="text-lg sm:text-xl font-semibold mb-4">Analytics Features</h2>
         <ul className="space-y-2 text-muted-foreground">
           <li>- Track revenue, orders, and customer metrics in real-time</li>
           <li>- Analyze product performance and identify best sellers</li>

@@ -13,18 +13,18 @@ export default function LegalLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
-        {/* Sidebar Navigation */}
-        <aside className="lg:col-span-1">
-          <div className="sticky top-24">
-            <h3 className="text-lg font-semibold mb-4">Legal</h3>
-            <nav className="space-y-2">
+    <div className="container mx-auto px-4 py-6 sm:py-8 lg:py-12">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-12">
+        {/* Sidebar Navigation - horizontal scrollable on mobile, sidebar on desktop */}
+        <aside className="lg:col-span-1 order-first">
+          <div className="lg:sticky lg:top-24">
+            <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Legal</h3>
+            <nav className="flex lg:flex-col gap-1 overflow-x-auto pb-2 lg:pb-0 -mx-1 lg:mx-0">
               {legalPages.map((page) => (
                 <Link
                   key={page.href}
                   href={page.href}
-                  className="block py-2 px-3 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-sm"
+                  className="block py-2.5 px-3 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-sm whitespace-nowrap lg:whitespace-normal"
                 >
                   {page.label}
                 </Link>
@@ -35,7 +35,7 @@ export default function LegalLayout({
 
         {/* Page Content */}
         <div className="lg:col-span-3">
-          <div className="prose prose-neutral dark:prose-invert max-w-none">
+          <div className="prose prose-sm sm:prose-base dark:prose-invert max-w-none">
             {children}
           </div>
         </div>

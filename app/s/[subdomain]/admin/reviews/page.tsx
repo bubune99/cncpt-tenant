@@ -287,10 +287,10 @@ export default function ReviewsPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Reviews</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Reviews</h1>
         <p className="text-muted-foreground mt-1">
           Moderate and manage product reviews
         </p>
@@ -298,7 +298,7 @@ export default function ReviewsPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid gap-4 md:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total Reviews</CardTitle>

@@ -252,10 +252,10 @@ export default function EmailMarketingPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8" data-help-key="admin.email-marketing.page">
-      <div className="flex justify-between items-center mb-8" data-help-key="admin.email-marketing.header">
+    <div className="p-4 sm:p-4 sm:p-6 lg:p-8" data-help-key="admin.email-marketing.page">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-8" data-help-key="admin.email-marketing.header">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Email Marketing</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Email Marketing</h1>
           <p className="text-muted-foreground mt-2">
             Create and manage email campaigns with visual editor
           </p>
@@ -284,7 +284,7 @@ export default function EmailMarketingPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-5 mb-8" data-help-key="admin.email-marketing.stats">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-5 mb-8" data-help-key="admin.email-marketing.stats">
         <Card data-help-key="admin.email-marketing.stat.campaigns">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Campaigns</CardTitle>
@@ -386,7 +386,7 @@ export default function EmailMarketingPage() {
           </div>
 
           <Card data-help-key="admin.email-marketing.table">
-            <CardContent className="p-0">
+            <CardContent className="p-0 overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -632,8 +632,8 @@ export default function EmailMarketingPage() {
         </TabsContent>
       </Tabs>
 
-      <div className="mt-8 bg-muted p-6 rounded-lg" data-help-key="admin.email-marketing.features-info">
-        <h2 className="text-xl font-semibold mb-4">Email Marketing Features</h2>
+      <div className="mt-8 bg-muted p-4 sm:p-6 rounded-lg" data-help-key="admin.email-marketing.features-info">
+        <h2 className="text-lg sm:text-xl font-semibold mb-4">Email Marketing Features</h2>
         <ul className="space-y-2 text-muted-foreground">
           <li>- Design beautiful emails with our visual editor</li>
           <li>- Create automated email sequences for customer engagement</li>

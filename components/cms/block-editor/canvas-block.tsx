@@ -16,6 +16,9 @@ import {
   Play,
   Move,
   Component,
+  Monitor,
+  Tablet,
+  Smartphone,
 } from "lucide-react"
 import { cn } from "@/lib/cms/utils"
 
@@ -82,6 +85,7 @@ export function CanvasBlock({ block, index, parentId, depth = 0, parentIsHorizon
   const isEditable = EDITABLE_TAGS.includes(block.tag) && !isContainer
   const isHidden = block.hidden === true
   const isLocked = block.locked === true
+  const hasResponsiveHidden = !!(block.responsive?.hidden?.desktop || block.responsive?.hidden?.tablet || block.responsive?.hidden?.mobile)
 
   // Determine if THIS block's children should use horizontal drop zones
   const thisBlockIsHorizontal = isHorizontalLayout(block.className)
@@ -351,6 +355,14 @@ export function CanvasBlock({ block, index, parentId, depth = 0, parentIsHorizon
                 <span className="flex items-center gap-0.5 text-[9px] font-medium px-1.5 py-0.5 rounded bg-primary/15 text-primary" title={`Animation: ${block.animation.type}`}>
                   <Play size={8} />
                   {block.animation.type}
+                </span>
+              )}
+
+              {hasResponsiveHidden && (
+                <span className="flex items-center gap-0.5 text-[9px] font-medium px-1 py-0.5 rounded bg-amber-500/15 text-amber-500" title="Hidden on some devices">
+                  {block.responsive?.hidden?.desktop && <Monitor size={8} className="opacity-50 line-through" />}
+                  {block.responsive?.hidden?.tablet && <Tablet size={8} className="opacity-50" />}
+                  {block.responsive?.hidden?.mobile && <Smartphone size={8} className="opacity-50" />}
                 </span>
               )}
 

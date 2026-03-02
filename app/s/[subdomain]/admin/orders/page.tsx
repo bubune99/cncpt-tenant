@@ -204,10 +204,10 @@ export default function OrdersPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-4 sm:p-4 sm:p-6 lg:p-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Orders</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Orders</h1>
           <p className="text-muted-foreground mt-2">
             Manage and track customer orders
           </p>
@@ -365,7 +365,7 @@ export default function OrdersPage() {
       )}
 
       <Card data-help-key="admin.orders.table">
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>

@@ -64,7 +64,7 @@ export function EditorCanvas({ viewportWidth = "100%" }: EditorCanvasProps) {
       data-canvas="true"
       className="flex-1 overflow-auto bg-background"
     >
-      <div className={`flex justify-center ${viewportWidth === "100%" ? "p-0" : "p-6"}`} data-canvas="true">
+      <div className={`flex justify-center ${viewportWidth === "100%" ? "p-0" : "p-2 sm:p-4 md:p-6"}`} data-canvas="true">
         <div
           className={`w-full transition-all duration-300 ease-out ${
             viewportWidth === "100%"

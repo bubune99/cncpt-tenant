@@ -143,7 +143,7 @@ export default function NewRolePage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
@@ -152,7 +152,7 @@ export default function NewRolePage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Create New Role</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Create New Role</h1>
           <p className="text-muted-foreground mt-1">
             Define a new role with custom permissions
           </p>

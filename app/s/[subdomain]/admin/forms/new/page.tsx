@@ -71,7 +71,7 @@ export default function NewFormPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8 max-w-2xl">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-2xl">
       <div className="mb-8">
         <Button variant="ghost" asChild className="mb-4">
           <Link href={buildPath('/admin/forms')}>
@@ -79,7 +79,7 @@ export default function NewFormPage() {
             Back to Forms
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold tracking-tight">Create New Form</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Create New Form</h1>
         <p className="text-muted-foreground mt-2">
           Set up your form details, then add fields in the editor
         </p>

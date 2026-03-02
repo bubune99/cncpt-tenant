@@ -112,7 +112,7 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <Shield className="h-12 w-12 text-destructive mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">Admin Access Required</h2>
+          <h2 className="text-xl sm:text-2xl font-bold mb-2">Admin Access Required</h2>
           <p className="text-muted-foreground mb-4">
             You need to be the owner of this subdomain or a team admin to access this area.
           </p>
@@ -128,7 +128,7 @@ export default function AdminDashboard() {
   const displayName = isDemo ? DEMO_USER.displayName : (user?.displayName || 'Admin');
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-4 sm:p-4 sm:p-6 lg:p-8">
       {/* Demo Mode Banner */}
       {(isDemo || isDemoAccess) && (
         <div className="mb-6 p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg flex items-center gap-3">

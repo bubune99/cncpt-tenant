@@ -457,7 +457,7 @@ export default function BusinessOwnerDetailPage() {
 
   if (!businessOwner) {
     return (
-      <div className="p-6 lg:p-8 space-y-6">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6">
         <Button variant="ghost" onClick={() => router.push('/admin/business-owners')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Business Owners
@@ -476,7 +476,7 @@ export default function BusinessOwnerDetailPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <div className="flex items-center justify-between">
         <Button variant="ghost" onClick={() => router.push('/admin/business-owners')}>
           <ArrowLeft className="h-4 w-4 mr-2" />

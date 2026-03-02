@@ -160,7 +160,7 @@ export default function CreateDiscountPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link href={buildPath('/admin/discounts')}>
@@ -169,7 +169,7 @@ export default function CreateDiscountPage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold">Create Discount</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">Create Discount</h1>
           <p className="text-muted-foreground mt-1">
             Create a new discount code for your store
           </p>

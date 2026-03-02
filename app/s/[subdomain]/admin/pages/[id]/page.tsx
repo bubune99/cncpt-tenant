@@ -163,7 +163,7 @@ export default function PageEditPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 lg:p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
@@ -173,7 +173,7 @@ export default function PageEditPage() {
 
   if (error || !page) {
     return (
-      <div className="p-6 lg:p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <div className="flex flex-col items-center justify-center h-64 text-center">
           <AlertCircle className="h-12 w-12 text-destructive mb-4" />
           <h2 className="text-xl font-semibold mb-2">{error || 'Page not found'}</h2>
@@ -192,7 +192,7 @@ export default function PageEditPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
@@ -203,7 +203,7 @@ export default function PageEditPage() {
           </Button>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold tracking-tight">{page.title}</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{page.title}</h1>
               {getStatusBadge(page.status)}
             </div>
             <p className="text-muted-foreground mt-1">

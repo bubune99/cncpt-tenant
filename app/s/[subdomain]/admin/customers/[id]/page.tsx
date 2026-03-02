@@ -222,7 +222,7 @@ export default function CustomerDetailPage() {
   const customerName = [customer.firstName, customer.lastName].filter(Boolean).join(' ') || customer.email;
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -234,7 +234,7 @@ export default function CustomerDetailPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">{customerName}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">{customerName}</h1>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-muted-foreground">{customer.email}</span>
               {customer.acceptsMarketing ? (
@@ -265,7 +265,7 @@ export default function CustomerDetailPage() {
       </div>
 
       {/* Overview Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Spent</CardTitle>

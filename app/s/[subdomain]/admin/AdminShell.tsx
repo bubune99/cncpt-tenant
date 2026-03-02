@@ -95,7 +95,7 @@ function HeaderActions() {
   };
 
   return (
-    <div className="flex items-center gap-2 ml-4" data-help-key="admin.header.actions">
+    <div className="flex items-center gap-1 sm:gap-2 ml-2 sm:ml-4" data-help-key="admin.header.actions">
       {/* Theme Toggle */}
       <div data-help-key="admin.header.theme">
         <ModeToggle />
@@ -103,7 +103,7 @@ function HeaderActions() {
 
       {/* Notifications */}
       <button
-        className="p-2 rounded-md hover:bg-accent transition-colors"
+        className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-md hover:bg-accent transition-colors"
         title="Notifications (coming soon)"
         data-help-key="admin.header.notifications"
       >
@@ -112,7 +112,7 @@ function HeaderActions() {
 
       {/* Help Mode Toggle */}
       <button
-        className={`p-2 rounded-md transition-colors ${
+        className={`flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-md transition-colors ${
           help?.helpMode?.isActive
             ? 'bg-orange-100 text-orange-600 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400'
             : 'hover:bg-accent'
@@ -136,7 +136,7 @@ export function AdminShell({
 }) {
   const { user, signOut } = useAuth();
   const pathname = usePathname();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<string[]>(['Main', 'E-Commerce', 'Content']);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -259,17 +259,27 @@ export function AdminShell({
         <WizardProvider>
           <div className="min-h-screen bg-background">
         {/* Mobile sidebar toggle */}
-        <div className="lg:hidden fixed top-4 left-4 z-50">
+        <div className="lg:hidden fixed top-3 left-3 z-50">
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-2 rounded-md bg-card border border-border"
+            className="flex items-center justify-center h-11 w-11 rounded-md bg-card border border-border shadow-sm"
+            aria-label={isSidebarOpen ? 'Close menu' : 'Open menu'}
           >
             {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
 
+        {/* Mobile backdrop overlay */}
+        {isSidebarOpen && (
+          <div
+            className="lg:hidden fixed inset-0 z-30 bg-black/50 backdrop-blur-sm"
+            onClick={() => setIsSidebarOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+
         {/* Sidebar */}
-        <div className={`fixed inset-y-0 left-0 z-40 w-56 bg-card border-r border-border transform transition-transform duration-200 ease-in-out ${
+        <div className={`fixed inset-y-0 left-0 z-40 w-64 lg:w-56 bg-card border-r border-border transform transition-transform duration-200 ease-in-out ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0`}>
           <div className="flex flex-col h-full">
@@ -298,7 +308,7 @@ export function AdminShell({
                 <div key={group.name}>
                   <button
                     onClick={() => toggleGroup(group.name)}
-                    className="flex items-center justify-between w-full px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+                    className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors min-h-[44px] lg:min-h-0 lg:py-1.5"
                   >
                     {group.name}
                     {expandedGroups.includes(group.name) ? (
@@ -316,8 +326,9 @@ export function AdminShell({
                             <li key={item.name}>
                               <Link
                                 href={item.href}
+                                onClick={() => setIsSidebarOpen(false)}
                                 data-help-key={item.helpKey}
-                                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors min-h-[44px] ${
                                   isActive
                                     ? 'bg-primary text-primary-foreground'
                                     : 'hover:bg-accent hover:text-accent-foreground'
@@ -340,8 +351,9 @@ export function AdminShell({
             <div className="p-4 border-t border-border" data-help-key="admin.sidebar.footer">
               <Link
                 href={siteUrl}
+                onClick={() => setIsSidebarOpen(false)}
                 data-help-key="admin.sidebar.view-site"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors mb-2"
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors mb-2 min-h-[44px]"
               >
                 <ArrowLeft className="h-4 w-4" />
                 View Site
@@ -349,17 +361,18 @@ export function AdminShell({
               {isDemo ? (
                 <Link
                   href="/pricing"
+                  onClick={() => setIsSidebarOpen(false)}
                   data-help-key="admin.sidebar.start-trial"
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium bg-orange-500/10 text-orange-600 hover:bg-orange-500/20 transition-colors w-full"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium bg-orange-500/10 text-orange-600 hover:bg-orange-500/20 transition-colors w-full min-h-[44px]"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   Start Free Trial
                 </Link>
               ) : (
                 <button
-                  onClick={() => signOut()}
+                  onClick={() => { setIsSidebarOpen(false); signOut(); }}
                   data-help-key="admin.sidebar.sign-out"
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors w-full"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors w-full min-h-[44px]"
                 >
                   <LogOut className="h-4 w-4" />
                   Sign Out
@@ -372,8 +385,8 @@ export function AdminShell({
       {/* Main content */}
       <div className="lg:pl-56">
         {/* Content Header */}
-        <header className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
-          <div className="flex items-center justify-between h-16 px-6 lg:px-8">
+        <header className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
+          <div className="flex items-center justify-between h-14 lg:h-16 pl-16 pr-3 sm:pr-4 lg:pl-6 lg:pr-8">
             {/* Search Bar */}
             <div className="flex-1 max-w-xl" data-help-key="admin.header.search">
               <div className="relative">

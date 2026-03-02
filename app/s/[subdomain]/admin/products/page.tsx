@@ -135,10 +135,10 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-4 sm:p-4 sm:p-6 lg:p-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Products</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Products</h1>
           <p className="text-muted-foreground mt-2">
             Manage your product catalog and inventory
           </p>
@@ -223,7 +223,7 @@ export default function ProductsPage() {
       </div>
 
       <Card data-help-key="admin.products.table">
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -320,8 +320,8 @@ export default function ProductsPage() {
         </CardContent>
       </Card>
 
-      <div className="mt-8 bg-muted p-6 rounded-lg">
-        <h2 className="text-xl font-semibold mb-4">Product Management</h2>
+      <div className="mt-8 bg-muted p-4 sm:p-6 rounded-lg">
+        <h2 className="text-lg sm:text-xl font-semibold mb-4">Product Management</h2>
         <ul className="space-y-2 text-muted-foreground">
           <li>• Add products manually or import from your e-commerce platform.</li>
           <li>• Configure product variants with different options and pricing.</li>

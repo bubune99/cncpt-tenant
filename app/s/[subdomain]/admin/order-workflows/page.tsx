@@ -211,7 +211,7 @@ export default function OrderWorkflowsPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 lg:p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <div className="flex items-center justify-center h-64">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
@@ -220,11 +220,11 @@ export default function OrderWorkflowsPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-8">
         <div>
-          <h1 className="text-2xl font-bold">Order Workflows</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">Order Workflows</h1>
           <p className="text-muted-foreground mt-1">
             Configure progress stages customers see during order fulfillment
           </p>
@@ -289,7 +289,7 @@ export default function OrderWorkflowsPage() {
               {workflows.length} workflow{workflows.length !== 1 ? 's' : ''} configured
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>

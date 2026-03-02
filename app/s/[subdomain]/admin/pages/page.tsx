@@ -197,10 +197,10 @@ export default function PagesPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8" data-help-key="admin.pages.page">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-4 sm:p-4 sm:p-6 lg:p-8" data-help-key="admin.pages.page">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Pages</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Pages</h1>
           <p className="text-muted-foreground mt-2">
             Manage your website pages and content
           </p>
@@ -279,7 +279,7 @@ export default function PagesPage() {
       </Card>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4 mb-8" data-help-key="admin.pages.stats">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4 mb-8" data-help-key="admin.pages.stats">
         <Card data-help-key="admin.pages.stat.total">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Pages</CardTitle>
@@ -339,7 +339,7 @@ export default function PagesPage() {
             A list of all pages on your website. Click to edit or manage.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-x-auto">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

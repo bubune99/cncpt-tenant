@@ -129,7 +129,7 @@ export default function NewPagePage() {
   };
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -139,7 +139,7 @@ export default function NewPagePage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Create New Page</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">Create New Page</h1>
             <p className="text-muted-foreground mt-2">
               Add a new page to your website
             </p>
