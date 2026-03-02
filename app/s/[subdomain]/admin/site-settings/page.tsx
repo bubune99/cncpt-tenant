@@ -168,7 +168,7 @@ export default function SiteSettingsPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-5xl">
+    <div className="container mx-auto py-4 sm:py-8 px-4 max-w-5xl">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
@@ -178,7 +178,7 @@ export default function SiteSettingsPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Site Settings</h1>
+            <h1 className="text-xl sm:text-2xl font-bold">Site Settings</h1>
             <p className="text-muted-foreground">
               Configure global site settings and appearance
             </p>

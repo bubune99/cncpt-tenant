@@ -341,7 +341,7 @@ export default function UserPermissionsPage() {
           </Avatar>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
                 {userPerms.name || userPerms.email}
               </h1>
               {userPerms.isSuperAdmin && (

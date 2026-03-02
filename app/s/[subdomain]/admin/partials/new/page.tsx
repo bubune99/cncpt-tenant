@@ -40,7 +40,7 @@ export default function NewPartialPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-2xl">
+    <div className="container mx-auto py-4 sm:py-8 px-4 max-w-2xl">
       <div className="flex items-center gap-4 mb-8">
         <Button variant="ghost" size="icon" asChild>
           <Link href={routes.admin.partials.list}>
@@ -48,7 +48,7 @@ export default function NewPartialPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-2xl font-bold">New Partial</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">New Partial</h1>
           <p className="text-muted-foreground">Create a reusable block composition</p>
         </div>
       </div>

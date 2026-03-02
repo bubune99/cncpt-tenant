@@ -425,7 +425,7 @@ export default function EditOrderWorkflowPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold">
+            <h1 className="text-xl sm:text-2xl font-bold">
               {isNew ? 'New Order Workflow' : 'Edit Workflow'}
             </h1>
             <p className="text-muted-foreground mt-1">

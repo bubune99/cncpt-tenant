@@ -190,7 +190,7 @@ export default function WorkflowTemplatesPage() {
 
   if (error) {
     return (
-      <div className="p-6">
+      <div className="p-4 sm:p-6 lg:p-8">
         <div className="bg-destructive/10 text-destructive p-4 rounded-lg flex items-center gap-2">
           <AlertCircle className="h-5 w-5" />
           {error}
@@ -200,7 +200,7 @@ export default function WorkflowTemplatesPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -210,7 +210,7 @@ export default function WorkflowTemplatesPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold">Workflow Templates</h1>
+            <h1 className="text-xl sm:text-2xl font-bold">Workflow Templates</h1>
             <p className="text-muted-foreground">
               Choose a template to quickly create a new workflow
             </p>

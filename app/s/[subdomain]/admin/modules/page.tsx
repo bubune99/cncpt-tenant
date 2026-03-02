@@ -147,11 +147,11 @@ export default function ModulesPage() {
   }
 
   return (
-    <div className="space-y-8 p-6 max-w-4xl">
+    <div className="space-y-8 p-4 sm:p-6 lg:p-8 max-w-4xl">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Modules</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Modules</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Enable or disable CMS features. Changes take effect immediately.
           </p>
