@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/cms/db'
+import { prisma, getCurrentTenant } from '@/lib/cms/db'
 import {
   withPermission,
   type AuthContext,
@@ -138,12 +138,14 @@ export const PUT = withPermission(
           slug = '/' + slug
         }
 
-        // Check for duplicate slug (excluding current page)
+        // Check for duplicate slug (excluding current page, scoped to tenant)
         if (slug !== page.slug) {
+          const currentTenantId = getCurrentTenant()
           const existing = await prisma.page.findFirst({
             where: {
               slug,
               id: { not: id },
+              tenantId: currentTenantId ?? undefined,
             },
           })
           if (existing) {

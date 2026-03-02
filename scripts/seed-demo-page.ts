@@ -451,7 +451,7 @@ function tagRow(tags: string[]): Block[] {
 // ── Database insertion ───────────────────────────────────────────────
 
 async function main() {
-  const subdomain = process.argv.includes('--subdomain')
+  const subdomainArg = process.argv.includes('--subdomain')
     ? process.argv[process.argv.indexOf('--subdomain') + 1]
     : null
 
@@ -479,16 +479,30 @@ async function main() {
   const { prisma } = await import('../lib/cms/db/index')
 
   try {
-    // If subdomain specified, find the tenant
+    // Resolve tenant — explicit --subdomain flag or auto-detect first available
     let tenantId: number | null = null
-    if (subdomain) {
-      const sub = await prisma.subdomain.findUnique({ where: { subdomain } })
+    let resolvedSubdomain: string | null = null
+
+    if (subdomainArg) {
+      const sub = await prisma.subdomain.findUnique({ where: { subdomain: subdomainArg } })
       if (!sub) {
-        console.error(`  ERROR: Subdomain "${subdomain}" not found`)
+        console.error(`  ERROR: Subdomain "${subdomainArg}" not found`)
         process.exit(1)
       }
       tenantId = sub.id
-      console.log(`  Target subdomain: ${subdomain} (ID: ${tenantId})`)
+      resolvedSubdomain = sub.subdomain
+      console.log(`  Target subdomain: ${resolvedSubdomain} (ID: ${tenantId})`)
+    } else {
+      // Auto-detect first subdomain
+      const first = await prisma.subdomain.findFirst({ orderBy: { createdAt: 'asc' } })
+      if (first) {
+        tenantId = first.id
+        resolvedSubdomain = first.subdomain
+        console.log(`  Using subdomain: ${resolvedSubdomain} (auto-detected, ID: ${tenantId})`)
+      } else {
+        console.error('  ERROR: No subdomains found. Create one first or pass --subdomain <name>')
+        process.exit(1)
+      }
     }
 
     // Upsert the demo page
@@ -496,7 +510,7 @@ async function main() {
 
     // Delete existing page with same slug for this tenant, then create fresh
     await prisma.page.deleteMany({
-      where: { slug, ...(tenantId !== null ? { tenantId } : { tenantId: null }) },
+      where: { slug, tenantId },
     })
 
     const page = await prisma.page.create({
@@ -505,12 +519,12 @@ async function main() {
         slug,
         content: pageContent as any,
         status: 'PUBLISHED',
-        ...(tenantId !== null ? { tenantId } : {}),
+        tenantId: tenantId!,
       },
     })
     console.log(`\n  Page created: "${page.title}" (ID: ${page.id})`)
     console.log(`  Status: ${page.status}`)
-    console.log(`  View at: /pages/${slug}\n`)
+    console.log(`  View at: /s/${resolvedSubdomain}/${slug}\n`)
   } catch (err) {
     console.error('  Database error:', (err as Error).message)
     process.exit(1)
