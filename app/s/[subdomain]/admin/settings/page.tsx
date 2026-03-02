@@ -61,6 +61,7 @@ import EmailProviderSettings from '@/components/cms/admin/EmailProviderSettings'
 import AiSettings from '@/components/cms/admin/AiSettings';
 import McpApiKeysSettings from '@/components/cms/admin/McpApiKeysSettings';
 import FeatureSettings from '@/components/cms/admin/settings/feature-settings';
+import AuthSettings from '@/components/cms/admin/AuthSettings';
 
 interface StoreSettings {
   general: {
@@ -271,7 +272,7 @@ export default function SettingsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-11 lg:w-[1250px]" data-help-key="admin.settings.tabs">
+        <TabsList className="grid w-full grid-cols-12 lg:w-[1350px]" data-help-key="admin.settings.tabs">
           <TabsTrigger value="features">
             <ToggleLeft className="mr-2 h-4 w-4" />
             Features
@@ -315,6 +316,10 @@ export default function SettingsPage() {
           <TabsTrigger value="security">
             <Shield className="mr-2 h-4 w-4" />
             Security
+          </TabsTrigger>
+          <TabsTrigger value="auth">
+            <Key className="mr-2 h-4 w-4" />
+            Auth
           </TabsTrigger>
         </TabsList>
 
@@ -805,6 +810,10 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="auth" className="space-y-4" data-help-key="admin.settings.auth-tab">
+          <AuthSettings />
         </TabsContent>
       </Tabs>
 

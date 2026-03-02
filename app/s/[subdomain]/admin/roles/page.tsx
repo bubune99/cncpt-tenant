@@ -61,9 +61,7 @@ interface Role {
   permissions: string[]
   isSystem: boolean
   position: number
-  _count: {
-    assignments: number
-  }
+  assignmentCount: number
   createdAt: string
   updatedAt: string
 }
@@ -99,7 +97,7 @@ export default function RolesPage() {
         // Calculate stats
         const systemRoles = data.roles.filter((r: Role) => r.isSystem).length
         const totalAssignments = data.roles.reduce(
-          (sum: number, r: Role) => sum + r._count.assignments,
+          (sum: number, r: Role) => sum + r.assignmentCount,
           0
         )
         setStats({
@@ -375,7 +373,7 @@ export default function RolesPage() {
                       </div>
                       <div className="flex items-center gap-1">
                         <Users className="h-4 w-4" />
-                        <span>{role._count.assignments} users</span>
+                        <span>{role.assignmentCount} users</span>
                       </div>
                       <span>Created {formatDate(role.createdAt)}</span>
                     </div>

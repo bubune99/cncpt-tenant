@@ -15,7 +15,7 @@ const cspDirectives = [
   "style-src 'self' 'unsafe-inline'",
 
   // Images: self + storage providers + data/blob URIs + Stripe + placeholders
-  "img-src 'self' data: blob: https://*.r2.dev https://*.r2.cloudflarestorage.com https://*.amazonaws.com https://placehold.co https://*.stripe.com",
+  "img-src 'self' data: blob: https://*.r2.dev https://*.r2.cloudflarestorage.com https://*.amazonaws.com https://placehold.co https://*.stripe.com https://*.googleusercontent.com https://*.stack-auth.com",
 
   // Fonts: self + data URIs (for base64-encoded fonts in emails)
   "font-src 'self' data:",
