@@ -131,6 +131,19 @@ export interface ShopifyConfig {
   apiVersion?: string
 }
 
+export interface ShopifyAdminConfig {
+  storeDomain: string
+  adminAccessToken: string
+  apiVersion?: string
+}
+
+export interface ShopifyFullConfig extends ShopifyConfig {
+  adminAccessToken?: string
+  webhookSecret?: string
+  syncEnabled?: boolean
+  autoSync?: boolean  // auto-sync on webhook events
+}
+
 export interface StripeCommerceConfig {
   /** Stripe is configured globally via env — no extra config needed */
   mode?: "live" | "test"

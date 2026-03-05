@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/cms/db';
 import { executeWorkflowInstance, triggerWorkflowManually } from '@/lib/cms/workflows';
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +17,7 @@ interface RouteParams {
 
 // POST - Execute workflow
 export async function POST(request: NextRequest, { params }: RouteParams) {
+  return withTenant(request, async () => {
   try {
     const { id } = await params;
 
@@ -63,4 +65,5 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       { status: 500 }
     );
   }
+  })
 }

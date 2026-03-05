@@ -9,6 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/cms/db';
+import { withTenant } from '@/lib/cms/api/tenant';
 import {
   ucpEnvelope,
   type UcpCatalogProduct,
@@ -21,6 +22,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  return withTenant(request, async () => {
   const { id } = await params;
 
   const product = await prisma.product.findUnique({
@@ -85,6 +87,7 @@ export async function GET(
       headers: { 'Access-Control-Allow-Origin': '*' },
     }
   );
+  })
 }
 
 // CORS preflight

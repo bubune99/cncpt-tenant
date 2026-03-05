@@ -12,10 +12,12 @@ import {
   getDefaultWorkflow,
 } from '@/lib/cms/order-workflows'
 import { seedDefaultWorkflows } from '@/lib/cms/order-workflows/seed'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const { searchParams } = new URL(request.url)
     const includeInactive = searchParams.get('includeInactive') === 'true'
@@ -30,9 +32,11 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
+  })
 }
 
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const body = await request.json()
 
@@ -69,4 +73,5 @@ export async function POST(request: NextRequest) {
     const message = error instanceof Error ? error.message : 'Failed to create workflow'
     return NextResponse.json({ error: message }, { status: 500 })
   }
+  })
 }

@@ -12,6 +12,8 @@ import {
   type AuthContext,
 } from '@/lib/cms/permissions/middleware'
 import { PERMISSIONS } from '@/lib/cms/permissions'
+import { stackServerApp } from '@/stack'
+import { isSuperAdmin } from '@/lib/super-admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,14 +26,41 @@ export const GET = withPermission(
   async (request: NextRequest, _context: AuthContext) => {
     try {
       const { searchParams } = new URL(request.url)
-      const businessOwnerId = searchParams.get('businessOwnerId')
+      const clientBusinessOwnerId = searchParams.get('businessOwnerId')
       const status = searchParams.get('status')
       const accessLevel = searchParams.get('accessLevel')
 
       const where: Record<string, unknown> = {}
 
-      if (businessOwnerId) {
-        where.tenantId = parseInt(businessOwnerId)
+      // Derive tenantId from x-subdomain header instead of trusting client param
+      const subdomain = request.headers.get('x-subdomain')
+
+      if (subdomain) {
+        const tenant = await prisma.subdomain.findUnique({
+          where: { subdomain },
+          select: { id: true },
+        })
+
+        if (tenant) {
+          where.tenantId = tenant.id
+        } else {
+          return NextResponse.json(
+            { error: 'Tenant not found for subdomain' },
+            { status: 404 }
+          )
+        }
+      } else if (clientBusinessOwnerId) {
+        // Only allow client-provided businessOwnerId for super admins
+        const stackUser = await stackServerApp.getUser()
+        if (stackUser && await isSuperAdmin(stackUser.id)) {
+          where.tenantId = parseInt(clientBusinessOwnerId)
+        } else {
+          // Non-super-admin without subdomain context — reject
+          return NextResponse.json(
+            { error: 'Tenant context required. Provide x-subdomain header.' },
+            { status: 400 }
+          )
+        }
       }
 
       if (status === 'active') {

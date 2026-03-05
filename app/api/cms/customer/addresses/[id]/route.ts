@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stackServerApp } from '@/lib/cms/stack';
 import { prisma } from '@/lib/cms/db';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -17,7 +18,8 @@ interface RouteParams {
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id } = await params;
 
     // Get authenticated user from Stack Auth
@@ -71,17 +73,19 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       isDefaultShipping: address.isDefaultShipping,
       isDefaultBilling: address.isDefaultBilling,
     });
-  } catch (error) {
-    console.error('Error fetching address:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch address' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Error fetching address:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch address' },
+        { status: 500 }
+      );
+    }
+  })
 }
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id } = await params;
 
     // Get authenticated user from Stack Auth
@@ -175,17 +179,19 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         isDefaultBilling: address.isDefaultBilling,
       },
     });
-  } catch (error) {
-    console.error('Error updating address:', error);
-    return NextResponse.json(
-      { error: 'Failed to update address' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Error updating address:', error);
+      return NextResponse.json(
+        { error: 'Failed to update address' },
+        { status: 500 }
+      );
+    }
+  })
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id } = await params;
 
     // Get authenticated user from Stack Auth
@@ -228,11 +234,12 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting address:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete address' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Error deleting address:', error);
+      return NextResponse.json(
+        { error: 'Failed to delete address' },
+        { status: 500 }
+      );
+    }
+  })
 }

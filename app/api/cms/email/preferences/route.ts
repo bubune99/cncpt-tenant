@@ -6,10 +6,12 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getSubscriberPreferences, updateSubscriberPreferences } from '@/lib/cms/email/subscriptions'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   const searchParams = request.nextUrl.searchParams
   const subscriberId = searchParams.get('s')
   const email = searchParams.get('email')
@@ -28,9 +30,11 @@ export async function GET(request: NextRequest) {
     success: true,
     subscriber: result.subscriber,
   })
+  })
 }
 
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const body = await request.json()
     const { subscriberId, email, preferences } = body
@@ -57,4 +61,5 @@ export async function POST(request: NextRequest) {
     console.error('Preferences update error:', error)
     return NextResponse.json({ success: false, error: 'Failed to update preferences' }, { status: 500 })
   }
+  })
 }

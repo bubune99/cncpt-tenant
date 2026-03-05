@@ -12,6 +12,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/cms/db';
+import { withTenant } from '@/lib/cms/api/tenant';
 import {
   ucpEnvelope,
   type UcpCatalogProduct,
@@ -21,6 +22,7 @@ import {
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   const { searchParams } = request.nextUrl;
 
   const search = searchParams.get('search') ?? undefined;
@@ -96,6 +98,7 @@ export async function GET(request: NextRequest) {
       headers: { 'Access-Control-Allow-Origin': '*' },
     }
   );
+  })
 }
 
 // CORS preflight

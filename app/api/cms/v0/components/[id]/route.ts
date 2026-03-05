@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stackServerApp } from "@/lib/cms/stack";
 import { prisma } from "@/lib/cms/db";
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -20,6 +21,7 @@ interface RouteParams {
  * GET - Get component by ID with full details
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
+  return withTenant(request, async () => {
   try {
     // Check authentication
     const user = await stackServerApp.getUser();
@@ -48,6 +50,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       { status: 500 }
     );
   }
+  })
 }
 
 /**
@@ -64,6 +67,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  * - isPublished: boolean
  */
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  return withTenant(request, async () => {
   try {
     // Check authentication
     const user = await stackServerApp.getUser();
@@ -131,12 +135,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       { status: 500 }
     );
   }
+  })
 }
 
 /**
  * DELETE - Delete component
  */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  return withTenant(request, async () => {
   try {
     // Check authentication
     const user = await stackServerApp.getUser();
@@ -174,4 +180,5 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       { status: 500 }
     );
   }
+  })
 }

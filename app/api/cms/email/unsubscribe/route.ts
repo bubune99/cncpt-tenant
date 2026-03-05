@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { unsubscribeById, unsubscribeEmail } from '@/lib/cms/email/subscriptions'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,6 +14,7 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
 // One-click unsubscribe (List-Unsubscribe-Post header support)
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const contentType = request.headers.get('content-type') || ''
 
@@ -70,10 +72,12 @@ export async function POST(request: NextRequest) {
     console.error('Unsubscribe error:', error)
     return NextResponse.json({ success: false, error: 'Failed to unsubscribe' }, { status: 500 })
   }
+  })
 }
 
 // One-click unsubscribe via GET (for email client links)
 export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   const searchParams = request.nextUrl.searchParams
   const subscriberId = searchParams.get('s')
   const email = searchParams.get('email')
@@ -102,4 +106,5 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.redirect(`${APP_URL}/email/unsubscribed?success=true`)
+  })
 }

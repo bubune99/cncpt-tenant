@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { respondToReview, getReviewById } from '@/lib/cms/reviews';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,8 @@ interface RouteParams {
 
 // POST - Add store response to review
 export async function POST(request: NextRequest, { params }: RouteParams) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id } = await params;
     const body = await request.json();
 
@@ -61,11 +63,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       success: true,
       review,
     });
-  } catch (error) {
-    console.error('Respond to review error:', error);
-    return NextResponse.json(
-      { error: 'Failed to respond to review' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Respond to review error:', error);
+      return NextResponse.json(
+        { error: 'Failed to respond to review' },
+        { status: 500 }
+      );
+    }
+  })
 }

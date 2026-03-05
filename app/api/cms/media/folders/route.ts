@@ -1,16 +1,20 @@
 /**
  * Media Folders API
  *
- * GET /api/media/folders - List folders (tree or flat)
- * POST /api/media/folders - Create new folder
+ * GET /api/cms/media/folders - List folders (tree or flat, tenant-scoped)
+ * POST /api/cms/media/folders - Create new folder (tenant-scoped)
  *
- * All endpoints require authentication.
+ * All endpoints require authentication and tenant context.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { listFolders, getFolderTree, createFolder } from '@/lib/cms/media/folders'
 import type { FolderCreateInput } from '@/lib/cms/media/types'
 import { stackServerApp } from '@/lib/cms/stack'
+import {
+  resolveTenantContext,
+  tenantRequiredResponse,
+} from '@/lib/cms/media/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,12 +29,16 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Resolve tenant context
+    const tenant = await resolveTenantContext(request, user.id)
+    if (!tenant) return tenantRequiredResponse()
+
     const { searchParams } = new URL(request.url)
     const tree = searchParams.get('tree') === 'true'
     const parentId = searchParams.get('parentId')
 
     if (tree) {
-      const folderTree = await getFolderTree()
+      const folderTree = await getFolderTree(tenant.tenantId)
       return NextResponse.json(folderTree)
     }
 
@@ -38,7 +46,7 @@ export async function GET(request: NextRequest) {
     const normalizedParentId =
       parentId === 'null' ? null : parentId === undefined ? undefined : parentId
 
-    const folders = await listFolders(normalizedParentId)
+    const folders = await listFolders(normalizedParentId, tenant.tenantId)
 
     return NextResponse.json(folders)
   } catch (error) {
@@ -61,6 +69,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Resolve tenant context
+    const tenant = await resolveTenantContext(request, user.id)
+    if (!tenant) return tenantRequiredResponse()
+
     const body = await request.json()
 
     const input: FolderCreateInput = {
@@ -71,6 +83,7 @@ export async function POST(request: NextRequest) {
       icon: body.icon,
       parentId: body.parentId || null,
       isPublic: body.isPublic ?? true,
+      tenantId: tenant.tenantId,
     }
 
     if (!input.name) {

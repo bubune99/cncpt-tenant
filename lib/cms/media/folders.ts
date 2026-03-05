@@ -35,9 +35,12 @@ const db = prisma as PrismaWithMediaFolder
 // LIST FOLDERS
 // =============================================================================
 
-export async function listFolders(parentId?: string | null): Promise<FolderWithRelations[]> {
+export async function listFolders(parentId?: string | null, tenantId?: number): Promise<FolderWithRelations[]> {
+  const where: any = parentId === undefined ? {} : { parentId }
+  if (tenantId !== undefined) where.tenantId = tenantId
+
   const folders = await db.mediaFolder.findMany({
-    where: parentId === undefined ? {} : { parentId },
+    where,
     include: {
       parent: true,
       _count: {
@@ -57,8 +60,12 @@ export async function listFolders(parentId?: string | null): Promise<FolderWithR
 // GET FOLDER TREE
 // =============================================================================
 
-export async function getFolderTree(): Promise<FolderTree[]> {
+export async function getFolderTree(tenantId?: number): Promise<FolderTree[]> {
+  const where: any = {}
+  if (tenantId !== undefined) where.tenantId = tenantId
+
   const folders = await db.mediaFolder.findMany({
+    where,
     include: {
       _count: {
         select: {
@@ -153,7 +160,7 @@ export async function getFolderByPath(path: string): Promise<FolderWithRelations
 // =============================================================================
 
 export async function createFolder(input: FolderCreateInput): Promise<FolderWithRelations> {
-  const { name, parentId, ...rest } = input
+  const { name, parentId, tenantId, ...rest } = input
 
   // Generate slug if not provided
   const slug = rest.slug || generateSlug(name)
@@ -189,6 +196,7 @@ export async function createFolder(input: FolderCreateInput): Promise<FolderWith
       depth,
       position: (maxPosition._max.position || 0) + 1,
       parentId,
+      ...(tenantId ? { tenantId } : {}),
       ...restWithoutSlug,
     },
     include: {

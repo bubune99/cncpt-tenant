@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { recordEmailOpen } from '@/lib/cms/email/tracking'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +17,7 @@ const TRACKING_PIXEL = Buffer.from(
 )
 
 export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   const searchParams = request.nextUrl.searchParams
   const recipientId = searchParams.get('r')
   const campaignId = searchParams.get('c')
@@ -49,5 +51,6 @@ export async function GET(request: NextRequest) {
       Pragma: 'no-cache',
       Expires: '0',
     },
+  })
   })
 }

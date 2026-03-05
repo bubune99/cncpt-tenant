@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +17,8 @@ interface RouteParams {
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id } = await params
 
     // Try to find by ID first, then by slug
@@ -35,18 +37,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Form not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ success: true, form })
-  } catch (error) {
-    console.error('Get form error:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to get form' },
-      { status: 500 }
-    )
-  }
+      return NextResponse.json({ success: true, form })
+    } catch (error) {
+      console.error('Get form error:', error)
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Failed to get form' },
+        { status: 500 }
+      )
+    }
+  })
 }
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id } = await params
     const body = await request.json()
 
@@ -68,9 +72,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Form not found' }, { status: 404 })
     }
 
-    // If slug is being changed, ensure it's unique
+    // If slug is being changed, ensure it's unique within this tenant
     if (slug && slug !== existingForm.slug) {
-      const slugExists = await prisma.form.findFirst({ where: { slug, tenantId: null } })
+      const slugExists = await prisma.form.findFirst({ where: { slug } })
       if (slugExists) {
         return NextResponse.json(
           { error: 'A form with this slug already exists' },
@@ -94,18 +98,20 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       },
     })
 
-    return NextResponse.json({ success: true, form })
-  } catch (error) {
-    console.error('Update form error:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update form' },
-      { status: 500 }
-    )
-  }
+      return NextResponse.json({ success: true, form })
+    } catch (error) {
+      console.error('Update form error:', error)
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Failed to update form' },
+        { status: 500 }
+      )
+    }
+  })
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id } = await params
 
     // Check if form exists
@@ -117,12 +123,13 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     // Delete form (cascades to submissions)
     await prisma.form.delete({ where: { id } })
 
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Delete form error:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to delete form' },
-      { status: 500 }
-    )
-  }
+      return NextResponse.json({ success: true })
+    } catch (error) {
+      console.error('Delete form error:', error)
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Failed to delete form' },
+        { status: 500 }
+      )
+    }
+  })
 }

@@ -4,8 +4,9 @@
  * Execute a workflow definition
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { executeByIdOrName } from '@/lib/cms/plugins';
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,7 +33,8 @@ interface WorkflowEdge {
   sourceHandle?: string;
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const body = await request.json();
     const { nodes, edges } = body as { nodes: WorkflowNode[]; edges: WorkflowEdge[] };
@@ -190,4 +192,5 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+  })
 }

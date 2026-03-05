@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,6 +14,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  return withTenant(request, async () => {
   try {
     const { id } = await params
 
@@ -73,12 +75,14 @@ export async function GET(
       { status: 500 }
     )
   }
+  })
 }
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  return withTenant(request, async () => {
   try {
     const { id } = await params
     const body = await request.json()
@@ -141,12 +145,14 @@ export async function PATCH(
       { status: 500 }
     )
   }
+  })
 }
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  return withTenant(request, async () => {
   try {
     const { id } = await params
 
@@ -198,4 +204,5 @@ export async function DELETE(
       { status: 500 }
     )
   }
+  })
 }

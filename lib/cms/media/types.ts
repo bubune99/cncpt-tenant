@@ -100,6 +100,8 @@ export interface MediaFilters {
   limit?: number
   sortBy?: SortField
   sortOrder?: SortOrder
+  /** Multi-tenant scoping -- when set, only return media belonging to this tenant */
+  tenantId?: number
 }
 
 export interface MediaWithRelations extends MediaBase {
@@ -138,6 +140,9 @@ export interface MediaCreateInput {
   key?: string
   uploadedById?: string
   tagIds?: string[]
+
+  // Multi-tenant scoping
+  tenantId?: number
 
   // Video metadata fields
   duration?: number
@@ -188,6 +193,8 @@ export interface FolderCreateInput {
   icon?: string
   parentId?: string | null
   isPublic?: boolean
+  /** Multi-tenant scoping */
+  tenantId?: number
 }
 
 export interface FolderUpdateInput {

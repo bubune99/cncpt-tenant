@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
 import { checkAndNotifyBackInStock } from '@/lib/cms/inventory'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,7 +44,8 @@ interface BulkUpdateBody {
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id: productId } = await params
 
     // Verify product exists
@@ -160,17 +162,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       customFields: productCustomFields.map((pcf) => pcf.customField),
       total: variants.length,
     })
-  } catch (error) {
-    console.error('List variants error:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to list variants' },
-      { status: 500 }
-    )
-  }
+    } catch (error) {
+      console.error('List variants error:', error)
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Failed to list variants' },
+        { status: 500 }
+      )
+    }
+  })
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id: productId } = await params
     const body: BulkUpdateBody = await request.json()
 
@@ -345,22 +349,24 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       success: true,
       results,
     })
-  } catch (error) {
-    console.error('Bulk update variants error:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update variants' },
-      { status: 500 }
-    )
-  }
+    } catch (error) {
+      console.error('Bulk update variants error:', error)
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Failed to update variants' },
+        { status: 500 }
+      )
+    }
+  })
 }
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const { id: productId } = await params
-    const { searchParams } = new URL(request.url)
+  return withTenant(request, async () => {
+    try {
+      const { id: productId } = await params
+      const { searchParams } = new URL(request.url)
     const ids = searchParams.get('ids')?.split(',').filter(Boolean) || []
 
     if (ids.length === 0) {
@@ -378,11 +384,12 @@ export async function DELETE(
       success: true,
       deleted: result.count,
     })
-  } catch (error) {
-    console.error('Delete variants error:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to delete variants' },
-      { status: 500 }
-    )
-  }
+    } catch (error) {
+      console.error('Delete variants error:', error)
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Failed to delete variants' },
+        { status: 500 }
+      )
+    }
+  })
 }

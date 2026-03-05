@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { voteReview, getReviewById } from '@/lib/cms/reviews';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,8 @@ interface RouteParams {
 
 // POST - Vote on a review
 export async function POST(request: NextRequest, { params }: RouteParams) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id } = await params;
     const body = await request.json();
 
@@ -62,11 +64,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       success: true,
       ...result,
     });
-  } catch (error) {
-    console.error('Vote review error:', error);
-    return NextResponse.json(
-      { error: 'Failed to vote on review' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Vote review error:', error);
+      return NextResponse.json(
+        { error: 'Failed to vote on review' },
+        { status: 500 }
+      );
+    }
+  })
 }

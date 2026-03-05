@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getOrCreateCart, updateCartEmail } from '@/lib/cms/cart';
 import { getCurrentUserId } from '@/lib/cms/cart/auth';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,8 @@ const CART_SESSION_COOKIE = 'cart_session_id';
 
 // POST - Update cart email
 export async function POST(request: NextRequest) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const body = await request.json();
     const { email } = body;
 
@@ -59,11 +61,12 @@ export async function POST(request: NextRequest) {
       cart: updatedCart,
       message: 'Email updated',
     });
-  } catch (error) {
-    console.error('Update cart email error:', error);
-    return NextResponse.json(
-      { error: 'Failed to update email' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Update cart email error:', error);
+      return NextResponse.json(
+        { error: 'Failed to update email' },
+        { status: 500 }
+      );
+    }
+  })
 }

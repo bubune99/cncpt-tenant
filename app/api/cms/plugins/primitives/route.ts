@@ -4,13 +4,15 @@
  * CRUD operations for primitives
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/cms/db';
 import { loadBuiltInPrimitives } from '@/lib/cms/plugins';
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     // Ensure built-in primitives are loaded
     await loadBuiltInPrimitives();
@@ -39,9 +41,11 @@ export async function GET() {
       { status: 500 }
     );
   }
+  })
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const body = await request.json();
     const {
@@ -99,4 +103,5 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+  })
 }

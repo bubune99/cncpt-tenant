@@ -3,17 +3,20 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { listImages, getCategories, R2_CONFIG } from "@/lib/cms/r2";
+import { listImages, getCategories, getStorageConfig } from "@/lib/cms/r2";
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   const searchParams = request.nextUrl.searchParams;
   const category = searchParams.get("category") || undefined;
   const search = searchParams.get("search") || undefined;
 
-  // Check if R2 is configured
-  if (!R2_CONFIG.isConfigured) {
+  // Check if storage is configured (DB-driven with env var fallback)
+  const storageConfig = await getStorageConfig();
+  if (!storageConfig.isConfigured) {
     // Return placeholder images if R2 is not configured
     return NextResponse.json({
       configured: false,
@@ -53,6 +56,7 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+  })
 }
 
 /**

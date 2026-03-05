@@ -4,8 +4,9 @@
  * CRUD operations for individual plugins
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/cms/db';
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +14,8 @@ interface RouteParams {
   params: Promise<{ pluginId: string }>;
 }
 
-export async function GET(request: Request, { params }: RouteParams) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
+  return withTenant(request, async () => {
   try {
     const { pluginId } = await params;
 
@@ -54,9 +56,11 @@ export async function GET(request: Request, { params }: RouteParams) {
       { status: 500 }
     );
   }
+  })
 }
 
-export async function PATCH(request: Request, { params }: RouteParams) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  return withTenant(request, async () => {
   try {
     const { pluginId } = await params;
     const body = await request.json();
@@ -81,9 +85,11 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       { status: 500 }
     );
   }
+  })
 }
 
-export async function DELETE(request: Request, { params }: RouteParams) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  return withTenant(request, async () => {
   try {
     const { pluginId } = await params;
 
@@ -119,4 +125,5 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       { status: 500 }
     );
   }
+  })
 }

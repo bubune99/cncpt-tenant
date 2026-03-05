@@ -7,10 +7,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stackServerApp } from '@/lib/cms/stack';
 import { seedEmailTemplates, needsSeeding } from '@/lib/cms/email/templates/seed';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     // Verify admin access
     const user = await stackServerApp.getUser();
@@ -37,27 +39,30 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+  })
 }
 
-export async function GET() {
-  try {
-    // Verify admin access
-    const user = await stackServerApp.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
+    try {
+      // Verify admin access
+      const user = await stackServerApp.getUser();
+      if (!user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+
+      // Check if seeding is needed
+      const needs = await needsSeeding();
+
+      return NextResponse.json({
+        needsSeeding: needs,
+      });
+    } catch (error) {
+      console.error('Error checking email templates:', error);
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Failed to check templates' },
+        { status: 500 }
+      );
     }
-
-    // Check if seeding is needed
-    const needs = await needsSeeding();
-
-    return NextResponse.json({
-      needsSeeding: needs,
-    });
-  } catch (error) {
-    console.error('Error checking email templates:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to check templates' },
-      { status: 500 }
-    );
-  }
+  })
 }

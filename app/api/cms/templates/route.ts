@@ -9,6 +9,7 @@ import {
   TemplateCategory,
 } from "@/lib/cms/templates";
 import { getTemplateRegistry } from "@/lib/cms/templates/registry";
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -22,6 +23,7 @@ export const dynamic = 'force-dynamic'
  * - categories: Return list of categories (set to "true")
  */
 export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     // Ensure templates are initialized
     ensureTemplatesInitialized();
@@ -71,6 +73,7 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+  })
 }
 
 /**
@@ -92,6 +95,7 @@ export async function GET(request: NextRequest) {
  * - category: Optional category
  */
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     // Ensure templates are initialized
     ensureTemplatesInitialized();
@@ -180,4 +184,5 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+  })
 }

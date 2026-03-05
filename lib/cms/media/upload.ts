@@ -11,6 +11,15 @@ import { getMaxFileSizeForType } from './types'
 import { createMedia } from './index'
 import { v4 as uuidv4 } from 'uuid'
 
+/**
+ * Options for tenant-scoped uploads.
+ * When provided, all storage keys are prefixed with `tenants/{subdomain}/media/`.
+ */
+export interface TenantUploadContext {
+  subdomain: string
+  tenantId: number
+}
+
 // =============================================================================
 // STORAGE CONFIGURATION CHECK
 // =============================================================================
@@ -77,7 +86,8 @@ export async function checkStorageConfig(): Promise<StorageConfigStatus> {
 export async function generatePresignedUrl(
   filename: string,
   mimeType: string,
-  size: number
+  size: number,
+  tenant?: TenantUploadContext
 ): Promise<PresignedUrlResponse> {
   const settings = await getStorageSettings()
   const provider = (settings.provider || 'local').toUpperCase() as StorageProvider
@@ -90,9 +100,25 @@ export async function generatePresignedUrl(
     }
   }
 
-  // Generate unique key
+  // Generate unique key with tenant isolation
   const ext = filename.split('.').pop() || ''
-  const key = `uploads/${new Date().toISOString().slice(0, 10)}/${uuidv4()}.${ext}`
+  const uniqueName = `${uuidv4()}.${ext}`
+  const datePath = new Date().toISOString().slice(0, 10)
+
+  let key: string
+  if (tenant) {
+    // Tenant-scoped key: tenants/{subdomain}/media/{date}/{uuid}.{ext}
+    const sanitizedSubdomain = tenant.subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '')
+    // Determine media subcategory from mime type
+    let subcategory = 'documents'
+    if (mimeType.startsWith('image/')) subcategory = 'images'
+    else if (mimeType.startsWith('video/')) subcategory = 'videos'
+    else if (mimeType.startsWith('audio/')) subcategory = 'audio'
+    key = `tenants/${sanitizedSubdomain}/media/${subcategory}/${datePath}/${uniqueName}`
+  } else {
+    // Fallback: global upload path (should not happen in multi-tenant usage)
+    key = `uploads/${datePath}/${uniqueName}`
+  }
 
   switch (provider) {
     case 'S3':
@@ -210,7 +236,8 @@ export async function processUpload(
   bucket: string,
   provider: StorageProvider,
   options: UploadOptions = {},
-  uploadedById?: string
+  uploadedById?: string,
+  tenantId?: number
 ) {
   // Get image dimensions if applicable
   let width: number | undefined
@@ -224,7 +251,7 @@ export async function processUpload(
     }
   }
 
-  // Create media record
+  // Create media record with tenant scoping
   const media = await createMedia({
     filename,
     originalName,
@@ -242,6 +269,7 @@ export async function processUpload(
     title: options.title || originalName,
     tagIds: options.tagIds,
     uploadedById,
+    tenantId,
   })
 
   return media

@@ -155,9 +155,13 @@ model CustomerAddress {
 // Role - Preset permission bundles
 model Role {
   id          String  @id @default(cuid())
-  name        String  @unique // "store_manager", "content_editor"
+  name        String // "store_manager", "content_editor"
   displayName String // "Store Manager"
   description String?
+
+  // Multi-tenant scoping (null = global/system role)
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Permissions as JSON array: ["products.view", "products.edit", "orders.*"]
   permissions Json @default("[]")
@@ -174,6 +178,8 @@ model Role {
   // Relations
   assignments RoleAssignment[]
 
+  @@unique([tenantId, name])
+  @@index([tenantId])
   @@index([isSystem])
   @@map("roles")
 }
@@ -183,6 +189,10 @@ model RoleAssignment {
   id     String @id @default(cuid())
   userId String
   roleId String
+
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Who assigned this role
   assignedBy String?
@@ -194,6 +204,7 @@ model RoleAssignment {
   role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([userId, roleId])
+  @@index([tenantId])
   @@index([userId])
   @@index([roleId])
   @@map("role_assignments")
@@ -210,6 +221,10 @@ model UserPermission {
   // GRANT adds permission, DENY removes it (even if role has it)
   type PermissionType
 
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
   // Optional expiration for temporary permissions
   expiresAt DateTime?
 
@@ -224,6 +239,7 @@ model UserPermission {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, permission])
+  @@index([tenantId])
   @@index([userId])
   @@index([expiresAt])
   @@map("user_permissions")
@@ -308,9 +324,9 @@ model ApiKey {
 
 // API Key Usage Analytics
 model ApiKeyUsage {
-  id        String   @id @default(cuid())
-  apiKeyId  String
-  date      DateTime @db.Date // Aggregated by day
+  id       String   @id @default(cuid())
+  apiKeyId String
+  date     DateTime @db.Date // Aggregated by day
 
   // Request counts
   requestCount   Int @default(0)
@@ -458,6 +474,12 @@ model Product {
   stripeSyncedAt  DateTime? // Last Stripe sync
   stripeSyncError String? // Last sync error
 
+  // Shopify sync
+  shopifyProductId String? // Shopify Admin API product GID
+  shopifySyncedAt  DateTime? // Last Shopify sync
+  shopifySyncError String? // Last sync error
+  shopifyData      Json? // Raw Shopify metadata (metafields, tags, etc.)
+
   // Subscription settings (for SUBSCRIPTION type)
   subscriptionInterval      String? // month, year
   subscriptionIntervalCount Int? // e.g., 3 for quarterly
@@ -510,6 +532,7 @@ model Product {
   @@index([type])
   @@index([sku])
   @@index([orderWorkflowId])
+  @@index([shopifyProductId])
   @@map("products")
 }
 
@@ -605,6 +628,11 @@ model ProductVariant {
   stripeSyncedAt  DateTime? // Last Stripe sync
   stripeSyncError String? // Last sync error
 
+  // Shopify sync
+  shopifyVariantId String? // Shopify Admin API variant GID
+  shopifySyncedAt  DateTime?
+  shopifySyncError String?
+
   // Image override
   imageId String?
 
@@ -629,6 +657,7 @@ model ProductVariant {
   @@index([productId])
   @@index([sku])
   @@index([enabled])
+  @@index([shopifyVariantId])
   @@map("product_variants")
 }
 
@@ -1268,7 +1297,7 @@ model RouteConfig {
 }
 
 enum RouteType {
-  CMS @map("PUCK") // Render a CMS page from the database
+  CMS      @map("PUCK") // Render a CMS page from the database
   CUSTOM // Render a custom-coded React component
   REDIRECT // Redirect to another URL
 }
@@ -1387,15 +1416,22 @@ model MediaFolder {
 
 model MediaTag {
   id    String  @id @default(cuid())
-  name  String  @unique
-  slug  String  @unique
+  name  String
+  slug  String
   color String? // For visual distinction
+
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
   // Relations
   media MediaTagOnMedia[]
 
+  @@unique([tenantId, name])
+  @@unique([tenantId, slug])
+  @@index([tenantId])
   @@index([slug])
   @@map("media_tags")
 }
@@ -2662,7 +2698,12 @@ model Subscription {
 model Form {
   id          String  @id @default(cuid())
   name        String
-  slug        String  @unique
+  slug        String
+
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
   description String?
 
   // Form schema (JSON Schema format)
@@ -2688,7 +2729,9 @@ model Form {
   // Relations
   submissions FormSubmission[]
 
+  @@unique([tenantId, slug])
   @@index([slug])
+  @@index([tenantId])
   @@index([status])
   @@map("forms")
 }
@@ -2702,6 +2745,10 @@ enum FormStatus {
 model FormSubmission {
   id     String @id @default(cuid())
   formId String
+
+  // Multi-tenant scoping (inherited from parent Form)
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Submission data
   data Json // The submitted form data
@@ -2721,6 +2768,7 @@ model FormSubmission {
   form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
 
   @@index([formId])
+  @@index([tenantId])
   @@index([createdAt])
   @@map("form_submissions")
 }
@@ -3185,11 +3233,15 @@ model DiscountUsage {
 
 model GiftCard {
   id             String         @id @default(cuid())
-  code           String         @unique // Unique redemption code
+  code           String // Redemption code (unique per tenant)
   initialBalance Int // Original value (cents)
   balance        Int // Current balance (cents)
   currency       String         @default("USD")
   status         GiftCardStatus @default(ACTIVE)
+
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Purchase info
   purchasedById   String?
@@ -3212,6 +3264,8 @@ model GiftCard {
   // Relations
   transactions GiftCardTransaction[]
 
+  @@unique([tenantId, code])
+  @@index([tenantId])
   @@index([code])
   @@index([status])
   @@index([recipientEmail])
@@ -3239,6 +3293,10 @@ model GiftCardTransaction {
   amount     Int // Positive for credits, negative for debits
   balance    Int // Balance after transaction
 
+  // Multi-tenant scoping (denormalized from GiftCard for direct filtering)
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
   // Reference
   orderId String?
   note    String?
@@ -3248,6 +3306,7 @@ model GiftCardTransaction {
   // Relations
   giftCard GiftCard @relation(fields: [giftCardId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
   @@index([giftCardId])
   @@index([orderId])
   @@map("gift_card_transactions")
@@ -3324,6 +3383,10 @@ model BackInStockSubscription {
   productId String
   variantId String?
 
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
   // Notification status
   notified   Boolean   @default(false)
   notifiedAt DateTime?
@@ -3335,6 +3398,7 @@ model BackInStockSubscription {
   variant ProductVariant? @relation(fields: [variantId], references: [id])
 
   @@unique([email, productId, variantId])
+  @@index([tenantId])
   @@index([productId])
   @@index([variantId])
   @@index([notified])
@@ -3346,6 +3410,10 @@ model StockReservation {
   productId String
   variantId String?
   quantity  Int
+
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Session/Order linking
   sessionId String? // Cart session for guest checkout
@@ -3362,6 +3430,7 @@ model StockReservation {
   variant ProductVariant? @relation(fields: [variantId], references: [id])
   order   Order?          @relation(fields: [orderId], references: [id])
 
+  @@index([tenantId])
   @@index([productId])
   @@index([variantId])
   @@index([sessionId])
@@ -3379,6 +3448,10 @@ model ProductReview {
   productId  String
   customerId String?
   orderId    String? // Verified purchase
+
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Reviewer info (for guest reviews)
   reviewerName  String
@@ -3424,6 +3497,7 @@ model ProductReview {
   customer Customer?    @relation(fields: [customerId], references: [id])
   votes    ReviewVote[]
 
+  @@index([tenantId])
   @@index([productId])
   @@index([customerId])
   @@index([status])
@@ -3445,6 +3519,10 @@ model ReviewVote {
   email    String?
   helpful  Boolean // true = helpful, false = not helpful
 
+  // Multi-tenant scoping (denormalized from ProductReview for direct filtering)
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
 
   // Relations
@@ -3452,6 +3530,7 @@ model ReviewVote {
 
   @@unique([reviewId, userId])
   @@unique([reviewId, email])
+  @@index([tenantId])
   @@index([reviewId])
   @@map("review_votes")
 }
@@ -3464,6 +3543,10 @@ model Notification {
   id     String           @id @default(cuid())
   userId String
   type   NotificationType
+
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Content
   title   String
@@ -3487,6 +3570,7 @@ model Notification {
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
   @@index([userId])
   @@index([read])
   @@index([createdAt])
@@ -3549,7 +3633,11 @@ model EmailQueueItem {
 // =============================================================================
 
 model SiteSettings {
-  id String @id @default("default") // Singleton pattern
+  id String @id @default(cuid())
+
+  // Multi-tenant scoping (null = global default, set = per-tenant settings)
+  tenantId Int?       @unique @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Global Header configuration (JSON data)
   header Json?
@@ -3588,6 +3676,7 @@ model SiteSettings {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([tenantId])
   @@map("site_settings")
 }
 
@@ -3906,19 +3995,19 @@ model AdminUser {
 
 // Subdomains table (main app managed)
 model Subdomain {
-  id              Int      @id @default(autoincrement())
-  subdomain       String   @unique
-  userId          String?  @map("user_id")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @default(now()) @map("updated_at")
+  id        Int      @id @default(autoincrement())
+  subdomain String   @unique
+  userId    String?  @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
 
   // Site status controls
-  maintenanceMode Boolean  @default(false) @map("maintenance_mode")
-  maintenanceMsg  String?  @map("maintenance_message") @db.Text
+  maintenanceMode Boolean @default(false) @map("maintenance_mode")
+  maintenanceMsg  String? @map("maintenance_message") @db.Text
 
   // Feature enablement config (per-tenant overrides)
   // JSON: Record<featureKey, boolean> e.g. { "commerce": true, "commerce.reviews": false }
-  featureConfig   Json?    @map("feature_config")
+  featureConfig Json? @map("feature_config")
 
   // Relations to tenant tables (legacy)
   tenantPosts    TenantPost[]
@@ -3926,25 +4015,47 @@ model Subdomain {
   tenantSettings TenantSetting?
 
   // Relations to CMS content (new multi-tenant scoping)
-  blogPosts      BlogPost[]
-  blogCategories BlogCategory[]
-  blogTags       BlogTag[]
-  pages          Page[]
-  products       Product[]
-  categories     Category[]
-  media          Media[]
-  orders         Order[]
-  customers      Customer[]
-  carts          Cart[]
-  wishlists      Wishlist[]
-  discountCodes  DiscountCode[]
-  settings       Setting[]       @relation("TenantSettings")
-  routeConfigs   RouteConfig[]
-  mediaFolders   MediaFolder[]
-  customFields   CustomField[]
-  digitalAssets  DigitalAsset[]
-  workflows      OrderWorkflow[]
+  blogPosts            BlogPost[]
+  blogCategories       BlogCategory[]
+  blogTags             BlogTag[]
+  pages                Page[]
+  products             Product[]
+  categories           Category[]
+  media                Media[]
+  orders               Order[]
+  customers            Customer[]
+  carts                Cart[]
+  wishlists            Wishlist[]
+  discountCodes        DiscountCode[]
+  settings             Setting[]             @relation("TenantSettings")
+  routeConfigs         RouteConfig[]
+  mediaFolders         MediaFolder[]
+  customFields         CustomField[]
+  digitalAssets        DigitalAsset[]
+  workflows            OrderWorkflow[]
   onboardingChecklists OnboardingChecklist[]
+
+  // Tenant-scoped models (isolation audit 2026-03)
+  events                   Event[]
+  eventTicketTypes         EventTicketType[]
+  eventScheduleItems       EventScheduleItem[]
+  eventSpeakers            EventSpeaker[]
+  eventRegistrations       EventRegistration[]
+  partials                 Partial[]
+  giftCards                GiftCard[]
+  giftCardTransactions     GiftCardTransaction[]
+  productReviews           ProductReview[]
+  reviewVotes              ReviewVote[]
+  roles                    Role[]
+  roleAssignments          RoleAssignment[]
+  userPermissions          UserPermission[]
+  mediaTags                MediaTag[]
+  backInStockSubscriptions BackInStockSubscription[]
+  stockReservations        StockReservation[]
+  notifications            Notification[]
+  siteSettings             SiteSettings?
+  forms                    Form[]
+  formSubmissions          FormSubmission[]
 
   @@index([subdomain])
   @@index([userId], map: "idx_subdomains_user_id")
@@ -3953,16 +4064,16 @@ model Subdomain {
 
 // Onboarding checklist per user per subdomain
 model OnboardingChecklist {
-  id            String    @id @default(cuid())
-  userId        String
-  subdomainId   Int
-  items         Json      // [{key, title, completed, completedAt, url}]
-  dismissed     Boolean   @default(false)
-  completedAt   DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id          String    @id @default(cuid())
+  userId      String
+  subdomainId Int
+  items       Json // [{key, title, completed, completedAt, url}]
+  dismissed   Boolean   @default(false)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  subdomain     Subdomain @relation(fields: [subdomainId], references: [id], onDelete: Cascade)
+  subdomain Subdomain @relation(fields: [subdomainId], references: [id], onDelete: Cascade)
 
   @@unique([userId, subdomainId])
   @@index([userId])
@@ -4047,20 +4158,20 @@ model TenantSetting {
   updatedAt       DateTime @default(now()) @map("updated_at")
 
   // White-label branding
-  siteName        String?  @map("site_name") @db.VarChar(255)
-  siteTagline     String?  @map("site_tagline") @db.VarChar(500)
-  logoUrl         String?  @map("logo_url") @db.VarChar(2048)
-  logoDarkUrl     String?  @map("logo_dark_url") @db.VarChar(2048)
-  logoAlt         String?  @map("logo_alt") @db.VarChar(255)
-  faviconUrl      String?  @map("favicon_url") @db.VarChar(2048)
-  faviconSvgUrl   String?  @map("favicon_svg_url") @db.VarChar(2048)
+  siteName          String? @map("site_name") @db.VarChar(255)
+  siteTagline       String? @map("site_tagline") @db.VarChar(500)
+  logoUrl           String? @map("logo_url") @db.VarChar(2048)
+  logoDarkUrl       String? @map("logo_dark_url") @db.VarChar(2048)
+  logoAlt           String? @map("logo_alt") @db.VarChar(255)
+  faviconUrl        String? @map("favicon_url") @db.VarChar(2048)
+  faviconSvgUrl     String? @map("favicon_svg_url") @db.VarChar(2048)
   appleTouchIconUrl String? @map("apple_touch_icon_url") @db.VarChar(2048)
-  ogImageUrl      String?  @map("og_image_url") @db.VarChar(2048)
-  primaryColor    String?  @map("primary_color") @db.VarChar(7)
-  accentColor     String?  @map("accent_color") @db.VarChar(7)
-  titleTemplate   String?  @map("title_template") @db.VarChar(255) // e.g. "%s | My Brand"
-  metaDescription String?  @map("meta_description") @db.Text
-  hidePoweredBy   Boolean  @default(false) @map("hide_powered_by")
+  ogImageUrl        String? @map("og_image_url") @db.VarChar(2048)
+  primaryColor      String? @map("primary_color") @db.VarChar(7)
+  accentColor       String? @map("accent_color") @db.VarChar(7)
+  titleTemplate     String? @map("title_template") @db.VarChar(255) // e.g. "%s | My Brand"
+  metaDescription   String? @map("meta_description") @db.Text
+  hidePoweredBy     Boolean @default(false) @map("hide_powered_by")
 
   // Relations
   tenant Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -4230,23 +4341,23 @@ enum FeedbackStatus {
 
 // User feedback table (main app managed)
 model Feedback {
-  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId      String         @map("user_id") @db.VarChar(255)
-  userEmail   String         @map("user_email") @db.VarChar(255)
-  userName    String?        @map("user_name") @db.VarChar(255)
-  tenantId    Int?           @map("tenant_id")
-  type        FeedbackType   @default(GENERAL)
-  subject     String?        @db.VarChar(255)
-  message     String         @db.Text
-  pageUrl     String?        @map("page_url") @db.VarChar(500)
-  userAgent   String?        @map("user_agent") @db.Text
-  status      FeedbackStatus @default(NEW)
-  priority    Int            @default(0)
-  adminNotes  String?        @map("admin_notes") @db.Text
-  resolvedBy  String?        @map("resolved_by") @db.VarChar(255)
-  resolvedAt  DateTime?      @map("resolved_at")
-  createdAt   DateTime       @default(now()) @map("created_at")
-  updatedAt   DateTime       @default(now()) @updatedAt @map("updated_at")
+  id         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String         @map("user_id") @db.VarChar(255)
+  userEmail  String         @map("user_email") @db.VarChar(255)
+  userName   String?        @map("user_name") @db.VarChar(255)
+  tenantId   Int?           @map("tenant_id")
+  type       FeedbackType   @default(GENERAL)
+  subject    String?        @db.VarChar(255)
+  message    String         @db.Text
+  pageUrl    String?        @map("page_url") @db.VarChar(500)
+  userAgent  String?        @map("user_agent") @db.Text
+  status     FeedbackStatus @default(NEW)
+  priority   Int            @default(0)
+  adminNotes String?        @map("admin_notes") @db.Text
+  resolvedBy String?        @map("resolved_by") @db.VarChar(255)
+  resolvedAt DateTime?      @map("resolved_at")
+  createdAt  DateTime       @default(now()) @map("created_at")
+  updatedAt  DateTime       @default(now()) @updatedAt @map("updated_at")
 
   @@index([userId], map: "idx_feedback_user")
   @@index([tenantId], map: "idx_feedback_tenant")
@@ -4267,10 +4378,10 @@ model CmsModule {
   description String?  @db.Text
   icon        String?
   version     String   @default("1.0.0")
-  manifest    Json     // ModuleManifest -- routes, blocks, settings, permissions
+  manifest    Json // ModuleManifest -- routes, blocks, settings, permissions
   enabled     Boolean  @default(true)
   builtIn     Boolean  @default(true)
-  config      Json?    // User-changeable module config (e.g., commerce provider)
+  config      Json? // User-changeable module config (e.g., commerce provider)
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -4295,16 +4406,23 @@ enum PartialCategory {
 model Partial {
   id          String          @id @default(cuid())
   name        String
-  slug        String          @unique
+  slug        String
   description String?
   category    PartialCategory
-  content     Json            // { version: "2.0", blocks: Block[] }
-  thumbnail   String?         // Preview screenshot URL
-  isDefault   Boolean         @default(false)   // Active default for this category
+  content     Json // { version: "2.0", blocks: Block[] }
+  thumbnail   String? // Preview screenshot URL
+  isDefault   Boolean         @default(false) // Active default for this category
   status      String          @default("DRAFT") // DRAFT | PUBLISHED
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
 
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
   @@index([category])
   @@index([category, isDefault])
   @@map("partials")
@@ -4338,11 +4456,15 @@ enum RegistrationStatus {
 model Event {
   id               String      @id @default(cuid())
   title            String
-  slug             String      @unique
+  slug             String
   description      String?     @db.Text
   shortDescription String?
   eventType        EventType   @default(IN_PERSON)
   status           EventStatus @default(DRAFT)
+
+  // Multi-tenant scoping
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   startDate DateTime
   endDate   DateTime
@@ -4388,6 +4510,8 @@ model Event {
   speakers      EventSpeaker[]
   registrations EventRegistration[]
 
+  @@unique([tenantId, slug])
+  @@index([tenantId])
   @@index([slug])
   @@index([status])
   @@index([startDate])
@@ -4396,19 +4520,23 @@ model Event {
 }
 
 model EventTicketType {
-  id          String  @id @default(cuid())
+  id          String    @id @default(cuid())
   eventId     String
   name        String
   description String?
-  price       Int     @default(0) // cents, 0 = free
-  currency    String  @default("usd")
-  quantity    Int?    // null = unlimited
-  sold        Int     @default(0)
-  maxPerOrder Int     @default(10)
+  price       Int       @default(0) // cents, 0 = free
+  currency    String    @default("usd")
+  quantity    Int? // null = unlimited
+  sold        Int       @default(0)
+  maxPerOrder Int       @default(10)
   salesStart  DateTime?
   salesEnd    DateTime?
-  isActive    Boolean @default(true)
-  position    Int     @default(0)
+  isActive    Boolean   @default(true)
+  position    Int       @default(0)
+
+  // Multi-tenant scoping (denormalized from Event for direct filtering)
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Stripe
   stripeProductId String?
@@ -4420,6 +4548,7 @@ model EventTicketType {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([tenantId])
   @@index([eventId])
   @@map("event_ticket_types")
 }
@@ -4435,6 +4564,10 @@ model EventScheduleItem {
   day         Int      @default(1)
   position    Int      @default(0)
 
+  // Multi-tenant scoping (denormalized from Event for direct filtering)
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
   speakerId String?
   speaker   EventSpeaker? @relation(fields: [speakerId], references: [id], onDelete: SetNull)
 
@@ -4443,6 +4576,7 @@ model EventScheduleItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([tenantId])
   @@index([eventId])
   @@index([day])
   @@map("event_schedule_items")
@@ -4461,12 +4595,17 @@ model EventSpeaker {
   linkedin  String?
   position  Int     @default(0)
 
+  // Multi-tenant scoping (denormalized from Event for direct filtering)
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
   event         Event               @relation(fields: [eventId], references: [id], onDelete: Cascade)
   scheduleItems EventScheduleItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([tenantId])
   @@index([eventId])
   @@map("event_speakers")
 }
@@ -4477,14 +4616,18 @@ model EventRegistration {
   ticketTypeId String?
   status       RegistrationStatus @default(PENDING)
 
+  // Multi-tenant scoping (denormalized from Event for direct filtering)
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
   // Attendee info
   attendeeName  String
   attendeeEmail String
   attendeePhone String?
 
   // Payment
-  amount          Int    @default(0) // cents
-  currency        String @default("usd")
+  amount          Int     @default(0) // cents
+  currency        String  @default("usd")
   stripePaymentId String?
   stripeSessionId String?
 
@@ -4501,6 +4644,7 @@ model EventRegistration {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([tenantId])
   @@index([eventId])
   @@index([attendeeEmail])
   @@index([status])
@@ -4542,30 +4686,30 @@ model MarketplaceTemplate {
   slug        String   @unique
   description String   @default("")
   type        String   @default("component") // 'site' or 'component'
-  category    String                          // e.g. 'hero', 'pricing', 'landing-page', 'saas'
+  category    String // e.g. 'hero', 'pricing', 'landing-page', 'saas'
   tags        String[] @default([])
 
   // Content — same Block[] format as Page.content
-  blocks      Json     // Block[] JSON array
-  jsx         String?  @db.Text // Original JSX source (for code preview)
+  blocks Json // Block[] JSON array
+  jsx    String? @db.Text // Original JSX source (for code preview)
 
   // Display
-  thumbnail   String?  // Preview image URL (R2/S3)
-  previewUrl  String?  // URL for live preview iframe
+  thumbnail  String? // Preview image URL (R2/S3)
+  previewUrl String? // URL for live preview iframe
 
   // Provenance
-  source      String   @default("custom") // 'hyperui', 'tailblocks', 'meraki', 'custom', etc.
-  sourceUrl   String?                      // Original URL where this was scraped/imported from
-  license     String   @default("MIT")     // SPDX license identifier
-  author      String?                      // Original author or contributor name
+  source    String  @default("custom") // 'hyperui', 'tailblocks', 'meraki', 'custom', etc.
+  sourceUrl String? // Original URL where this was scraped/imported from
+  license   String  @default("MIT") // SPDX license identifier
+  author    String? // Original author or contributor name
 
   // Status & popularity
-  isPublished Boolean  @default(true)
-  isFeatured  Boolean  @default(false)
-  usageCount  Int      @default(0)         // Incremented when a user inserts this template
+  isPublished Boolean @default(true)
+  isFeatured  Boolean @default(false)
+  usageCount  Int     @default(0) // Incremented when a user inserts this template
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([type, category])
   @@index([isPublished, isFeatured])

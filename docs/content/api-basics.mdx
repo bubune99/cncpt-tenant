@@ -1,0 +1,107 @@
+---
+title: API Basics
+description: Get started with the CNCPT Web API for programmatic site management and content access.
+---
+
+# API Basics
+
+The CNCPT Web API lets you manage sites, content, and resources programmatically. All endpoints use REST conventions and return JSON.
+
+## Authentication
+
+All API requests require an API key. Generate one from **Dashboard > Settings > API Keys**.
+
+Include your key in the `Authorization` header:
+
+```bash
+curl -H "Authorization: Bearer your_api_key_here" \
+  https://api.cncptweb.com/v1/sites
+```
+
+<Callout type="warning">
+Keep your API key secret. Never expose it in client-side code or public repositories.
+</Callout>
+
+## Base URL
+
+All API endpoints use the base URL:
+
+```
+https://api.cncptweb.com/v1
+```
+
+## Common Endpoints
+
+### Sites
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/sites` | List all your sites |
+| GET | `/sites/:id` | Get site details |
+| POST | `/sites` | Create a new site |
+| PATCH | `/sites/:id` | Update site settings |
+| DELETE | `/sites/:id` | Delete a site |
+
+### Pages
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/sites/:id/pages` | List pages for a site |
+| GET | `/sites/:id/pages/:pageId` | Get page content |
+| POST | `/sites/:id/pages` | Create a page |
+| PATCH | `/sites/:id/pages/:pageId` | Update a page |
+
+### Media
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/sites/:id/media` | List media files |
+| POST | `/sites/:id/media/upload` | Upload a file |
+| DELETE | `/sites/:id/media/:mediaId` | Delete a file |
+
+## Response Format
+
+All responses follow a consistent structure:
+
+```json
+{
+  "data": { ... },
+  "meta": {
+    "page": 1,
+    "perPage": 20,
+    "total": 45
+  }
+}
+```
+
+Error responses include a message and error code:
+
+```json
+{
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Site not found"
+  }
+}
+```
+
+## Rate Limiting
+
+API requests are rate-limited per API key:
+
+- **Starter** — 100 requests/minute
+- **Growth** — 300 requests/minute
+- **Pro** — 1,000 requests/minute
+- **Business** — 5,000 requests/minute
+
+Rate limit headers are included in every response:
+
+```
+X-RateLimit-Limit: 300
+X-RateLimit-Remaining: 287
+X-RateLimit-Reset: 1709312400
+```
+
+<Callout type="info">
+Need higher rate limits? Contact us about the Business plan or a custom enterprise agreement.
+</Callout>

@@ -26,11 +26,13 @@ import {
 } from '@/lib/cms/ai/image-generation'
 import {
   uploadTenantMedia,
-  R2_CONFIG,
+  getStorageConfig,
+  getS3Client,
 } from '@/lib/cms/r2/client'
 import { createMedia } from '@/lib/cms/media'
 import { rateLimitCheck } from '@/lib/cms/rate-limit'
 import type { RateLimitConfig } from '@/lib/cms/rate-limit'
+import { getTenantIdBySubdomain } from '@/lib/cms/media/tenant'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60 // Image generation can take 30-60s
@@ -158,6 +160,7 @@ export async function POST(request: NextRequest) {
 
     // 6. Get tenant subdomain for scoped storage
     const subdomain = await getSubdomain()
+    const tenantId = subdomain ? await getTenantIdBySubdomain(subdomain) : null
 
     // 7. Upload each generated image to storage and create Media records
     const uploadedImages: Array<{
@@ -179,8 +182,11 @@ export async function POST(request: NextRequest) {
       let storageBucket: string
       let storageProvider: 'R2' | 'S3' | 'LOCAL' = 'LOCAL'
 
-      if (subdomain && R2_CONFIG.isConfigured) {
-        // Tenant-scoped upload to R2
+      // Get DB-driven storage config
+      const storageConf = await getStorageConfig()
+
+      if (subdomain && storageConf.isConfigured) {
+        // Tenant-scoped upload to R2/S3
         const r2Result = await uploadTenantMedia(
           subdomain,
           imageBuffer,
@@ -190,21 +196,21 @@ export async function POST(request: NextRequest) {
         )
 
         if (!r2Result) {
-          console.error('Failed to upload generated image to R2')
+          console.error('Failed to upload generated image to storage')
           continue
         }
 
         imageUrl = r2Result.url
         storageKey = r2Result.key
-        storageBucket = R2_CONFIG.bucketName
-        storageProvider = 'R2'
-      } else if (R2_CONFIG.isConfigured) {
-        // Non-tenant upload to R2 (global ai-generated prefix)
+        storageBucket = storageConf.bucketName
+        storageProvider = storageConf.provider === 'r2' ? 'R2' : 'S3'
+      } else if (storageConf.isConfigured) {
+        // Non-tenant upload (global ai-generated prefix)
         const { PutObjectCommand } = await import('@aws-sdk/client-s3')
-        const { r2Client } = await import('@/lib/cms/r2/client')
+        const s3Client = await getS3Client()
 
         storageKey = `ai-generated/${new Date().toISOString().slice(0, 10)}/${filename}`
-        storageBucket = R2_CONFIG.bucketName
+        storageBucket = storageConf.bucketName
 
         const command = new PutObjectCommand({
           Bucket: storageBucket,
@@ -214,9 +220,9 @@ export async function POST(request: NextRequest) {
           CacheControl: 'public, max-age=31536000, immutable',
         })
 
-        await r2Client.send(command)
-        imageUrl = `${R2_CONFIG.publicUrl}/${storageKey}`
-        storageProvider = 'R2'
+        await s3Client.send(command)
+        imageUrl = `${storageConf.publicUrl}/${storageKey}`
+        storageProvider = storageConf.provider === 'r2' ? 'R2' : 'S3'
       } else {
         // Fallback: store locally via the upload system
         const fs = await import('fs/promises')
@@ -259,6 +265,7 @@ export async function POST(request: NextRequest) {
           bucket: storageBucket,
           key: storageKey,
           uploadedById: user.id,
+          tenantId: tenantId ?? undefined,
         })
 
         uploadedImages.push({

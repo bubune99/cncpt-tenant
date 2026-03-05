@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getOrCreateCart, clearCart } from '@/lib/cms/cart';
 import { getCurrentUserId } from '@/lib/cms/cart/auth';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,8 @@ const CART_SESSION_COOKIE = 'cart_session_id';
 
 // POST - Clear cart
 export async function POST(request: NextRequest) {
-  try {
+  return withTenant(request, async () => {
+    try {
     // Get session
     const cookieStore = await cookies();
     const sessionId = cookieStore.get(CART_SESSION_COOKIE)?.value;
@@ -40,11 +42,12 @@ export async function POST(request: NextRequest) {
       cart: updatedCart,
       message: 'Cart cleared',
     });
-  } catch (error) {
-    console.error('Clear cart error:', error);
-    return NextResponse.json(
-      { error: 'Failed to clear cart' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Clear cart error:', error);
+      return NextResponse.json(
+        { error: 'Failed to clear cart' },
+        { status: 500 }
+      );
+    }
+  })
 }

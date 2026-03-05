@@ -3,13 +3,16 @@
  * Returns diagnostic information about the chat configuration
  */
 
+import { NextRequest } from 'next/server';
 import { stackServerApp } from '@/lib/cms/stack';
 import { prisma } from '@/lib/cms/db';
 import { isAiAvailable, getAiStatus } from '@/lib/cms/ai';
 import { getAiSettings } from '@/lib/cms/settings';
 import { myProvider } from '@/lib/cms/ai/providers';
+import { withTenant } from '@/lib/cms/api/tenant';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   const diagnostics: Record<string, any> = {
     timestamp: new Date().toISOString(),
     checks: {},
@@ -125,4 +128,5 @@ export async function GET() {
   };
 
   return Response.json(diagnostics, { status: 200 });
+  })
 }

@@ -6,10 +6,12 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { recordEmailClick } from '@/lib/cms/email/tracking'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   const searchParams = request.nextUrl.searchParams
   const recipientId = searchParams.get('r')
   const originalUrl = searchParams.get('u')
@@ -59,5 +61,6 @@ export async function GET(request: NextRequest) {
     headers: {
       'Cache-Control': 'no-store, no-cache, must-revalidate',
     },
+  })
   })
 }

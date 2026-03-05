@@ -12,13 +12,15 @@ import { prisma } from "@/lib/cms/db"
 import { generateApiKey } from "@/lib/cms/mcp/auth"
 import { validateScopes, MCP_SCOPES } from "@/lib/cms/mcp/scopes"
 import { RATE_LIMIT_TIERS } from "@/lib/cms/mcp/rate-limit"
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = "force-dynamic"
 
 /**
  * GET /api/cms/api-keys - List user's API keys
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const user = await stackServerApp.getUser()
     if (!user) {
@@ -65,6 +67,7 @@ export async function GET() {
       { status: 500 }
     )
   }
+  })
 }
 
 /**
@@ -78,6 +81,7 @@ export async function GET() {
  * - rateLimitTier: string (optional) - Rate limit tier (free, pro, enterprise)
  */
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const user = await stackServerApp.getUser()
     if (!user) {
@@ -176,12 +180,14 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
+  })
 }
 
 /**
  * DELETE /api/cms/api-keys - Revoke an API key
  */
 export async function DELETE(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const user = await stackServerApp.getUser()
     if (!user) {
@@ -234,4 +240,5 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     )
   }
+  })
 }

@@ -62,6 +62,7 @@ export default async function StorefrontLayout({
   };
 
   const navLinks = [
+    { href: '/shop', label: 'Shop' },
     { href: '/posts', label: 'Blog' },
     { href: '/categories', label: 'Categories' },
   ];
@@ -107,6 +108,14 @@ export default async function StorefrontLayout({
             <div>
               <h3 className="font-semibold mb-3 sm:mb-4">Links</h3>
               <ul className="space-y-2 text-sm">
+                <li>
+                  <Link
+                    href="/shop"
+                    className="text-muted-foreground hover:text-foreground inline-block py-1"
+                  >
+                    Shop
+                  </Link>
+                </li>
                 <li>
                   <Link
                     href="/posts"

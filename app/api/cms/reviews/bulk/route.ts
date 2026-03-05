@@ -10,12 +10,14 @@ import {
   bulkRejectReviews,
   bulkDeleteReviews,
 } from '@/lib/cms/reviews';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
 // POST - Bulk actions
 export async function POST(request: NextRequest) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const body = await request.json();
 
     // Validate
@@ -77,11 +79,12 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
     }
-  } catch (error) {
-    console.error('Bulk review action error:', error);
-    return NextResponse.json(
-      { error: 'Failed to perform bulk action' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Bulk review action error:', error);
+      return NextResponse.json(
+        { error: 'Failed to perform bulk action' },
+        { status: 500 }
+      );
+    }
+  })
 }

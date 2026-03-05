@@ -6,10 +6,12 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { subscribeEmail } from '@/lib/cms/email/subscriptions'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const body = await request.json()
     const { email, firstName, lastName, name, source, tags, doubleOptIn } = body
@@ -54,4 +56,5 @@ export async function POST(request: NextRequest) {
     console.error('Subscribe error:', error)
     return NextResponse.json({ success: false, error: 'Failed to subscribe' }, { status: 500 })
   }
+  })
 }

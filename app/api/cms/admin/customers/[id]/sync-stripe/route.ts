@@ -11,6 +11,7 @@ import {
   syncCustomerToStripe,
   getCustomerSyncStatus,
 } from '@/lib/cms/stripe/customer-sync'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,6 +20,7 @@ interface RouteParams {
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
+  return withTenant(request, async () => {
   try {
     const { id } = await params
     const body = await request.json().catch(() => ({}))
@@ -65,9 +67,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       { status: 500 }
     )
   }
+  })
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
+  return withTenant(request, async () => {
   try {
     const { id } = await params
 
@@ -86,4 +90,5 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       { status: 500 }
     )
   }
+  })
 }

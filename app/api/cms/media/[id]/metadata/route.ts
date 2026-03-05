@@ -9,13 +9,17 @@
  * GET /api/cms/media/[id]/metadata
  *   Get the video metadata for a media record.
  *
- * All endpoints require authentication.
+ * All endpoints require authentication and tenant context.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
 import { isVideoMimeType } from '@/lib/cms/media/video-utils'
 import { stackServerApp } from '@/lib/cms/stack'
+import {
+  resolveTenantContext,
+  tenantRequiredResponse,
+} from '@/lib/cms/media/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -47,12 +51,17 @@ export async function GET(
       )
     }
 
+    // Resolve tenant context
+    const tenant = await resolveTenantContext(request, user.id)
+    if (!tenant) return tenantRequiredResponse()
+
     const { id } = await params
 
     const media = await db.media.findUnique({
       where: { id },
       select: {
         id: true,
+        tenantId: true,
         mimeType: true,
         width: true,
         height: true,
@@ -62,7 +71,7 @@ export async function GET(
       },
     })
 
-    if (!media) {
+    if (!media || media.tenantId !== tenant.tenantId) {
       return NextResponse.json({ error: 'Media not found' }, { status: 404 })
     }
 
@@ -108,10 +117,14 @@ export async function PATCH(
       )
     }
 
+    // Resolve tenant context
+    const tenant = await resolveTenantContext(request, user.id)
+    if (!tenant) return tenantRequiredResponse()
+
     const { id } = await params
     const body = await request.json()
 
-    // Validate the media record exists
+    // Validate the media record exists and belongs to this tenant
     const media = await db.media.findUnique({
       where: { id },
       select: {
@@ -121,7 +134,7 @@ export async function PATCH(
       },
     })
 
-    if (!media) {
+    if (!media || media.tenantId !== tenant.tenantId) {
       return NextResponse.json({ error: 'Media not found' }, { status: 404 })
     }
 

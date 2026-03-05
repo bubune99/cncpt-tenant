@@ -3,14 +3,17 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { uploadImage, R2_CONFIG } from "@/lib/cms/r2";
+import { uploadImage, getStorageConfig } from "@/lib/cms/r2";
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
-  if (!R2_CONFIG.isConfigured) {
+  return withTenant(request, async () => {
+  const storageConfig = await getStorageConfig();
+  if (!storageConfig.isConfigured) {
     return NextResponse.json(
-      { error: "R2 storage is not configured" },
+      { error: "Storage is not configured. Configure via Admin > Settings > Storage or set env vars." },
       { status: 503 }
     );
   }
@@ -69,4 +72,5 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+  })
 }

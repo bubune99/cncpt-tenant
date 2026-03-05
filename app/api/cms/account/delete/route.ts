@@ -16,6 +16,7 @@ import { unsubscribeEmail } from '@/lib/cms/email/subscriptions';
 import crypto from 'crypto';
 import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit';
 import { validateCsrf } from '@/lib/cms/csrf';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 /**
  * Generate an anonymized identifier from a user ID.
@@ -27,6 +28,7 @@ function anonymize(value: string): string {
 }
 
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.auth);
   if (limited) return limited;
 
@@ -297,4 +299,5 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+  })
 }

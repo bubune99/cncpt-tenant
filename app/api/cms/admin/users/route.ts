@@ -1,20 +1,61 @@
 /**
  * Admin Users API
  *
- * GET /api/admin/users - List all users with roles
+ * GET /api/admin/users - List users scoped to the current tenant
  *
  * Uses isAdminUser() check for authorization to be consistent with
- * frontend admin access control.
+ * frontend admin access control. Non-super-admin users only see
+ * users who belong to the same subdomain (owner + team members).
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
 import { stackServerApp } from '@/lib/cms/stack'
 import { isAdminUser } from '@/lib/cms/admin-config'
+import { isSuperAdmin } from '@/lib/super-admin'
+import { sql } from '@/lib/neon'
 
 export const dynamic = 'force-dynamic'
 
-// GET - List all users with their roles
+/**
+ * Get all Stack Auth user IDs associated with a subdomain
+ * (the owner + all team members with access to this subdomain).
+ */
+async function getSubdomainUserIds(subdomain: string): Promise<string[]> {
+  try {
+    // Get the subdomain owner
+    const ownerResult = await sql`
+      SELECT user_id FROM subdomains WHERE subdomain = ${subdomain}
+    `
+
+    const userIds = new Set<string>()
+
+    if (ownerResult.length > 0 && ownerResult[0].user_id) {
+      userIds.add(ownerResult[0].user_id as string)
+    }
+
+    // Get team members who have access to this subdomain
+    const teamResult = await sql`
+      SELECT DISTINCT tm.user_id
+      FROM team_subdomains ts
+      JOIN team_members tm ON ts.team_id = tm.team_id
+      WHERE ts.subdomain = ${subdomain}
+    `
+
+    for (const row of teamResult) {
+      if (row.user_id) {
+        userIds.add(row.user_id as string)
+      }
+    }
+
+    return Array.from(userIds)
+  } catch (error) {
+    console.error('[admin-users] Error getting subdomain user IDs:', error)
+    return []
+  }
+}
+
+// GET - List users with their roles, scoped to the current tenant
 export async function GET(request: NextRequest) {
   try {
     // Check authentication via Stack Auth
@@ -38,9 +79,31 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     const hasRoles = searchParams.get('hasRoles')
 
+    // Determine tenant scoping: super admins see all, others see only their subdomain's users
+    const superAdmin = await isSuperAdmin(user.id)
+    const subdomain = request.headers.get('x-subdomain')
+
+    let stackAuthIdFilter: { stackAuthId: { in: string[] } } | Record<string, never> = {}
+
+    if (!superAdmin && subdomain) {
+      // Scope to users who belong to this subdomain (owner + team members)
+      const allowedStackAuthIds = await getSubdomainUserIds(subdomain)
+
+      if (allowedStackAuthIds.length === 0) {
+        // No users found for this subdomain — return empty
+        return NextResponse.json({ users: [], total: 0 })
+      }
+
+      stackAuthIdFilter = { stackAuthId: { in: allowedStackAuthIds } }
+    } else if (!superAdmin && !subdomain) {
+      // Non-super-admin without subdomain context — return empty for safety
+      return NextResponse.json({ users: [], total: 0 })
+    }
+
     const users = await prisma.user.findMany({
       where: {
         AND: [
+          stackAuthIdFilter,
           search
             ? {
                 OR: [
@@ -94,7 +157,7 @@ export async function GET(request: NextRequest) {
       }))
 
       // Check if user is super admin
-      const isSuperAdmin = user.roleAssignments.some((ra) =>
+      const userIsSuperAdmin = user.roleAssignments.some((ra) =>
         (ra.role.permissions as string[]).includes('*')
       )
 
@@ -105,7 +168,7 @@ export async function GET(request: NextRequest) {
         image: user.avatar,
         roles,
         permissionCount: user.permissions.length,
-        isSuperAdmin,
+        isSuperAdmin: userIsSuperAdmin,
         createdAt: user.createdAt.toISOString(),
         lastLogin: null, // Would need to track this separately
       }

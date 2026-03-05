@@ -13,6 +13,7 @@ import {
   getStripeSettings,
 } from '@/lib/cms/stripe'
 import type { CreateCheckoutSessionRequest, CheckoutItem } from '@/lib/cms/stripe/types'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,6 +29,7 @@ interface CreateSessionBody {
 }
 
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const settings = await getStripeSettings()
 
@@ -128,9 +130,11 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
+  })
 }
 
 export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const { searchParams } = new URL(request.url)
     const sessionId = searchParams.get('sessionId')
@@ -160,4 +164,5 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
+  })
 }

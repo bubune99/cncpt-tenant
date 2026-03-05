@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/cms/db';
+import { withTenant } from '@/lib/cms/api/tenant';
 import {
   ucpEnvelope,
   type UcpOrder,
@@ -30,6 +31,7 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  return withTenant(_request, async () => {
   try {
     const { id } = await params;
 
@@ -137,6 +139,7 @@ export async function GET(
       { status: 500, headers: { 'Access-Control-Allow-Origin': '*' } }
     );
   }
+  })
 }
 
 // CORS preflight

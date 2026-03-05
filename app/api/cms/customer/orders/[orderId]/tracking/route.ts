@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stackServerApp } from '@/lib/cms/stack';
 import { prisma } from '@/lib/cms/db';
 import { getTracking, type CarrierType } from '@/lib/cms/shippo';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -17,8 +18,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ orderId: string }> }
 ) {
-  try {
-    const { orderId } = await params;
+  return withTenant(request, async () => {
+    try {
+      const { orderId } = await params;
 
     // Get authenticated user from Stack Auth
     const stackUser = await stackServerApp.getUser();
@@ -152,13 +154,14 @@ export async function GET(
         trackingError: 'Unable to fetch real-time tracking. Please check the carrier website directly.',
       });
     }
-  } catch (error) {
-    console.error('Error fetching order tracking:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch tracking information' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Error fetching order tracking:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch tracking information' },
+        { status: 500 }
+      );
+    }
+  })
 }
 
 // Map Shippo tracking status to our ShipmentStatus enum

@@ -68,6 +68,7 @@ export type AuditAction =
   | 'route.create'
   | 'route.update'
   | 'route.delete'
+  | 'shopify.sync'
 
 // Audit log entry
 export interface AuditLogEntry {

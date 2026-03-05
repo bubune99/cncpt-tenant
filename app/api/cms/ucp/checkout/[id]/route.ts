@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
 import { prisma } from '@/lib/cms/db';
 import { getUcpSession, updateUcpSession } from '@/lib/cms/ucp/sessions';
+import { withTenant } from '@/lib/cms/api/tenant';
 import {
   ucpEnvelope,
   stripePaymentHandler,
@@ -29,6 +30,7 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  return withTenant(_request, async () => {
   try {
     const { id } = await params;
     const session = getUcpSession(id);
@@ -50,6 +52,7 @@ export async function GET(
       { status: 500, headers: { 'Access-Control-Allow-Origin': '*' } }
     );
   }
+  })
 }
 
 interface UpdateCheckoutBody {
@@ -62,6 +65,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  return withTenant(request, async () => {
   try {
     const { id } = await params;
     const session = getUcpSession(id);
@@ -192,6 +196,7 @@ export async function PATCH(
       { status: 500, headers: { 'Access-Control-Allow-Origin': '*' } }
     );
   }
+  })
 }
 
 // CORS preflight

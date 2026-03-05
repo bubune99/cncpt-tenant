@@ -1,59 +1,64 @@
 /**
  * Blog Categories API
  *
- * GET /api/blog/categories - List all categories
- * POST /api/blog/categories - Create a new category
+ * GET /api/blog/categories - List all categories (tenant-scoped)
+ * POST /api/blog/categories - Create a new category (tenant-scoped)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { listCategories, createCategory } from '@/lib/cms/blog'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url)
+  return withTenant(request, async (tenant) => {
+    try {
+      const { searchParams } = new URL(request.url)
 
-    const options = {
-      parentId: searchParams.has('parentId')
-        ? searchParams.get('parentId') || null
-        : undefined,
-      search: searchParams.get('search') || undefined,
-      limit: parseInt(searchParams.get('limit') || '100'),
-      offset: parseInt(searchParams.get('offset') || '0'),
+      const options = {
+        parentId: searchParams.has('parentId')
+          ? searchParams.get('parentId') || null
+          : undefined,
+        search: searchParams.get('search') || undefined,
+        limit: parseInt(searchParams.get('limit') || '100'),
+        offset: parseInt(searchParams.get('offset') || '0'),
+        tenantId: tenant.tenantId,
+      }
+
+      const result = await listCategories(options)
+      return NextResponse.json(result)
+    } catch (error) {
+      console.error('List categories error:', error)
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Failed to list categories' },
+        { status: 500 }
+      )
     }
-
-    const result = await listCategories(options)
-
-    return NextResponse.json(result)
-  } catch (error) {
-    console.error('List categories error:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to list categories' },
-      { status: 500 }
-    )
-  }
+  })
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
+  return withTenant(request, async (tenant) => {
+    try {
+      const body = await request.json()
 
-    if (!body.name) {
+      if (!body.name) {
+        return NextResponse.json(
+          { error: 'Category name is required' },
+          { status: 400 }
+        )
+      }
+
+      body.tenantId = tenant.tenantId
+      const category = await createCategory(body)
+      return NextResponse.json(category, { status: 201 })
+    } catch (error) {
+      console.error('Create category error:', error)
       return NextResponse.json(
-        { error: 'Category name is required' },
-        { status: 400 }
+        { error: error instanceof Error ? error.message : 'Failed to create category' },
+        { status: 500 }
       )
     }
-
-    const category = await createCategory(body)
-
-    return NextResponse.json(category, { status: 201 })
-  } catch (error) {
-    console.error('Create category error:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create category' },
-      { status: 500 }
-    )
-  }
+  })
 }

@@ -1,0 +1,44 @@
+{
+  "sections": [
+    {
+      "title": "Getting Started",
+      "pages": [
+        { "slug": "getting-started", "title": "Quick Start Guide" },
+        { "slug": "dashboard-overview", "title": "Dashboard Overview" }
+      ]
+    },
+    {
+      "title": "Site Management",
+      "pages": [
+        { "slug": "managing-sites", "title": "Managing Sites" },
+        { "slug": "custom-domains", "title": "Custom Domains" },
+        { "slug": "branding-white-label", "title": "Branding & White Label" }
+      ]
+    },
+    {
+      "title": "Collaboration",
+      "pages": [
+        { "slug": "teams-collaboration", "title": "Teams & Collaboration" }
+      ]
+    },
+    {
+      "title": "AI & Credits",
+      "pages": [
+        { "slug": "ai-credits-chat", "title": "AI Credits & Chat" }
+      ]
+    },
+    {
+      "title": "Billing",
+      "pages": [
+        { "slug": "billing-plans", "title": "Billing & Plans" }
+      ]
+    },
+    {
+      "title": "Advanced",
+      "pages": [
+        { "slug": "api-basics", "title": "API Basics" },
+        { "slug": "faq", "title": "FAQ" }
+      ]
+    }
+  ]
+}

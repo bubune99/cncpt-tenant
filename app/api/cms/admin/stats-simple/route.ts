@@ -4,12 +4,14 @@
  * GET /api/admin/stats-simple - Get basic admin dashboard statistics
  */
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     // Get counts in parallel
     const [
@@ -44,4 +46,5 @@ export async function GET() {
       },
     })
   }
+  })
 }

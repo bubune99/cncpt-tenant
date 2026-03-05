@@ -14,6 +14,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/cms/db';
 import { getBaseUrl } from '@/lib/cms/ucp/types';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,6 +37,7 @@ interface MerchantProduct {
 }
 
 export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   const format = request.nextUrl.searchParams.get('format') || 'json';
   const baseUrl = getBaseUrl();
 
@@ -121,6 +123,7 @@ export async function GET(request: NextRequest) {
       },
     }
   );
+  })
 }
 
 function escapeXml(str: string): string {

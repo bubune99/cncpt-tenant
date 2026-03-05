@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
 import { refundLabel, getShippingSettings } from '@/lib/cms/shippo'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,6 +16,7 @@ interface RefundRequestBody {
 }
 
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const body: RefundRequestBody = await request.json()
     const settings = await getShippingSettings()
@@ -84,4 +86,5 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
+  })
 }

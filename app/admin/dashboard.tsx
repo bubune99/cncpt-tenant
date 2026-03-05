@@ -991,26 +991,107 @@ type PlatformUser = {
   id: string
   email: string
   displayName: string | null
-  createdAt: string
+  profileImageUrl: string | null
+  createdAt: string | null
+  lastActiveAt: string | null
   isAdmin: boolean
   isSuperAdmin: boolean
   subdomainCount: number
+  status: "active" | "suspended" | "deactivated"
+  suspendedAt: string | null
+  suspensionReason: string | null
+  deletedAt: string | null
+  adminNotes: string | null
+  tierOverride: string | null
+  tierName: string | null
+  creditBalance: number
 }
 
+type UserDetailData = {
+  user: PlatformUser & {
+    suspendedBy: string | null
+    deletedBy: string | null
+    superAdminPermissions: string[] | null
+  }
+  subdomains: Array<{ subdomain: string; createdAt: string }>
+  teams: Array<{ id: string; name: string; slug: string; role: string }>
+  recentActivity: Array<{ id: string; action: string; details: Record<string, unknown>; createdAt: string }>
+}
+
+type PlatformInvite = {
+  id: string
+  email: string
+  name: string | null
+  invitedBy: string
+  invitedByEmail: string | null
+  tier: string
+  message: string | null
+  token: string
+  status: "pending" | "accepted" | "expired" | "revoked"
+  acceptedAt: string | null
+  expiresAt: string
+  createdAt: string
+  inviteLink: string
+}
+
+type UserStatusFilter = "all" | "active" | "suspended" | "deactivated"
+type UserRoleFilter = "all" | "user" | "admin" | "super_admin"
+type UserSortField = "name" | "email" | "createdAt" | "lastLogin"
+
 function UsersSection() {
+  // === User list state ===
   const [users, setUsers] = useState<PlatformUser[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
-  const [selectedUser, setSelectedUser] = useState<PlatformUser | null>(null)
-  const [userDetails, setUserDetails] = useState<{
-    subdomains: Array<{ subdomain: string; createdAt: string }>
-    teams: Array<{ id: string; name: string; slug: string; role: string }>
-  } | null>(null)
+  const [statusFilter, setStatusFilter] = useState<UserStatusFilter>("all")
+  const [roleFilter, setRoleFilter] = useState<UserRoleFilter>("all")
+  const [sortBy, setSortBy] = useState<UserSortField>("createdAt")
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({})
   const [actionLoading, setActionLoading] = useState(false)
 
+  // === Selected users for bulk actions ===
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set())
+  const [bulkActionLoading, setBulkActionLoading] = useState(false)
+
+  // === User detail panel ===
+  const [selectedUser, setSelectedUser] = useState<PlatformUser | null>(null)
+  const [userDetails, setUserDetails] = useState<UserDetailData | null>(null)
+  const [detailTab, setDetailTab] = useState<"profile" | "subdomains" | "activity" | "notes">("profile")
+
+  // === Suspend dialog ===
+  const [suspendUser, setSuspendUser] = useState<PlatformUser | null>(null)
+  const [suspendReason, setSuspendReason] = useState("")
+
+  // === Delete dialog ===
+  const [deleteUser, setDeleteUser] = useState<PlatformUser | null>(null)
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState("")
+  const [deleteReason, setDeleteReason] = useState("")
+
+  // === Admin notes ===
+  const [editingNotes, setEditingNotes] = useState(false)
+  const [notesText, setNotesText] = useState("")
+  const [savingNotes, setSavingNotes] = useState(false)
+
+  // === Invite dialog ===
+  const [showInviteDialog, setShowInviteDialog] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState("")
+  const [inviteName, setInviteName] = useState("")
+  const [inviteTier, setInviteTier] = useState("starter")
+  const [inviteMessage, setInviteMessage] = useState("")
+  const [inviting, setInviting] = useState(false)
+
+  // === Invites list ===
+  const [showInvites, setShowInvites] = useState(false)
+  const [invites, setInvites] = useState<PlatformInvite[]>([])
+  const [invitesLoading, setInvitesLoading] = useState(false)
+  const [inviteStatusCounts, setInviteStatusCounts] = useState<Record<string, number>>({})
+  const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null)
+
+  // === Fetch users ===
   const fetchUsers = useCallback(async () => {
     setLoading(true)
     try {
@@ -1018,6 +1099,10 @@ function UsersSection() {
         page: page.toString(),
         limit: "20",
         ...(search && { search }),
+        status: statusFilter,
+        role: roleFilter,
+        sortBy,
+        sortOrder,
       })
       const res = await fetch(`/api/super-admin/users?${params}`)
       if (res.ok) {
@@ -1025,24 +1110,27 @@ function UsersSection() {
         setUsers(data.users)
         setTotalPages(data.totalPages)
         setTotal(data.total)
+        if (data.statusCounts) setStatusCounts(data.statusCounts)
       }
     } catch (error) {
       console.error("Failed to fetch users:", error)
     } finally {
       setLoading(false)
     }
-  }, [page, search])
+  }, [page, search, statusFilter, roleFilter, sortBy, sortOrder])
 
   useEffect(() => {
     fetchUsers()
   }, [fetchUsers])
 
+  // === Fetch user details ===
   const fetchUserDetails = async (userId: string) => {
     try {
       const res = await fetch(`/api/super-admin/users/${userId}`)
       if (res.ok) {
         const data = await res.json()
-        setUserDetails({ subdomains: data.subdomains, teams: data.teams })
+        setUserDetails(data)
+        setNotesText(data.user?.adminNotes || "")
       }
     } catch (error) {
       console.error("Failed to fetch user details:", error)
@@ -1052,9 +1140,29 @@ function UsersSection() {
   const handleViewUser = (user: PlatformUser) => {
     setSelectedUser(user)
     setUserDetails(null)
+    setDetailTab("profile")
+    setEditingNotes(false)
     fetchUserDetails(user.id)
   }
 
+  // === Fetch invites ===
+  const fetchInvites = useCallback(async () => {
+    setInvitesLoading(true)
+    try {
+      const res = await fetch("/api/super-admin/users/invites")
+      if (res.ok) {
+        const data = await res.json()
+        setInvites(data.invites)
+        if (data.statusCounts) setInviteStatusCounts(data.statusCounts)
+      }
+    } catch (error) {
+      console.error("Failed to fetch invites:", error)
+    } finally {
+      setInvitesLoading(false)
+    }
+  }, [])
+
+  // === User actions ===
   const handleToggleAdmin = async (user: PlatformUser, makeAdmin: boolean) => {
     setActionLoading(true)
     try {
@@ -1063,9 +1171,7 @@ function UsersSection() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isAdmin: makeAdmin }),
       })
-      if (res.ok) {
-        fetchUsers()
-      }
+      if (res.ok) fetchUsers()
     } catch (error) {
       console.error("Failed to update user:", error)
     } finally {
@@ -1081,9 +1187,7 @@ function UsersSection() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isSuperAdmin: makeSuperAdmin }),
       })
-      if (res.ok) {
-        fetchUsers()
-      }
+      if (res.ok) fetchUsers()
     } catch (error) {
       console.error("Failed to update user:", error)
     } finally {
@@ -1091,20 +1195,405 @@ function UsersSection() {
     }
   }
 
+  const handleSuspend = async () => {
+    if (!suspendUser) return
+    setActionLoading(true)
+    try {
+      const res = await fetch(`/api/super-admin/users/${suspendUser.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "suspend", reason: suspendReason }),
+      })
+      if (res.ok) {
+        setSuspendUser(null)
+        setSuspendReason("")
+        setSelectedUser(null)
+        fetchUsers()
+      }
+    } catch (error) {
+      console.error("Failed to suspend user:", error)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleUnsuspend = async (user: PlatformUser) => {
+    setActionLoading(true)
+    try {
+      const res = await fetch(`/api/super-admin/users/${user.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "unsuspend" }),
+      })
+      if (res.ok) {
+        setSelectedUser(null)
+        fetchUsers()
+      }
+    } catch (error) {
+      console.error("Failed to unsuspend user:", error)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!deleteUser || deleteConfirmEmail !== deleteUser.email) return
+    setActionLoading(true)
+    try {
+      const res = await fetch(`/api/super-admin/users/${deleteUser.id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: true, reason: deleteReason }),
+      })
+      if (res.ok) {
+        setDeleteUser(null)
+        setDeleteConfirmEmail("")
+        setDeleteReason("")
+        setSelectedUser(null)
+        fetchUsers()
+      }
+    } catch (error) {
+      console.error("Failed to delete user:", error)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleSaveNotes = async () => {
+    if (!selectedUser) return
+    setSavingNotes(true)
+    try {
+      const res = await fetch(`/api/super-admin/users/${selectedUser.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminNotes: notesText }),
+      })
+      if (res.ok) {
+        setEditingNotes(false)
+        fetchUserDetails(selectedUser.id)
+      }
+    } catch (error) {
+      console.error("Failed to save notes:", error)
+    } finally {
+      setSavingNotes(false)
+    }
+  }
+
+  const handleInvite = async () => {
+    if (!inviteEmail) return
+    setInviting(true)
+    try {
+      const res = await fetch("/api/super-admin/users/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: inviteEmail,
+          name: inviteName || undefined,
+          tier: inviteTier,
+          message: inviteMessage || undefined,
+        }),
+      })
+      if (res.ok) {
+        setShowInviteDialog(false)
+        setInviteEmail("")
+        setInviteName("")
+        setInviteTier("starter")
+        setInviteMessage("")
+        if (showInvites) fetchInvites()
+      } else {
+        const data = await res.json()
+        alert(data.error || "Failed to send invite")
+      }
+    } catch (error) {
+      console.error("Failed to send invite:", error)
+    } finally {
+      setInviting(false)
+    }
+  }
+
+  const handleRevokeInvite = async (inviteId: string) => {
+    try {
+      const res = await fetch("/api/super-admin/users/invites", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inviteId }),
+      })
+      if (res.ok) fetchInvites()
+    } catch (error) {
+      console.error("Failed to revoke invite:", error)
+    }
+  }
+
+  const handleResendInvite = async (inviteId: string) => {
+    try {
+      const res = await fetch("/api/super-admin/users/invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inviteId }),
+      })
+      if (res.ok) fetchInvites()
+    } catch (error) {
+      console.error("Failed to resend invite:", error)
+    }
+  }
+
+  const handleCopyInviteLink = (inviteLink: string, inviteId: string) => {
+    navigator.clipboard.writeText(inviteLink)
+    setCopiedInviteId(inviteId)
+    setTimeout(() => setCopiedInviteId(null), 2000)
+  }
+
+  // === Bulk actions ===
+  const toggleSelectUser = (userId: string) => {
+    setSelectedUserIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(userId)) next.delete(userId)
+      else next.add(userId)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedUserIds.size === users.length) {
+      setSelectedUserIds(new Set())
+    } else {
+      setSelectedUserIds(new Set(users.map((u) => u.id)))
+    }
+  }
+
+  const handleBulkSuspend = async () => {
+    if (selectedUserIds.size === 0) return
+    setBulkActionLoading(true)
+    try {
+      const promises = Array.from(selectedUserIds).map((userId) =>
+        fetch(`/api/super-admin/users/${userId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "suspend", reason: "Bulk suspension by admin" }),
+        })
+      )
+      await Promise.allSettled(promises)
+      setSelectedUserIds(new Set())
+      fetchUsers()
+    } catch (error) {
+      console.error("Bulk suspend failed:", error)
+    } finally {
+      setBulkActionLoading(false)
+    }
+  }
+
+  // === Sorting ===
+  const handleSort = (field: UserSortField) => {
+    if (sortBy === field) {
+      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
+    } else {
+      setSortBy(field)
+      setSortOrder("desc")
+    }
+    setPage(1)
+  }
+
+  const SortIndicator = ({ field }: { field: UserSortField }) => {
+    if (sortBy !== field) return null
+    return <span className="ml-1 text-orange-400">{sortOrder === "asc" ? "\u2191" : "\u2193"}</span>
+  }
+
+  // === Status badge ===
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "active":
+        return <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">Active</Badge>
+      case "suspended":
+        return <Badge className="bg-red-500/10 text-red-400 border-red-500/20">Suspended</Badge>
+      case "deactivated":
+        return <Badge className="bg-slate-500/10 text-slate-400 border-slate-500/20">Deactivated</Badge>
+      default:
+        return <Badge className="bg-slate-700 text-slate-300">{status}</Badge>
+    }
+  }
+
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return "-"
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
+  }
+
+  const formatDateTime = (dateStr: string | null) => {
+    if (!dateStr) return "-"
+    return new Date(dateStr).toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    })
+  }
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-xl font-semibold text-white">User Management</h2>
           <p className="text-sm text-slate-400">{total} total users</p>
         </div>
-        <Button onClick={fetchUsers} variant="outline" size="sm" className="bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => { setShowInvites(!showInvites); if (!showInvites) fetchInvites() }}
+            variant="outline"
+            size="sm"
+            className={`bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5 ${showInvites ? "border-orange-500/30 text-orange-400" : ""}`}
+          >
+            <Mail className="h-4 w-4 mr-2" />
+            Invites {(inviteStatusCounts.pending || 0) > 0 && <Badge className="ml-1 bg-orange-500/20 text-orange-400 text-[10px] px-1.5">{inviteStatusCounts.pending}</Badge>}
+          </Button>
+          <Button
+            onClick={() => setShowInviteDialog(true)}
+            size="sm"
+            className="bg-gradient-to-r from-blue-700 to-orange-500 hover:from-blue-600 hover:to-orange-400 text-white border-0"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Invite User
+          </Button>
+          <Button onClick={fetchUsers} variant="outline" size="sm" className="bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
-      <div className="flex gap-4">
+      {/* Invites Panel */}
+      {showInvites && (
+        <Card className="bg-slate-800/50 border-white/[0.08]">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-white text-base flex items-center gap-2">
+                <Mail className="h-4 w-4 text-orange-400" />
+                Pending Invitations
+              </CardTitle>
+              <Button onClick={fetchInvites} variant="ghost" size="sm" className="text-slate-400 hover:text-white">
+                <RefreshCw className="h-3 w-3" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {invitesLoading ? (
+              <div className="flex justify-center py-6">
+                <Loader2 className="h-5 w-5 animate-spin text-orange-400" />
+              </div>
+            ) : invites.length === 0 ? (
+              <p className="text-sm text-slate-500 text-center py-4">No invites sent yet</p>
+            ) : (
+              <div className="space-y-2">
+                {invites.map((inv) => (
+                  <div key={inv.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-900/50 border border-white/[0.05]">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-8 w-8 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0">
+                        <Mail className="h-3.5 w-3.5 text-slate-400" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-white truncate">
+                          {inv.name || inv.email}
+                        </div>
+                        <div className="text-xs text-slate-400 truncate">{inv.email}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Badge className={
+                        inv.status === "pending" ? "bg-amber-500/10 text-amber-400 border-amber-500/20" :
+                        inv.status === "accepted" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
+                        inv.status === "expired" ? "bg-slate-500/10 text-slate-400 border-slate-500/20" :
+                        "bg-red-500/10 text-red-400 border-red-500/20"
+                      }>
+                        {inv.status}
+                      </Badge>
+                      <span className="text-xs text-slate-500">{formatDate(inv.createdAt)}</span>
+                      {inv.status === "pending" && (
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleCopyInviteLink(inv.inviteLink, inv.id)}
+                            className="h-7 px-2 text-slate-400 hover:text-white"
+                            title="Copy invite link"
+                          >
+                            {copiedInviteId === inv.id ? (
+                              <span className="text-emerald-400 text-xs">Copied</span>
+                            ) : (
+                              <span className="text-xs">Copy Link</span>
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleResendInvite(inv.id)}
+                            className="h-7 px-2 text-slate-400 hover:text-white"
+                            title="Resend invite"
+                          >
+                            <RefreshCw className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRevokeInvite(inv.id)}
+                            className="h-7 px-2 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                            title="Revoke invite"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
+                      {inv.status === "expired" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleResendInvite(inv.id)}
+                          className="h-7 px-2 text-orange-400 hover:text-orange-300"
+                          title="Resend invite"
+                        >
+                          <RefreshCw className="h-3 w-3 mr-1" />
+                          <span className="text-xs">Resend</span>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Status Filter Tabs */}
+      <div className="flex items-center gap-1 bg-slate-800/30 rounded-lg p-1 w-fit">
+        {([
+          { key: "all" as UserStatusFilter, label: "All" },
+          { key: "active" as UserStatusFilter, label: "Active" },
+          { key: "suspended" as UserStatusFilter, label: "Suspended" },
+          { key: "deactivated" as UserStatusFilter, label: "Deactivated" },
+        ]).map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => { setStatusFilter(key); setPage(1) }}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              statusFilter === key
+                ? "bg-slate-700 text-white"
+                : "text-slate-400 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            {label}
+            {statusCounts[key] !== undefined && (
+              <span className="ml-1.5 text-xs text-slate-500">({statusCounts[key]})</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Search and Filters */}
+      <div className="flex gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500" />
           <Input
@@ -1117,15 +1606,80 @@ function UsersSection() {
             className="pl-10 bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
           />
         </div>
+        <select
+          value={roleFilter}
+          onChange={(e) => { setRoleFilter(e.target.value as UserRoleFilter); setPage(1) }}
+          className="bg-slate-800/50 border border-white/[0.08] text-white text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none"
+        >
+          <option value="all">All Roles</option>
+          <option value="user">Users</option>
+          <option value="admin">Admins</option>
+          <option value="super_admin">Super Admins</option>
+        </select>
       </div>
 
+      {/* Bulk Actions Bar */}
+      {selectedUserIds.size > 0 && (
+        <div className="flex items-center gap-3 bg-blue-500/10 border border-blue-500/20 rounded-lg px-4 py-3">
+          <span className="text-sm text-blue-400 font-medium">{selectedUserIds.size} selected</span>
+          <div className="flex gap-2 ml-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBulkSuspend}
+              disabled={bulkActionLoading}
+              className="bg-transparent border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+            >
+              {bulkActionLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+              Suspend Selected
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedUserIds(new Set())}
+              className="bg-transparent border-white/10 text-slate-300 hover:text-white"
+            >
+              Clear
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Users Table */}
       <Card className="bg-slate-800/50 border-white/[0.08] overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="border-white/[0.08] hover:bg-transparent">
-              <TableHead className="text-slate-400">User</TableHead>
-              <TableHead className="text-slate-400">Joined</TableHead>
-              <TableHead className="text-slate-400">Subdomains</TableHead>
+              <TableHead className="w-10">
+                <input
+                  type="checkbox"
+                  checked={users.length > 0 && selectedUserIds.size === users.length}
+                  onChange={toggleSelectAll}
+                  className="rounded border-slate-600 bg-slate-800 text-blue-500 focus:ring-blue-500/20"
+                />
+              </TableHead>
+              <TableHead className="text-slate-400">
+                <button onClick={() => handleSort("name")} className="flex items-center hover:text-white transition-colors">
+                  User<SortIndicator field="name" />
+                </button>
+              </TableHead>
+              <TableHead className="text-slate-400">Status</TableHead>
+              <TableHead className="text-slate-400">
+                <button onClick={() => handleSort("email")} className="flex items-center hover:text-white transition-colors">
+                  Tier<SortIndicator field="email" />
+                </button>
+              </TableHead>
+              <TableHead className="text-slate-400">Sites</TableHead>
+              <TableHead className="text-slate-400">
+                <button onClick={() => handleSort("lastLogin")} className="flex items-center hover:text-white transition-colors">
+                  Last Active<SortIndicator field="lastLogin" />
+                </button>
+              </TableHead>
+              <TableHead className="text-slate-400">
+                <button onClick={() => handleSort("createdAt")} className="flex items-center hover:text-white transition-colors">
+                  Joined<SortIndicator field="createdAt" />
+                </button>
+              </TableHead>
               <TableHead className="text-slate-400">Role</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
@@ -1133,40 +1687,60 @@ function UsersSection() {
           <TableBody>
             {loading ? (
               <TableRow className="border-white/[0.08]">
-                <TableCell colSpan={5} className="text-center py-12">
+                <TableCell colSpan={9} className="text-center py-12">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-400" />
                 </TableCell>
               </TableRow>
             ) : users.length === 0 ? (
               <TableRow className="border-white/[0.08]">
-                <TableCell colSpan={5} className="text-center py-12 text-slate-500">
-                  No users found
+                <TableCell colSpan={9} className="text-center py-12 text-slate-500">
+                  <Users className="h-12 w-12 text-slate-700 mx-auto mb-4" />
+                  <p>No users found</p>
                 </TableCell>
               </TableRow>
             ) : (
               users.map((user) => (
-                <TableRow key={user.id} className="border-white/[0.08] hover:bg-white/[0.02]">
+                <TableRow key={user.id} className={`border-white/[0.08] hover:bg-white/[0.02] ${user.status === "suspended" ? "opacity-70" : ""}`}>
+                  <TableCell>
+                    <input
+                      type="checkbox"
+                      checked={selectedUserIds.has(user.id)}
+                      onChange={() => toggleSelectUser(user.id)}
+                      className="rounded border-slate-600 bg-slate-800 text-blue-500 focus:ring-blue-500/20"
+                    />
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 bg-slate-700 rounded-full flex items-center justify-center">
-                        <User className="h-4 w-4 text-slate-400" />
-                      </div>
-                      <div>
-                        <div className="font-medium text-white">{user.displayName || user.email}</div>
-                        <div className="text-sm text-slate-400">{user.email}</div>
+                      {user.profileImageUrl ? (
+                        <img src={user.profileImageUrl} alt="" className="h-8 w-8 rounded-full object-cover" />
+                      ) : (
+                        <div className="h-8 w-8 bg-slate-700 rounded-full flex items-center justify-center">
+                          <User className="h-4 w-4 text-slate-400" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <div className="font-medium text-white truncate">{user.displayName || user.email}</div>
+                        <div className="text-xs text-slate-400 truncate">{user.email}</div>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-sm text-slate-400">
-                    {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}
+                  <TableCell>{getStatusBadge(user.status)}</TableCell>
+                  <TableCell className="text-sm text-slate-300">
+                    {user.tierName || <span className="text-slate-500">-</span>}
                   </TableCell>
                   <TableCell className="text-white">{user.subdomainCount}</TableCell>
+                  <TableCell className="text-sm text-slate-400">
+                    {user.lastActiveAt ? formatDate(user.lastActiveAt) : <span className="text-slate-600">Never</span>}
+                  </TableCell>
+                  <TableCell className="text-sm text-slate-400">
+                    {formatDate(user.createdAt)}
+                  </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
                       {user.isSuperAdmin && (
                         <Badge className="bg-blue-500/20 text-orange-400 border-blue-500/30 hover:bg-blue-500/30">
                           <Crown className="h-3 w-3 mr-1" />
-                          Super Admin
+                          Super
                         </Badge>
                       )}
                       {user.isAdmin && !user.isSuperAdmin && (
@@ -1177,48 +1751,51 @@ function UsersSection() {
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent align="end" className="w-48">
                         <DropdownMenuItem onClick={() => handleViewUser(user)}>
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         {user.isAdmin ? (
-                          <DropdownMenuItem
-                            onClick={() => handleToggleAdmin(user, false)}
-                            disabled={actionLoading}
-                          >
+                          <DropdownMenuItem onClick={() => handleToggleAdmin(user, false)} disabled={actionLoading}>
                             Remove Admin
                           </DropdownMenuItem>
                         ) : (
-                          <DropdownMenuItem
-                            onClick={() => handleToggleAdmin(user, true)}
-                            disabled={actionLoading}
-                          >
+                          <DropdownMenuItem onClick={() => handleToggleAdmin(user, true)} disabled={actionLoading}>
                             Make Admin
                           </DropdownMenuItem>
                         )}
                         {user.isSuperAdmin ? (
-                          <DropdownMenuItem
-                            onClick={() => handleToggleSuperAdmin(user, false)}
-                            disabled={actionLoading}
-                            className="text-red-600"
-                          >
+                          <DropdownMenuItem onClick={() => handleToggleSuperAdmin(user, false)} disabled={actionLoading} className="text-red-600">
                             Remove Super Admin
                           </DropdownMenuItem>
                         ) : (
-                          <DropdownMenuItem
-                            onClick={() => handleToggleSuperAdmin(user, true)}
-                            disabled={actionLoading}
-                          >
+                          <DropdownMenuItem onClick={() => handleToggleSuperAdmin(user, true)} disabled={actionLoading}>
                             <Crown className="h-4 w-4 mr-2" />
                             Make Super Admin
                           </DropdownMenuItem>
                         )}
+                        <DropdownMenuSeparator />
+                        {user.status === "suspended" ? (
+                          <DropdownMenuItem onClick={() => handleUnsuspend(user)} disabled={actionLoading}>
+                            <Shield className="h-4 w-4 mr-2" />
+                            Unsuspend
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem onClick={() => setSuspendUser(user)} className="text-amber-500">
+                            <Shield className="h-4 w-4 mr-2" />
+                            Suspend
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem onClick={() => setDeleteUser(user)} className="text-red-500">
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete User
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -1229,10 +1806,11 @@ function UsersSection() {
         </Table>
       </Card>
 
+      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-between items-center">
-          <p className="text-sm text-gray-500">
-            Page {page} of {totalPages}
+          <p className="text-sm text-slate-500">
+            Page {page} of {totalPages} ({total} users)
           </p>
           <div className="flex gap-2">
             <Button
@@ -1240,6 +1818,7 @@ function UsersSection() {
               size="sm"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
+              className="bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -1248,6 +1827,7 @@ function UsersSection() {
               size="sm"
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
+              className="bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -1255,90 +1835,456 @@ function UsersSection() {
         </div>
       )}
 
+      {/* ===== User Detail Dialog ===== */}
       <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-slate-900 border-white/[0.08]">
           <DialogHeader>
-            <DialogTitle>User Details</DialogTitle>
-            <DialogDescription>
-              {selectedUser?.email}
-            </DialogDescription>
+            <DialogTitle className="text-white flex items-center gap-3">
+              {selectedUser?.profileImageUrl ? (
+                <img src={selectedUser.profileImageUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
+              ) : (
+                <div className="h-10 w-10 bg-slate-700 rounded-full flex items-center justify-center">
+                  <User className="h-5 w-5 text-slate-400" />
+                </div>
+              )}
+              <div>
+                <div>{selectedUser?.displayName || selectedUser?.email}</div>
+                <div className="text-sm font-normal text-slate-400">{selectedUser?.email}</div>
+              </div>
+            </DialogTitle>
+            <DialogDescription className="sr-only">User detail view</DialogDescription>
           </DialogHeader>
+
           {selectedUser && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-gray-500">Display Name</Label>
-                  <p className="font-medium">{selectedUser.displayName || "Not set"}</p>
-                </div>
-                <div>
-                  <Label className="text-gray-500">User ID</Label>
-                  <p className="font-mono text-sm">{selectedUser.id}</p>
-                </div>
+              {/* Detail Tabs */}
+              <div className="flex gap-1 bg-slate-800/50 rounded-lg p-1 border border-white/[0.05]">
+                {([
+                  { key: "profile" as const, label: "Profile", icon: User },
+                  { key: "subdomains" as const, label: "Subdomains", icon: Globe },
+                  { key: "activity" as const, label: "Activity", icon: Activity },
+                  { key: "notes" as const, label: "Notes", icon: Pencil },
+                ]).map(({ key, label, icon: Icon }) => (
+                  <button
+                    key={key}
+                    onClick={() => setDetailTab(key)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      detailTab === key
+                        ? "bg-slate-700 text-white"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {label}
+                  </button>
+                ))}
               </div>
 
-              {userDetails ? (
-                <>
-                  <div>
-                    <Label className="text-gray-500 mb-2 block">
-                      Subdomains ({userDetails.subdomains.length})
-                    </Label>
-                    {userDetails.subdomains.length > 0 ? (
-                      <div className="space-y-2">
-                        {userDetails.subdomains.map((s) => (
-                          <div
-                            key={s.subdomain}
-                            className="flex items-center justify-between p-2 bg-gray-50 rounded"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{s.subdomain}</span>
-                            </div>
-                            <a
-                              href={`${protocol}://${s.subdomain}.${rootDomain}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-500 text-sm hover:underline"
-                            >
-                              Visit
-                            </a>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-gray-500 text-sm">No subdomains</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label className="text-gray-500 mb-2 block">
-                      Teams ({userDetails.teams.length})
-                    </Label>
-                    {userDetails.teams.length > 0 ? (
-                      <div className="space-y-2">
-                        {userDetails.teams.map((t) => (
-                          <div
-                            key={t.id}
-                            className="flex items-center justify-between p-2 bg-gray-50 rounded"
-                          >
-                            <div className="flex items-center gap-2">
-                              <Building2 className="h-4 w-4 text-gray-400" />
-                              <span className="font-medium">{t.name}</span>
-                            </div>
-                            <Badge variant="outline">{t.role}</Badge>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-gray-500 text-sm">Not a member of any teams</p>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <div className="py-8 text-center">
-                  <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+              {!userDetails ? (
+                <div className="py-12 text-center">
+                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-400" />
                 </div>
+              ) : (
+                <>
+                  {/* Profile Tab */}
+                  {detailTab === "profile" && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-slate-800/50 rounded-lg p-3 border border-white/[0.05]">
+                          <Label className="text-slate-500 text-xs">Display Name</Label>
+                          <p className="font-medium text-white mt-1">{userDetails.user.displayName || "Not set"}</p>
+                        </div>
+                        <div className="bg-slate-800/50 rounded-lg p-3 border border-white/[0.05]">
+                          <Label className="text-slate-500 text-xs">User ID</Label>
+                          <p className="font-mono text-xs text-slate-300 mt-1 break-all">{userDetails.user.id}</p>
+                        </div>
+                        <div className="bg-slate-800/50 rounded-lg p-3 border border-white/[0.05]">
+                          <Label className="text-slate-500 text-xs">Status</Label>
+                          <div className="mt-1">{getStatusBadge(userDetails.user.status)}</div>
+                          {userDetails.user.suspendedAt && (
+                            <p className="text-xs text-red-400 mt-1">
+                              Suspended {formatDate(userDetails.user.suspendedAt)}
+                              {userDetails.user.suspensionReason && ` - ${userDetails.user.suspensionReason}`}
+                            </p>
+                          )}
+                        </div>
+                        <div className="bg-slate-800/50 rounded-lg p-3 border border-white/[0.05]">
+                          <Label className="text-slate-500 text-xs">Tier</Label>
+                          <p className="font-medium text-white mt-1">{userDetails.user.tierName || "No tier"}</p>
+                        </div>
+                        <div className="bg-slate-800/50 rounded-lg p-3 border border-white/[0.05]">
+                          <Label className="text-slate-500 text-xs">Joined</Label>
+                          <p className="text-slate-300 mt-1">{formatDateTime(userDetails.user.createdAt)}</p>
+                        </div>
+                        <div className="bg-slate-800/50 rounded-lg p-3 border border-white/[0.05]">
+                          <Label className="text-slate-500 text-xs">Last Active</Label>
+                          <p className="text-slate-300 mt-1">{formatDateTime(userDetails.user.lastActiveAt)}</p>
+                        </div>
+                        <div className="bg-slate-800/50 rounded-lg p-3 border border-white/[0.05]">
+                          <Label className="text-slate-500 text-xs">AI Credits</Label>
+                          <p className="font-medium text-blue-400 mt-1">{userDetails.user.creditBalance.toLocaleString()}</p>
+                        </div>
+                        <div className="bg-slate-800/50 rounded-lg p-3 border border-white/[0.05]">
+                          <Label className="text-slate-500 text-xs">Subdomains</Label>
+                          <p className="font-medium text-white mt-1">{userDetails.subdomains.length}</p>
+                        </div>
+                      </div>
+
+                      {/* Teams */}
+                      {userDetails.teams.length > 0 && (
+                        <div>
+                          <Label className="text-slate-500 text-xs mb-2 block">Teams ({userDetails.teams.length})</Label>
+                          <div className="space-y-1.5">
+                            {userDetails.teams.map((t) => (
+                              <div key={t.id} className="flex items-center justify-between p-2 bg-slate-800/50 rounded-lg border border-white/[0.05]">
+                                <div className="flex items-center gap-2">
+                                  <Building2 className="h-4 w-4 text-slate-500" />
+                                  <span className="text-sm text-white">{t.name}</span>
+                                </div>
+                                <Badge className="bg-slate-700 text-slate-300 text-xs">{t.role}</Badge>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="flex flex-wrap gap-2 pt-2 border-t border-white/[0.05]">
+                        {selectedUser.status === "suspended" ? (
+                          <Button
+                            size="sm"
+                            onClick={() => handleUnsuspend(selectedUser)}
+                            disabled={actionLoading}
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white"
+                          >
+                            <Shield className="h-4 w-4 mr-1" />
+                            Unsuspend
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setSuspendUser(selectedUser)}
+                            className="bg-transparent border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+                          >
+                            <Shield className="h-4 w-4 mr-1" />
+                            Suspend
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setDeleteUser(selectedUser)}
+                          className="bg-transparent border-red-500/30 text-red-400 hover:bg-red-500/10"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete User
+                        </Button>
+                        <a
+                          href={`${protocol}://${rootDomain}/dashboard`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-transparent border border-white/10 text-slate-300 hover:text-white hover:bg-white/5 text-sm"
+                        >
+                          <Eye className="h-4 w-4" />
+                          View as User
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Subdomains Tab */}
+                  {detailTab === "subdomains" && (
+                    <div>
+                      <Label className="text-slate-500 text-xs mb-3 block">
+                        Subdomains ({userDetails.subdomains.length})
+                      </Label>
+                      {userDetails.subdomains.length > 0 ? (
+                        <div className="space-y-2">
+                          {userDetails.subdomains.map((s) => (
+                            <div key={s.subdomain} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-white/[0.05]">
+                              <div className="flex items-center gap-3">
+                                <Globe className="h-4 w-4 text-emerald-400" />
+                                <div>
+                                  <span className="font-medium text-white">{s.subdomain}</span>
+                                  <div className="text-xs text-slate-500">Created {formatDate(s.createdAt)}</div>
+                                </div>
+                              </div>
+                              <a
+                                href={`${protocol}://${s.subdomain}.${rootDomain}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-orange-400 text-sm hover:text-orange-300 flex items-center gap-1"
+                              >
+                                Visit <ArrowRight className="h-3 w-3" />
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-slate-500 text-sm text-center py-6">No subdomains</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Activity Tab */}
+                  {detailTab === "activity" && (
+                    <div>
+                      <Label className="text-slate-500 text-xs mb-3 block">Recent Activity</Label>
+                      {userDetails.recentActivity.length > 0 ? (
+                        <div className="space-y-2">
+                          {userDetails.recentActivity.map((act) => (
+                            <div key={act.id} className="flex items-start gap-3 p-3 bg-slate-800/50 rounded-lg border border-white/[0.05]">
+                              <Activity className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
+                              <div className="min-w-0">
+                                <div className="text-sm text-white">{act.action.replace(/\./g, " ").replace(/^./, (c) => c.toUpperCase())}</div>
+                                <div className="text-xs text-slate-500">{formatDateTime(act.createdAt)}</div>
+                                {Object.keys(act.details).length > 0 && (
+                                  <div className="text-xs text-slate-400 mt-1 bg-slate-900/50 rounded p-2 font-mono break-all">
+                                    {JSON.stringify(act.details, null, 0)}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-slate-500 text-sm text-center py-6">No recent activity</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Notes Tab */}
+                  {detailTab === "notes" && (
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <Label className="text-slate-500 text-xs">Admin Notes</Label>
+                        {!editingNotes && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => { setEditingNotes(true); setNotesText(userDetails.user.adminNotes || "") }}
+                            className="text-slate-400 hover:text-white"
+                          >
+                            <Pencil className="h-3 w-3 mr-1" />
+                            Edit
+                          </Button>
+                        )}
+                      </div>
+                      {editingNotes ? (
+                        <div className="space-y-3">
+                          <textarea
+                            value={notesText}
+                            onChange={(e) => setNotesText(e.target.value)}
+                            rows={6}
+                            className="w-full bg-slate-800/50 border border-white/[0.08] text-white text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none resize-none placeholder:text-slate-500"
+                            placeholder="Add admin notes about this user..."
+                          />
+                          <div className="flex gap-2 justify-end">
+                            <Button variant="outline" size="sm" onClick={() => setEditingNotes(false)} className="bg-transparent border-white/10 text-slate-300">
+                              Cancel
+                            </Button>
+                            <Button size="sm" onClick={handleSaveNotes} disabled={savingNotes} className="bg-blue-600 hover:bg-blue-500 text-white">
+                              {savingNotes ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                              Save Notes
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-slate-800/50 rounded-lg p-4 border border-white/[0.05] min-h-[120px]">
+                          {userDetails.user.adminNotes ? (
+                            <p className="text-sm text-slate-300 whitespace-pre-wrap">{userDetails.user.adminNotes}</p>
+                          ) : (
+                            <p className="text-sm text-slate-600 italic">No admin notes</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== Suspend Dialog ===== */}
+      <Dialog open={!!suspendUser} onOpenChange={() => { setSuspendUser(null); setSuspendReason("") }}>
+        <DialogContent className="bg-slate-900 border-white/[0.08]">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Shield className="h-5 w-5 text-amber-400" />
+              Suspend User
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              This will prevent {suspendUser?.email} from logging in and using the platform.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+              <p className="text-sm text-amber-300">
+                The user will be notified via email about the suspension.
+              </p>
+            </div>
+            <div>
+              <Label className="text-slate-400 text-sm">Reason for suspension</Label>
+              <textarea
+                value={suspendReason}
+                onChange={(e) => setSuspendReason(e.target.value)}
+                rows={3}
+                className="w-full mt-1.5 bg-slate-800/50 border border-white/[0.08] text-white text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none resize-none placeholder:text-slate-500"
+                placeholder="Reason for suspending this user..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setSuspendUser(null); setSuspendReason("") }} className="bg-transparent border-white/10 text-slate-300">
+              Cancel
+            </Button>
+            <Button onClick={handleSuspend} disabled={actionLoading} className="bg-amber-600 hover:bg-amber-500 text-white">
+              {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Shield className="h-4 w-4 mr-2" />}
+              Suspend User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== Delete Dialog ===== */}
+      <Dialog open={!!deleteUser} onOpenChange={() => { setDeleteUser(null); setDeleteConfirmEmail(""); setDeleteReason("") }}>
+        <DialogContent className="bg-slate-900 border-white/[0.08]">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-red-400" />
+              Delete User
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              This action will schedule {deleteUser?.email} for deletion.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 space-y-2">
+              <p className="text-sm text-red-300 font-medium">Warning: This action is destructive</p>
+              <ul className="text-sm text-red-300/80 list-disc list-inside space-y-1">
+                <li>The user account will be suspended immediately</li>
+                <li>Data will be permanently deleted after 30 days</li>
+                <li>User&apos;s subdomains will be unassigned</li>
+                <li>Team memberships will be removed</li>
+                <li>The user will be notified via email</li>
+              </ul>
+            </div>
+
+            {deleteUser && deleteUser.subdomainCount > 0 && (
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+                <p className="text-sm text-amber-300">
+                  This user has {deleteUser.subdomainCount} subdomain(s) that will be unassigned.
+                </p>
+              </div>
+            )}
+
+            <div>
+              <Label className="text-slate-400 text-sm">Reason for deletion (optional)</Label>
+              <textarea
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                rows={2}
+                className="w-full mt-1.5 bg-slate-800/50 border border-white/[0.08] text-white text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none resize-none placeholder:text-slate-500"
+                placeholder="Reason for deletion..."
+              />
+            </div>
+
+            <div>
+              <Label className="text-slate-400 text-sm">
+                Type <span className="text-red-400 font-mono">{deleteUser?.email}</span> to confirm
+              </Label>
+              <Input
+                value={deleteConfirmEmail}
+                onChange={(e) => setDeleteConfirmEmail(e.target.value)}
+                className="mt-1.5 bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-red-500/50"
+                placeholder="Type email to confirm..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDeleteUser(null); setDeleteConfirmEmail(""); setDeleteReason("") }} className="bg-transparent border-white/10 text-slate-300">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDelete}
+              disabled={actionLoading || deleteConfirmEmail !== deleteUser?.email}
+              className="bg-red-600 hover:bg-red-500 text-white disabled:opacity-50"
+            >
+              {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+              Delete Permanently
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== Invite Dialog ===== */}
+      <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+        <DialogContent className="bg-slate-900 border-white/[0.08]">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Mail className="h-5 w-5 text-blue-400" />
+              Invite New User
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Send an invitation email to join the platform.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label className="text-slate-400 text-sm">Email *</Label>
+              <Input
+                type="email"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                className="mt-1.5 bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
+                placeholder="user@example.com"
+              />
+            </div>
+            <div>
+              <Label className="text-slate-400 text-sm">Name (optional)</Label>
+              <Input
+                value={inviteName}
+                onChange={(e) => setInviteName(e.target.value)}
+                className="mt-1.5 bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
+                placeholder="John Doe"
+              />
+            </div>
+            <div>
+              <Label className="text-slate-400 text-sm">Tier</Label>
+              <select
+                value={inviteTier}
+                onChange={(e) => setInviteTier(e.target.value)}
+                className="w-full mt-1.5 bg-slate-800/50 border border-white/[0.08] text-white text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none"
+              >
+                <option value="starter">Starter</option>
+                <option value="professional">Professional</option>
+                <option value="business">Business</option>
+                <option value="enterprise">Enterprise</option>
+              </select>
+            </div>
+            <div>
+              <Label className="text-slate-400 text-sm">Personal message (optional)</Label>
+              <textarea
+                value={inviteMessage}
+                onChange={(e) => setInviteMessage(e.target.value)}
+                rows={3}
+                className="w-full mt-1.5 bg-slate-800/50 border border-white/[0.08] text-white text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none resize-none placeholder:text-slate-500"
+                placeholder="Hi! I'd like to invite you to try out our platform..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowInviteDialog(false)} className="bg-transparent border-white/10 text-slate-300">
+              Cancel
+            </Button>
+            <Button onClick={handleInvite} disabled={inviting || !inviteEmail} className="bg-gradient-to-r from-blue-700 to-orange-500 hover:from-blue-600 hover:to-orange-400 text-white border-0">
+              {inviting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Mail className="h-4 w-4 mr-2" />}
+              Send Invitation
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

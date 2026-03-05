@@ -173,6 +173,28 @@ const TENANT_SCOPED_MODELS = new Set([
   "TenantSetting",
   "Feedback",
   "AnalyticsEvent",
+  // Tenant isolation audit (2026-03) — CRITICAL priority
+  "Event",
+  "EventTicketType",
+  "EventScheduleItem",
+  "EventSpeaker",
+  "EventRegistration",
+  "Partial",
+  "GiftCard",
+  "GiftCardTransaction",
+  "ProductReview",
+  "ReviewVote",
+  "Form",
+  "FormSubmission",
+  // Tenant isolation audit (2026-03) — HIGH priority
+  "Role",
+  "RoleAssignment",
+  "UserPermission",
+  "MediaTag",
+  "BackInStockSubscription",
+  "StockReservation",
+  "Notification",
+  "SiteSettings",
 ])
 
 /**

@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from '@/lib/cms/db';
+import { syncUserToDb, recordSignIn } from "@/lib/auth-sync";
 
 export const dynamic = 'force-dynamic'
 
 /**
- * POST /api/auth/sync
- * Syncs a Stack Auth user to the local database.
- * Called after successful authentication to ensure user exists in DB.
+ * POST /api/cms/auth/sync
+ * Syncs a Stack Auth user to both:
+ * 1. CMS User model (Prisma) — for CMS admin, page editing, blog authoring
+ * 2. Platform users table (raw SQL) — for dashboard, billing, credits
+ *
+ * Called after successful authentication to ensure user exists in both DBs.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -19,6 +23,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // ---- CMS User sync (Prisma) ----
 
     // First check if user exists by stackAuthId
     let user = await prisma.user.findUnique({
@@ -63,6 +69,27 @@ export async function POST(request: NextRequest) {
           },
         });
       }
+    }
+
+    // ---- Platform users table sync (raw SQL) ----
+    // This ensures the platform DB has a record for subscription/billing/credits
+    try {
+      await syncUserToDb({
+        id: stackAuthId,
+        primaryEmail: email,
+        displayName: name || null,
+        profileImageUrl: avatar || null,
+      });
+
+      // Record login activity
+      const ipAddress =
+        request.headers.get("x-forwarded-for")?.split(",")[0] ||
+        request.headers.get("x-real-ip") ||
+        undefined;
+      await recordSignIn(stackAuthId, ipAddress);
+    } catch (platformError) {
+      // Platform sync failure is non-critical — log and continue
+      console.warn("[cms/auth/sync] Platform users table sync failed (non-critical):", platformError);
     }
 
     return NextResponse.json({

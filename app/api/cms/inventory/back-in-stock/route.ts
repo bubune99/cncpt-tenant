@@ -7,10 +7,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { subscribeToBackInStock, unsubscribeFromBackInStock } from '@/lib/cms/inventory';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const body = await request.json();
     const { email, productId, variantId } = body;
@@ -51,9 +53,11 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+  })
 }
 
 export async function DELETE(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const { searchParams } = new URL(request.url);
     const email = searchParams.get('email');
@@ -80,4 +84,5 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     );
   }
+  })
 }

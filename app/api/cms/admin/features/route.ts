@@ -17,6 +17,7 @@ import {
   getSubFeatures,
   MODULE_FEATURES,
 } from "@/lib/cms/features"
+import { withTenant } from "@/lib/cms/api/tenant"
 
 /**
  * GET /api/cms/admin/features
@@ -24,7 +25,8 @@ import {
  * Returns the resolved feature config for the current tenant
  * plus metadata about each feature for the settings UI.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   const tenantId = getCurrentTenant()
   const config = await resolveFeatureConfig(tenantId ?? undefined)
   const features = await getResolvedFeatures(tenantId ?? undefined)
@@ -50,6 +52,7 @@ export async function GET() {
       features: grouped,
     },
   })
+  })
 }
 
 /**
@@ -59,6 +62,7 @@ export async function GET() {
  * Body: { key: string, enabled: boolean } | { features: Record<string, boolean> }
  */
 export async function PATCH(request: NextRequest) {
+  return withTenant(request, async () => {
   const tenantId = getCurrentTenant()
   const body = await request.json()
 
@@ -140,6 +144,7 @@ export async function PATCH(request: NextRequest) {
     ok: true,
     data: { config: newConfig },
   })
+  })
 }
 
 /**
@@ -149,6 +154,7 @@ export async function PATCH(request: NextRequest) {
  * Body: { config: Record<string, boolean> }
  */
 export async function PUT(request: NextRequest) {
+  return withTenant(request, async () => {
   const tenantId = getCurrentTenant()
   const body = await request.json()
   const { config } = body as { config: Record<string, boolean> }
@@ -181,6 +187,7 @@ export async function PUT(request: NextRequest) {
   return NextResponse.json({
     ok: true,
     data: { config: newConfig },
+  })
   })
 }
 

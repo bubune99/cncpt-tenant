@@ -1,11 +1,12 @@
 /**
  * Single Media API
  *
- * GET /api/media/[id] - Get single media with details
- * PUT /api/media/[id] - Update media metadata
- * DELETE /api/media/[id] - Delete media (soft or hard)
+ * GET /api/cms/media/[id] - Get single media with details
+ * PUT /api/cms/media/[id] - Update media metadata
+ * DELETE /api/cms/media/[id] - Delete media (soft or hard)
  *
- * All endpoints require authentication.
+ * All endpoints require authentication and tenant context.
+ * Tenant ownership is verified before any operation.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -13,8 +14,19 @@ import { getMedia, updateMedia, deleteMedia, restoreMedia } from '@/lib/cms/medi
 import { deleteFromStorage } from '@/lib/cms/media/upload'
 import type { MediaUpdateInput } from '@/lib/cms/media/types'
 import { stackServerApp } from '@/lib/cms/stack'
+import {
+  resolveTenantContext,
+  tenantRequiredResponse,
+} from '@/lib/cms/media/tenant'
 
 export const dynamic = 'force-dynamic'
+
+/**
+ * Verify that a media record belongs to the given tenant.
+ */
+function verifyMediaTenant(media: any, tenantId: number): boolean {
+  return media.tenantId === tenantId
+}
 
 export async function GET(
   request: NextRequest,
@@ -30,6 +42,10 @@ export async function GET(
       )
     }
 
+    // Resolve tenant context
+    const tenant = await resolveTenantContext(request, user.id)
+    if (!tenant) return tenantRequiredResponse()
+
     const { id } = await params
     const { searchParams } = new URL(request.url)
     const includeUsage = searchParams.get('includeUsage') === 'true'
@@ -37,6 +53,11 @@ export async function GET(
     const media = await getMedia(id, includeUsage)
 
     if (!media) {
+      return NextResponse.json({ error: 'Media not found' }, { status: 404 })
+    }
+
+    // Verify tenant ownership of the media record
+    if (!verifyMediaTenant(media, tenant.tenantId)) {
       return NextResponse.json({ error: 'Media not found' }, { status: 404 })
     }
 
@@ -64,7 +85,18 @@ export async function PUT(
       )
     }
 
+    // Resolve tenant context
+    const tenant = await resolveTenantContext(request, user.id)
+    if (!tenant) return tenantRequiredResponse()
+
     const { id } = await params
+
+    // Verify the media belongs to this tenant before updating
+    const existing = await getMedia(id, false)
+    if (!existing || !verifyMediaTenant(existing, tenant.tenantId)) {
+      return NextResponse.json({ error: 'Media not found' }, { status: 404 })
+    }
+
     const body = await request.json()
 
     // Check if this is a restore operation
@@ -110,14 +142,23 @@ export async function DELETE(
       )
     }
 
+    // Resolve tenant context
+    const tenant = await resolveTenantContext(request, user.id)
+    if (!tenant) return tenantRequiredResponse()
+
     const { id } = await params
     const { searchParams } = new URL(request.url)
     const hard = searchParams.get('hard') === 'true'
 
-    // Get media first for storage deletion
+    // Get media first for storage deletion and tenant verification
     const media = await getMedia(id)
 
     if (!media) {
+      return NextResponse.json({ error: 'Media not found' }, { status: 404 })
+    }
+
+    // Verify tenant ownership
+    if (!verifyMediaTenant(media, tenant.tenantId)) {
       return NextResponse.json({ error: 'Media not found' }, { status: 404 })
     }
 

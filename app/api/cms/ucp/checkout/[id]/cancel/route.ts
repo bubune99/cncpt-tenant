@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getUcpSession, updateUcpSession } from '@/lib/cms/ucp/sessions';
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +14,7 @@ export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  return withTenant(_request, async () => {
   try {
     const { id } = await params;
     const session = getUcpSession(id);
@@ -53,6 +55,7 @@ export async function POST(
       { status: 500, headers: { 'Access-Control-Allow-Origin': '*' } }
     );
   }
+  })
 }
 
 // CORS preflight

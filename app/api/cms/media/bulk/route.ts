@@ -1,9 +1,10 @@
 /**
  * Bulk Operations API
  *
- * POST /api/media/bulk - Execute bulk operations on media
+ * POST /api/cms/media/bulk - Execute bulk operations on media
  *
- * Requires authentication. Rate-limited for destructive operations.
+ * Requires authentication and tenant context. All operations are tenant-scoped.
+ * Rate-limited for destructive operations.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -17,6 +18,10 @@ import {
 import type { BulkOperationInput } from '@/lib/cms/media/types'
 import { stackServerApp } from '@/lib/cms/stack'
 import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit'
+import {
+  resolveTenantContext,
+  tenantRequiredResponse,
+} from '@/lib/cms/media/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,6 +35,10 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       )
     }
+
+    // Resolve tenant context
+    const tenant = await resolveTenantContext(request, user.id)
+    if (!tenant) return tenantRequiredResponse()
 
     // Rate limit bulk operations (same as upload limit)
     const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.upload)
@@ -52,7 +61,8 @@ export async function POST(request: NextRequest) {
 
     switch (operation) {
       case 'delete':
-        count = await bulkDeleteMedia(mediaIds, hard ?? false)
+        // Tenant-scoped: only deletes media belonging to this tenant
+        count = await bulkDeleteMedia(mediaIds, hard ?? false, tenant.tenantId)
         break
 
       case 'move':
@@ -62,7 +72,8 @@ export async function POST(request: NextRequest) {
             { status: 400 }
           )
         }
-        count = await bulkMoveMedia(mediaIds, folderId)
+        // Tenant-scoped: only moves media belonging to this tenant
+        count = await bulkMoveMedia(mediaIds, folderId, tenant.tenantId)
         break
 
       case 'tag':
@@ -86,7 +97,8 @@ export async function POST(request: NextRequest) {
         break
 
       case 'restore':
-        count = await bulkRestoreMedia(mediaIds)
+        // Tenant-scoped: only restores media belonging to this tenant
+        count = await bulkRestoreMedia(mediaIds, tenant.tenantId)
         break
 
       default:

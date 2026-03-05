@@ -7,11 +7,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/cms/db';
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
 // GET - List all workflows
 export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const { searchParams } = new URL(request.url);
     const enabled = searchParams.get('enabled');
@@ -60,10 +62,12 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+  })
 }
 
 // POST - Create a new workflow
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const body = await request.json();
     const {
@@ -128,4 +132,5 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+  })
 }

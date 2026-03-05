@@ -8,11 +8,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
 import type { FormStatus } from '@prisma/client'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { searchParams } = new URL(request.url)
 
     const page = parseInt(searchParams.get('page') || '1')
@@ -63,17 +65,19 @@ export async function GET(request: NextRequest) {
         pages: Math.ceil(total / limit),
       },
     })
-  } catch (error) {
-    console.error('List forms error:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to list forms' },
-      { status: 500 }
-    )
-  }
+    } catch (error) {
+      console.error('List forms error:', error)
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Failed to list forms' },
+        { status: 500 }
+      )
+    }
+  })
 }
 
 export async function POST(request: NextRequest) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const body = await request.json()
     const { name, description, fields, submitButtonText, successMessage, redirectUrl, notifyEmails, status } = body
 
@@ -90,7 +94,7 @@ export async function POST(request: NextRequest) {
     // Check for existing slug and make unique if necessary
     let slug = baseSlug
     let counter = 1
-    while (await prisma.form.findFirst({ where: { slug, tenantId: null } })) {
+    while (await prisma.form.findFirst({ where: { slug } })) {
       slug = `${baseSlug}-${counter}`
       counter++
     }
@@ -109,12 +113,13 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ success: true, form }, { status: 201 })
-  } catch (error) {
-    console.error('Create form error:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create form' },
-      { status: 500 }
-    )
-  }
+      return NextResponse.json({ success: true, form }, { status: 201 })
+    } catch (error) {
+      console.error('Create form error:', error)
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Failed to create form' },
+        { status: 500 }
+      )
+    }
+  })
 }

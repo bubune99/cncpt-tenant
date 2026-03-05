@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { stackServerApp } from "@/lib/cms/stack";
 import { getV0ImportAgent } from "@/lib/cms/v0-agent";
 import type { V0ImportRequest } from "@/lib/cms/v0-agent";
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -22,6 +23,7 @@ export const dynamic = 'force-dynamic'
  * - description?: string - Custom description
  */
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     // Check authentication
     const user = await stackServerApp.getUser();
@@ -90,4 +92,5 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+  })
 }

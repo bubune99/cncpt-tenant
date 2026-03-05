@@ -4,15 +4,17 @@
  * GET /api/customer/payment-methods - List payment methods from Stripe
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { stackServerApp } from '@/lib/cms/stack';
 import { prisma } from '@/lib/cms/db';
 import { listPaymentMethods } from '@/lib/cms/stripe';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
-  try {
+export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
+    try {
     // Get authenticated user from Stack Auth
     const stackUser = await stackServerApp.getUser();
 
@@ -47,11 +49,12 @@ export async function GET() {
     }));
 
     return NextResponse.json({ methods });
-  } catch (error) {
-    console.error('Error fetching payment methods:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch payment methods' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Error fetching payment methods:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch payment methods' },
+        { status: 500 }
+      );
+    }
+  })
 }

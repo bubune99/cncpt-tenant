@@ -2,7 +2,7 @@
  * S3/R2 Multipart (Chunked) Upload Utilities
  *
  * Enables uploading large files (100MB+ videos) with resumable uploads.
- * Uses the existing S3 client and tenant-scoped key generation from client.ts.
+ * Uses the DB-driven S3 client and tenant-scoped key generation from client.ts.
  *
  * Flow:
  * 1. Client calls initiateMultipartUpload() to start
@@ -21,7 +21,7 @@ import {
   AbortMultipartUploadCommand,
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-import { r2Client, R2_CONFIG } from './client'
+import { getS3Client, getStorageConfig } from './client'
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -74,18 +74,21 @@ export async function initiateMultipartUpload(
   key: string,
   contentType: string
 ): Promise<MultipartUploadInit> {
-  if (!R2_CONFIG.isConfigured) {
-    throw new Error('R2/S3 storage is not configured')
+  const config = await getStorageConfig()
+  if (!config.isConfigured) {
+    throw new Error('Storage is not configured. Configure via Admin > Settings > Storage or set env vars.')
   }
 
+  const client = await getS3Client()
+
   const command = new CreateMultipartUploadCommand({
-    Bucket: R2_CONFIG.bucketName,
+    Bucket: config.bucketName,
     Key: key,
     ContentType: contentType,
     CacheControl: 'public, max-age=31536000, immutable',
   })
 
-  const response = await r2Client.send(command)
+  const response = await client.send(command)
 
   if (!response.UploadId) {
     throw new Error('Failed to initiate multipart upload: no UploadId returned')
@@ -94,7 +97,7 @@ export async function initiateMultipartUpload(
   return {
     uploadId: response.UploadId,
     key,
-    bucket: R2_CONFIG.bucketName,
+    bucket: config.bucketName,
   }
 }
 
@@ -118,22 +121,25 @@ export async function generatePartPresignedUrl(
   uploadId: string,
   partNumber: number
 ): Promise<MultipartPresignedUrl> {
-  if (!R2_CONFIG.isConfigured) {
-    throw new Error('R2/S3 storage is not configured')
+  const config = await getStorageConfig()
+  if (!config.isConfigured) {
+    throw new Error('Storage is not configured. Configure via Admin > Settings > Storage or set env vars.')
   }
 
   if (partNumber < 1 || partNumber > MAX_PARTS) {
     throw new Error(`Part number must be between 1 and ${MAX_PARTS}`)
   }
 
+  const client = await getS3Client()
+
   const command = new UploadPartCommand({
-    Bucket: R2_CONFIG.bucketName,
+    Bucket: config.bucketName,
     Key: key,
     UploadId: uploadId,
     PartNumber: partNumber,
   })
 
-  const url = await getSignedUrl(r2Client, command, {
+  const url = await getSignedUrl(client, command, {
     expiresIn: PRESIGN_EXPIRY_SECONDS,
   })
 
@@ -161,8 +167,9 @@ export async function completeMultipartUpload(
   uploadId: string,
   parts: CompletedPart[]
 ): Promise<{ url: string; key: string; bucket: string }> {
-  if (!R2_CONFIG.isConfigured) {
-    throw new Error('R2/S3 storage is not configured')
+  const config = await getStorageConfig()
+  if (!config.isConfigured) {
+    throw new Error('Storage is not configured. Configure via Admin > Settings > Storage or set env vars.')
   }
 
   if (parts.length === 0) {
@@ -181,8 +188,10 @@ export async function completeMultipartUpload(
     }
   }
 
+  const client = await getS3Client()
+
   const command = new CompleteMultipartUploadCommand({
-    Bucket: R2_CONFIG.bucketName,
+    Bucket: config.bucketName,
     Key: key,
     UploadId: uploadId,
     MultipartUpload: {
@@ -193,14 +202,14 @@ export async function completeMultipartUpload(
     },
   })
 
-  await r2Client.send(command)
+  await client.send(command)
 
-  const publicUrl = `${R2_CONFIG.publicUrl}/${key}`
+  const publicUrl = `${config.publicUrl}/${key}`
 
   return {
     url: publicUrl,
     key,
-    bucket: R2_CONFIG.bucketName,
+    bucket: config.bucketName,
   }
 }
 
@@ -221,15 +230,18 @@ export async function abortMultipartUpload(
   key: string,
   uploadId: string
 ): Promise<void> {
-  if (!R2_CONFIG.isConfigured) {
-    throw new Error('R2/S3 storage is not configured')
+  const config = await getStorageConfig()
+  if (!config.isConfigured) {
+    throw new Error('Storage is not configured. Configure via Admin > Settings > Storage or set env vars.')
   }
 
+  const client = await getS3Client()
+
   const command = new AbortMultipartUploadCommand({
-    Bucket: R2_CONFIG.bucketName,
+    Bucket: config.bucketName,
     Key: key,
     UploadId: uploadId,
   })
 
-  await r2Client.send(command)
+  await client.send(command)
 }

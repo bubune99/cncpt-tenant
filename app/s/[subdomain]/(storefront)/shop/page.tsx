@@ -2,7 +2,9 @@
  * Shop Listing Page
  *
  * Renders the main shop page. If a CMS page with slug 'shop' or '/shop'
- * exists and is PUBLISHED, renders that. Otherwise uses default template blocks.
+ * exists and is PUBLISHED, renders that via the block editor. Otherwise
+ * renders the FilterableProductGrid with full filtering, sorting,
+ * pagination, and search.
  *
  * Route: /s/[subdomain]/shop
  */
@@ -16,7 +18,7 @@ import {
   resolveSmartBlockData,
   serializeSmartBlockData,
 } from '@/lib/cms/block-editor/smart-blocks';
-import { defaultShopPageBlocks } from '@/lib/cms/block-editor/smart-blocks/default-templates';
+import { ShopPageLayout } from '@/components/cms/shop/shop-page-layout';
 import { getTenantContext } from '../../lib/tenant-context';
 
 export const dynamic = 'force-dynamic';
@@ -77,17 +79,30 @@ export default async function ShopPage({ params }: PageProps) {
   const { subdomain } = await params;
   const tenantContext = await getTenantContext(subdomain);
   if (!tenantContext) {
-    return <div className="py-8 sm:py-12 text-center text-sm sm:text-base text-gray-500 px-4">Site not found</div>;
+    return <div className="py-8 sm:py-12 text-center text-sm sm:text-base text-muted-foreground px-4">Site not found</div>;
   }
 
+  // Check for a CMS-designed shop page first
   const page = await getShopPage(tenantContext.id);
   const blocks = page ? parseBlocks(page.content) : [];
-  const useDefault = blocks.length === 0;
-  const finalBlocks = useDefault ? defaultShopPageBlocks() : blocks;
 
-  registerCommerceFetchers();
-  const dataMap = await resolveSmartBlockData(finalBlocks);
-  const smartBlockData = serializeSmartBlockData(dataMap);
+  // If a CMS page exists with content, render it via the block editor
+  if (blocks.length > 0) {
+    registerCommerceFetchers();
+    const dataMap = await resolveSmartBlockData(blocks);
+    const smartBlockData = serializeSmartBlockData(dataMap);
+    return <BlockPageRenderer blocks={blocks} smartBlockData={smartBlockData} />;
+  }
 
-  return <BlockPageRenderer blocks={finalBlocks} smartBlockData={smartBlockData} />;
+  // Otherwise, render the built-in filterable shop page
+  return (
+    <ShopPageLayout
+      title="Shop"
+      description="Browse our full collection of products."
+      breadcrumbs={[
+        { label: 'Home', href: '/' },
+        { label: 'Shop' },
+      ]}
+    />
+  );
 }

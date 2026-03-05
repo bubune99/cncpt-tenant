@@ -102,8 +102,8 @@ export async function updateSettings(
   for (const [key, value] of Object.entries(settings)) {
     if (value === undefined) continue
 
-    // Skip if value is masked (unchanged)
-    if (value === '********') continue
+    // Skip if value is masked (unchanged) — handles both full mask and partial mask (****XXXX)
+    if (typeof value === 'string' && (value === '********' || /^\*{4,}/.test(value))) continue
 
     const fullKey = `${group}.${key}`
     const isSensitive = sensitiveKeys.includes(key)
@@ -180,7 +180,7 @@ export async function getStorageSettings(): Promise<StorageSettings> {
   const settings = await getSettings('storage', DEFAULT_STORAGE_SETTINGS)
 
   // Fallback to environment variables (S3 or R2)
-  if (!settings.bucket) settings.bucket = process.env.S3_BUCKET || process.env.R2_BUCKET
+  if (!settings.bucket) settings.bucket = process.env.S3_BUCKET || process.env.R2_BUCKET || process.env.R2_BUCKET_NAME
   if (!settings.region) settings.region = process.env.S3_REGION || 'auto'
   if (!settings.accessKeyId) settings.accessKeyId = process.env.S3_ACCESS_KEY_ID || process.env.R2_ACCESS_KEY_ID
   if (!settings.secretAccessKey) settings.secretAccessKey = process.env.S3_SECRET_ACCESS_KEY || process.env.R2_SECRET_ACCESS_KEY
@@ -194,12 +194,22 @@ export async function getStorageSettings(): Promise<StorageSettings> {
     }
   }
 
-  // Public URL for R2
-  if (!settings.publicUrl) settings.publicUrl = process.env.R2_PUBLIC_URL
+  // Public URL for R2 or S3
+  if (!settings.publicUrl) settings.publicUrl = process.env.R2_PUBLIC_URL || process.env.S3_PUBLIC_URL
 
-  // Auto-detect R2 provider when R2 env vars are used
-  if (process.env.R2_BUCKET || process.env.R2_ACCOUNT_ID) {
-    settings.provider = 'r2'
+  // Auto-detect provider from env vars if not explicitly set in DB
+  if (settings.provider === DEFAULT_STORAGE_SETTINGS.provider) {
+    const storageProvider = process.env.STORAGE_PROVIDER?.toLowerCase()
+    if (storageProvider === 'r2' || process.env.R2_BUCKET || process.env.R2_ACCOUNT_ID) {
+      settings.provider = 'r2'
+    } else if (storageProvider === 'local') {
+      settings.provider = 'local'
+    }
+  }
+
+  // R2 always uses forcePathStyle; auto-set if provider is R2 and not explicitly configured
+  if (settings.provider === 'r2' && settings.forcePathStyle === undefined) {
+    settings.forcePathStyle = true
   }
 
   return settings
@@ -260,6 +270,9 @@ export async function getAllSettings(): Promise<{
     },
     storage: {
       ...storage,
+      accessKeyId: storage.accessKeyId
+        ? `****${storage.accessKeyId.slice(-4)}`
+        : undefined,
       secretAccessKey: storage.secretAccessKey ? '********' : undefined,
     },
     ai,

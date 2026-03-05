@@ -8,10 +8,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
 import { getTracking, getShippingSettings } from '@/lib/cms/shippo'
 import type { CarrierType } from '@/lib/cms/shippo/types'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const { searchParams } = new URL(request.url)
     const shipmentId = searchParams.get('shipmentId')
@@ -73,4 +75,5 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
+  })
 }

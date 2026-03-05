@@ -12,6 +12,7 @@ import {
   getShippingSettings,
 } from '@/lib/cms/shippo'
 import type { Parcel, ShippingAddress } from '@/lib/cms/shippo/types'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,6 +27,7 @@ interface RatesRequestBody {
 }
 
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const body: RatesRequestBody = await request.json()
     const settings = await getShippingSettings()
@@ -136,4 +138,5 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
+  })
 }

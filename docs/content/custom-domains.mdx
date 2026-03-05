@@ -1,0 +1,76 @@
+---
+title: Custom Domains
+description: Connect your own domain to your CNCPT Web site with DNS configuration.
+---
+
+# Custom Domains
+
+Every site starts with a `yoursite.cncptweb.com` subdomain. You can connect your own domain for a professional look.
+
+## Adding a Custom Domain
+
+1. Go to **Dashboard > Domains**.
+2. Click **Add Domain**.
+3. Enter your domain (e.g., `www.example.com` or `example.com`).
+4. Select which site to connect it to.
+5. Follow the DNS instructions shown on screen.
+
+## DNS Configuration
+
+You will need to add DNS records at your domain registrar (e.g., Namecheap, GoDaddy, Cloudflare).
+
+### For root domains (`example.com`)
+
+Add an **A record** pointing to our IP address:
+
+```
+Type: A
+Host: @
+Value: 76.76.21.21
+```
+
+### For subdomains (`www.example.com`)
+
+Add a **CNAME record** pointing to your site:
+
+```
+Type: CNAME
+Host: www
+Value: cname.cncptweb.com
+```
+
+<Callout type="info">
+DNS changes can take up to 48 hours to propagate, though most complete within 1-2 hours.
+</Callout>
+
+## SSL Certificates
+
+SSL certificates are provisioned automatically once your DNS is verified. Your site will be accessible via HTTPS with no additional configuration required.
+
+## Verification Status
+
+Your domain will show one of these statuses:
+
+- **Pending** — DNS records not yet detected. Wait for propagation or double-check your records.
+- **Verified** — DNS is correct and SSL is being provisioned.
+- **Active** — Domain is fully connected and serving your site.
+- **Error** — Something went wrong. Check the error message for details.
+
+## Troubleshooting
+
+**Domain stuck on Pending?**
+- Verify your DNS records match exactly what is shown in the dashboard.
+- Check for conflicting records (e.g., an existing A record that needs to be removed).
+- Try using a DNS checker tool to confirm propagation.
+
+**SSL not working?**
+- SSL provisioning can take up to 10 minutes after DNS verification.
+- Ensure there is no CAA record blocking certificate issuance.
+
+<Callout type="tip">
+Use the AI chat assistant to troubleshoot domain issues. It can check your DNS records and suggest fixes.
+</Callout>
+
+## Removing a Domain
+
+Go to **Dashboard > Domains**, find the domain, and click **Remove**. The site will continue to be accessible at its original subdomain.

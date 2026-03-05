@@ -12,6 +12,7 @@ import {
   deleteStripeDiscount,
   toggleStripePromotionCode,
 } from '@/lib/cms/discounts';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -21,7 +22,8 @@ interface RouteParams {
 
 // POST - Sync discount to Stripe
 export async function POST(request: NextRequest, { params }: RouteParams) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id } = await params;
 
     // Check discount exists
@@ -58,21 +60,23 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       promotionCodeId: result.promotionCodeId,
       syncedAt: updated?.stripeSyncedAt,
     });
-  } catch (error) {
-    console.error('Sync discount to Stripe error:', error);
-    return NextResponse.json(
-      {
-        error: 'Failed to sync discount to Stripe',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Sync discount to Stripe error:', error);
+      return NextResponse.json(
+        {
+          error: 'Failed to sync discount to Stripe',
+          details: error instanceof Error ? error.message : 'Unknown error',
+        },
+        { status: 500 }
+      );
+    }
+  })
 }
 
 // DELETE - Remove from Stripe
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id } = await params;
 
     // Check discount exists
@@ -94,21 +98,23 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       success: true,
       message: 'Discount removed from Stripe',
     });
-  } catch (error) {
-    console.error('Delete Stripe discount error:', error);
-    return NextResponse.json(
-      {
-        error: 'Failed to remove discount from Stripe',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Delete Stripe discount error:', error);
+      return NextResponse.json(
+        {
+          error: 'Failed to remove discount from Stripe',
+          details: error instanceof Error ? error.message : 'Unknown error',
+        },
+        { status: 500 }
+      );
+    }
+  })
 }
 
 // PATCH - Toggle Stripe promotion code active status
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id } = await params;
     const body = await request.json();
     const { active } = body;
@@ -146,14 +152,15 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       success: true,
       active,
     });
-  } catch (error) {
-    console.error('Toggle Stripe promotion code error:', error);
-    return NextResponse.json(
-      {
-        error: 'Failed to toggle Stripe promotion code',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Toggle Stripe promotion code error:', error);
+      return NextResponse.json(
+        {
+          error: 'Failed to toggle Stripe promotion code',
+          details: error instanceof Error ? error.message : 'Unknown error',
+        },
+        { status: 500 }
+      );
+    }
+  })
 }

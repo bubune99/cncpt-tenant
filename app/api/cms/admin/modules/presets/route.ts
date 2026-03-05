@@ -7,12 +7,16 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { applyPreset, MODULE_PRESETS } from "@/lib/cms/modules/presets"
+import { withTenant } from "@/lib/cms/api/tenant"
 
-export async function GET() {
-  return NextResponse.json({ ok: true, data: MODULE_PRESETS })
+export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
+    return NextResponse.json({ ok: true, data: MODULE_PRESETS })
+  })
 }
 
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   const body = await request.json()
   const { presetId } = body as { presetId: string }
 
@@ -32,4 +36,5 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     )
   }
+  })
 }

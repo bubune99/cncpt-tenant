@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
 import { prisma } from '@/lib/cms/db';
 import { createUcpSession } from '@/lib/cms/ucp/sessions';
+import { withTenant } from '@/lib/cms/api/tenant';
 import {
   ucpEnvelope,
   stripePaymentHandler,
@@ -33,6 +34,7 @@ interface CreateCheckoutBody {
 }
 
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const body: CreateCheckoutBody = await request.json();
 
@@ -174,6 +176,7 @@ export async function POST(request: NextRequest) {
       { status: 500, headers: { 'Access-Control-Allow-Origin': '*' } }
     );
   }
+  })
 }
 
 // CORS preflight

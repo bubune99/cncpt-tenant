@@ -1,5 +1,5 @@
 /**
- * Footer Settings API
+ * Footer Settings API (tenant-scoped)
  *
  * GET /api/admin/site-settings/footer - Get footer configuration
  * PUT /api/admin/site-settings/footer - Update footer configuration
@@ -11,62 +11,67 @@ import {
   updateFooterConfig,
 } from '@/lib/cms/site-settings';
 import { stackServerApp } from '@/lib/cms/stack';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
 /**
  * GET - Fetch footer configuration
  */
-export async function GET() {
-  try {
-    // Check authentication
-    const user = await stackServerApp.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
+    try {
+      // Check authentication
+      const user = await stackServerApp.getUser();
+      if (!user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
 
-    const settings = await getOrCreateSiteSettings();
-    return NextResponse.json({
-      footer: settings.footer,
-    });
-  } catch (error) {
-    console.error('Error fetching footer settings:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch footer settings' },
-      { status: 500 }
-    );
-  }
+      const settings = await getOrCreateSiteSettings();
+      return NextResponse.json({
+        footer: settings.footer,
+      });
+    } catch (error) {
+      console.error('Error fetching footer settings:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch footer settings' },
+        { status: 500 }
+      );
+    }
+  })
 }
 
 /**
  * PUT - Update footer configuration
  */
 export async function PUT(request: NextRequest) {
-  try {
-    // Check authentication
-    const user = await stackServerApp.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  return withTenant(request, async () => {
+    try {
+      // Check authentication
+      const user = await stackServerApp.getUser();
+      if (!user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
 
-    const body = await request.json();
+      const body = await request.json();
 
-    if (!body.footer || typeof body.footer !== 'object') {
+      if (!body.footer || typeof body.footer !== 'object') {
+        return NextResponse.json(
+          { error: 'Invalid footer configuration' },
+          { status: 400 }
+        );
+      }
+
+      const settings = await updateFooterConfig(body.footer);
+      return NextResponse.json({
+        footer: settings.footer,
+      });
+    } catch (error) {
+      console.error('Error updating footer settings:', error);
       return NextResponse.json(
-        { error: 'Invalid footer configuration' },
-        { status: 400 }
+        { error: 'Failed to update footer settings' },
+        { status: 500 }
       );
     }
-
-    const settings = await updateFooterConfig(body.footer);
-    return NextResponse.json({
-      footer: settings.footer,
-    });
-  } catch (error) {
-    console.error('Error updating footer settings:', error);
-    return NextResponse.json(
-      { error: 'Failed to update footer settings' },
-      { status: 500 }
-    );
-  }
+  })
 }

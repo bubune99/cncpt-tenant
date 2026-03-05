@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +17,7 @@ interface RouteParams {
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
+  return withTenant(request, async () => {
   try {
     const { id } = await params
 
@@ -115,9 +117,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     console.error('Error getting customer:', error)
     return NextResponse.json({ error: 'Failed to get customer' }, { status: 500 })
   }
+  })
 }
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  return withTenant(request, async () => {
   try {
     const { id } = await params
     const body = await request.json()
@@ -164,9 +168,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     console.error('Error updating customer:', error)
     return NextResponse.json({ error: 'Failed to update customer' }, { status: 500 })
   }
+  })
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  return withTenant(request, async () => {
   try {
     const { id } = await params
 
@@ -191,4 +197,5 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     console.error('Error deleting customer:', error)
     return NextResponse.json({ error: 'Failed to delete customer' }, { status: 500 })
   }
+  })
 }

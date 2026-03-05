@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getOrCreateCart, applyDiscount, removeDiscount } from '@/lib/cms/cart';
 import { getCurrentUserId } from '@/lib/cms/cart/auth';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +17,8 @@ const CART_SESSION_COOKIE = 'cart_session_id';
 
 // POST - Apply discount code
 export async function POST(request: NextRequest) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const body = await request.json();
     const { code } = body;
 
@@ -58,18 +60,20 @@ export async function POST(request: NextRequest) {
       cart: result.cart,
       message: 'Discount applied successfully',
     });
-  } catch (error) {
-    console.error('Apply discount error:', error);
-    return NextResponse.json(
-      { error: 'Failed to apply discount' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Apply discount error:', error);
+      return NextResponse.json(
+        { error: 'Failed to apply discount' },
+        { status: 500 }
+      );
+    }
+  })
 }
 
 // DELETE - Remove discount code
 export async function DELETE(request: NextRequest) {
-  try {
+  return withTenant(request, async () => {
+    try {
     // Get session
     const cookieStore = await cookies();
     const sessionId = cookieStore.get(CART_SESSION_COOKIE)?.value;
@@ -94,11 +98,12 @@ export async function DELETE(request: NextRequest) {
       cart: updatedCart,
       message: 'Discount removed',
     });
-  } catch (error) {
-    console.error('Remove discount error:', error);
-    return NextResponse.json(
-      { error: 'Failed to remove discount' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Remove discount error:', error);
+      return NextResponse.json(
+        { error: 'Failed to remove discount' },
+        { status: 500 }
+      );
+    }
+  })
 }

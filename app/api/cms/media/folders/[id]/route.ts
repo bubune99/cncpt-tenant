@@ -1,19 +1,31 @@
 /**
  * Single Folder API
  *
- * GET /api/media/folders/[id] - Get single folder
- * PUT /api/media/folders/[id] - Update folder
- * DELETE /api/media/folders/[id] - Delete folder
+ * GET /api/cms/media/folders/[id] - Get single folder
+ * PUT /api/cms/media/folders/[id] - Update folder
+ * DELETE /api/cms/media/folders/[id] - Delete folder
  *
- * All endpoints require authentication.
+ * All endpoints require authentication and tenant context.
+ * Folder ownership is verified before any operation.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getFolder, updateFolder, deleteFolder, reorderFolders } from '@/lib/cms/media/folders'
 import type { FolderUpdateInput } from '@/lib/cms/media/types'
 import { stackServerApp } from '@/lib/cms/stack'
+import {
+  resolveTenantContext,
+  tenantRequiredResponse,
+} from '@/lib/cms/media/tenant'
 
 export const dynamic = 'force-dynamic'
+
+/**
+ * Verify that a folder record belongs to the given tenant.
+ */
+function verifyFolderTenant(folder: any, tenantId: number): boolean {
+  return folder.tenantId === tenantId
+}
 
 export async function GET(
   request: NextRequest,
@@ -29,10 +41,14 @@ export async function GET(
       )
     }
 
+    // Resolve tenant context
+    const tenant = await resolveTenantContext(request, user.id)
+    if (!tenant) return tenantRequiredResponse()
+
     const { id } = await params
     const folder = await getFolder(id)
 
-    if (!folder) {
+    if (!folder || !verifyFolderTenant(folder, tenant.tenantId)) {
       return NextResponse.json({ error: 'Folder not found' }, { status: 404 })
     }
 
@@ -60,7 +76,18 @@ export async function PUT(
       )
     }
 
+    // Resolve tenant context
+    const tenant = await resolveTenantContext(request, user.id)
+    if (!tenant) return tenantRequiredResponse()
+
     const { id } = await params
+
+    // Verify folder belongs to this tenant
+    const existing = await getFolder(id)
+    if (!existing || !verifyFolderTenant(existing, tenant.tenantId)) {
+      return NextResponse.json({ error: 'Folder not found' }, { status: 404 })
+    }
+
     const body = await request.json()
 
     // Handle reorder action
@@ -106,7 +133,18 @@ export async function DELETE(
       )
     }
 
+    // Resolve tenant context
+    const tenant = await resolveTenantContext(request, user.id)
+    if (!tenant) return tenantRequiredResponse()
+
     const { id } = await params
+
+    // Verify folder belongs to this tenant
+    const existing = await getFolder(id)
+    if (!existing || !verifyFolderTenant(existing, tenant.tenantId)) {
+      return NextResponse.json({ error: 'Folder not found' }, { status: 404 })
+    }
+
     const { searchParams } = new URL(request.url)
 
     const moveMediaTo = searchParams.get('moveMediaTo')

@@ -30,6 +30,8 @@ import type { ChatContext } from '@/lib/cms/ai/chat-store';
 import { nanoid } from 'nanoid';
 import type { EntityContext } from '@/lib/cms/socket/types';
 import { checkCredits, useCredits } from '@/lib/ai-credits';
+import { NextRequest } from 'next/server';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
@@ -460,7 +462,8 @@ Keep it under 500 words. Be factual and preserve specific details like IDs, name
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   console.log('[Chat API] ========== POST Request Started ==========');
 
   try {
@@ -807,10 +810,12 @@ export async function POST(request: Request) {
 
     return ChatSDKError.internal().toResponse();
   }
+  })
 }
 
 // Get conversation history
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const user = await stackServerApp.getUser();
 
@@ -878,10 +883,12 @@ export async function GET(request: Request) {
     console.error('[Chat API] GET Error:', error);
     return ChatSDKError.internal().toResponse();
   }
+  })
 }
 
 // Delete conversation
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const user = await stackServerApp.getUser();
 
@@ -923,4 +930,5 @@ export async function DELETE(request: Request) {
     console.error('[Chat API] DELETE Error:', error);
     return ChatSDKError.internal().toResponse();
   }
+  })
 }

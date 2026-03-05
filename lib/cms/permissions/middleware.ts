@@ -1,12 +1,17 @@
 /**
  * Permission Middleware
  * Protect API routes and server actions with permission checks
+ *
+ * All withPermission-wrapped routes automatically resolve tenant context
+ * from the x-subdomain header and set it via runWithTenant(), ensuring
+ * the Prisma tenant middleware scopes all queries to the current tenant.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from '../stack'
-import { prisma } from '../db'
+import { prisma, runWithTenant } from '../db'
 import { getUserPermissions, checkPermission, type UserWithPermissions } from './index'
+import { resolveCmsTenantContext } from '../tenant-context'
 
 export interface AuthContext {
   user: {
@@ -152,11 +157,16 @@ export function handleAuthError(error: unknown): NextResponse {
 
 /**
  * Higher-order function to wrap API route handlers with permission check
+ * and automatic tenant context resolution.
+ *
+ * Reads the x-subdomain header (set by middleware) and automatically
+ * sets the tenant context so all Prisma queries are tenant-scoped.
  *
  * Usage:
  * ```ts
  * export const GET = withPermission('products.view', async (req, context) => {
  *   // context.user is available here
+ *   // Prisma queries are automatically scoped to the current tenant
  *   return NextResponse.json({ products: [] })
  * })
  * ```
@@ -172,6 +182,18 @@ export function withPermission<T extends unknown[]>(
   return async (request: NextRequest, ...args: T): Promise<NextResponse> => {
     try {
       const authContext = await requirePermission(permission)
+
+      // Resolve tenant context from x-subdomain header
+      const tenantContext = await resolveCmsTenantContext(request)
+
+      if (tenantContext) {
+        // Run handler within tenant scope - all Prisma queries auto-filtered
+        return await runWithTenant(tenantContext.tenantId, () =>
+          handler(request, authContext, ...args)
+        )
+      }
+
+      // No tenant context (platform-level operation) - run without scoping
       return await handler(request, authContext, ...args)
     } catch (error) {
       return handleAuthError(error)
@@ -180,7 +202,7 @@ export function withPermission<T extends unknown[]>(
 }
 
 /**
- * Wrap with any permission check
+ * Wrap with any permission check (with automatic tenant context)
  */
 export function withAnyPermission<T extends unknown[]>(
   permissions: string[],
@@ -193,6 +215,14 @@ export function withAnyPermission<T extends unknown[]>(
   return async (request: NextRequest, ...args: T): Promise<NextResponse> => {
     try {
       const authContext = await requireAnyPermission(permissions)
+
+      const tenantContext = await resolveCmsTenantContext(request)
+      if (tenantContext) {
+        return await runWithTenant(tenantContext.tenantId, () =>
+          handler(request, authContext, ...args)
+        )
+      }
+
       return await handler(request, authContext, ...args)
     } catch (error) {
       return handleAuthError(error)
@@ -201,7 +231,7 @@ export function withAnyPermission<T extends unknown[]>(
 }
 
 /**
- * Wrap with auth only (no specific permission required)
+ * Wrap with auth only (no specific permission required, with automatic tenant context)
  */
 export function withAuth<T extends unknown[]>(
   handler: (
@@ -213,6 +243,14 @@ export function withAuth<T extends unknown[]>(
   return async (request: NextRequest, ...args: T): Promise<NextResponse> => {
     try {
       const authContext = await requireAuth()
+
+      const tenantContext = await resolveCmsTenantContext(request)
+      if (tenantContext) {
+        return await runWithTenant(tenantContext.tenantId, () =>
+          handler(request, authContext, ...args)
+        )
+      }
+
       return await handler(request, authContext, ...args)
     } catch (error) {
       return handleAuthError(error)
@@ -221,7 +259,7 @@ export function withAuth<T extends unknown[]>(
 }
 
 /**
- * Wrap with super admin check
+ * Wrap with super admin check (with automatic tenant context)
  */
 export function withSuperAdmin<T extends unknown[]>(
   handler: (
@@ -233,6 +271,14 @@ export function withSuperAdmin<T extends unknown[]>(
   return async (request: NextRequest, ...args: T): Promise<NextResponse> => {
     try {
       const authContext = await requireSuperAdmin()
+
+      const tenantContext = await resolveCmsTenantContext(request)
+      if (tenantContext) {
+        return await runWithTenant(tenantContext.tenantId, () =>
+          handler(request, authContext, ...args)
+        )
+      }
+
       return await handler(request, authContext, ...args)
     } catch (error) {
       return handleAuthError(error)

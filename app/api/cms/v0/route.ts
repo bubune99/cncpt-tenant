@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { getV0ImportAgent } from "@/lib/cms/v0-agent";
 import { prisma } from "@/lib/cms/db";
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -20,6 +21,7 @@ export const dynamic = 'force-dynamic'
  * - slug: Page slug (required if createPage is true)
  */
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const body = await request.json();
     const { url, code, name, description, category, createPage, slug } = body;
@@ -164,6 +166,7 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+  })
 }
 
 /**
@@ -171,7 +174,8 @@ export async function POST(request: NextRequest) {
  *
  * Health check endpoint
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
 
   return NextResponse.json({
@@ -181,4 +185,5 @@ export async function GET() {
       ? "V0 import endpoint is ready"
       : "ANTHROPIC_API_KEY is not configured",
   });
+  })
 }

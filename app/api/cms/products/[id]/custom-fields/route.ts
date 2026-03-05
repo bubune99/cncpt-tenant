@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,11 +18,12 @@ interface AddCustomFieldsBody {
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const { id: productId } = await params
+  return withTenant(request, async () => {
+    try {
+      const { id: productId } = await params
 
-    // Verify product exists
-    const product = await prisma.product.findUnique({
+      // Verify product exists
+      const product = await prisma.product.findUnique({
       where: { id: productId },
       select: { id: true, title: true },
     })
@@ -71,17 +73,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       })),
       availableFields,
     })
-  } catch (error) {
-    console.error('Get product custom fields error:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to get product custom fields' },
-      { status: 500 }
-    )
-  }
+    } catch (error) {
+      console.error('Get product custom fields error:', error)
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Failed to get product custom fields' },
+        { status: 500 }
+      )
+    }
+  })
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id: productId } = await params
     const body: AddCustomFieldsBody = await request.json()
 
@@ -142,17 +146,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       success: true,
       added: created,
     })
-  } catch (error) {
-    console.error('Add product custom fields error:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to add custom fields to product' },
-      { status: 500 }
-    )
-  }
+    } catch (error) {
+      console.error('Add product custom fields error:', error)
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Failed to add custom fields to product' },
+        { status: 500 }
+      )
+    }
+  })
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id: productId } = await params
     const body: { fieldId: string; position?: number; enabled?: boolean } = await request.json()
 
@@ -188,20 +194,22 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     })
 
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Update product custom field error:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update product custom field' },
-      { status: 500 }
-    )
-  }
+    } catch (error) {
+      console.error('Update product custom field error:', error)
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Failed to update product custom field' },
+        { status: 500 }
+      )
+    }
+  })
 }
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id: productId } = await params
     const { searchParams } = new URL(request.url)
     const fieldIds = searchParams.get('fieldIds')?.split(',').filter(Boolean) || []
@@ -241,11 +249,12 @@ export async function DELETE(
       success: true,
       removed: result.count,
     })
-  } catch (error) {
-    console.error('Remove product custom fields error:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to remove custom fields from product' },
-      { status: 500 }
-    )
-  }
+    } catch (error) {
+      console.error('Remove product custom fields error:', error)
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Failed to remove custom fields from product' },
+        { status: 500 }
+      )
+    }
+  })
 }

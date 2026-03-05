@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getOrCreateCart, addToCart } from '@/lib/cms/cart';
 import { getCurrentUserId } from '@/lib/cms/cart/auth';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -19,7 +20,8 @@ function generateSessionId(): string {
 
 // POST - Add item to cart
 export async function POST(request: NextRequest) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const body = await request.json();
     const { productId, variantId, quantity = 1 } = body;
 
@@ -90,5 +92,6 @@ export async function POST(request: NextRequest) {
       { error: 'Failed to add item to cart' },
       { status: 500 }
     );
-  }
+    }
+  })
 }

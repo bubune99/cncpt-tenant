@@ -13,12 +13,14 @@ import {
   type ReviewSort,
 } from '@/lib/cms/reviews';
 import type { ReviewStatus } from '@prisma/client';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
-// GET - List reviews (admin)
+// GET - List reviews (admin, tenant-scoped)
 export async function GET(request: NextRequest) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const searchParams = request.nextUrl.searchParams;
 
     // Build filters
@@ -60,18 +62,20 @@ export async function GET(request: NextRequest) {
     const result = await getReviews(filters, sort, page, Math.min(pageSize, 100));
 
     return NextResponse.json(result);
-  } catch (error) {
-    console.error('List reviews error:', error);
-    return NextResponse.json(
-      { error: 'Failed to list reviews' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('List reviews error:', error);
+      return NextResponse.json(
+        { error: 'Failed to list reviews' },
+        { status: 500 }
+      );
+    }
+  })
 }
 
 // POST - Submit a new review
 export async function POST(request: NextRequest) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const body = await request.json();
 
     // Validate required fields
@@ -155,5 +159,6 @@ export async function POST(request: NextRequest) {
       { error: 'Failed to submit review' },
       { status: 500 }
     );
-  }
+    }
+  })
 }

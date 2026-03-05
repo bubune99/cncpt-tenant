@@ -11,6 +11,7 @@ import {
   calculateDiscount,
   getDiscountSummary,
 } from '@/lib/cms/discounts';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -30,7 +31,8 @@ interface ValidateRequest {
 }
 
 export async function POST(request: NextRequest) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const body: ValidateRequest = await request.json();
 
     if (!body.code) {
@@ -102,11 +104,12 @@ export async function POST(request: NextRequest) {
       },
       summary,
     });
-  } catch (error) {
-    console.error('Validate discount error:', error);
-    return NextResponse.json(
-      { error: 'Failed to validate discount code' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Validate discount error:', error);
+      return NextResponse.json(
+        { error: 'Failed to validate discount code' },
+        { status: 500 }
+      );
+    }
+  })
 }

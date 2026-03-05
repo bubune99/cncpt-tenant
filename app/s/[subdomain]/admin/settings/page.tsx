@@ -31,6 +31,7 @@ import {
   Server,
   Bot,
   ToggleLeft,
+  HardDrive,
 } from "lucide-react";
 
 import { Button } from '@/components/cms/ui/button';
@@ -62,6 +63,7 @@ import AiSettings from '@/components/cms/admin/AiSettings';
 import McpApiKeysSettings from '@/components/cms/admin/McpApiKeysSettings';
 import FeatureSettings from '@/components/cms/admin/settings/feature-settings';
 import AuthSettings from '@/components/cms/admin/AuthSettings';
+import StorageSettings from '@/components/cms/admin/StorageSettings';
 
 interface StoreSettings {
   general: {
@@ -330,7 +332,7 @@ export default function SettingsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-12 lg:w-[1350px]" data-help-key="admin.settings.tabs">
+        <TabsList className="grid w-full grid-cols-13 lg:w-[1450px]" data-help-key="admin.settings.tabs">
           <TabsTrigger value="features">
             <ToggleLeft className="mr-2 h-4 w-4" />
             Features
@@ -350,6 +352,10 @@ export default function SettingsPage() {
           <TabsTrigger value="ai">
             <Bot className="mr-2 h-4 w-4" />
             AI
+          </TabsTrigger>
+          <TabsTrigger value="storage">
+            <HardDrive className="mr-2 h-4 w-4" />
+            Storage
           </TabsTrigger>
           <TabsTrigger value="notifications">
             <Bell className="mr-2 h-4 w-4" />
@@ -395,6 +401,10 @@ export default function SettingsPage() {
 
         <TabsContent value="ai" className="space-y-4" data-help-key="admin.settings.ai-tab">
           <AiSettings />
+        </TabsContent>
+
+        <TabsContent value="storage" className="space-y-4" data-help-key="admin.settings.storage-tab">
+          <StorageSettings />
         </TabsContent>
 
         <TabsContent value="general" className="space-y-4" data-help-key="admin.settings.store-tab">

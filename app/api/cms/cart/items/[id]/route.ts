@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getOrCreateCart, updateCartItem, removeFromCart } from '@/lib/cms/cart';
 import { getCurrentUserId } from '@/lib/cms/cart/auth';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -20,7 +21,8 @@ interface RouteParams {
 
 // PATCH - Update item quantity
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id: itemId } = await params;
     const body = await request.json();
     const { quantity } = body;
@@ -65,18 +67,20 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       cart: updatedCart,
       message: quantity === 0 ? 'Item removed from cart' : 'Cart updated',
     });
-  } catch (error) {
-    console.error('Update cart item error:', error);
-    return NextResponse.json(
-      { error: 'Failed to update cart item' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Update cart item error:', error);
+      return NextResponse.json(
+        { error: 'Failed to update cart item' },
+        { status: 500 }
+      );
+    }
+  })
 }
 
 // DELETE - Remove item from cart
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id: itemId } = await params;
 
     // Get session
@@ -112,11 +116,12 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       cart: updatedCart,
       message: 'Item removed from cart',
     });
-  } catch (error) {
-    console.error('Remove cart item error:', error);
-    return NextResponse.json(
-      { error: 'Failed to remove cart item' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Remove cart item error:', error);
+      return NextResponse.json(
+        { error: 'Failed to remove cart item' },
+        { status: 500 }
+      );
+    }
+  })
 }

@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
 import { syncProductToStripe, syncVariantsToStripe } from '@/lib/cms/stripe/product-sync'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +15,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id } = await params
     const body = await request.json().catch(() => ({}))
     const { syncVariants = true, forceUpdate = false } = body
@@ -71,5 +73,6 @@ export async function POST(
       { error: error instanceof Error ? error.message : 'Failed to sync with Stripe' },
       { status: 500 }
     )
-  }
+    }
+  })
 }

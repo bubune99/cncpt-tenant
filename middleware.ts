@@ -24,12 +24,12 @@ function extractSubdomain(request: NextRequest): string | null {
     // Try to extract subdomain from the full URL
     const fullUrlMatch = url.match(/http:\/\/([^.]+)\.localhost/)
     if (fullUrlMatch && fullUrlMatch[1]) {
-      return fullUrlMatch[1]
+      return sanitizeSubdomain(fullUrlMatch[1])
     }
 
     // Fallback to host header approach
     if (hostname.includes(".localhost")) {
-      return hostname.split(".")[0]
+      return sanitizeSubdomain(hostname.split(".")[0])
     }
 
     return null
@@ -41,7 +41,7 @@ function extractSubdomain(request: NextRequest): string | null {
   // Handle preview deployment URLs (tenant---branch-name.vercel.app)
   if (hostname.includes("---") && hostname.endsWith(".vercel.app")) {
     const parts = hostname.split("---")
-    return parts.length > 0 ? parts[0] : null
+    return parts.length > 0 ? sanitizeSubdomain(parts[0]) : null
   }
 
   // Regular subdomain detection
@@ -50,13 +50,31 @@ function extractSubdomain(request: NextRequest): string | null {
     hostname !== `www.${rootDomainFormatted}` &&
     hostname.endsWith(`.${rootDomainFormatted}`)
 
-  return isSubdomain ? hostname.replace(`.${rootDomainFormatted}`, "") : null
+  if (!isSubdomain) return null
+
+  const raw = hostname.replace(`.${rootDomainFormatted}`, "")
+  return sanitizeSubdomain(raw)
+}
+
+/**
+ * Sanitize extracted subdomain to only allow safe characters.
+ * Returns null if the subdomain is empty or contains only invalid characters.
+ */
+function sanitizeSubdomain(raw: string): string | null {
+  const sanitized = raw.toLowerCase().replace(/[^a-z0-9-]/g, "")
+  return sanitized.length > 0 ? sanitized : null
 }
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const host = request.headers.get("host") || ""
   const hostname = host.split(":")[0]
+
+  // SECURITY: Strip any incoming x-subdomain header to prevent spoofing.
+  // This header must ONLY be set by this middleware, never by the client.
+  // We create a new headers object without x-subdomain for all downstream processing.
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.delete("x-subdomain")
 
   // Maintenance mode check
   if (process.env.MAINTENANCE_MODE === "true") {
@@ -90,7 +108,11 @@ h1{font-size:2rem;margin-bottom:1rem}p{color:#94a3b8}
   // (e.g., /robots.txt, /sitemap.xml, /logo.png from /public)
   // Subdomain requests still proceed so favicon.ico/manifest.json get rewritten
   if (!subdomain && /^\/[\w-]+\.\w+$/.test(pathname)) {
-    return NextResponse.next()
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    })
   }
 
   // Stack Auth will handle authentication redirects through its own system
@@ -105,6 +127,21 @@ h1{font-size:2rem;margin-bottom:1rem}p{color:#94a3b8}
     // - /manifest.json -> Per-tenant PWA manifest
     // - /* -> Storefront pages
 
+    // For API routes: inject x-subdomain header so API handlers know the tenant
+    // API routes are NOT rewritten (they stay at /api/...), but they receive
+    // the tenant context via this header for tenant-scoped operations.
+    // NOTE: Route-level validation against the Subdomain table is still needed
+    // to confirm the subdomain actually exists. Middleware runs at the Edge and
+    // cannot easily query Prisma, so that check happens in resolveCmsTenantContext().
+    if (pathname.startsWith("/api")) {
+      requestHeaders.set("x-subdomain", subdomain)
+      return NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      })
+    }
+
     if (pathname === "/") {
       return NextResponse.rewrite(new URL(`/s/${subdomain}`, request.url))
     }
@@ -116,7 +153,7 @@ h1{font-size:2rem;margin-bottom:1rem}p{color:#94a3b8}
     }
 
     // Rewrite all non-API paths to the subdomain namespace
-    if (!pathname.startsWith("/api") && !pathname.startsWith("/_next")) {
+    if (!pathname.startsWith("/_next")) {
       return NextResponse.rewrite(new URL(`/s/${subdomain}${pathname}`, request.url))
     }
   }
@@ -147,31 +184,49 @@ h1{font-size:2rem;margin-bottom:1rem}p{color:#94a3b8}
           return NextResponse.redirect(new URL(adminUrl))
         }
 
+        // For API routes on custom domains: inject x-subdomain header
+        // (requestHeaders already has x-subdomain stripped from client input)
+        if (pathname.startsWith("/api")) {
+          requestHeaders.set("x-subdomain", tenantSubdomain)
+          return NextResponse.next({
+            request: {
+              headers: requestHeaders,
+            },
+          })
+        }
+
         // Public site routes
         if (pathname === "/") {
           return NextResponse.rewrite(new URL(`/s/${tenantSubdomain}`, request.url))
         }
 
-        if (!pathname.startsWith("/api") && !pathname.startsWith("/_next")) {
+        if (!pathname.startsWith("/_next")) {
           return NextResponse.rewrite(new URL(`/s/${tenantSubdomain}${pathname}`, request.url))
         }
       }
     }
   }
 
-  // On the root domain, allow normal access
-  return NextResponse.next()
+  // On the root domain, allow normal access.
+  // Pass cleaned headers (x-subdomain stripped) to prevent spoofing on root domain routes.
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  })
 }
 
 export const config = {
   matcher: [
     /*
      * Match all paths except for:
-     * 1. /api routes
-     * 2. /_next (Next.js internals)
-     * 3. root files inside /public EXCEPT favicon.ico, manifest.json, icon
+     * 1. /_next (Next.js internals)
+     * 2. root files inside /public EXCEPT favicon.ico, manifest.json, icon
      *    (those need rewriting for per-tenant branding on subdomains)
+     *
+     * Note: API routes ARE matched so we can inject x-subdomain header
+     * for tenant-scoped API operations.
      */
-    "/((?!api|_next).*)",
+    "/((?!_next).*)",
   ],
 }

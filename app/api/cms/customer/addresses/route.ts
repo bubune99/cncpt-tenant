@@ -8,11 +8,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stackServerApp } from '@/lib/cms/stack';
 import { prisma } from '@/lib/cms/db';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
-  try {
+export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
+    try {
     // Get authenticated user from Stack Auth
     const stackUser = await stackServerApp.getUser();
 
@@ -57,17 +59,19 @@ export async function GET() {
     }));
 
     return NextResponse.json({ addresses: transformed });
-  } catch (error) {
-    console.error('Error fetching addresses:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch addresses' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Error fetching addresses:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch addresses' },
+        { status: 500 }
+      );
+    }
+  })
 }
 
 export async function POST(request: NextRequest) {
-  try {
+  return withTenant(request, async () => {
+    try {
     // Get authenticated user from Stack Auth
     const stackUser = await stackServerApp.getUser();
 
@@ -167,11 +171,12 @@ export async function POST(request: NextRequest) {
         isDefaultBilling: address.isDefaultBilling,
       },
     });
-  } catch (error) {
-    console.error('Error creating address:', error);
-    return NextResponse.json(
-      { error: 'Failed to create address' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Error creating address:', error);
+      return NextResponse.json(
+        { error: 'Failed to create address' },
+        { status: 500 }
+      );
+    }
+  })
 }

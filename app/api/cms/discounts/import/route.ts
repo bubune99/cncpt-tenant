@@ -7,33 +7,37 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { listUnimportedStripeCoupons, importFromStripe } from '@/lib/cms/discounts';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
 // GET - List unimported Stripe coupons
-export async function GET() {
-  try {
+export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
+    try {
     const coupons = await listUnimportedStripeCoupons();
 
     return NextResponse.json({
       coupons,
       total: coupons.length,
     });
-  } catch (error) {
-    console.error('List unimported coupons error:', error);
-    return NextResponse.json(
-      {
-        error: 'Failed to list Stripe coupons',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('List unimported coupons error:', error);
+      return NextResponse.json(
+        {
+          error: 'Failed to list Stripe coupons',
+          details: error instanceof Error ? error.message : 'Unknown error',
+        },
+        { status: 500 }
+      );
+    }
+  })
 }
 
 // POST - Import a Stripe promotion code
 export async function POST(request: NextRequest) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const body = await request.json();
     const { promotionCodeId } = body;
 
@@ -51,14 +55,15 @@ export async function POST(request: NextRequest) {
       discountId,
       message: 'Promotion code imported successfully',
     }, { status: 201 });
-  } catch (error) {
-    console.error('Import from Stripe error:', error);
-    return NextResponse.json(
-      {
-        error: 'Failed to import from Stripe',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Import from Stripe error:', error);
+      return NextResponse.json(
+        {
+          error: 'Failed to import from Stripe',
+          details: error instanceof Error ? error.message : 'Unknown error',
+        },
+        { status: 500 }
+      );
+    }
+  })
 }

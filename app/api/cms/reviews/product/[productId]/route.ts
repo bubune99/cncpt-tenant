@@ -11,6 +11,7 @@ import {
   canCustomerReviewProduct,
   type ReviewSort,
 } from '@/lib/cms/reviews';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -20,7 +21,8 @@ interface RouteParams {
 
 // GET - Get reviews for a product
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { productId } = await params;
     const searchParams = request.nextUrl.searchParams;
 
@@ -60,11 +62,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       stats,
       eligibility,
     });
-  } catch (error) {
-    console.error('Get product reviews error:', error);
-    return NextResponse.json(
-      { error: 'Failed to get product reviews' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Get product reviews error:', error);
+      return NextResponse.json(
+        { error: 'Failed to get product reviews' },
+        { status: 500 }
+      );
+    }
+  })
 }

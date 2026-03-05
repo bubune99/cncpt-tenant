@@ -20,22 +20,25 @@ export function useAuth() {
   const [syncError, setSyncError] = useState<string | null>(null);
   const syncAttemptedRef = useRef(false);
 
-  // Sync Stack Auth user to database
+  // Sync Stack Auth user to both CMS (Prisma) and platform (raw SQL) databases
   useEffect(() => {
     if (stackUser && !syncAttemptedRef.current) {
       syncAttemptedRef.current = true;
 
       const syncUser = async () => {
+        const syncPayload = {
+          stackAuthId: stackUser.id,
+          email: stackUser.primaryEmail,
+          name: stackUser.displayName,
+          avatar: stackUser.profileImageUrl,
+        };
+
+        // Sync to CMS User model (Prisma)
         try {
           const response = await fetch("/api/cms/auth/sync", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              stackAuthId: stackUser.id,
-              email: stackUser.primaryEmail,
-              name: stackUser.displayName,
-              avatar: stackUser.profileImageUrl,
-            }),
+            body: JSON.stringify(syncPayload),
           });
 
           if (response.ok) {
@@ -43,12 +46,24 @@ export function useAuth() {
             setDbUser(data.user);
           } else {
             const error = await response.json();
-            console.error("User sync failed:", error);
-            setSyncError(error.error || "Sync failed");
+            console.error("CMS user sync failed:", error);
+            setSyncError(error.error || "CMS sync failed");
           }
         } catch (error) {
-          console.error("User sync error:", error);
-          setSyncError("Network error during sync");
+          console.error("CMS user sync error:", error);
+          setSyncError("Network error during CMS sync");
+        }
+
+        // Sync to platform users table (raw SQL) — fire-and-forget
+        try {
+          await fetch("/api/auth/sync-platform", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(syncPayload),
+          });
+        } catch (error) {
+          // Platform sync failure is non-critical — webhook will catch up
+          console.warn("Platform user sync error (non-critical):", error);
         }
       };
 

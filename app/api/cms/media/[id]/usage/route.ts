@@ -1,14 +1,19 @@
 /**
  * Media Usage API
  *
- * GET /api/media/[id]/usage - Get all places where media is used
+ * GET /api/cms/media/[id]/usage - Get all places where media is used
  *
- * Requires authentication.
+ * Requires authentication and tenant context.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { getMedia } from '@/lib/cms/media'
 import { getMediaUsage, getUsageCount, isMediaInUse } from '@/lib/cms/media/usage'
 import { stackServerApp } from '@/lib/cms/stack'
+import {
+  resolveTenantContext,
+  tenantRequiredResponse,
+} from '@/lib/cms/media/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,7 +31,18 @@ export async function GET(
       )
     }
 
+    // Resolve tenant context
+    const tenant = await resolveTenantContext(request, user.id)
+    if (!tenant) return tenantRequiredResponse()
+
     const { id } = await params
+
+    // Verify the media belongs to this tenant
+    const media = await getMedia(id, false)
+    if (!media || (media as any).tenantId !== tenant.tenantId) {
+      return NextResponse.json({ error: 'Media not found' }, { status: 404 })
+    }
+
     const { searchParams } = new URL(request.url)
     const countOnly = searchParams.get('countOnly') === 'true'
 

@@ -6,12 +6,14 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { confirmSubscription } from '@/lib/cms/email/subscriptions'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
 export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   const searchParams = request.nextUrl.searchParams
   const token = searchParams.get('token')
 
@@ -26,4 +28,5 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.redirect(`${APP_URL}/email/confirmed?success=true`)
+  })
 }

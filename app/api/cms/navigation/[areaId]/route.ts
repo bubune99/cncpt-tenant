@@ -1,5 +1,5 @@
 /**
- * Navigation API
+ * Navigation API (tenant-scoped)
  *
  * GET /api/navigation/[areaId]
  * Returns navigation for an authenticated area, including CMS pages.
@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAreaNavigation, getAreaConfig } from '@/lib/cms/authenticated-routes';
 import { getAuthContext } from '@/lib/cms/permissions/middleware';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -15,6 +16,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ areaId: string }> }
 ) {
+  return withTenant(request, async () => {
   try {
     const { areaId } = await params;
 
@@ -39,7 +41,7 @@ export async function GET(
         }
       : undefined;
 
-    // Get navigation with CMS pages
+    // Get navigation with CMS pages (auto-scoped to tenant)
     const { groups, cmsPages } = await getAreaNavigation(areaId, userContext);
 
     return NextResponse.json({
@@ -57,4 +59,5 @@ export async function GET(
       { status: 500 }
     );
   }
+  })
 }

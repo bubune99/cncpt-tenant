@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { mergeCartsOnLogin } from '@/lib/cms/cart';
 import { getCurrentUserId } from '@/lib/cms/cart/auth';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,8 @@ const CART_SESSION_COOKIE = 'cart_session_id';
 
 // POST - Merge guest cart on login
 export async function POST(request: NextRequest) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const body = await request.json().catch(() => ({}));
     let { userId } = body;
 
@@ -56,11 +58,12 @@ export async function POST(request: NextRequest) {
     response.cookies.delete(CART_SESSION_COOKIE);
 
     return response;
-  } catch (error) {
-    console.error('Merge carts error:', error);
-    return NextResponse.json(
-      { error: 'Failed to merge carts' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Merge carts error:', error);
+      return NextResponse.json(
+        { error: 'Failed to merge carts' },
+        { status: 500 }
+      );
+    }
+  })
 }

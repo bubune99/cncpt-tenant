@@ -16,6 +16,7 @@ import ProductSearch from './ProductSearch'
 import AddToCartButton from './AddToCartButton'
 import CartSummary from './CartSummary'
 import FeaturedProducts from './FeaturedProducts'
+import ShopSection from './ShopSection'
 
 // ---------------------------------------------------------------------------
 // ProductGrid
@@ -389,6 +390,95 @@ registerSmartBlock({
 })
 
 // ---------------------------------------------------------------------------
+// ShopSection
+// ---------------------------------------------------------------------------
+registerSmartBlock({
+  componentName: 'ShopSection',
+  displayName: 'Shop Section',
+  category: 'commerce',
+  icon: 'store',
+  component: ShopSection,
+  dataRequirements: (block: Block) => [
+    {
+      key: 'products',
+      fetcher: 'fetchProducts',
+      args: {
+        limit: block.commerce?.limit ?? 12,
+        categorySlug: block.commerce?.handle || undefined,
+        sort: block.commerce?.sortKey ?? 'CREATED_AT',
+        reverse: block.commerce?.reverse ?? true,
+      },
+    },
+  ],
+  defaultBlock: {
+    tag: 'section',
+    className: 'py-8 sm:py-12',
+    textContent: 'Shop Our Products',
+    componentName: 'ShopSection',
+    commerce: {
+      type: 'collection',
+      limit: 12,
+      sortKey: 'CREATED_AT',
+      reverse: true,
+    },
+  },
+  editorConfig: {
+    fields: [
+      {
+        key: 'handle',
+        label: 'Collection slug (empty = all)',
+        type: 'text',
+        defaultValue: '',
+        target: 'commerce',
+      },
+      {
+        key: 'limit',
+        label: 'Max products',
+        type: 'number',
+        defaultValue: 12,
+        min: 1,
+        max: 50,
+        target: 'commerce',
+      },
+      {
+        key: 'data-columns',
+        label: 'Columns',
+        type: 'select',
+        defaultValue: '4',
+        options: [
+          { label: '2', value: '2' },
+          { label: '3', value: '3' },
+          { label: '4', value: '4' },
+          { label: '5', value: '5' },
+          { label: '6', value: '6' },
+        ],
+        target: 'attrs',
+      },
+      {
+        key: 'data-show-filters',
+        label: 'Show sort controls',
+        type: 'toggle',
+        defaultValue: true,
+        target: 'attrs',
+      },
+      {
+        key: 'sortKey',
+        label: 'Default sort',
+        type: 'select',
+        defaultValue: 'CREATED_AT',
+        options: [
+          { label: 'Newest', value: 'CREATED_AT' },
+          { label: 'Price', value: 'PRICE' },
+          { label: 'Title', value: 'TITLE' },
+          { label: 'Best Selling', value: 'BEST_SELLING' },
+        ],
+        target: 'commerce',
+      },
+    ],
+  },
+})
+
+// ---------------------------------------------------------------------------
 // Re-exports for direct imports
 // ---------------------------------------------------------------------------
 export { default as ProductGrid } from './ProductGrid'
@@ -399,3 +489,4 @@ export { default as ProductSearch } from './ProductSearch'
 export { default as AddToCartButton } from './AddToCartButton'
 export { default as CartSummary } from './CartSummary'
 export { default as FeaturedProducts } from './FeaturedProducts'
+export { default as ShopSection } from './ShopSection'

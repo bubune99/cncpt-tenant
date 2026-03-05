@@ -75,15 +75,17 @@ export interface StorageSettings {
   provider: 's3' | 'r2' | 'local'
   bucket?: string
   region?: string
-  accessKeyId?: string
-  secretAccessKey?: string
+  accessKeyId?: string     // ENCRYPTED in DB
+  secretAccessKey?: string // ENCRYPTED in DB
   endpoint?: string // For R2 or S3-compatible
   publicUrl?: string
+  forcePathStyle?: boolean // needed for some S3-compatible providers (R2, MinIO)
   maxFileSize: number // in MB (general limit, used as fallback)
   maxImageSize?: number // in MB (default: 50MB)
   maxVideoSize?: number // in MB (default: 2048MB / 2GB)
   maxAudioSize?: number // in MB (default: 500MB)
   allowedFileTypes: string[]
+  tenantIsolation?: boolean // prefix keys with tenant ID
 }
 
 // AI rate limits per role (messages per day, 0 = unlimited for admin, 0 = disabled for guest)
@@ -180,11 +182,13 @@ export const DEFAULT_EMAIL_SETTINGS: EmailSettings = {
 
 export const DEFAULT_STORAGE_SETTINGS: StorageSettings = {
   provider: 's3',
+  forcePathStyle: false,
   maxFileSize: 500, // 500MB general limit
   maxImageSize: 50, // 50MB for images
   maxVideoSize: 2048, // 2GB for videos
   maxAudioSize: 500, // 500MB for audio
   allowedFileTypes: ['image/*', 'video/*', 'audio/*', 'application/pdf'],
+  tenantIsolation: true,
 }
 
 export const DEFAULT_AI_SETTINGS: AiSettings = {
@@ -234,12 +238,19 @@ export const REQUIRED_ENV_VARS: EnvVarStatus[] = [
   { name: 'NEXT_PUBLIC_MATOMO_URL', configured: false, required: false, group: 'analytics', description: 'Matomo server URL' },
   { name: 'NEXT_PUBLIC_MATOMO_SITE_ID', configured: false, required: false, group: 'analytics', description: 'Matomo site ID' },
 
-  // Storage (S3/R2)
+  // Storage (S3/R2) — env vars are fallback; DB settings take precedence (Admin > Settings > Storage)
+  { name: 'STORAGE_PROVIDER', configured: false, required: false, group: 'storage', description: 'Storage provider: s3, r2, or local' },
   { name: 'S3_BUCKET', configured: false, required: false, group: 'storage', description: 'S3 bucket name' },
   { name: 'S3_REGION', configured: false, required: false, group: 'storage', description: 'S3 region' },
   { name: 'S3_ACCESS_KEY_ID', configured: false, required: false, group: 'storage', description: 'S3 access key ID' },
   { name: 'S3_SECRET_ACCESS_KEY', configured: false, required: false, group: 'storage', description: 'S3 secret access key' },
-  { name: 'S3_ENDPOINT', configured: false, required: false, group: 'storage', description: 'S3-compatible endpoint (for R2)' },
+  { name: 'S3_ENDPOINT', configured: false, required: false, group: 'storage', description: 'S3-compatible endpoint' },
+  { name: 'S3_PUBLIC_URL', configured: false, required: false, group: 'storage', description: 'Custom public URL prefix for S3' },
+  { name: 'R2_BUCKET', configured: false, required: false, group: 'storage', description: 'R2 bucket name' },
+  { name: 'R2_ACCOUNT_ID', configured: false, required: false, group: 'storage', description: 'Cloudflare account ID' },
+  { name: 'R2_ACCESS_KEY_ID', configured: false, required: false, group: 'storage', description: 'R2 API token key ID' },
+  { name: 'R2_SECRET_ACCESS_KEY', configured: false, required: false, group: 'storage', description: 'R2 API token secret' },
+  { name: 'R2_PUBLIC_URL', configured: false, required: false, group: 'storage', description: 'R2 public URL for serving files' },
 
   // AI (Anthropic/Claude)
   { name: 'ANTHROPIC_API_KEY', configured: false, required: true, group: 'ai', description: 'Anthropic API key for Claude Sonnet/Haiku' },

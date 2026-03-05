@@ -1,5 +1,5 @@
 /**
- * Header Settings API
+ * Header Settings API (tenant-scoped)
  *
  * GET /api/admin/site-settings/header - Get header configuration
  * PUT /api/admin/site-settings/header - Update header configuration
@@ -11,62 +11,67 @@ import {
   updateHeaderConfig,
 } from '@/lib/cms/site-settings';
 import { stackServerApp } from '@/lib/cms/stack';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
 /**
  * GET - Fetch header configuration
  */
-export async function GET() {
-  try {
-    // Check authentication
-    const user = await stackServerApp.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
+    try {
+      // Check authentication
+      const user = await stackServerApp.getUser();
+      if (!user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
 
-    const settings = await getOrCreateSiteSettings();
-    return NextResponse.json({
-      header: settings.header,
-    });
-  } catch (error) {
-    console.error('Error fetching header settings:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch header settings' },
-      { status: 500 }
-    );
-  }
+      const settings = await getOrCreateSiteSettings();
+      return NextResponse.json({
+        header: settings.header,
+      });
+    } catch (error) {
+      console.error('Error fetching header settings:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch header settings' },
+        { status: 500 }
+      );
+    }
+  })
 }
 
 /**
  * PUT - Update header configuration
  */
 export async function PUT(request: NextRequest) {
-  try {
-    // Check authentication
-    const user = await stackServerApp.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  return withTenant(request, async () => {
+    try {
+      // Check authentication
+      const user = await stackServerApp.getUser();
+      if (!user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
 
-    const body = await request.json();
+      const body = await request.json();
 
-    if (!body.header || typeof body.header !== 'object') {
+      if (!body.header || typeof body.header !== 'object') {
+        return NextResponse.json(
+          { error: 'Invalid header configuration' },
+          { status: 400 }
+        );
+      }
+
+      const settings = await updateHeaderConfig(body.header);
+      return NextResponse.json({
+        header: settings.header,
+      });
+    } catch (error) {
+      console.error('Error updating header settings:', error);
       return NextResponse.json(
-        { error: 'Invalid header configuration' },
-        { status: 400 }
+        { error: 'Failed to update header settings' },
+        { status: 500 }
       );
     }
-
-    const settings = await updateHeaderConfig(body.header);
-    return NextResponse.json({
-      header: settings.header,
-    });
-  } catch (error) {
-    console.error('Error updating header settings:', error);
-    return NextResponse.json(
-      { error: 'Failed to update header settings' },
-      { status: 500 }
-    );
-  }
+  })
 }

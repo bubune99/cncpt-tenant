@@ -28,6 +28,8 @@ import { getAiSettings } from '@/lib/cms/settings';
 import { ChatSDKError } from '@/lib/cms/ai/errors';
 import { checkCredits, useCredits } from '@/lib/ai-credits';
 import { isSuperAdmin } from '@/lib/super-admin';
+import { NextRequest } from 'next/server';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
@@ -262,7 +264,8 @@ const requestSchema = z.object({
 /*  POST handler                                                       */
 /* ------------------------------------------------------------------ */
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     // --- Auth: require authenticated user ---
     const user = await stackServerApp.getUser();
@@ -445,4 +448,5 @@ export async function POST(request: Request) {
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
+  })
 }

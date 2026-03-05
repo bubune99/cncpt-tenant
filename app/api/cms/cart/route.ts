@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getOrCreateCart, getCartStats } from '@/lib/cms/cart';
 import { getCurrentUserId } from '@/lib/cms/cart/auth';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -21,7 +22,8 @@ function generateSessionId(): string {
 
 // GET - Get current cart
 export async function GET(request: NextRequest) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { searchParams } = new URL(request.url);
     const includeStats = searchParams.get('stats') === 'true';
 
@@ -63,18 +65,20 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ cart });
-  } catch (error) {
-    console.error('Get cart error:', error);
-    return NextResponse.json(
-      { error: 'Failed to get cart' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Get cart error:', error);
+      return NextResponse.json(
+        { error: 'Failed to get cart' },
+        { status: 500 }
+      );
+    }
+  })
 }
 
 // POST - Create new cart (explicit creation with session)
 export async function POST(request: NextRequest) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const body = await request.json().catch(() => ({}));
     const { email } = body;
 
@@ -107,11 +111,12 @@ export async function POST(request: NextRequest) {
     });
 
     return response;
-  } catch (error) {
-    console.error('Create cart error:', error);
-    return NextResponse.json(
-      { error: 'Failed to create cart' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Create cart error:', error);
+      return NextResponse.json(
+        { error: 'Failed to create cart' },
+        { status: 500 }
+      );
+    }
+  })
 }

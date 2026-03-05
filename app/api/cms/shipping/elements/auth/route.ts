@@ -8,12 +8,14 @@
  * @see https://docs.goshippo.com/docs/shippingelements/
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getShippingSettings } from '@/lib/cms/shippo';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const settings = await getShippingSettings();
 
@@ -128,4 +130,5 @@ export async function POST() {
       { status: 500 }
     );
   }
+  })
 }

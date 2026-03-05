@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/cms/db';
 import { getUcpSession, updateUcpSession } from '@/lib/cms/ucp/sessions';
 import { ucpEnvelope, getBaseUrl } from '@/lib/cms/ucp/types';
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic';
 
@@ -28,6 +29,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  return withTenant(request, async () => {
   try {
     const { id } = await params;
     const session = getUcpSession(id);
@@ -176,6 +178,7 @@ export async function POST(
       { status: 500, headers: { 'Access-Control-Allow-Origin': '*' } }
     );
   }
+  })
 }
 
 // CORS preflight

@@ -8,11 +8,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stackServerApp } from '@/lib/cms/stack';
 import { prisma } from '@/lib/cms/db';
 import { OrderStatus } from '@prisma/client';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
-  try {
+  return withTenant(request, async () => {
+    try {
     // Get authenticated user from Stack Auth
     const stackUser = await stackServerApp.getUser();
 
@@ -126,11 +128,12 @@ export async function GET(request: NextRequest) {
       limit,
       offset,
     });
-  } catch (error) {
-    console.error('Error fetching customer orders:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch orders' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Error fetching customer orders:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch orders' },
+        { status: 500 }
+      );
+    }
+  })
 }

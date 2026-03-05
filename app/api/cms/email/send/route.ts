@@ -29,6 +29,7 @@ import { renderPasswordResetEmail, renderPasswordChangedEmail } from '@/lib/cms/
 import { renderCartAbandonmentEmail } from '@/lib/cms/email/templates/cart-abandonment'
 import { renderTemplate, StoreConfig } from '@/lib/cms/email/templates/renderer'
 import { getEmailSettings } from '@/lib/cms/settings'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -108,6 +109,7 @@ function normalizeEmails(input: EmailAddress | EmailAddress[] | string | string[
 }
 
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const body: SendEmailRequest = await request.json()
 
@@ -298,12 +300,14 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
+  })
 }
 
 /**
  * GET /api/email/send - Get queue status (for async sends)
  */
 export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const { searchParams } = new URL(request.url)
     const queueId = searchParams.get('queueId')
@@ -349,4 +353,5 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
+  })
 }

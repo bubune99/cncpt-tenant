@@ -16,6 +16,7 @@ import {
   flagReview,
 } from '@/lib/cms/reviews';
 import type { ReviewStatus } from '@prisma/client';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -25,7 +26,8 @@ interface RouteParams {
 
 // GET - Get review details
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id } = await params;
 
     const review = await getReviewById(id);
@@ -38,18 +40,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     return NextResponse.json(review);
-  } catch (error) {
-    console.error('Get review error:', error);
-    return NextResponse.json(
-      { error: 'Failed to get review' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Get review error:', error);
+      return NextResponse.json(
+        { error: 'Failed to get review' },
+        { status: 500 }
+      );
+    }
+  })
 }
 
 // PATCH - Update review (moderation)
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id } = await params;
     const body = await request.json();
 
@@ -108,18 +112,20 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const review = await updateReview(id, updateData);
 
     return NextResponse.json(review);
-  } catch (error) {
-    console.error('Update review error:', error);
-    return NextResponse.json(
-      { error: 'Failed to update review' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Update review error:', error);
+      return NextResponse.json(
+        { error: 'Failed to update review' },
+        { status: 500 }
+      );
+    }
+  })
 }
 
 // DELETE - Delete review
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id } = await params;
 
     // Check review exists
@@ -137,11 +143,12 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       success: true,
       message: 'Review deleted successfully',
     });
-  } catch (error) {
-    console.error('Delete review error:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete review' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Delete review error:', error);
+      return NextResponse.json(
+        { error: 'Failed to delete review' },
+        { status: 500 }
+      );
+    }
+  })
 }

@@ -5,14 +5,16 @@
  * Used by the frontend to dynamically render the appropriate dashboard layout.
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { stackServerApp } from '@/lib/cms/stack';
 import { getDashboardConfig } from '@/lib/cms/dashboard';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
-  try {
+export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
+    try {
     // Check authentication (optional - allow anonymous for caching)
     const stackUser = await stackServerApp.getUser();
 
@@ -38,11 +40,12 @@ export async function GET() {
       theme: config.theme,
       isAuthenticated: !!stackUser,
     });
-  } catch (error) {
-    console.error('Error fetching customer dashboard config:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch dashboard configuration' },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Error fetching customer dashboard config:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch dashboard configuration' },
+        { status: 500 }
+      );
+    }
+  })
 }

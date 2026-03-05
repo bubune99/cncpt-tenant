@@ -21,6 +21,7 @@ import {
   initializeOrderWorkflow,
   assignWorkflowToOrder,
 } from '@/lib/cms/order-workflows'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,7 +30,8 @@ interface RouteParams {
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id: orderId } = await params
     const { searchParams } = new URL(request.url)
     const customerView = searchParams.get('customerView') === 'true'
@@ -49,17 +51,19 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     return NextResponse.json({ order })
-  } catch (error) {
-    console.error('Error getting order progress:', error)
-    return NextResponse.json(
-      { error: 'Failed to get order progress' },
-      { status: 500 }
-    )
-  }
+    } catch (error) {
+      console.error('Error getting order progress:', error)
+      return NextResponse.json(
+        { error: 'Failed to get order progress' },
+        { status: 500 }
+      )
+    }
+  })
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id: orderId } = await params
     const body = await request.json()
 
@@ -130,15 +134,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       { error: 'action or stageId is required' },
       { status: 400 }
     )
-  } catch (error) {
-    console.error('Error updating order progress:', error)
-    const message = error instanceof Error ? error.message : 'Failed to update progress'
-    return NextResponse.json({ error: message }, { status: 500 })
-  }
+    } catch (error) {
+      console.error('Error updating order progress:', error)
+      const message = error instanceof Error ? error.message : 'Failed to update progress'
+      return NextResponse.json({ error: message }, { status: 500 })
+    }
+  })
 }
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { id: orderId } = await params
     const body = await request.json()
 
@@ -195,9 +201,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       { error: 'action is required (toggleAutoSync, revert, or skip)' },
       { status: 400 }
     )
-  } catch (error) {
-    console.error('Error updating order progress:', error)
-    const message = error instanceof Error ? error.message : 'Failed to update progress'
-    return NextResponse.json({ error: message }, { status: 500 })
-  }
+    } catch (error) {
+      console.error('Error updating order progress:', error)
+      const message = error instanceof Error ? error.message : 'Failed to update progress'
+      return NextResponse.json({ error: message }, { status: 500 })
+    }
+  })
 }

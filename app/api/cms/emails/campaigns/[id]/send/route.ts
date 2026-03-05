@@ -9,6 +9,7 @@ import { prisma } from '@/lib/cms/db'
 import { sendEmail } from '@/lib/cms/email'
 import { processEmailForTracking, getUnsubscribeHeaders } from '@/lib/cms/email/tracking'
 import { parseMergeTags } from '@/lib/cms/email/merge-tags'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +17,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  return withTenant(request, async () => {
   try {
     const { id } = await params
     const body = await request.json()
@@ -226,4 +228,5 @@ export async function POST(
       { status: 500 }
     )
   }
+  })
 }

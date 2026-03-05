@@ -12,8 +12,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stackServerApp } from '@/lib/cms/stack';
 import { prisma } from '@/lib/cms/db';
 import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.dataExport);
   if (limited) return limited;
 
@@ -379,4 +381,5 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+  })
 }

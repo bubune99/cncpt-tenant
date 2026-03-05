@@ -10,6 +10,7 @@ import { createCheckoutSession, getStripeSettings } from '@/lib/cms/stripe';
 import type { CreateCheckoutSessionRequest, CheckoutItem } from '@/lib/cms/stripe/types';
 import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit';
 import { validateCsrf } from '@/lib/cms/csrf';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 // =============================================================================
 // TYPES
@@ -82,6 +83,7 @@ async function generateOrderNumber(): Promise<string> {
 // =============================================================================
 
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.checkout);
   if (limited) return limited;
 
@@ -297,4 +299,5 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+  })
 }

@@ -1,10 +1,11 @@
 /**
  * Media API
  *
- * GET /api/media - List media with filters
- * POST /api/media - Upload new media
+ * GET /api/cms/media - List media with filters (tenant-scoped)
+ * POST /api/cms/media - Upload new media (tenant-scoped)
  *
- * All endpoints require authentication. Upload endpoints are rate-limited.
+ * All endpoints require authentication and tenant context.
+ * Tenant is resolved from x-subdomain header or subdomain query parameter.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -13,8 +14,43 @@ import { processUpload, generatePresignedUrl, validateFile } from '@/lib/cms/med
 import type { MediaFilters, MediaType } from '@/lib/cms/media/types'
 import { stackServerApp } from '@/lib/cms/stack'
 import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit'
+import {
+  resolveTenantContext,
+  getSubdomainFromRequest,
+  getTenantIdBySubdomain,
+  validateTenantOwnership,
+  tenantRequiredResponse,
+  tenantAccessDeniedResponse,
+  type TenantContext,
+} from '@/lib/cms/media/tenant'
 
 export const dynamic = 'force-dynamic'
+
+/**
+ * Resolve tenant context, returning an error response if resolution fails.
+ * This is a convenience wrapper for the route handlers.
+ */
+async function requireTenant(
+  request: NextRequest,
+  userId: string
+): Promise<TenantContext | NextResponse> {
+  const subdomain = await getSubdomainFromRequest(request)
+  if (!subdomain) {
+    return tenantRequiredResponse()
+  }
+
+  const owns = await validateTenantOwnership(userId, subdomain)
+  if (!owns) {
+    return tenantAccessDeniedResponse()
+  }
+
+  const tenantId = await getTenantIdBySubdomain(subdomain)
+  if (!tenantId) {
+    return tenantRequiredResponse()
+  }
+
+  return { subdomain, tenantId }
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,10 +63,16 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Resolve tenant context
+    const tenantResult = await requireTenant(request, user.id)
+    if (tenantResult instanceof NextResponse) return tenantResult
+    const tenant = tenantResult
+
     const { searchParams } = new URL(request.url)
 
     // Parse filters from query params
     const filters: MediaFilters = {
+      tenantId: tenant.tenantId,
       folderId: searchParams.get('folderId') || undefined,
       type: (searchParams.get('type') as MediaType) || undefined,
       search: searchParams.get('search') || undefined,
@@ -55,7 +97,7 @@ export async function GET(request: NextRequest) {
 
     // Check if stats are requested
     if (searchParams.get('stats') === 'true') {
-      const stats = await getMediaStats()
+      const stats = await getMediaStats(tenant.tenantId)
       return NextResponse.json(stats)
     }
 
@@ -81,6 +123,11 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       )
     }
+
+    // Resolve tenant context
+    const tenantResult = await requireTenant(request, user.id)
+    if (tenantResult instanceof NextResponse) return tenantResult
+    const tenant = tenantResult
 
     const contentType = request.headers.get('content-type') || ''
 
@@ -108,7 +155,11 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: validation.error }, { status: 400 })
         }
 
-        const presignedData = await generatePresignedUrl(filename, mimeType, size)
+        // Generate tenant-scoped presigned URL
+        const presignedData = await generatePresignedUrl(filename, mimeType, size, {
+          subdomain: tenant.subdomain,
+          tenantId: tenant.tenantId,
+        })
 
         return NextResponse.json(presignedData)
       }
@@ -137,6 +188,18 @@ export async function POST(request: NextRequest) {
           tagIds,
         } = body
 
+        // Verify the storage key belongs to this tenant (if tenant-scoped)
+        if (key && key.startsWith('tenants/')) {
+          const sanitizedSubdomain = tenant.subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '')
+          const expectedPrefix = `tenants/${sanitizedSubdomain}/`
+          if (!key.startsWith(expectedPrefix)) {
+            return NextResponse.json(
+              { error: 'Access denied: storage key does not belong to this tenant' },
+              { status: 403 }
+            )
+          }
+        }
+
         const media = await createMedia({
           filename,
           originalName,
@@ -154,6 +217,7 @@ export async function POST(request: NextRequest) {
           title,
           tagIds,
           uploadedById: user.id,
+          tenantId: tenant.tenantId,
         })
 
         return NextResponse.json(media, { status: 201 })
@@ -193,8 +257,11 @@ export async function POST(request: NextRequest) {
       const title = formData.get('title') as string | null
       const tagIds = (formData.get('tagIds') as string)?.split(',').filter(Boolean)
 
-      // Generate presigned URL and upload
-      const presignedData = await generatePresignedUrl(file.name, file.type, file.size)
+      // Generate tenant-scoped presigned URL and upload
+      const presignedData = await generatePresignedUrl(file.name, file.type, file.size, {
+        subdomain: tenant.subdomain,
+        tenantId: tenant.tenantId,
+      })
 
       // Upload file to storage
       const arrayBuffer = await file.arrayBuffer()
@@ -211,7 +278,7 @@ export async function POST(request: NextRequest) {
         throw new Error('Failed to upload file to storage')
       }
 
-      // Create media record — use authenticated user ID, not client-supplied value
+      // Create media record with tenant scoping
       const media = await processUpload(
         presignedData.key.split('/').pop()!,
         file.name,
@@ -228,7 +295,8 @@ export async function POST(request: NextRequest) {
           title: title || undefined,
           tagIds,
         },
-        user.id
+        user.id,
+        tenant.tenantId
       )
 
       return NextResponse.json(media, { status: 201 })

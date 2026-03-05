@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { stackServerApp } from "@/lib/cms/stack";
 import { prisma } from "@/lib/cms/db";
 import { Prisma } from "@prisma/client";
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +25,7 @@ export const dynamic = 'force-dynamic'
  * - limit: Items per page (default 20)
  */
 export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     // Check authentication
     const user = await stackServerApp.getUser();
@@ -115,6 +117,7 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+  })
 }
 
 /**
@@ -130,6 +133,7 @@ export async function GET(request: NextRequest) {
  * - editorConfig: object (required) - editor component configuration
  */
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     // Check authentication
     const user = await stackServerApp.getUser();
@@ -189,4 +193,5 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+  })
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/cms/db';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 type Metric = 'revenue' | 'orders' | 'traffic';
 type Range = '7d' | '30d' | '90d';
@@ -27,6 +28,7 @@ function generateDateBuckets(days: number): { start: Date; label: string }[] {
 }
 
 export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   const { searchParams } = request.nextUrl;
   const metric = (searchParams.get('metric') || 'revenue') as Metric;
   const range = (searchParams.get('range') || '7d') as Range;
@@ -113,4 +115,5 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+  })
 }

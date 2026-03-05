@@ -8,10 +8,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
 import { sendEmail } from '@/lib/cms/email'
 import { parseMergeTags } from '@/lib/cms/email/merge-tags'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const body = await request.json()
     const { campaignId, email, content, subject } = body
@@ -106,4 +108,5 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
+  })
 }

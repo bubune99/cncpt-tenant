@@ -7,6 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { withTenant } from '@/lib/cms/api/tenant'
 import {
   getWorkflow,
   updateWorkflow,
@@ -21,6 +22,7 @@ interface RouteParams {
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
+  return withTenant(request, async () => {
   try {
     const { id } = await params
     const workflow = await getWorkflow(id)
@@ -37,9 +39,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       { status: 500 }
     )
   }
+  })
 }
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
+  return withTenant(request, async () => {
   try {
     const { id } = await params
     const body = await request.json()
@@ -72,9 +76,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const message = error instanceof Error ? error.message : 'Failed to update workflow'
     return NextResponse.json({ error: message }, { status: 500 })
   }
+  })
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  return withTenant(request, async () => {
   try {
     const { id } = await params
 
@@ -86,4 +92,5 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const message = error instanceof Error ? error.message : 'Failed to delete workflow'
     return NextResponse.json({ error: message }, { status: 500 })
   }
+  })
 }

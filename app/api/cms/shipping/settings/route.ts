@@ -10,6 +10,7 @@ import { prisma } from '@/lib/cms/db'
 import { getShippingSettings, clearShippingSettingsCache } from '@/lib/cms/shippo'
 import { encrypt } from '@/lib/cms/encryption'
 import type { ShippingSettings } from '@/lib/cms/shippo/types'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,7 +37,8 @@ const SHIPPING_SETTINGS_KEYS = [
   'shipping.requireSignature',
 ]
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const settings = await getShippingSettings()
 
@@ -55,15 +57,20 @@ export async function GET() {
       { status: 500 }
     )
   }
+  })
 }
 
 // Support both POST and PUT for updating settings
 export async function POST(request: NextRequest) {
-  return handleUpdate(request)
+  return withTenant(request, async () => {
+    return handleUpdate(request)
+  })
 }
 
 export async function PUT(request: NextRequest) {
-  return handleUpdate(request)
+  return withTenant(request, async () => {
+    return handleUpdate(request)
+  })
 }
 
 async function handleUpdate(request: NextRequest) {

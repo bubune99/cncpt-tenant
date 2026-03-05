@@ -9,10 +9,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
 import { getAnalyticsSettings, clearAnalyticsSettingsCache } from '@/lib/cms/analytics'
 import type { AnalyticsSettings } from '@/lib/cms/analytics/types'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const settings = await getAnalyticsSettings()
     return NextResponse.json(settings)
@@ -23,9 +25,11 @@ export async function GET() {
       { status: 500 }
     )
   }
+  })
 }
 
 export async function PUT(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const body: Partial<AnalyticsSettings> = await request.json()
 
@@ -115,4 +119,5 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     )
   }
+  })
 }

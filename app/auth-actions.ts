@@ -2,6 +2,7 @@
 
 import { stackServerApp } from "@/stack"
 import { redirect } from "next/navigation"
+import { syncUserToDb, syncUserToCms } from "@/lib/auth-sync"
 
 export async function registerAction(prevState: any, formData: FormData) {
   const email = formData.get("email") as string
@@ -17,11 +18,35 @@ export async function registerAction(prevState: any, formData: FormData) {
   }
 
   try {
-    await stackServerApp.createUser({
+    const stackUser = await stackServerApp.createUser({
       primaryEmail: email,
       password: password,
       displayName: name,
     })
+
+    // Immediately sync to both platform users table and CMS User model
+    // This ensures the user record exists before they hit the dashboard
+    try {
+      await syncUserToDb({
+        id: stackUser.id,
+        primaryEmail: email,
+        displayName: name,
+        profileImageUrl: null,
+      })
+    } catch (syncError) {
+      console.warn("[register] Platform user sync failed (non-critical):", syncError)
+    }
+
+    try {
+      await syncUserToCms({
+        id: stackUser.id,
+        primaryEmail: email,
+        displayName: name,
+        profileImageUrl: null,
+      })
+    } catch (syncError) {
+      console.warn("[register] CMS user sync failed (non-critical):", syncError)
+    }
 
     // Sign in the user after registration
     await stackServerApp.signInWithPassword({ email, password })

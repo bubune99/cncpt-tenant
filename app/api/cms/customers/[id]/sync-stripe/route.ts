@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
+import { withTenant } from '@/lib/cms/api/tenant'
 import {
   syncCustomerToStripe,
   getCustomerSyncStatus,
@@ -18,6 +19,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  return withTenant(request, async () => {
   try {
     const { id } = await params
     const body = await request.json().catch(() => ({}))
@@ -64,12 +66,14 @@ export async function POST(
       { status: 500 }
     )
   }
+  })
 }
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  return withTenant(request, async () => {
   try {
     const { id } = await params
 
@@ -88,4 +92,5 @@ export async function GET(
       { status: 500 }
     )
   }
+  })
 }

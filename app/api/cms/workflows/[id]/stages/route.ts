@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { withTenant } from '@/lib/cms/api/tenant'
 import {
   addStage,
   updateStage,
@@ -21,6 +22,7 @@ interface RouteParams {
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
+  return withTenant(request, async () => {
   try {
     const { id: workflowId } = await params
     const body = await request.json()
@@ -53,9 +55,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const message = error instanceof Error ? error.message : 'Failed to add stage'
     return NextResponse.json({ error: message }, { status: 500 })
   }
+  })
 }
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
+  return withTenant(request, async () => {
   try {
     const { id: workflowId } = await params
     const body = await request.json()
@@ -94,9 +98,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const message = error instanceof Error ? error.message : 'Failed to update stage'
     return NextResponse.json({ error: message }, { status: 500 })
   }
+  })
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  return withTenant(request, async () => {
   try {
     const { searchParams } = new URL(request.url)
     const stageId = searchParams.get('stageId')
@@ -116,4 +122,5 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const message = error instanceof Error ? error.message : 'Failed to delete stage'
     return NextResponse.json({ error: message }, { status: 500 })
   }
+  })
 }

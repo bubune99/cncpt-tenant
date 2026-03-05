@@ -16,23 +16,20 @@ import {
   deleteTenantMedia,
   getTenantCategories,
   getTenantStorageUsage,
-  R2_CONFIG,
+  getStorageConfig,
   type MediaCategory,
 } from '@/lib/cms/r2/client';
 import { stackServerApp } from '@/lib/cms/stack';
 import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit';
 import { sql } from '@/lib/neon';
 
-// Get subdomain from request headers (set by middleware)
-async function getSubdomain(req: NextRequest): Promise<string | null> {
+// Get subdomain from request headers (set by middleware).
+// SECURITY: Only reads from x-subdomain header, not query params,
+// to prevent cross-tenant access via ?subdomain= spoofing.
+// The middleware strips any client-supplied x-subdomain before setting its own.
+async function getSubdomain(_req: NextRequest): Promise<string | null> {
   const headersList = await headers();
-  const subdomain = headersList.get('x-subdomain');
-
-  // Also check query param for admin panel usage
-  const url = new URL(req.url);
-  const querySubdomain = url.searchParams.get('subdomain');
-
-  return subdomain || querySubdomain;
+  return headersList.get('x-subdomain');
 }
 
 /**
@@ -77,9 +74,10 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    if (!R2_CONFIG.isConfigured) {
+    const storageConfig = await getStorageConfig();
+    if (!storageConfig.isConfigured) {
       return NextResponse.json(
-        { error: 'R2 storage is not configured' },
+        { error: 'Storage is not configured. Configure via Admin > Settings > Storage or set env vars.' },
         { status: 503 }
       );
     }
@@ -162,9 +160,10 @@ export async function POST(req: NextRequest) {
     const limited = await rateLimitCheck(req, RATE_LIMIT_PRESETS.upload);
     if (limited) return limited;
 
-    if (!R2_CONFIG.isConfigured) {
+    const storageConfig = await getStorageConfig();
+    if (!storageConfig.isConfigured) {
       return NextResponse.json(
-        { error: 'R2 storage is not configured' },
+        { error: 'Storage is not configured. Configure via Admin > Settings > Storage or set env vars.' },
         { status: 503 }
       );
     }
@@ -276,9 +275,10 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    if (!R2_CONFIG.isConfigured) {
+    const storageConfig = await getStorageConfig();
+    if (!storageConfig.isConfigured) {
       return NextResponse.json(
-        { error: 'R2 storage is not configured' },
+        { error: 'Storage is not configured. Configure via Admin > Settings > Storage or set env vars.' },
         { status: 503 }
       );
     }

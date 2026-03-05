@@ -15,13 +15,15 @@ import {
   clearFeatureCache,
   MODULE_FEATURES,
 } from "@/lib/cms/features"
+import { withTenant } from "@/lib/cms/api/tenant"
 
 /**
  * GET /api/cms/admin/features/presets
  *
  * List all available vertical presets.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   return NextResponse.json({
     ok: true,
     data: FEATURE_PRESETS.map((p) => ({
@@ -33,6 +35,7 @@ export async function GET() {
       tags: p.tags,
     })),
   })
+  })
 }
 
 /**
@@ -41,6 +44,7 @@ export async function GET() {
  * Apply a preset. Body: { presetId: string }
  */
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   const tenantId = getCurrentTenant()
   const body = await request.json()
   const { presetId } = body as { presetId: string }
@@ -94,5 +98,6 @@ export async function POST(request: NextRequest) {
       preset: preset.name,
       config,
     },
+  })
   })
 }

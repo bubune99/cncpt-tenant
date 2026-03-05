@@ -6,10 +6,12 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
@@ -83,9 +85,11 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
+  })
 }
 
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const body = await request.json()
     const { name, description, category, subject, preheader, html, content } = body
@@ -133,4 +137,5 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
+  })
 }

@@ -7,10 +7,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateAddress, getShippingSettings } from '@/lib/cms/shippo'
 import type { ShippingAddress } from '@/lib/cms/shippo/types'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const address: ShippingAddress = await request.json()
     const settings = await getShippingSettings()
@@ -43,4 +45,5 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
+  })
 }

@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { markCartRecovered } from '@/lib/cms/cart';
 import { prisma } from '@/lib/cms/db';
 import { CartStatus } from '@prisma/client';
+import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -22,7 +23,8 @@ interface RouteParams {
 
 // GET - Recover cart and redirect
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  try {
+  return withTenant(request, async () => {
+    try {
     const { token: cartId } = await params;
 
     // Find the cart
@@ -78,10 +80,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     return response;
-  } catch (error) {
-    console.error('Cart recovery error:', error);
-    return NextResponse.redirect(
-      new URL('/?error=recovery_failed', request.url)
-    );
-  }
+    } catch (error) {
+      console.error('Cart recovery error:', error);
+      return NextResponse.redirect(
+        new URL('/?error=recovery_failed', request.url)
+      );
+    }
+  })
 }

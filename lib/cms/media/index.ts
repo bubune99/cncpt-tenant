@@ -37,6 +37,7 @@ const db = prisma as PrismaWithMedia
 // Type for media where input
 interface MediaWhereInput {
   id?: { in: string[] }
+  tenantId?: number | null
   deletedAt?: null | Date | { gte?: Date }
   folderId?: string | null
   mimeType?: { startsWith?: string; contains?: string } | string
@@ -63,6 +64,7 @@ export async function listMedia(filters: MediaFilters = {}): Promise<MediaListRe
     type,
     search,
     tagIds,
+    tenantId,
     includeDeleted = false,
     page = 1,
     limit = 50,
@@ -71,6 +73,11 @@ export async function listMedia(filters: MediaFilters = {}): Promise<MediaListRe
   } = filters
 
   const where: MediaWhereInput = {}
+
+  // Tenant isolation -- CRITICAL for multi-tenant security
+  if (tenantId !== undefined) {
+    where.tenantId = tenantId
+  }
 
   // Soft delete filter
   if (!includeDeleted) {
@@ -223,11 +230,13 @@ export async function getMedia(id: string, includeUsage = true): Promise<MediaWi
 // =============================================================================
 
 export async function createMedia(input: MediaCreateInput): Promise<MediaWithRelations> {
-  const { tagIds, ...data } = input
+  const { tagIds, tenantId, ...data } = input
 
   const media = await db.media.create({
     data: {
       ...data,
+      // Connect to tenant if tenantId is provided
+      ...(tenantId ? { tenantId } : {}),
       tags: tagIds?.length
         ? {
             create: tagIds.map((tagId) => ({ tagId })),
@@ -349,24 +358,28 @@ export async function restoreMedia(id: string): Promise<MediaWithRelations> {
 // BULK OPERATIONS
 // =============================================================================
 
-export async function bulkDeleteMedia(ids: string[], hard = false): Promise<number> {
+export async function bulkDeleteMedia(ids: string[], hard = false, tenantId?: number): Promise<number> {
+  const where: any = { id: { in: ids } }
+  if (tenantId !== undefined) where.tenantId = tenantId
+
   if (hard) {
-    const result = await db.media.deleteMany({
-      where: { id: { in: ids } },
-    })
+    const result = await db.media.deleteMany({ where })
     return result.count
   } else {
     const result = await db.media.updateMany({
-      where: { id: { in: ids } },
+      where,
       data: { deletedAt: new Date() },
     })
     return result.count
   }
 }
 
-export async function bulkMoveMedia(ids: string[], folderId: string | null): Promise<number> {
+export async function bulkMoveMedia(ids: string[], folderId: string | null, tenantId?: number): Promise<number> {
+  const where: any = { id: { in: ids } }
+  if (tenantId !== undefined) where.tenantId = tenantId
+
   const result = await db.media.updateMany({
-    where: { id: { in: ids } },
+    where,
     data: { folderId },
   })
   return result.count
@@ -396,9 +409,12 @@ export async function bulkUntagMedia(ids: string[], tagIds: string[]): Promise<n
   return result.count
 }
 
-export async function bulkRestoreMedia(ids: string[]): Promise<number> {
+export async function bulkRestoreMedia(ids: string[], tenantId?: number): Promise<number> {
+  const where: any = { id: { in: ids } }
+  if (tenantId !== undefined) where.tenantId = tenantId
+
   const result = await db.media.updateMany({
-    where: { id: { in: ids } },
+    where,
     data: { deletedAt: null },
   })
   return result.count
@@ -408,24 +424,27 @@ export async function bulkRestoreMedia(ids: string[]): Promise<number> {
 // STATS
 // =============================================================================
 
-export async function getMediaStats() {
+export async function getMediaStats(tenantId?: number) {
+  const baseWhere: any = { deletedAt: null }
+  if (tenantId !== undefined) baseWhere.tenantId = tenantId
+
+  const recentWhere: any = {
+    ...baseWhere,
+    createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+  }
+
   const [total, byType, totalSize, recentCount] = await Promise.all([
-    db.media.count({ where: { deletedAt: null } }),
+    db.media.count({ where: baseWhere }),
     db.media.groupBy({
       by: ['mimeType'],
-      where: { deletedAt: null },
+      where: baseWhere,
       _count: { id: true },
     }),
     db.media.aggregate({
-      where: { deletedAt: null },
+      where: baseWhere,
       _sum: { size: true },
     }),
-    db.media.count({
-      where: {
-        deletedAt: null,
-        createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-      },
-    }),
+    db.media.count({ where: recentWhere }),
   ])
 
   // Group by media type

@@ -20,6 +20,8 @@ export type {
   CommerceMoney,
   CommerceProviderConfig,
   ShopifyConfig,
+  ShopifyAdminConfig,
+  ShopifyFullConfig,
   StripeCommerceConfig,
   SaleorConfig,
 } from "./types"

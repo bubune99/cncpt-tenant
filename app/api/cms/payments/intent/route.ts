@@ -21,6 +21,7 @@ import {
 } from '@/lib/cms/stripe'
 import { createOrderPaymentIntent } from '@/lib/cms/stripe/product-sync'
 import type { CreatePaymentIntentRequest } from '@/lib/cms/stripe/types'
+import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,6 +43,7 @@ interface CreateIntentBody {
 }
 
 export async function POST(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const settings = await getStripeSettings()
 
@@ -122,9 +124,11 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
+  })
 }
 
 export async function GET(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const { searchParams } = new URL(request.url)
     const paymentIntentId = searchParams.get('paymentIntentId')
@@ -152,9 +156,11 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
+  })
 }
 
 export async function PUT(request: NextRequest) {
+  return withTenant(request, async () => {
   try {
     const body = await request.json()
     const { paymentIntentId, action, amount } = body
@@ -185,4 +191,5 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     )
   }
+  })
 }

@@ -19,7 +19,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { rateLimitCheck } from '@/lib/cms/rate-limit'
-import { buildTenantPath, R2_CONFIG, parseTenantPath } from '@/lib/cms/r2/client'
+import { buildTenantPath, getStorageConfig, parseTenantPath } from '@/lib/cms/r2/client'
 import type { MediaCategory } from '@/lib/cms/r2/client'
 import {
   initiateMultipartUpload,
@@ -33,6 +33,7 @@ import { createMedia } from '@/lib/cms/media'
 import { DEFAULT_ALLOWED_TYPES, isAllowedFileType } from '@/lib/cms/media/types'
 import { stackServerApp } from '@/lib/cms/stack'
 import { sql } from '@/lib/neon'
+import { getTenantIdBySubdomain } from '@/lib/cms/media/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -76,15 +77,11 @@ const MULTIPART_RATE_LIMIT = {
 // Auth helper: get subdomain from headers (same pattern as admin media route)
 // ---------------------------------------------------------------------------
 
-async function getSubdomain(req: NextRequest): Promise<string | null> {
+// SECURITY: Only reads from x-subdomain header, not query params,
+// to prevent cross-tenant access via ?subdomain= spoofing.
+async function getSubdomain(_req: NextRequest): Promise<string | null> {
   const headersList = await headers()
-  const subdomain = headersList.get('x-subdomain')
-
-  // Also check query param for admin panel usage
-  const url = new URL(req.url)
-  const querySubdomain = url.searchParams.get('subdomain')
-
-  return subdomain || querySubdomain
+  return headersList.get('x-subdomain')
 }
 
 /**
@@ -137,10 +134,11 @@ export async function POST(request: NextRequest) {
     const limited = await rateLimitCheck(request, MULTIPART_RATE_LIMIT)
     if (limited) return limited
 
-    // Check storage configuration
-    if (!R2_CONFIG.isConfigured) {
+    // Check storage configuration (DB-driven with env var fallback)
+    const storageConfig = await getStorageConfig()
+    if (!storageConfig.isConfigured) {
       return NextResponse.json(
-        { error: 'R2/S3 storage is not configured' },
+        { error: 'Storage is not configured. Configure via Admin > Settings > Storage or set env vars.' },
         { status: 503 }
       )
     }
@@ -166,6 +164,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { action } = body
 
+    // Resolve numeric tenantId for DB record creation
+    const tenantId = await getTenantIdBySubdomain(subdomain)
+
     switch (action) {
       case 'initiate':
         return handleInitiate(subdomain, body)
@@ -174,7 +175,7 @@ export async function POST(request: NextRequest) {
         return handlePresignPart(subdomain, body)
 
       case 'complete':
-        return handleComplete(subdomain, body, user.id)
+        return handleComplete(subdomain, body, user.id, tenantId ?? undefined)
 
       case 'abort':
         return handleAbort(subdomain, body)
@@ -240,13 +241,16 @@ async function handleInitiate(
   // Initiate the multipart upload
   const result = await initiateMultipartUpload(key, mimeType)
 
+  // Resolve public URL from DB-driven config
+  const config = await getStorageConfig()
+
   return NextResponse.json({
     uploadId: result.uploadId,
     key: result.key,
     bucket: result.bucket,
     chunkSize,
     totalParts,
-    publicUrl: `${R2_CONFIG.publicUrl}/${key}`,
+    publicUrl: `${config.publicUrl}/${key}`,
   })
 }
 
@@ -311,7 +315,8 @@ async function handleComplete(
     title?: string
     tagIds?: string[]
   },
-  authenticatedUserId: string
+  authenticatedUserId: string,
+  tenantId?: number
 ) {
   const { uploadId, key, parts, filename, mimeType, size } = body
 
@@ -371,6 +376,7 @@ async function handleComplete(
         title: body.title || filename,
         tagIds: body.tagIds,
         uploadedById: authenticatedUserId,
+        tenantId,
       })
     } catch (mediaError) {
       // Log but don't fail -- the file is already uploaded to storage

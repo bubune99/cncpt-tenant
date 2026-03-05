@@ -1,7 +1,9 @@
 /**
- * Cloudflare R2 Client Configuration
+ * Cloudflare R2 / S3-Compatible Storage Client
  *
- * R2 is S3-compatible, so we use the AWS SDK with R2's endpoint.
+ * DB-driven configuration with env var fallback.
+ * Uses getStorageSettings() from the settings system, so credentials
+ * stored in the database (encrypted) take precedence over env vars.
  *
  * Multi-Tenant Storage Schema:
  * tenants/{subdomain}/
@@ -16,30 +18,137 @@
  * └── avatars/          # User/team avatars
  */
 
-import { S3Client, ListObjectsV2Command, PutObjectCommand, DeleteObjectCommand, CopyObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  ListObjectsV2Command,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  CopyObjectCommand,
+  HeadBucketCommand,
+} from "@aws-sdk/client-s3";
+import { getStorageSettings } from '../settings';
+import type { StorageSettings } from '../settings/types';
 
-// R2 credentials from environment variables
+// ---------------------------------------------------------------------------
+// S3 Client Factory (DB-driven, cached with invalidation)
+// ---------------------------------------------------------------------------
+
+let _cachedClient: S3Client | null = null;
+let _cachedConfig: StorageResolvedConfig | null = null;
+let _cacheTimestamp = 0;
+const CLIENT_CACHE_TTL = 60 * 1000; // 1 minute — matches settings cache TTL
+
+export interface StorageResolvedConfig {
+  bucketName: string;
+  publicUrl: string;
+  endpoint: string;
+  region: string;
+  isConfigured: boolean;
+  provider: 's3' | 'r2' | 'local';
+}
+
+/**
+ * Get a configured S3 client using DB settings with env var fallback.
+ * The client is cached for 1 minute and recreated when settings change.
+ */
+export async function getS3Client(): Promise<S3Client> {
+  const now = Date.now();
+  if (_cachedClient && now - _cacheTimestamp < CLIENT_CACHE_TTL) {
+    return _cachedClient;
+  }
+
+  const settings = await getStorageSettings();
+
+  _cachedClient = new S3Client({
+    region: settings.region || 'auto',
+    endpoint: settings.endpoint || undefined,
+    credentials: {
+      accessKeyId: settings.accessKeyId || '',
+      secretAccessKey: settings.secretAccessKey || '',
+    },
+    forcePathStyle: settings.forcePathStyle ?? (settings.provider === 'r2'),
+  });
+
+  _cacheTimestamp = now;
+  return _cachedClient;
+}
+
+/**
+ * Get the resolved storage configuration from DB/env.
+ * Cached alongside the S3 client.
+ */
+export async function getStorageConfig(): Promise<StorageResolvedConfig> {
+  const now = Date.now();
+  if (_cachedConfig && now - _cacheTimestamp < CLIENT_CACHE_TTL) {
+    return _cachedConfig;
+  }
+
+  const settings = await getStorageSettings();
+
+  _cachedConfig = {
+    bucketName: settings.bucket || '',
+    publicUrl: (settings.publicUrl || '').replace(/\/$/, ''),
+    endpoint: settings.endpoint || '',
+    region: settings.region || 'auto',
+    isConfigured: Boolean(
+      settings.accessKeyId &&
+      settings.secretAccessKey &&
+      settings.bucket &&
+      (settings.provider !== 'r2' || settings.endpoint)
+    ),
+    provider: settings.provider || 's3',
+  };
+
+  return _cachedConfig;
+}
+
+/**
+ * Invalidate the cached S3 client and config.
+ * Call this after storage settings are updated via the admin API.
+ */
+export function invalidateStorageClient(): void {
+  if (_cachedClient) {
+    _cachedClient.destroy();
+  }
+  _cachedClient = null;
+  _cachedConfig = null;
+  _cacheTimestamp = 0;
+}
+
+// ---------------------------------------------------------------------------
+// Legacy exports — kept for backwards compatibility
+// ---------------------------------------------------------------------------
+
+/**
+ * @deprecated Use getS3Client() instead. This is kept for code that imports r2Client directly.
+ * Falls back to env vars for module-level initialization (non-async context).
+ */
 const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID || "";
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID || "";
 const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY || "";
 const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || process.env.R2_BUCKET || "cms-images";
-const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || ""; // Your R2 public bucket URL or custom domain
+const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || "";
 
-// Create S3 client configured for R2
+/** @deprecated Use getS3Client() instead */
 export const r2Client = new S3Client({
   region: "auto",
-  endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  endpoint: R2_ACCOUNT_ID ? `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com` : undefined,
   credentials: {
     accessKeyId: R2_ACCESS_KEY_ID,
     secretAccessKey: R2_SECRET_ACCESS_KEY,
   },
 });
 
+/** @deprecated Use getStorageConfig() instead */
 export const R2_CONFIG = {
   bucketName: R2_BUCKET_NAME,
   publicUrl: R2_PUBLIC_URL,
   isConfigured: Boolean(R2_ACCOUNT_ID && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY),
 };
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 // Media categories for organizing uploads within a tenant
 export type MediaCategory =
@@ -73,6 +182,10 @@ export interface R2Image {
   lastModified?: Date;
 }
 
+// ---------------------------------------------------------------------------
+// Path Utilities
+// ---------------------------------------------------------------------------
+
 /**
  * Build a tenant-scoped storage path
  */
@@ -96,118 +209,9 @@ export function parseTenantPath(key: string): { subdomain: string; category: str
   };
 }
 
-/**
- * List media for a specific tenant
- * @param subdomain - The tenant's subdomain
- * @param category - Optional category filter (e.g., 'media/images', 'products')
- * @param options - Additional options like maxKeys and continuationToken
- */
-export async function listTenantMedia(
-  subdomain: string,
-  category?: MediaCategory,
-  options?: { maxKeys?: number; continuationToken?: string }
-): Promise<{ media: R2Media[]; nextToken?: string }> {
-  if (!R2_CONFIG.isConfigured) {
-    console.warn("R2 is not configured. Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY env vars.");
-    return { media: [] };
-  }
-
-  const sanitizedSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
-  const prefix = category
-    ? `tenants/${sanitizedSubdomain}/${category}/`
-    : `tenants/${sanitizedSubdomain}/`;
-
-  try {
-    const command = new ListObjectsV2Command({
-      Bucket: R2_CONFIG.bucketName,
-      Prefix: prefix,
-      MaxKeys: options?.maxKeys || 100,
-      ContinuationToken: options?.continuationToken,
-    });
-
-    const response = await r2Client.send(command);
-    const media: R2Media[] = [];
-
-    for (const obj of response.Contents || []) {
-      if (!obj.Key) continue;
-
-      const parsed = parseTenantPath(obj.Key);
-      if (!parsed) continue;
-
-      // Determine content type from extension
-      const ext = parsed.filename.split('.').pop()?.toLowerCase() || '';
-      const contentType = getContentType(ext);
-
-      media.push({
-        key: obj.Key,
-        url: `${R2_CONFIG.publicUrl}/${obj.Key}`,
-        name: parsed.filename,
-        category: parsed.category,
-        subdomain: parsed.subdomain,
-        size: obj.Size,
-        lastModified: obj.LastModified,
-        contentType,
-      });
-    }
-
-    return {
-      media,
-      nextToken: response.NextContinuationToken,
-    };
-  } catch (error) {
-    console.error("Error listing tenant media:", error);
-    return { media: [] };
-  }
-}
-
-/**
- * List images from R2 bucket (legacy function for backwards compatibility)
- * Images are organized by prefix/folder (e.g., "heroes/", "features/", "team/")
- */
-export async function listImages(prefix?: string): Promise<R2Image[]> {
-  if (!R2_CONFIG.isConfigured) {
-    console.warn("R2 is not configured. Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY env vars.");
-    return [];
-  }
-
-  try {
-    const command = new ListObjectsV2Command({
-      Bucket: R2_CONFIG.bucketName,
-      Prefix: prefix || "",
-      MaxKeys: 100,
-    });
-
-    const response = await r2Client.send(command);
-    const images: R2Image[] = [];
-
-    for (const obj of response.Contents || []) {
-      if (!obj.Key) continue;
-
-      // Skip if not an image
-      const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(obj.Key);
-      if (!isImage) continue;
-
-      // Extract category from path (e.g., "heroes/image.jpg" -> "heroes")
-      const parts = obj.Key.split("/");
-      const category = parts.length > 1 ? parts[0] : "uncategorized";
-      const name = parts[parts.length - 1];
-
-      images.push({
-        key: obj.Key,
-        url: `${R2_CONFIG.publicUrl}/${obj.Key}`,
-        name,
-        category,
-        size: obj.Size,
-        lastModified: obj.LastModified,
-      });
-    }
-
-    return images;
-  } catch (error) {
-    console.error("Error listing R2 images:", error);
-    return [];
-  }
-}
+// ---------------------------------------------------------------------------
+// Content Type Helper
+// ---------------------------------------------------------------------------
 
 /**
  * Get content type from file extension
@@ -239,6 +243,128 @@ function getContentType(ext: string): string {
   return types[ext] || 'application/octet-stream';
 }
 
+// ---------------------------------------------------------------------------
+// Tenant Media Operations (DB-driven)
+// ---------------------------------------------------------------------------
+
+/**
+ * List media for a specific tenant
+ * @param subdomain - The tenant's subdomain
+ * @param category - Optional category filter (e.g., 'media/images', 'products')
+ * @param options - Additional options like maxKeys and continuationToken
+ */
+export async function listTenantMedia(
+  subdomain: string,
+  category?: MediaCategory,
+  options?: { maxKeys?: number; continuationToken?: string }
+): Promise<{ media: R2Media[]; nextToken?: string }> {
+  const config = await getStorageConfig();
+  if (!config.isConfigured) {
+    console.warn("Storage is not configured. Configure via Admin > Settings > Storage or set env vars.");
+    return { media: [] };
+  }
+
+  const client = await getS3Client();
+  const sanitizedSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
+  const prefix = category
+    ? `tenants/${sanitizedSubdomain}/${category}/`
+    : `tenants/${sanitizedSubdomain}/`;
+
+  try {
+    const command = new ListObjectsV2Command({
+      Bucket: config.bucketName,
+      Prefix: prefix,
+      MaxKeys: options?.maxKeys || 100,
+      ContinuationToken: options?.continuationToken,
+    });
+
+    const response = await client.send(command);
+    const media: R2Media[] = [];
+
+    for (const obj of response.Contents || []) {
+      if (!obj.Key) continue;
+
+      const parsed = parseTenantPath(obj.Key);
+      if (!parsed) continue;
+
+      // Determine content type from extension
+      const ext = parsed.filename.split('.').pop()?.toLowerCase() || '';
+      const contentType = getContentType(ext);
+
+      media.push({
+        key: obj.Key,
+        url: `${config.publicUrl}/${obj.Key}`,
+        name: parsed.filename,
+        category: parsed.category,
+        subdomain: parsed.subdomain,
+        size: obj.Size,
+        lastModified: obj.LastModified,
+        contentType,
+      });
+    }
+
+    return {
+      media,
+      nextToken: response.NextContinuationToken,
+    };
+  } catch (error) {
+    console.error("Error listing tenant media:", error);
+    return { media: [] };
+  }
+}
+
+/**
+ * List images from bucket (legacy function for backwards compatibility)
+ * Images are organized by prefix/folder (e.g., "heroes/", "features/", "team/")
+ */
+export async function listImages(prefix?: string): Promise<R2Image[]> {
+  const config = await getStorageConfig();
+  if (!config.isConfigured) {
+    console.warn("Storage is not configured. Configure via Admin > Settings > Storage or set env vars.");
+    return [];
+  }
+
+  const client = await getS3Client();
+
+  try {
+    const command = new ListObjectsV2Command({
+      Bucket: config.bucketName,
+      Prefix: prefix || "",
+      MaxKeys: 100,
+    });
+
+    const response = await client.send(command);
+    const images: R2Image[] = [];
+
+    for (const obj of response.Contents || []) {
+      if (!obj.Key) continue;
+
+      // Skip if not an image
+      const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(obj.Key);
+      if (!isImage) continue;
+
+      // Extract category from path (e.g., "heroes/image.jpg" -> "heroes")
+      const parts = obj.Key.split("/");
+      const category = parts.length > 1 ? parts[0] : "uncategorized";
+      const name = parts[parts.length - 1];
+
+      images.push({
+        key: obj.Key,
+        url: `${config.publicUrl}/${obj.Key}`,
+        name,
+        category,
+        size: obj.Size,
+        lastModified: obj.LastModified,
+      });
+    }
+
+    return images;
+  } catch (error) {
+    console.error("Error listing images:", error);
+    return [];
+  }
+}
+
 /**
  * Upload media for a specific tenant
  * @param subdomain - The tenant's subdomain
@@ -254,10 +380,13 @@ export async function uploadTenantMedia(
   category: MediaCategory = 'media/images',
   contentType?: string
 ): Promise<R2Media | null> {
-  if (!R2_CONFIG.isConfigured) {
-    console.warn("R2 is not configured");
+  const config = await getStorageConfig();
+  if (!config.isConfigured) {
+    console.warn("Storage is not configured");
     return null;
   }
+
+  const client = await getS3Client();
 
   try {
     const key = buildTenantPath(subdomain, category, filename);
@@ -265,7 +394,7 @@ export async function uploadTenantMedia(
     const mimeType = contentType || getContentType(ext);
 
     const command = new PutObjectCommand({
-      Bucket: R2_CONFIG.bucketName,
+      Bucket: config.bucketName,
       Key: key,
       Body: file,
       ContentType: mimeType,
@@ -273,13 +402,13 @@ export async function uploadTenantMedia(
       CacheControl: 'public, max-age=31536000, immutable',
     });
 
-    await r2Client.send(command);
+    await client.send(command);
 
     const sanitizedSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
 
     return {
       key,
-      url: `${R2_CONFIG.publicUrl}/${key}`,
+      url: `${config.publicUrl}/${key}`,
       name: filename,
       category,
       subdomain: sanitizedSubdomain,
@@ -292,7 +421,7 @@ export async function uploadTenantMedia(
 }
 
 /**
- * Upload an image to R2 (legacy function for backwards compatibility)
+ * Upload an image to bucket (legacy function for backwards compatibility)
  */
 export async function uploadImage(
   file: Buffer,
@@ -300,31 +429,34 @@ export async function uploadImage(
   category: string = "uploads",
   contentType: string = "image/jpeg"
 ): Promise<R2Image | null> {
-  if (!R2_CONFIG.isConfigured) {
-    console.warn("R2 is not configured");
+  const config = await getStorageConfig();
+  if (!config.isConfigured) {
+    console.warn("Storage is not configured");
     return null;
   }
+
+  const client = await getS3Client();
 
   try {
     const key = `${category}/${Date.now()}-${filename}`;
 
     const command = new PutObjectCommand({
-      Bucket: R2_CONFIG.bucketName,
+      Bucket: config.bucketName,
       Key: key,
       Body: file,
       ContentType: contentType,
     });
 
-    await r2Client.send(command);
+    await client.send(command);
 
     return {
       key,
-      url: `${R2_CONFIG.publicUrl}/${key}`,
+      url: `${config.publicUrl}/${key}`,
       name: filename,
       category,
     };
   } catch (error) {
-    console.error("Error uploading to R2:", error);
+    console.error("Error uploading image:", error);
     return null;
   }
 }
@@ -335,7 +467,8 @@ export async function uploadImage(
  * @param key - The full storage key to delete
  */
 export async function deleteTenantMedia(subdomain: string, key: string): Promise<boolean> {
-  if (!R2_CONFIG.isConfigured) {
+  const config = await getStorageConfig();
+  if (!config.isConfigured) {
     return false;
   }
 
@@ -348,13 +481,15 @@ export async function deleteTenantMedia(subdomain: string, key: string): Promise
     return false;
   }
 
+  const client = await getS3Client();
+
   try {
     const command = new DeleteObjectCommand({
-      Bucket: R2_CONFIG.bucketName,
+      Bucket: config.bucketName,
       Key: key,
     });
 
-    await r2Client.send(command);
+    await client.send(command);
     return true;
   } catch (error) {
     console.error("Error deleting tenant media:", error);
@@ -363,23 +498,26 @@ export async function deleteTenantMedia(subdomain: string, key: string): Promise
 }
 
 /**
- * Delete an image from R2 (legacy function)
+ * Delete an image from bucket (legacy function)
  */
 export async function deleteImage(key: string): Promise<boolean> {
-  if (!R2_CONFIG.isConfigured) {
+  const config = await getStorageConfig();
+  if (!config.isConfigured) {
     return false;
   }
 
+  const client = await getS3Client();
+
   try {
     const command = new DeleteObjectCommand({
-      Bucket: R2_CONFIG.bucketName,
+      Bucket: config.bucketName,
       Key: key,
     });
 
-    await r2Client.send(command);
+    await client.send(command);
     return true;
   } catch (error) {
-    console.error("Error deleting from R2:", error);
+    console.error("Error deleting image:", error);
     return false;
   }
 }
@@ -389,21 +527,23 @@ export async function deleteImage(key: string): Promise<boolean> {
  * @param subdomain - The tenant's subdomain
  */
 export async function getTenantCategories(subdomain: string): Promise<MediaCategory[]> {
-  if (!R2_CONFIG.isConfigured) {
+  const config = await getStorageConfig();
+  if (!config.isConfigured) {
     return [];
   }
 
+  const client = await getS3Client();
   const sanitizedSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
   const prefix = `tenants/${sanitizedSubdomain}/`;
 
   try {
     const command = new ListObjectsV2Command({
-      Bucket: R2_CONFIG.bucketName,
+      Bucket: config.bucketName,
       Prefix: prefix,
       Delimiter: "/",
     });
 
-    const response = await r2Client.send(command);
+    const response = await client.send(command);
     const categories: MediaCategory[] = [];
 
     for (const commonPrefix of response.CommonPrefixes || []) {
@@ -427,17 +567,20 @@ export async function getTenantCategories(subdomain: string): Promise<MediaCateg
  * Get image categories (top-level folders) - legacy function
  */
 export async function getCategories(): Promise<string[]> {
-  if (!R2_CONFIG.isConfigured) {
+  const config = await getStorageConfig();
+  if (!config.isConfigured) {
     return [];
   }
 
+  const client = await getS3Client();
+
   try {
     const command = new ListObjectsV2Command({
-      Bucket: R2_CONFIG.bucketName,
+      Bucket: config.bucketName,
       Delimiter: "/",
     });
 
-    const response = await r2Client.send(command);
+    const response = await client.send(command);
     const categories: string[] = [];
 
     for (const prefix of response.CommonPrefixes || []) {
@@ -448,7 +591,7 @@ export async function getCategories(): Promise<string[]> {
 
     return categories;
   } catch (error) {
-    console.error("Error getting R2 categories:", error);
+    console.error("Error getting categories:", error);
     return [];
   }
 }
@@ -464,7 +607,8 @@ export async function copyTenantMedia(
   targetSubdomain: string,
   sourceKey: string
 ): Promise<R2Media | null> {
-  if (!R2_CONFIG.isConfigured) {
+  const config = await getStorageConfig();
+  if (!config.isConfigured) {
     return null;
   }
 
@@ -480,22 +624,24 @@ export async function copyTenantMedia(
     return null;
   }
 
+  const client = await getS3Client();
+
   try {
     const newKey = buildTenantPath(targetSubdomain, parsed.category as MediaCategory, parsed.filename);
 
     const command = new CopyObjectCommand({
-      Bucket: R2_CONFIG.bucketName,
-      CopySource: `${R2_CONFIG.bucketName}/${sourceKey}`,
+      Bucket: config.bucketName,
+      CopySource: `${config.bucketName}/${sourceKey}`,
       Key: newKey,
     });
 
-    await r2Client.send(command);
+    await client.send(command);
 
     const sanitizedTarget = targetSubdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
 
     return {
       key: newKey,
-      url: `${R2_CONFIG.publicUrl}/${newKey}`,
+      url: `${config.publicUrl}/${newKey}`,
       name: parsed.filename,
       category: parsed.category,
       subdomain: sanitizedTarget,
@@ -515,10 +661,12 @@ export async function getTenantStorageUsage(subdomain: string): Promise<{
   fileCount: number;
   byCategory: Record<string, { size: number; count: number }>;
 }> {
-  if (!R2_CONFIG.isConfigured) {
+  const config = await getStorageConfig();
+  if (!config.isConfigured) {
     return { totalSize: 0, fileCount: 0, byCategory: {} };
   }
 
+  const client = await getS3Client();
   const sanitizedSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
   const prefix = `tenants/${sanitizedSubdomain}/`;
 
@@ -530,13 +678,13 @@ export async function getTenantStorageUsage(subdomain: string): Promise<{
   try {
     do {
       const command = new ListObjectsV2Command({
-        Bucket: R2_CONFIG.bucketName,
+        Bucket: config.bucketName,
         Prefix: prefix,
         MaxKeys: 1000,
         ContinuationToken: continuationToken,
       });
 
-      const response = await r2Client.send(command);
+      const response = await client.send(command);
 
       for (const obj of response.Contents || []) {
         if (!obj.Key || !obj.Size) continue;
@@ -561,5 +709,61 @@ export async function getTenantStorageUsage(subdomain: string): Promise<{
   } catch (error) {
     console.error("Error getting tenant storage usage:", error);
     return { totalSize: 0, fileCount: 0, byCategory: {} };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Test Connection
+// ---------------------------------------------------------------------------
+
+/**
+ * Test the S3/R2 storage connection by attempting a HeadBucket request.
+ * Uses the current DB settings (or env var fallback).
+ */
+export async function testStorageConnection(): Promise<{
+  success: boolean;
+  message: string;
+  provider: string;
+  bucket: string;
+}> {
+  const config = await getStorageConfig();
+
+  if (!config.isConfigured) {
+    return {
+      success: false,
+      message: 'Storage is not configured. Please provide bucket, credentials, and endpoint.',
+      provider: config.provider,
+      bucket: config.bucketName,
+    };
+  }
+
+  const client = await getS3Client();
+
+  try {
+    await client.send(new HeadBucketCommand({ Bucket: config.bucketName }));
+    return {
+      success: true,
+      message: `Successfully connected to ${config.provider.toUpperCase()} bucket "${config.bucketName}".`,
+      provider: config.provider,
+      bucket: config.bucketName,
+    };
+  } catch (error: any) {
+    let message = 'Connection failed: ';
+    if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
+      message += `Bucket "${config.bucketName}" not found.`;
+    } else if (error.name === 'Forbidden' || error.$metadata?.httpStatusCode === 403) {
+      message += 'Access denied. Check your credentials and bucket permissions.';
+    } else if (error.name === 'CredentialsProviderError' || error.message?.includes('credentials')) {
+      message += 'Invalid credentials. Check your Access Key ID and Secret Access Key.';
+    } else {
+      message += error.message || 'Unknown error.';
+    }
+
+    return {
+      success: false,
+      message,
+      provider: config.provider,
+      bucket: config.bucketName,
+    };
   }
 }
