@@ -86,6 +86,27 @@ export interface StorageSettings {
   allowedFileTypes: string[]
 }
 
+// AI rate limits per role (messages per day, 0 = unlimited for admin, 0 = disabled for guest)
+export interface AiRateLimits {
+  guest: number
+  customer: number
+  editor: number
+  admin: number
+}
+
+// Block editor AI chat settings
+export interface AiBlockEditorChatSettings {
+  enabled: boolean
+  maxTokensPerRequest: number
+  rateLimitPerHour: number // per-user requests/hour
+}
+
+// AI usage tracking settings
+export interface AiUsageTrackingSettings {
+  enabled: boolean
+  retentionDays: number // how long to keep aggregated stats
+}
+
 // AI settings (Vercel AI Gateway)
 export interface AiSettings {
   enabled: boolean
@@ -93,6 +114,9 @@ export interface AiSettings {
   enabledModels: string[] // Models available in chat UI (e.g., ['anthropic/claude-sonnet-4.5'])
   maxTokens: number
   temperature: number
+  rateLimits: AiRateLimits
+  blockEditorChat: AiBlockEditorChatSettings
+  usageTracking: AiUsageTrackingSettings
 }
 
 // Security settings
@@ -169,6 +193,9 @@ export const DEFAULT_AI_SETTINGS: AiSettings = {
   enabledModels: ['anthropic/claude-sonnet-4.5', 'anthropic/claude-haiku-4.5'],
   maxTokens: 4096,
   temperature: 0.7,
+  rateLimits: { guest: 0, customer: 50, editor: 200, admin: 0 },
+  blockEditorChat: { enabled: true, maxTokensPerRequest: 4096, rateLimitPerHour: 30 },
+  usageTracking: { enabled: true, retentionDays: 90 },
 }
 
 export const DEFAULT_SECURITY_SETTINGS: SecuritySettings = {

@@ -22,6 +22,11 @@ import {
 import { z } from 'zod';
 import { getLanguageModel } from '@/lib/cms/ai/providers';
 import { DEFAULT_CHAT_MODEL } from '@/lib/cms/ai/models';
+import { stackServerApp } from '@/lib/cms/stack';
+import { prisma } from '@/lib/cms/db';
+import { getAiSettings } from '@/lib/cms/settings';
+import { ChatSDKError } from '@/lib/cms/ai/errors';
+import { checkCredits, useCredits } from '@/lib/ai-credits';
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
@@ -258,6 +263,77 @@ const requestSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    // --- Auth: require authenticated user ---
+    const user = await stackServerApp.getUser();
+    if (!user) {
+      return ChatSDKError.unauthorized().toResponse();
+    }
+
+    const dbUser = await prisma.user.findFirst({
+      where: { stackAuthId: user.id },
+    });
+    if (!dbUser) {
+      return ChatSDKError.unauthorized('User not found in database').toResponse();
+    }
+
+    // Require at least editor role
+    const role = (dbUser.role as string)?.toUpperCase();
+    if (role !== 'ADMIN' && role !== 'EDITOR') {
+      return ChatSDKError.forbidden('Block editor AI requires editor or admin role').toResponse();
+    }
+
+    // --- Settings: check if block editor AI is enabled ---
+    const aiSettings = await getAiSettings();
+    if (!aiSettings.enabled) {
+      return ChatSDKError.aiDisabled().toResponse();
+    }
+    if (!aiSettings.blockEditorChat.enabled) {
+      return ChatSDKError.aiDisabled('Block editor AI chat is disabled').toResponse();
+    }
+
+    // --- Credit check (tenant-specific) ---
+    const modelId = DEFAULT_CHAT_MODEL;
+    let modelTierName = 'pro';
+    if (modelId.includes('haiku')) modelTierName = 'standard';
+    else if (modelId.includes('opus')) modelTierName = 'premium';
+
+    const creditCheck = await checkCredits({
+      userId: user.id,
+      feature: 'block_editor_chat',
+      modelTier: modelTierName,
+    });
+
+    if (!creditCheck.canUse) {
+      return new Response(
+        JSON.stringify({
+          error: 'Insufficient credits',
+          creditCost: creditCheck.creditCost,
+          totalBalance: creditCheck.totalBalance,
+          message: `You need ${creditCheck.creditCost} credits but only have ${creditCheck.totalBalance} available.`,
+        }),
+        { status: 402, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // --- Rate limiting: per-user requests/hour ---
+    const hourlyLimit = aiSettings.blockEditorChat.rateLimitPerHour;
+    if (hourlyLimit > 0) {
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      const recentCount = await prisma.aiMessage.count({
+        where: {
+          conversation: { userId: dbUser.id, contextType: 'block-editor' },
+          role: 'user',
+          createdAt: { gte: oneHourAgo },
+        },
+      });
+      if (recentCount >= hourlyLimit) {
+        return ChatSDKError.rateLimit(
+          `Block editor AI rate limit reached (${hourlyLimit} requests/hour).`
+        ).toResponse();
+      }
+    }
+
+    // --- Parse request ---
     const body = await request.json();
     const parsed = requestSchema.safeParse(body);
 
@@ -308,7 +384,25 @@ export async function POST(request: Request) {
           tools: kofiTools,
           toolChoice: 'auto',
           stopWhen: stepCountIs(8),
+          maxOutputTokens: aiSettings.blockEditorChat.maxTokensPerRequest,
           experimental_transform: smoothStream({ chunking: 'word' }),
+          onFinish: async (event: { usage?: { totalTokens?: number } }) => {
+            // Deduct credits after successful completion
+            try {
+              await useCredits({
+                userId: user.id,
+                feature: 'block_editor_chat',
+                modelTier: modelTierName,
+                description: 'Block editor AI chat message',
+                metadata: {
+                  model: modelId,
+                  tokens: event.usage?.totalTokens,
+                },
+              });
+            } catch (e) {
+              console.error('[Kofi] Failed to deduct credits:', e);
+            }
+          },
         });
 
         dataStream.merge(
@@ -334,6 +428,9 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('[Kofi] Error:', error);
+    if (error instanceof ChatSDKError) {
+      return error.toResponse();
+    }
     const message = error instanceof Error ? error.message : 'Internal server error';
     return new Response(
       JSON.stringify({ error: message }),

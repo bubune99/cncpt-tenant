@@ -29,12 +29,22 @@ import { getAllVmcpTools } from '@/lib/cms/vmcp';
 import type { ChatContext } from '@/lib/cms/ai/chat-store';
 import { nanoid } from 'nanoid';
 import type { EntityContext } from '@/lib/cms/socket/types';
+import { checkCredits, useCredits } from '@/lib/ai-credits';
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
 
-// Rate limiting
-const RATE_LIMIT_MESSAGES_PER_DAY = 200;
+// Role mapping for rate limit lookup
+type RateLimitRole = 'guest' | 'customer' | 'editor' | 'admin';
+function mapUserRole(role?: string): RateLimitRole {
+  if (!role) return 'guest';
+  switch (role.toUpperCase()) {
+    case 'ADMIN': return 'admin';
+    case 'EDITOR': return 'editor';
+    case 'CUSTOMER': return 'customer';
+    default: return 'guest';
+  }
+}
 
 // Message part schema for AI SDK v6
 const messagePartSchema = z.union([
@@ -509,22 +519,54 @@ export async function POST(request: Request) {
     }
     console.log('[Chat API] ✓ Database user found');
 
-    // Rate limiting
-    console.log('[Chat API] Step 5: Checking rate limit...');
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const messageCount = await prisma.aiMessage.count({
-      where: {
-        conversation: { userId: dbUser.id },
-        createdAt: { gte: oneDayAgo },
-      },
-    });
-    console.log('[Chat API] Messages in last 24h:', messageCount, '/ Limit:', RATE_LIMIT_MESSAGES_PER_DAY);
+    // DB-driven, role-aware rate limiting
+    console.log('[Chat API] Step 5: Checking rate limit and credits...');
+    const aiSettings = await getAiSettings();
+    const userRole = mapUserRole(dbUser.role as string);
+    const dailyLimit = aiSettings.rateLimits?.[userRole] ?? aiSettings.rateLimits?.customer ?? 200;
 
-    if (messageCount >= RATE_LIMIT_MESSAGES_PER_DAY) {
-      console.error('[Chat API] ❌ Rate limit exceeded');
-      return ChatSDKError.rateLimit().toResponse();
+    if (dailyLimit === 0 && userRole === 'guest') {
+      return ChatSDKError.unauthorized('Authentication required to use AI chat').toResponse();
+    }
+
+    if (dailyLimit > 0) {
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const messageCount = await prisma.aiMessage.count({
+        where: {
+          conversation: { userId: dbUser.id },
+          createdAt: { gte: oneDayAgo },
+        },
+      });
+      console.log('[Chat API] Messages in last 24h:', messageCount, '/ Limit:', dailyLimit);
+
+      if (messageCount >= dailyLimit) {
+        console.error('[Chat API] ❌ Rate limit exceeded');
+        return ChatSDKError.rateLimit(
+          `Daily message limit reached (${dailyLimit} messages/day for ${userRole} role).`
+        ).toResponse();
+      }
     }
     console.log('[Chat API] ✓ Rate limit OK');
+
+    // Credit check (tenant-specific)
+    const creditCheck = await checkCredits({
+      userId: user.id,
+      feature: 'chat',
+      modelTier: 'pro', // Will be recalculated once model is selected
+    });
+
+    if (!creditCheck.canUse) {
+      return new Response(
+        JSON.stringify({
+          error: 'Insufficient credits',
+          creditCost: creditCheck.creditCost,
+          totalBalance: creditCheck.totalBalance,
+          message: `You need ${creditCheck.creditCost} credits but only have ${creditCheck.totalBalance} available.`,
+        }),
+        { status: 402, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    console.log('[Chat API] ✓ Credit check OK');
 
     // Get or create conversation
     let conversation = await prisma.aiConversation.findUnique({
@@ -558,17 +600,15 @@ export async function POST(request: Request) {
       });
     }
 
-    // Get AI settings
-    console.log('[Chat API] Step 6: Getting AI settings...');
-    const settings = await getAiSettings();
-    console.log('[Chat API] AI settings:', {
-      enabledModels: settings.enabledModels,
-      temperature: settings.temperature,
-      maxTokens: settings.maxTokens,
+    // AI settings already loaded above (aiSettings)
+    console.log('[Chat API] Step 6: AI settings:', {
+      enabledModels: aiSettings.enabledModels,
+      temperature: aiSettings.temperature,
+      maxTokens: aiSettings.maxTokens,
     });
 
     // Use the model selected in the chat UI, or fall back to first enabled model
-    const modelId = selectedChatModel || settings.enabledModels?.[0] || 'anthropic/claude-sonnet-4.5';
+    const modelId = selectedChatModel || aiSettings.enabledModels?.[0] || 'anthropic/claude-sonnet-4.5';
     console.log('[Chat API] Step 7: Creating model instance for:', modelId);
 
     let model;
@@ -654,8 +694,8 @@ export async function POST(request: Request) {
           tools: allTools,
           maxSteps: 10, // Allow multi-step tool execution
           toolChoice: 'auto',
-          temperature: settings.temperature,
-          maxOutputTokens: settings.maxTokens,
+          temperature: aiSettings.temperature,
+          maxOutputTokens: aiSettings.maxTokens,
           experimental_transform: smoothStream({ chunking: 'word' }),
           onStepFinish: async ({ toolCalls, toolResults }: { toolCalls?: unknown[]; toolResults?: unknown[] }) => {
             // Log each step for debugging multi-step execution
@@ -668,7 +708,7 @@ export async function POST(request: Request) {
             text?: string;
             toolCalls?: unknown;
             toolResults?: unknown;
-            usage?: unknown;
+            usage?: { promptTokens?: number; completionTokens?: number; totalTokens?: number };
             finishReason?: string;
           }) => {
             try {
@@ -687,6 +727,28 @@ export async function POST(request: Request) {
                     } as Prisma.InputJsonValue,
                   },
                 });
+              }
+
+              // Deduct credits after successful completion
+              let modelTierName = 'pro';
+              if (modelId.includes('haiku')) modelTierName = 'standard';
+              else if (modelId.includes('opus')) modelTierName = 'premium';
+
+              try {
+                await useCredits({
+                  userId: user.id,
+                  feature: 'chat',
+                  modelTier: modelTierName,
+                  referenceId: id,
+                  description: `CMS chat message`,
+                  metadata: {
+                    model: modelId,
+                    tokens: event.usage?.totalTokens,
+                    conversationLength: messages.length,
+                  },
+                });
+              } catch (creditError) {
+                console.error('[Chat API] Failed to deduct credits:', creditError);
               }
 
               // Generate title for new conversations
