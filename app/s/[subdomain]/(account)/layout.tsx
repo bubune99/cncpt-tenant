@@ -8,7 +8,7 @@
 import { redirect } from 'next/navigation';
 import { stackServerApp } from '@/lib/cms/stack';
 import { PageWrapper, getPageLayoutSettings } from '@/components/cms/page-wrapper';
-import { features } from '../../../../../client.config';
+import { features } from '../../../../client.config';
 
 export default async function AccountLayout({
   children,
