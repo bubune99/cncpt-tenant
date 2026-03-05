@@ -18,17 +18,14 @@ export function Navigation() {
 
   const publicNavItems = [
     { href: "/", label: "Home" },
-    { href: "/product", label: "Product" },
-    { href: "/about", label: "About" },
     { href: "/pricing", label: "Pricing" },
-    { href: "/designer-demo", label: "Demo" },
-    { href: "/faq", label: "FAQ" },
+    { href: "/demo", label: "Demo" },
+    { href: "/book", label: "Book a Call" },
   ];
 
   const dashboardNavItems = [
-    { href: "/business", label: "Dashboard", icon: BarChart3 },
-    { href: "/designer", label: "Designer", icon: Palette },
-    { href: "/projects", label: "Projects", icon: Settings },
+    { href: "/dashboard", label: "Dashboard", icon: BarChart3 },
+    { href: "/dashboard?section=settings", label: "Settings", icon: Settings },
   ];
 
   return (
@@ -102,7 +99,7 @@ export function Navigation() {
                               <span>Account Settings</span>
                             </Link>
                             <Link
-                              href="/business?tab=privacy"
+                              href="/dashboard?section=settings"
                               className="flex items-center space-x-2 px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
                             >
                               <Shield className="h-4 w-4" />

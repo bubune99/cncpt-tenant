@@ -25,7 +25,7 @@ export async function createPaymentIntent(
 ): Promise<PaymentIntentResult> {
   const baseUrl = options?.baseUrl || '';
 
-  const response = await fetch(`${baseUrl}/api/payments/intent`, {
+  const response = await fetch(`${baseUrl}/api/cms/payments/intent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -55,7 +55,7 @@ export async function createCheckoutSession(
 ): Promise<CheckoutSessionResult> {
   const baseUrl = options?.baseUrl || '';
 
-  const response = await fetch(`${baseUrl}/api/checkout/session`, {
+  const response = await fetch(`${baseUrl}/api/cms/checkout/session`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -91,7 +91,7 @@ export async function getPaymentIntentStatus(
   const baseUrl = options?.baseUrl || '';
 
   const response = await fetch(
-    `${baseUrl}/api/payments/intent?paymentIntentId=${encodeURIComponent(paymentIntentId)}`,
+    `${baseUrl}/api/cms/payments/intent?paymentIntentId=${encodeURIComponent(paymentIntentId)}`,
     { method: 'GET' }
   );
 
@@ -119,7 +119,7 @@ export async function getCheckoutSessionStatus(
   const baseUrl = options?.baseUrl || '';
 
   const response = await fetch(
-    `${baseUrl}/api/checkout/session?sessionId=${encodeURIComponent(sessionId)}`,
+    `${baseUrl}/api/cms/checkout/session?sessionId=${encodeURIComponent(sessionId)}`,
     { method: 'GET' }
   );
 
@@ -284,7 +284,7 @@ export async function createCheckoutFromOrder(
   const successPath = options?.successPath || '/checkout/success';
   const cancelPath = options?.cancelPath || '/checkout/cancel';
 
-  const response = await fetch(`${baseUrl}/api/checkout/session`, {
+  const response = await fetch(`${baseUrl}/api/cms/checkout/session`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -311,7 +311,7 @@ export async function createPaymentIntentFromOrder(
 ): Promise<PaymentIntentResult> {
   const baseUrl = options?.baseUrl || '';
 
-  const response = await fetch(`${baseUrl}/api/payments/intent`, {
+  const response = await fetch(`${baseUrl}/api/cms/payments/intent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ orderId }),

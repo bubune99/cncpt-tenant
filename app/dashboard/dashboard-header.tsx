@@ -24,10 +24,10 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
             <Link href="/dashboard" className="text-foreground font-medium">
               Dashboard
             </Link>
-            <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/dashboard?section=settings" className="text-muted-foreground hover:text-foreground transition-colors">
               Settings
             </Link>
-            <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/dashboard/support" className="text-muted-foreground hover:text-foreground transition-colors">
               Support
             </Link>
           </nav>

@@ -412,8 +412,8 @@ export function AdminShell({
         </main>
       </div>
 
-          {/* AI Chat Panel - persists across admin routes */}
-          {showChat && <AdminChat />}
+          {/* AI Chat Panel - only visible inside the page builder editor */}
+          {showChat && normalizedPathname.match(/\/admin\/pages\/[^/]+\/editor/) && <AdminChat />}
         </div>
         </WizardProvider>
       </HelpProvider>

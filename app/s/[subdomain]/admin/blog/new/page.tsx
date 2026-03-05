@@ -167,7 +167,7 @@ export default function NewBlogPostPage() {
         toast.success(
           publishNow ? "Post published successfully!" : "Post saved as draft"
         );
-        router.push(`/blog/${post.id}`);
+        router.push(`/admin/blog/${post.id}`);
       } else {
         const data = await response.json();
         toast.error(data.error || "Failed to create post");

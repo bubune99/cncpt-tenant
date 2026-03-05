@@ -181,7 +181,7 @@ export default function NewWorkflowPage() {
 
       if (response.ok) {
         const data = await response.json();
-        router.push(`/plugins/workflows/${data.workflow.id}`);
+        router.push(`/admin/plugins/workflows/${data.workflow.id}`);
       } else {
         const error = await response.json();
         alert(`Failed to save: ${error.error || 'Unknown error'}`);

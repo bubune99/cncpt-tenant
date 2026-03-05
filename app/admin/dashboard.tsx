@@ -1,7 +1,7 @@
 "use client"
 
 import { useFormState } from "react-dom"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, Fragment } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -2614,6 +2614,21 @@ type CreditStats = {
   avgBalance: string
 }
 
+type CreditGrant = {
+  id: string
+  userId: string
+  userEmail: string | null
+  creditsAmount: number
+  creditType: string
+  grantReason: string | null
+  notes: string | null
+  grantedByUserId: string | null
+  grantedByEmail: string | null
+  status: string
+  appliedAt: string | null
+  createdAt: string
+}
+
 function AICreditsSection({ adminUserId }: { adminUserId: string }) {
   const [balances, setBalances] = useState<CreditBalance[]>([])
   const [stats, setStats] = useState<CreditStats | null>(null)
@@ -2621,11 +2636,20 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
+
+  // Grant dialog state
   const [selectedUser, setSelectedUser] = useState<CreditBalance | null>(null)
   const [grantAmount, setGrantAmount] = useState("")
   const [grantType, setGrantType] = useState<"monthly" | "purchased">("purchased")
   const [grantReason, setGrantReason] = useState("")
+  const [grantNotes, setGrantNotes] = useState("")
   const [granting, setGranting] = useState(false)
+
+  // History panel state
+  const [historyUser, setHistoryUser] = useState<CreditBalance | null>(null)
+  const [grants, setGrants] = useState<CreditGrant[]>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
 
   const fetchBalances = useCallback(async () => {
     setLoading(true)
@@ -2641,6 +2665,7 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
         setBalances(data.balances)
         setStats(data.stats)
         setTotalPages(data.totalPages)
+        setTotal(data.total)
       }
     } catch (error) {
       console.error("Failed to fetch credit balances:", error)
@@ -2652,6 +2677,31 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
   useEffect(() => {
     fetchBalances()
   }, [fetchBalances])
+
+  const fetchUserHistory = useCallback(async (userId: string) => {
+    setHistoryLoading(true)
+    try {
+      const res = await fetch(`/api/super-admin/users/${userId}/credits`)
+      if (res.ok) {
+        const data = await res.json()
+        setGrants(data.grants || [])
+      }
+    } catch (error) {
+      console.error("Failed to fetch grant history:", error)
+    } finally {
+      setHistoryLoading(false)
+    }
+  }, [])
+
+  const handleRowClick = (balance: CreditBalance) => {
+    if (historyUser?.userId === balance.userId) {
+      setHistoryUser(null)
+      setGrants([])
+    } else {
+      setHistoryUser(balance)
+      fetchUserHistory(balance.userId)
+    }
+  }
 
   const handleGrantCredits = async () => {
     if (!selectedUser || !grantAmount) return
@@ -2666,19 +2716,45 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
           amount: parseInt(grantAmount),
           creditType: grantType,
           reason: grantReason || `Manual grant by admin`,
+          notes: grantNotes || null,
         }),
       })
       if (res.ok) {
         setGrantAmount("")
         setGrantReason("")
+        setGrantNotes("")
         setSelectedUser(null)
         fetchBalances()
+        // Refresh history if viewing the same user
+        if (historyUser?.userId === selectedUser.userId) {
+          fetchUserHistory(selectedUser.userId)
+        }
       }
     } catch (error) {
       console.error("Failed to grant credits:", error)
     } finally {
       setGranting(false)
     }
+  }
+
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return "-"
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
+  }
+
+  const formatDateTime = (dateStr: string | null) => {
+    if (!dateStr) return "-"
+    return new Date(dateStr).toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    })
   }
 
   return (
@@ -2696,40 +2772,83 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid gap-4 md:grid-cols-5">
-          <Card className="bg-slate-800/50 border-white/[0.08]">
+        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+          <Card className="bg-slate-800/50 border-white/[0.08] hover:border-white/[0.15] transition-colors">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-400">Total Platform Users</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-slate-400">Total Users</CardTitle>
+                <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                  <Users className="h-4 w-4 text-blue-400" />
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-white">{stats.totalUsers}</div>
-              {stats.usersWithCredits !== undefined && (
-                <p className="text-xs text-slate-400 mt-1">{stats.usersWithCredits} with credits</p>
-              )}
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-white/[0.08]">
+          <Card className="bg-slate-800/50 border-white/[0.08] hover:border-white/[0.15] transition-colors">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-400">Total Monthly Credits</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-slate-400">With Credits</CardTitle>
+                <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                  <UserCheck className="h-4 w-4 text-emerald-400" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-emerald-400">{stats.usersWithCredits ?? 0}</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-slate-800/50 border-white/[0.08] hover:border-white/[0.15] transition-colors">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-slate-400">Monthly Credits</CardTitle>
+                <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                  <Calendar className="h-4 w-4 text-blue-400" />
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-400">{stats.totalMonthlyCredits.toLocaleString()}</div>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-white/[0.08]">
+          <Card className="bg-slate-800/50 border-white/[0.08] hover:border-white/[0.15] transition-colors">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-400">Total Purchased Credits</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-slate-400">Purchased Credits</CardTitle>
+                <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                  <CreditCard className="h-4 w-4 text-emerald-400" />
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-emerald-400">{stats.totalPurchasedCredits.toLocaleString()}</div>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-white/[0.08]">
+          <Card className="bg-slate-800/50 border-white/[0.08] hover:border-white/[0.15] transition-colors">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-400">Total Used Credits</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-slate-400">Total Used</CardTitle>
+                <div className="h-8 w-8 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                  <Activity className="h-4 w-4 text-orange-400" />
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-orange-400">{stats.totalUsedCredits.toLocaleString()}</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-slate-800/50 border-white/[0.08] hover:border-white/[0.15] transition-colors">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-slate-400">Avg Balance</CardTitle>
+                <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                  <TrendingUp className="h-4 w-4 text-amber-400" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-amber-400">{parseFloat(stats.avgBalance).toLocaleString(undefined, { maximumFractionDigits: 1 })}</div>
             </CardContent>
           </Card>
         </div>
@@ -2762,75 +2881,167 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
               <TableHead className="text-right text-slate-400">Purchased</TableHead>
               <TableHead className="text-right text-slate-400">Total</TableHead>
               <TableHead className="text-right text-slate-400">Lifetime Used</TableHead>
+              <TableHead className="text-slate-400">Last Updated</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow className="border-white/[0.08]">
-                <TableCell colSpan={7} className="text-center py-12">
+                <TableCell colSpan={8} className="text-center py-12">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-400" />
                 </TableCell>
               </TableRow>
             ) : balances.length === 0 ? (
               <TableRow className="border-white/[0.08]">
-                <TableCell colSpan={7} className="text-center py-12 text-slate-500">
-                  No users found
+                <TableCell colSpan={8} className="text-center py-12 text-slate-500">
+                  <Sparkles className="h-12 w-12 text-slate-700 mx-auto mb-4" />
+                  <p>No users found</p>
                 </TableCell>
               </TableRow>
             ) : (
               balances.map((balance) => (
-                <TableRow key={balance.userId} className={`border-white/[0.08] hover:bg-white/[0.02] ${balance.hasCredits === false ? "opacity-60" : ""}`}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                        balance.hasCredits !== false
-                          ? "bg-gradient-to-br from-blue-600 to-orange-500"
-                          : "bg-slate-700"
-                      }`}>
-                        <Sparkles className={`h-4 w-4 ${balance.hasCredits !== false ? "text-white" : "text-slate-500"}`} />
+                <Fragment key={balance.userId}>
+                  <TableRow
+                    className={`border-white/[0.08] hover:bg-white/[0.02] cursor-pointer ${balance.hasCredits === false ? "opacity-60" : ""} ${historyUser?.userId === balance.userId ? "bg-blue-500/5 border-l-2 border-l-blue-500" : ""}`}
+                    onClick={() => handleRowClick(balance)}
+                  >
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                          balance.hasCredits !== false
+                            ? "bg-gradient-to-br from-blue-600 to-orange-500"
+                            : "bg-slate-700"
+                        }`}>
+                          <Sparkles className={`h-4 w-4 ${balance.hasCredits !== false ? "text-white" : "text-slate-500"}`} />
+                        </div>
+                        <div>
+                          <div className="font-medium text-white">{balance.userDisplayName || balance.userEmail || "Unknown"}</div>
+                          <div className="text-sm text-slate-400">{balance.userEmail}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-medium text-white">{balance.userDisplayName || balance.userEmail || "Unknown"}</div>
-                        <div className="text-sm text-slate-400">{balance.userEmail}</div>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {balance.hasCredits !== false ? (
-                      <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
-                        Has Credits
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-slate-700 text-slate-400">
-                        No Credits
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right font-medium text-blue-400">
-                    {balance.monthlyBalance.toLocaleString()}
-                  </TableCell>
-                  <TableCell className="text-right font-medium text-emerald-400">
-                    {balance.purchasedBalance.toLocaleString()}
-                  </TableCell>
-                  <TableCell className="text-right font-bold text-white">
-                    {balance.totalBalance.toLocaleString()}
-                  </TableCell>
-                  <TableCell className="text-right text-slate-400">
-                    {balance.lifetimeUsed.toLocaleString()}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setSelectedUser(balance)}
-                      title="Grant credits"
-                      className="text-orange-400 hover:text-orange-300 hover:bg-blue-500/10"
-                    >
-                      <Gift className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
+                    </TableCell>
+                    <TableCell>
+                      {balance.hasCredits !== false ? (
+                        <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                          Has Credits
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-slate-700 text-slate-400">
+                          No Credits
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right font-medium text-blue-400">
+                      {balance.monthlyBalance.toLocaleString()}
+                    </TableCell>
+                    <TableCell className="text-right font-medium text-emerald-400">
+                      {balance.purchasedBalance.toLocaleString()}
+                    </TableCell>
+                    <TableCell className="text-right font-bold text-white">
+                      {balance.totalBalance.toLocaleString()}
+                    </TableCell>
+                    <TableCell className="text-right text-slate-400">
+                      {balance.lifetimeUsed.toLocaleString()}
+                    </TableCell>
+                    <TableCell className="text-sm text-slate-400">
+                      {formatDate(balance.updatedAt)}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedUser(balance)
+                        }}
+                        title="Grant credits"
+                        className="text-orange-400 hover:text-orange-300 hover:bg-blue-500/10"
+                      >
+                        <Gift className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                  {/* Expanded grant history row */}
+                  {historyUser?.userId === balance.userId && (
+                    <TableRow className="border-white/[0.08] bg-slate-900/50">
+                      <TableCell colSpan={8} className="p-0">
+                        <div className="px-6 py-4 border-l-2 border-l-blue-500">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+                              <History className="h-4 w-4 text-blue-400" />
+                              Grant History for {balance.userDisplayName || balance.userEmail}
+                            </h4>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setSelectedUser(balance)
+                              }}
+                              className="text-orange-400 hover:text-orange-300 hover:bg-blue-500/10 text-xs"
+                            >
+                              <Gift className="h-3 w-3 mr-1" />
+                              Grant Credits
+                            </Button>
+                          </div>
+                          {historyLoading ? (
+                            <div className="flex items-center justify-center py-6">
+                              <Loader2 className="h-5 w-5 animate-spin text-blue-400" />
+                            </div>
+                          ) : grants.length === 0 ? (
+                            <p className="text-sm text-slate-500 py-4">No credit grants recorded for this user.</p>
+                          ) : (
+                            <div className="space-y-2 max-h-64 overflow-y-auto">
+                              {grants.map((grant) => (
+                                <div key={grant.id} className="flex items-center justify-between bg-slate-800/50 rounded-lg px-4 py-2.5 border border-white/[0.05]">
+                                  <div className="flex items-center gap-3">
+                                    <div className={`h-7 w-7 rounded-full flex items-center justify-center ${
+                                      grant.creditType === "purchased" ? "bg-emerald-500/10" : "bg-blue-500/10"
+                                    }`}>
+                                      <Gift className={`h-3.5 w-3.5 ${grant.creditType === "purchased" ? "text-emerald-400" : "text-blue-400"}`} />
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-sm font-medium text-white">+{grant.creditsAmount.toLocaleString()} credits</span>
+                                        <Badge className={`text-[10px] px-1.5 ${
+                                          grant.creditType === "purchased"
+                                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                            : "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                                        }`}>
+                                          {grant.creditType}
+                                        </Badge>
+                                        {grant.status && (
+                                          <Badge className={`text-[10px] px-1.5 ${
+                                            grant.status === "applied"
+                                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                              : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                                          }`}>
+                                            {grant.status}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <div className="text-xs text-slate-500 mt-0.5">
+                                        {grant.grantReason || "No reason specified"}
+                                        {grant.notes && <span className="text-slate-600"> -- {grant.notes}</span>}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-xs text-slate-400">{formatDateTime(grant.createdAt)}</div>
+                                    {grant.grantedByEmail && (
+                                      <div className="text-[10px] text-slate-600">by {grant.grantedByEmail}</div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </Fragment>
               ))
             )}
           </TableBody>
@@ -2840,13 +3051,16 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-between items-center">
-          <p className="text-sm text-gray-500">Page {page} of {totalPages}</p>
+          <p className="text-sm text-slate-400">
+            Page {page} of {totalPages} ({total} users)
+          </p>
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
+              className="bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5 disabled:opacity-30"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -2855,6 +3069,7 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
               size="sm"
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
+              className="bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5 disabled:opacity-30"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -2864,76 +3079,96 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
 
       {/* Grant Credits Dialog */}
       <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
-        <DialogContent>
+        <DialogContent className="bg-slate-900 border-white/[0.08] text-white">
           <DialogHeader>
-            <DialogTitle>Grant AI Credits</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-white">Grant AI Credits</DialogTitle>
+            <DialogDescription className="text-slate-400">
               Grant credits to {selectedUser?.userDisplayName || selectedUser?.userEmail}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Current Monthly</Label>
-                <p className="text-lg font-medium text-blue-600">
+              <div className="bg-slate-800/50 rounded-lg p-3 border border-white/[0.05]">
+                <p className="text-xs text-slate-400 mb-1">Current Monthly</p>
+                <p className="text-lg font-medium text-blue-400">
                   {selectedUser?.monthlyBalance.toLocaleString()}
                 </p>
               </div>
-              <div>
-                <Label>Current Purchased</Label>
-                <p className="text-lg font-medium text-green-600">
+              <div className="bg-slate-800/50 rounded-lg p-3 border border-white/[0.05]">
+                <p className="text-xs text-slate-400 mb-1">Current Purchased</p>
+                <p className="text-lg font-medium text-emerald-400">
                   {selectedUser?.purchasedBalance.toLocaleString()}
                 </p>
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="amount">Credits to Grant</Label>
+              <Label htmlFor="grant-amount" className="text-slate-300">Credits to Grant</Label>
               <Input
-                id="amount"
+                id="grant-amount"
                 type="number"
+                min="1"
                 placeholder="100"
                 value={grantAmount}
                 onChange={(e) => setGrantAmount(e.target.value)}
+                className="bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500"
               />
             </div>
             <div className="space-y-2">
-              <Label>Credit Type</Label>
+              <Label className="text-slate-300">Credit Type</Label>
               <div className="flex gap-4">
-                <label className="flex items-center gap-2">
+                <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="radio"
                     name="creditType"
                     checked={grantType === "purchased"}
                     onChange={() => setGrantType("purchased")}
+                    className="accent-emerald-500"
                   />
-                  <span className="text-sm">Purchased (never expires)</span>
+                  <span className="text-sm text-slate-300">Purchased (never expires)</span>
                 </label>
-                <label className="flex items-center gap-2">
+                <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="radio"
                     name="creditType"
                     checked={grantType === "monthly"}
                     onChange={() => setGrantType("monthly")}
+                    className="accent-blue-500"
                   />
-                  <span className="text-sm">Monthly (can rollover)</span>
+                  <span className="text-sm text-slate-300">Monthly (resets each cycle)</span>
                 </label>
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="reason">Reason (optional)</Label>
+              <Label htmlFor="grant-reason" className="text-slate-300">Reason</Label>
               <Input
-                id="reason"
+                id="grant-reason"
                 placeholder="Promotional grant, support resolution, etc."
                 value={grantReason}
                 onChange={(e) => setGrantReason(e.target.value)}
+                className="bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="grant-notes" className="text-slate-300">Notes (optional)</Label>
+              <textarea
+                id="grant-notes"
+                placeholder="Internal notes about this grant..."
+                value={grantNotes}
+                onChange={(e) => setGrantNotes(e.target.value)}
+                rows={3}
+                className="w-full rounded-md bg-slate-800/50 border border-white/[0.08] text-white placeholder:text-slate-500 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 resize-none"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSelectedUser(null)}>
+            <Button variant="outline" onClick={() => setSelectedUser(null)} className="bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5">
               Cancel
             </Button>
-            <Button onClick={handleGrantCredits} disabled={granting || !grantAmount}>
+            <Button
+              onClick={handleGrantCredits}
+              disabled={granting || !grantAmount || parseInt(grantAmount) <= 0}
+              className="bg-gradient-to-r from-blue-700 to-orange-500 hover:from-blue-600 hover:to-orange-400 text-white border-0"
+            >
               {granting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Gift className="h-4 w-4 mr-2" />}
               Grant Credits
             </Button>

@@ -1,0 +1,210 @@
+/**
+ * Admin Customers API Routes
+ *
+ * GET  /api/cms/admin/customers - List customers with filters
+ * POST /api/cms/admin/customers - Create a new customer
+ */
+
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/cms/db'
+import {
+  withPermission,
+  type AuthContext,
+} from '@/lib/cms/permissions/middleware'
+import { PERMISSIONS } from '@/lib/cms/permissions'
+
+export const dynamic = 'force-dynamic'
+
+const DEFAULT_STORAGE_LIMIT = 500 * 1024 * 1024 // 500 MB
+const PREMIUM_STORAGE_LIMIT = 2 * 1024 * 1024 * 1024 // 2 GB
+
+// GET - List all customers with optional filters
+export const GET = withPermission(
+  PERMISSIONS.CUSTOMERS_VIEW,
+  async (request: NextRequest, _context: AuthContext) => {
+    try {
+      const { searchParams } = new URL(request.url)
+      const businessOwnerId = searchParams.get('businessOwnerId')
+      const status = searchParams.get('status')
+      const accessLevel = searchParams.get('accessLevel')
+
+      const where: Record<string, unknown> = {}
+
+      if (businessOwnerId) {
+        where.tenantId = parseInt(businessOwnerId)
+      }
+
+      if (status === 'active') {
+        // Active = has placed an order or was created recently (last 90 days)
+        const ninetyDaysAgo = new Date()
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
+        where.OR = [
+          { lastOrderAt: { not: null } },
+          { createdAt: { gte: ninetyDaysAgo } },
+        ]
+      } else if (status === 'inactive') {
+        const ninetyDaysAgo = new Date()
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
+        where.AND = [
+          { lastOrderAt: null },
+          { createdAt: { lt: ninetyDaysAgo } },
+        ]
+      }
+
+      if (accessLevel && accessLevel !== 'all') {
+        where.tags = { has: `access:${accessLevel}` }
+      }
+
+      const customers = await prisma.customer.findMany({
+        where,
+        include: {
+          tenant: {
+            select: {
+              id: true,
+              subdomain: true,
+              tenantSettings: {
+                select: {
+                  siteName: true,
+                  siteTitle: true,
+                },
+              },
+            },
+          },
+          _count: {
+            select: {
+              orders: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      })
+
+      const result = customers.map((customer) => {
+        const accessTag = customer.tags.find((t) => t.startsWith('access:'))
+        const customerAccessLevel = accessTag ? accessTag.replace('access:', '') : 'standard'
+
+        const isActive = !!(
+          customer.lastOrderAt ||
+          customer.createdAt > new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+        )
+
+        const businessName =
+          customer.tenant?.tenantSettings?.siteName ||
+          customer.tenant?.tenantSettings?.siteTitle ||
+          customer.tenant?.subdomain ||
+          'Unknown'
+
+        return {
+          id: customer.id,
+          name: [customer.firstName, customer.lastName].filter(Boolean).join(' ') || customer.email,
+          email: customer.email,
+          businessOwner: {
+            id: String(customer.tenantId || 0),
+            businessName,
+          },
+          stackAuthUserId: customer.userId || undefined,
+          accessLevel: customerAccessLevel,
+          storageUsed: 0, // No per-customer storage tracking yet
+          storageLimit:
+            customerAccessLevel === 'premium'
+              ? PREMIUM_STORAGE_LIMIT
+              : DEFAULT_STORAGE_LIMIT,
+          designCount: customer._count.orders,
+          lastActivityAt: customer.lastOrderAt?.toISOString() || null,
+          isActive,
+          createdAt: customer.createdAt.toISOString(),
+        }
+      })
+
+      return NextResponse.json({ customers: result })
+    } catch (error) {
+      console.error('List customers error:', error)
+      return NextResponse.json(
+        { error: 'Failed to list customers' },
+        { status: 500 }
+      )
+    }
+  }
+)
+
+// POST - Create a new customer
+export const POST = withPermission(
+  PERMISSIONS.CUSTOMERS_CREATE,
+  async (request: NextRequest, _context: AuthContext) => {
+    try {
+      const body = await request.json()
+
+      if (!body.email?.trim()) {
+        return NextResponse.json(
+          { error: 'Email is required' },
+          { status: 400 }
+        )
+      }
+
+      if (!body.businessOwnerId) {
+        return NextResponse.json(
+          { error: 'Business owner is required' },
+          { status: 400 }
+        )
+      }
+
+      const tenantId = parseInt(body.businessOwnerId)
+
+      // Verify the tenant exists
+      const tenant = await prisma.subdomain.findUnique({
+        where: { id: tenantId },
+      })
+
+      if (!tenant) {
+        return NextResponse.json(
+          { error: 'Business owner not found' },
+          { status: 404 }
+        )
+      }
+
+      // Check for duplicate email within this tenant
+      const existing = await prisma.customer.findFirst({
+        where: { email: body.email.trim(), tenantId },
+      })
+
+      if (existing) {
+        return NextResponse.json(
+          { error: 'A customer with this email already exists for this business' },
+          { status: 409 }
+        )
+      }
+
+      // Parse name into first/last
+      const nameParts = (body.name || '').trim().split(' ')
+      const firstName = nameParts[0] || null
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : null
+
+      // Build tags array with access level
+      const tags: string[] = []
+      if (body.accessLevel && body.accessLevel !== 'standard') {
+        tags.push(`access:${body.accessLevel}`)
+      }
+
+      const customer = await prisma.customer.create({
+        data: {
+          email: body.email.trim(),
+          firstName,
+          lastName,
+          tenantId,
+          tags,
+        },
+      })
+
+      return NextResponse.json(
+        { success: true, customer },
+        { status: 201 }
+      )
+    } catch (error) {
+      console.error('Create customer error:', error)
+      return NextResponse.json(
+        { error: 'Failed to create customer' },
+        { status: 500 }
+      )
+    }
+  }
+)

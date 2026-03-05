@@ -259,7 +259,7 @@ export default function OrderDetailPage() {
             <Button
               variant="outline"
               className="mt-4"
-              onClick={() => router.push('/orders')}
+              onClick={() => router.push('/admin/orders')}
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Orders
@@ -280,7 +280,7 @@ export default function OrderDetailPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => router.push('/orders')}
+            onClick={() => router.push('/admin/orders')}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back

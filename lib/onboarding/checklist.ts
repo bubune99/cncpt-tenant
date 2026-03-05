@@ -30,7 +30,7 @@ const DEFAULT_ITEMS: Omit<ChecklistItem, "completed" | "completedAt">[] = [
     key: "first_page",
     title: "Create your first page",
     description: "Build a landing page with the visual editor",
-    url: "/admin/pages",
+    url: "{admin}/pages",
   },
   {
     key: "configure_brand",
@@ -48,21 +48,31 @@ const DEFAULT_ITEMS: Omit<ChecklistItem, "completed" | "completedAt">[] = [
     key: "invite_team",
     title: "Invite a team member",
     description: "Collaborate with your team",
-    url: "/teams",
+    url: "/dashboard/teams",
   },
   {
     key: "explore_editor",
     title: "Explore the block editor",
     description: "Drag and drop blocks to build pages",
-    url: "/admin/pages",
+    url: "{admin}/pages",
   },
   {
     key: "publish_page",
     title: "Publish a page",
     description: "Make your first page live",
-    url: "/admin/pages",
+    url: "{admin}/pages",
   },
 ]
+
+/**
+ * Resolve checklist item URLs by replacing {admin} placeholder with the actual subdomain admin path
+ */
+export function resolveChecklistUrl(url: string, subdomainName?: string): string {
+  if (url.includes("{admin}") && subdomainName) {
+    return url.replace("{admin}", `/s/${subdomainName}/admin`)
+  }
+  return url
+}
 
 /**
  * Get or create an onboarding checklist for a user+subdomain pair

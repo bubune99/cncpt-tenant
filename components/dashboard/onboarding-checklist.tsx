@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { CheckCircle2, Circle, ArrowRight, X, Sparkles, Rocket } from "lucide-react"
+import { resolveChecklistUrl } from "@/lib/onboarding/checklist"
 
 interface ChecklistItem {
   key: string
@@ -164,7 +165,7 @@ export function OnboardingChecklist({ subdomainId, subdomainName }: OnboardingCh
                     variant="ghost"
                     size="sm"
                     className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => router.push(item.url)}
+                    onClick={() => router.push(resolveChecklistUrl(item.url, subdomainName))}
                   >
                     <ArrowRight className="h-4 w-4" />
                   </Button>

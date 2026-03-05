@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import { getUserSubdomains } from "@/app/actions"
 import { DashboardSidebar } from "./dashboard-sidebar"
 import { DashboardContent } from "./dashboard-content"
@@ -12,7 +13,8 @@ import { FeedbackWidget } from "@/components/feedback"
 export const dynamic = "force-dynamic"
 
 export default function DashboardPage() {
-  const [activeSection, setActiveSection] = useState("overview")
+  const searchParams = useSearchParams()
+  const [activeSection, setActiveSection] = useState(() => searchParams.get("section") || "overview")
   const [selectedSubdomain, setSelectedSubdomain] = useState<string | null>(null)
   const [stackAuthError, setStackAuthError] = useState<string | null>(null)
   const [user, setUser] = useState<any>(null)

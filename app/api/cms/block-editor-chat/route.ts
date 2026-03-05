@@ -27,6 +27,7 @@ import { prisma } from '@/lib/cms/db';
 import { getAiSettings } from '@/lib/cms/settings';
 import { ChatSDKError } from '@/lib/cms/ai/errors';
 import { checkCredits, useCredits } from '@/lib/ai-credits';
+import { isSuperAdmin } from '@/lib/super-admin';
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
@@ -272,13 +273,20 @@ export async function POST(request: Request) {
     const dbUser = await prisma.user.findFirst({
       where: { stackAuthId: user.id },
     });
-    if (!dbUser) {
-      return ChatSDKError.unauthorized('User not found in database').toResponse();
+
+    // Check CMS role first, then fall back to platform super admin
+    let hasAccess = false;
+    if (dbUser) {
+      const role = (dbUser.role as string)?.toUpperCase();
+      hasAccess = role === 'ADMIN' || role === 'EDITOR';
     }
 
-    // Require at least editor role
-    const role = (dbUser.role as string)?.toUpperCase();
-    if (role !== 'ADMIN' && role !== 'EDITOR') {
+    if (!hasAccess) {
+      // Fallback: platform super admins always have access
+      hasAccess = await isSuperAdmin(user.id);
+    }
+
+    if (!hasAccess) {
       return ChatSDKError.forbidden('Block editor AI requires editor or admin role').toResponse();
     }
 
@@ -317,7 +325,7 @@ export async function POST(request: Request) {
 
     // --- Rate limiting: per-user requests/hour ---
     const hourlyLimit = aiSettings.blockEditorChat.rateLimitPerHour;
-    if (hourlyLimit > 0) {
+    if (hourlyLimit > 0 && dbUser) {
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
       const recentCount = await prisma.aiMessage.count({
         where: {

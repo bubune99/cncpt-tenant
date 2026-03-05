@@ -141,7 +141,7 @@ export default function EditBlogPostPage() {
         setMetaDescription(data.metaDescription || "");
       } else {
         toast.error("Post not found");
-        router.push("/blog");
+        router.push("/admin/blog");
       }
     } catch (error) {
       console.error("Error fetching post:", error);
@@ -231,7 +231,7 @@ export default function EditBlogPostPage() {
 
       if (response.ok) {
         toast.success("Post deleted");
-        router.push("/blog");
+        router.push("/admin/blog");
       } else {
         const data = await response.json();
         toast.error(data.error || "Failed to delete post");

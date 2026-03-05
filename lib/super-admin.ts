@@ -58,8 +58,8 @@ export async function requireSuperAdmin(): Promise<SuperAdminContext> {
   const userEmail = user.primaryEmail || ""
 
   // Check SUPER_ADMIN_EMAILS env var first (always available, even if table doesn't exist)
-  const superAdminEmails = process.env.SUPER_ADMIN_EMAILS?.split(",").map(e => e.trim()) || []
-  const isEnvSuperAdmin = superAdminEmails.includes(userEmail)
+  const superAdminEmails = process.env.SUPER_ADMIN_EMAILS?.split(",").map(e => e.trim().toLowerCase()) || []
+  const isEnvSuperAdmin = superAdminEmails.includes(userEmail.toLowerCase())
 
   try {
     const result = await sql`
@@ -149,8 +149,8 @@ export async function isSuperAdmin(userId: string): Promise<boolean> {
     const user = await stackServerApp.getUser({ userId })
     if (!user) return false
 
-    const superAdminEmails = process.env.SUPER_ADMIN_EMAILS?.split(",") || []
-    return superAdminEmails.includes(user.primaryEmail || "")
+    const superAdminEmails = process.env.SUPER_ADMIN_EMAILS?.split(",").map(e => e.trim().toLowerCase()) || []
+    return superAdminEmails.includes((user.primaryEmail || "").toLowerCase())
   } catch (error) {
     console.error("[super-admin] Error checking super admin status:", error)
     return false
