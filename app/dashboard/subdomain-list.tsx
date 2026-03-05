@@ -13,7 +13,6 @@ import Link from "next/link"
 
 interface Subdomain {
   subdomain: string
-  emoji: string
   created_at: string
   site_title?: string
 }
@@ -54,7 +53,6 @@ function SubdomainCard({ subdomain }: { subdomain: Subdomain }) {
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className="text-3xl">{subdomain.emoji}</div>
             <div>
               <h3 className="font-semibold text-lg">
                 {subdomain.site_title || `${subdomain.subdomain}.${rootDomain}`}

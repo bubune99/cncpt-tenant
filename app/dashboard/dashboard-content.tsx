@@ -10,6 +10,7 @@ import { Billing } from "./billing"
 import { Credits } from "./credits"
 import { FrontendDeployment } from "./frontend-deployment"
 import { McpIntegration } from "./mcp-integration"
+import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -50,6 +51,12 @@ export function DashboardContent({
                 </Button>
               )}
             </div>
+            {subdomains.length > 0 && (
+              <OnboardingChecklist
+                subdomainId={selectedSubdomain ? subdomains.find(s => s.subdomain === selectedSubdomain)?.id : subdomains[0]?.id}
+                subdomainName={selectedSubdomain || subdomains[0]?.subdomain}
+              />
+            )}
             {subdomains.length > 0 ? (
               <div data-help-key="dashboard.sites.list">
                 <SubdomainList subdomains={subdomains} />

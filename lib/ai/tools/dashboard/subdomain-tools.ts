@@ -17,7 +17,7 @@ export function createSubdomainTools(userId: string) {
    */
   const listSubdomains = tool({
     description:
-      "List all subdomains owned by the current user. Returns subdomain names, emojis, and creation dates.",
+      "List all subdomains owned by the current user. Returns subdomain names and creation dates.",
     inputSchema: z.object({
       includeStats: z
         .boolean()
@@ -34,7 +34,6 @@ export function createSubdomainTools(userId: string) {
           SELECT
             s.id,
             s.subdomain,
-            s.emoji,
             s.created_at,
             ts.site_title
           FROM subdomains s
@@ -134,7 +133,6 @@ export function createSubdomainTools(userId: string) {
 
         return {
           subdomain: sub.subdomain,
-          emoji: sub.emoji,
           createdAt: sub.created_at,
           siteTitle: sub.site_title,
           siteDescription: sub.site_description,
@@ -168,7 +166,7 @@ export function createSubdomainTools(userId: string) {
         const searchPattern = `%${query.toLowerCase()}%`
 
         const owned = await sql`
-          SELECT s.subdomain, s.emoji, s.created_at, ts.site_title, 'owner' as access_type
+          SELECT s.subdomain, s.created_at, ts.site_title, 'owner' as access_type
           FROM subdomains s
           LEFT JOIN tenant_settings ts ON ts.tenant_id = s.id
           WHERE s.user_id = ${userId}
@@ -181,7 +179,7 @@ export function createSubdomainTools(userId: string) {
 
         const teamAccessible = await sql`
           SELECT DISTINCT ON (s.subdomain)
-            s.subdomain, s.emoji, s.created_at, ts.site_title, 'team' as access_type
+            s.subdomain, s.created_at, ts.site_title, 'team' as access_type
           FROM subdomains s
           LEFT JOIN tenant_settings ts ON ts.tenant_id = s.id
           JOIN team_subdomains tsd ON tsd.subdomain = s.subdomain

@@ -10,7 +10,7 @@ export type {
   NavItem,
   NavGroup,
   AuthenticatedAreaConfig,
-  PuckPageRegistration,
+  CmsPageRegistration,
   NavigationState,
   NavigationUserContext,
   FilteredNavigation,
@@ -24,15 +24,15 @@ export {
   getAreaConfig,
   getAreaByPath,
   isAuthenticatedPath,
-  getPuckPagesPath,
+  getCmsPagesPath,
 } from './config';
 
 // Navigation
 export {
-  getPuckPagesForArea,
+  getCmsPagesForArea,
   mergeNavigation,
   filterNavigationByPermissions,
   getAreaNavigation,
-  registerPuckPageForArea,
+  registerCmsPageForArea,
   getBreadcrumbs,
 } from './navigation';

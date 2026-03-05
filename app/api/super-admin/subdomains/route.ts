@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { subdomain, emoji, siteName, ownerId, ownerEmail } = body
+    const { subdomain, siteName, ownerId, ownerEmail } = body
 
     // Validate subdomain
     const sanitizedSubdomain = subdomain?.toLowerCase().trim()
@@ -55,7 +55,6 @@ export async function POST(request: NextRequest) {
       INSERT INTO subdomains (
         user_id,
         subdomain,
-        emoji,
         site_name,
         onboarding_completed,
         onboarding_completed_at
@@ -63,12 +62,11 @@ export async function POST(request: NextRequest) {
       VALUES (
         ${ownerId || null},
         ${sanitizedSubdomain},
-        ${emoji || "🌐"},
         ${siteName || sanitizedSubdomain},
         true,
         NOW()
       )
-      RETURNING id, subdomain, emoji, site_name, user_id, created_at
+      RETURNING id, subdomain, site_name, user_id, created_at
     `
 
     const newSubdomain = result[0]
@@ -107,7 +105,6 @@ export async function POST(request: NextRequest) {
       subdomain: {
         id: newSubdomain.id,
         subdomain: newSubdomain.subdomain,
-        emoji: newSubdomain.emoji,
         siteName: newSubdomain.site_name,
         userId: newSubdomain.user_id,
         createdAt: newSubdomain.created_at,
@@ -205,7 +202,7 @@ export async function GET(request: NextRequest) {
     }
 
     const subdomainsResult = await sql`
-      SELECT s.id, s.subdomain, s.emoji, s.user_id, s.created_at,
+      SELECT s.id, s.subdomain, s.user_id, s.created_at,
              (SELECT COUNT(*) FROM team_subdomains WHERE subdomain = s.subdomain) as team_share_count
       FROM subdomains s
       ${sql.unsafe(whereClause)}
@@ -239,7 +236,6 @@ export async function GET(request: NextRequest) {
     const subdomains = subdomainsResult.map((s) => ({
       id: s.id,
       subdomain: s.subdomain,
-      emoji: s.emoji,
       userId: s.user_id,
       owner: userMap.get(s.user_id as string) || null,
       createdAt: s.created_at,

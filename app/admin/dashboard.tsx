@@ -78,7 +78,6 @@ import type { SubscriptionTier, ClientStats } from "@/types/admin"
 
 type Tenant = {
   subdomain: string
-  emoji: string
   createdAt: number
 }
 
@@ -432,7 +431,6 @@ function OverviewSection() {
 type EnhancedSubdomain = {
   id: number
   subdomain: string
-  emoji: string
   userId: string | null
   owner: {
     id: string
@@ -468,7 +466,6 @@ function SubdomainsSection({
   // Create subdomain state
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [newSubdomain, setNewSubdomain] = useState("")
-  const [newEmoji, setNewEmoji] = useState("🌐")
   const [newSiteName, setNewSiteName] = useState("")
   const [assignOwnerEmail, setAssignOwnerEmail] = useState("")
   const [assignOwnerId, setAssignOwnerId] = useState("")
@@ -617,7 +614,6 @@ function SubdomainsSection({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           subdomain: newSubdomain.toLowerCase().trim(),
-          emoji: newEmoji || "🌐",
           siteName: newSiteName || newSubdomain,
           ownerId: assignOwnerId || null,
           ownerEmail: assignFoundUser?.email || assignOwnerEmail || null,
@@ -626,7 +622,6 @@ function SubdomainsSection({
       if (res.ok) {
         setShowCreateDialog(false)
         setNewSubdomain("")
-        setNewEmoji("🌐")
         setNewSiteName("")
         setAssignOwnerEmail("")
         setAssignOwnerId("")
@@ -710,7 +705,6 @@ function SubdomainsSection({
                 <TableRow key={sub.id} className="border-white/[0.08] hover:bg-white/[0.02]">
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <span className="text-2xl">{sub.emoji}</span>
                       <div>
                         <div className="font-medium text-white">{sub.subdomain}</div>
                         <a
@@ -915,18 +909,7 @@ function SubdomainsSection({
               <p className="text-xs text-gray-500">Lowercase letters, numbers, and hyphens only</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="newEmoji">Emoji</Label>
-                <Input
-                  id="newEmoji"
-                  value={newEmoji}
-                  onChange={(e) => setNewEmoji(e.target.value)}
-                  placeholder="🌐"
-                  className="text-center text-2xl"
-                  maxLength={4}
-                />
-              </div>
+            <div className="space-y-2">
               <div className="space-y-2">
                 <Label htmlFor="newSiteName">Site Name</Label>
                 <Input
@@ -1023,7 +1006,7 @@ function UsersSection() {
   const [total, setTotal] = useState(0)
   const [selectedUser, setSelectedUser] = useState<PlatformUser | null>(null)
   const [userDetails, setUserDetails] = useState<{
-    subdomains: Array<{ subdomain: string; emoji: string; createdAt: string }>
+    subdomains: Array<{ subdomain: string; createdAt: string }>
     teams: Array<{ id: string; name: string; slug: string; role: string }>
   } | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
@@ -1307,7 +1290,6 @@ function UsersSection() {
                             className="flex items-center justify-between p-2 bg-gray-50 rounded"
                           >
                             <div className="flex items-center gap-2">
-                              <span className="text-xl">{s.emoji}</span>
                               <span className="font-medium">{s.subdomain}</span>
                             </div>
                             <a

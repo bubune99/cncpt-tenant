@@ -1,209 +1,421 @@
 /**
- * Validation Tool
+ * Block Validation Tool
  *
- * Validates template structure and provides feedback
+ * Validates Block[] structure for the page builder.
+ * Replaces the old Puck template validation.
  */
 
-import { AgentToolResult, ComponentNode, PuckPrimitive } from "../types";
-import { listPrimitivesTool } from "./primitives";
+import type { Block, BlockTag, BlockAnimation, BlockBackground } from "@/lib/cms/block-editor/types"
+import { CONTAINER_TAGS, LEAF_TAGS } from "@/lib/cms/block-editor/types"
+import type { AgentToolResult } from "../types"
 
-interface ValidateTemplateInput {
-  root: ComponentNode;
-  strict?: boolean;
-}
+const ALL_TAGS: BlockTag[] = [...CONTAINER_TAGS, ...LEAF_TAGS]
+
+// ============================================================
+// Validation Types
+// ============================================================
 
 interface ValidationIssue {
-  path: string;
-  type: "error" | "warning";
-  message: string;
-  suggestion?: string;
+  path: string
+  type: "error" | "warning"
+  message: string
+  suggestion?: string
 }
 
-interface ValidateTemplateOutput {
-  valid: boolean;
-  issues: ValidationIssue[];
-  stats: {
-    totalNodes: number;
-    primitivesUsed: string[];
-    maxDepth: number;
-    hasSlots: boolean;
-  };
+interface ValidationStats {
+  totalBlocks: number
+  rootBlocks: number
+  maxDepth: number
+  tagsUsed: string[]
+  hasAnimations: boolean
+  hasBackgrounds: boolean
 }
 
-interface SuggestMappingInput {
-  jsxElement: string;
-  attributes: Record<string, string>;
-  children?: string;
+interface ValidateBlocksInput {
+  blocks: unknown
+  strict?: boolean
 }
 
-interface SuggestMappingOutput {
-  suggestedPrimitive: string;
-  confidence: "high" | "medium" | "low";
-  props: Record<string, unknown>;
-  reasoning: string;
-  alternatives?: string[];
+interface ValidateBlocksOutput {
+  valid: boolean
+  issues: ValidationIssue[]
+  stats: ValidationStats
 }
+
+// ============================================================
+// Validation Logic
+// ============================================================
+
+function validateBlock(
+  block: unknown,
+  path: string,
+  depth: number,
+  issues: ValidationIssue[],
+  stats: { totalBlocks: number; maxDepth: number; tagsUsed: Set<string>; hasAnimations: boolean; hasBackgrounds: boolean },
+  strict: boolean
+): void {
+  stats.totalBlocks++
+  stats.maxDepth = Math.max(stats.maxDepth, depth)
+
+  if (typeof block !== "object" || block === null) {
+    issues.push({
+      path,
+      type: "error",
+      message: "Block must be an object",
+      suggestion: "Each block should be { id, tag, className, ... }",
+    })
+    return
+  }
+
+  const b = block as Record<string, unknown>
+
+  // Required: id
+  if (!b.id || typeof b.id !== "string" || b.id.trim() === "") {
+    issues.push({
+      path,
+      type: "error",
+      message: 'Missing or invalid "id" field',
+      suggestion: "Every block needs a unique string id, e.g., \"sec-001\"",
+    })
+  }
+
+  // Required: tag
+  if (!b.tag || typeof b.tag !== "string") {
+    issues.push({
+      path,
+      type: "error",
+      message: 'Missing "tag" field',
+      suggestion: "Specify an HTML tag like \"div\", \"section\", \"h1\", etc.",
+    })
+  } else if (!ALL_TAGS.includes(b.tag as BlockTag)) {
+    issues.push({
+      path,
+      type: "error",
+      message: `Invalid tag "${b.tag}"`,
+      suggestion: `Valid tags: ${ALL_TAGS.join(", ")}`,
+    })
+  } else {
+    stats.tagsUsed.add(b.tag as string)
+  }
+
+  // Required: className (can be empty string)
+  if (typeof b.className !== "string") {
+    issues.push({
+      path,
+      type: "error",
+      message: 'Missing "className" field',
+      suggestion: "Every block needs className (can be empty string \"\")",
+    })
+  }
+
+  // Semantic: Leaf tags should not have children
+  if (LEAF_TAGS.includes(b.tag as BlockTag) && Array.isArray(b.children) && b.children.length > 0) {
+    issues.push({
+      path,
+      type: "error",
+      message: `Leaf tag "${b.tag}" cannot have children`,
+      suggestion: `Use textContent for leaf elements, or change to a container tag (div, section, etc.)`,
+    })
+  }
+
+  // Semantic: Container tags should use children, not textContent (warning)
+  if (
+    CONTAINER_TAGS.includes(b.tag as BlockTag) &&
+    b.textContent &&
+    typeof b.textContent === "string" &&
+    b.textContent.trim()
+  ) {
+    issues.push({
+      path,
+      type: strict ? "error" : "warning",
+      message: `Container tag "${b.tag}" has textContent`,
+      suggestion: "Wrap text in a child <p> or <span> instead",
+    })
+  }
+
+  // Semantic: <a> should have href
+  if (b.tag === "a") {
+    const attrs = b.attrs as Record<string, string> | undefined
+    if (!attrs?.href) {
+      issues.push({
+        path,
+        type: strict ? "error" : "warning",
+        message: "<a> tag should have href attribute",
+        suggestion: 'Add attrs: { href: "/path" }',
+      })
+    }
+  }
+
+  // Semantic: <img> must have src
+  if (b.tag === "img") {
+    const attrs = b.attrs as Record<string, string> | undefined
+    if (!attrs?.src) {
+      issues.push({
+        path,
+        type: "error",
+        message: "<img> tag requires src attribute",
+        suggestion: 'Add attrs: { src: "/image.jpg", alt: "Description" }',
+      })
+    }
+    if (!attrs?.alt) {
+      issues.push({
+        path,
+        type: "warning",
+        message: "<img> tag should have alt attribute for accessibility",
+        suggestion: 'Add attrs: { alt: "Image description" }',
+      })
+    }
+  }
+
+  // Semantic: <input> should have type
+  if (b.tag === "input") {
+    const attrs = b.attrs as Record<string, string> | undefined
+    if (!attrs?.type) {
+      issues.push({
+        path,
+        type: "warning",
+        message: "<input> tag should have type attribute",
+        suggestion: 'Add attrs: { type: "text" } or "email", "password", etc.',
+      })
+    }
+  }
+
+  // Validate attrs is an object of strings
+  if (b.attrs !== undefined) {
+    if (typeof b.attrs !== "object" || b.attrs === null || Array.isArray(b.attrs)) {
+      issues.push({
+        path,
+        type: "error",
+        message: '"attrs" must be an object',
+        suggestion: 'Use attrs: { href: "...", src: "..." }',
+      })
+    } else {
+      for (const [key, value] of Object.entries(b.attrs)) {
+        if (typeof value !== "string") {
+          issues.push({
+            path: `${path}.attrs.${key}`,
+            type: "error",
+            message: `Attribute value must be a string, got ${typeof value}`,
+            suggestion: `Convert to string: ${JSON.stringify(value)}`,
+          })
+        }
+      }
+    }
+  }
+
+  // Validate animation if present
+  if (b.animation !== undefined) {
+    stats.hasAnimations = true
+    if (typeof b.animation !== "object" || b.animation === null) {
+      issues.push({
+        path,
+        type: "error",
+        message: '"animation" must be an object',
+      })
+    } else {
+      const anim = b.animation as BlockAnimation
+      const validTypes = ["fadeIn", "slideUp", "slideDown", "slideLeft", "slideRight", "scale", "custom"]
+      const validTriggers = ["onMount", "inView", "hover"]
+
+      if (anim.type && !validTypes.includes(anim.type)) {
+        issues.push({
+          path: `${path}.animation.type`,
+          type: "error",
+          message: `Invalid animation type "${anim.type}"`,
+          suggestion: `Valid types: ${validTypes.join(", ")}`,
+        })
+      }
+      if (anim.trigger && !validTriggers.includes(anim.trigger)) {
+        issues.push({
+          path: `${path}.animation.trigger`,
+          type: "error",
+          message: `Invalid animation trigger "${anim.trigger}"`,
+          suggestion: `Valid triggers: ${validTriggers.join(", ")}`,
+        })
+      }
+      if (anim.duration !== undefined && (typeof anim.duration !== "number" || anim.duration < 0)) {
+        issues.push({
+          path: `${path}.animation.duration`,
+          type: "error",
+          message: "Animation duration must be a positive number",
+        })
+      }
+      if (anim.delay !== undefined && (typeof anim.delay !== "number" || anim.delay < 0)) {
+        issues.push({
+          path: `${path}.animation.delay`,
+          type: "error",
+          message: "Animation delay must be a positive number",
+        })
+      }
+    }
+  }
+
+  // Validate background if present
+  if (b.background !== undefined) {
+    stats.hasBackgrounds = true
+    if (typeof b.background !== "object" || b.background === null) {
+      issues.push({
+        path,
+        type: "error",
+        message: '"background" must be an object',
+      })
+    } else {
+      const bg = b.background as BlockBackground
+      if (!bg.url || typeof bg.url !== "string") {
+        issues.push({
+          path: `${path}.background.url`,
+          type: "error",
+          message: "Background url is required and must be a string",
+        })
+      }
+      const validSizes = ["cover", "contain", "auto"]
+      const validPositions = ["center", "top", "bottom", "left", "right"]
+      const validAttachments = ["scroll", "fixed"]
+
+      if (bg.size && !validSizes.includes(bg.size)) {
+        issues.push({
+          path: `${path}.background.size`,
+          type: "error",
+          message: `Invalid size. Valid: ${validSizes.join(", ")}`,
+        })
+      }
+      if (bg.position && !validPositions.includes(bg.position)) {
+        issues.push({
+          path: `${path}.background.position`,
+          type: "error",
+          message: `Invalid position. Valid: ${validPositions.join(", ")}`,
+        })
+      }
+      if (bg.attachment && !validAttachments.includes(bg.attachment)) {
+        issues.push({
+          path: `${path}.background.attachment`,
+          type: "error",
+          message: `Invalid attachment. Valid: ${validAttachments.join(", ")}`,
+        })
+      }
+    }
+  }
+
+  // Recurse into children
+  if (b.children !== undefined) {
+    if (!Array.isArray(b.children)) {
+      issues.push({
+        path,
+        type: "error",
+        message: '"children" must be an array',
+        suggestion: "Use children: [{ ... }, { ... }]",
+      })
+    } else {
+      b.children.forEach((child, i) => {
+        validateBlock(child, `${path}.children[${i}]`, depth + 1, issues, stats, strict)
+      })
+    }
+  }
+}
+
+function checkDuplicateIds(blocks: Block[], issues: ValidationIssue[]): void {
+  const ids = new Set<string>()
+
+  function collect(block: Block, path: string) {
+    if (ids.has(block.id)) {
+      issues.push({
+        path,
+        type: "error",
+        message: `Duplicate block ID: "${block.id}"`,
+        suggestion: "Every block must have a unique id",
+      })
+    }
+    ids.add(block.id)
+    if (block.children) {
+      block.children.forEach((child, i) => collect(child, `${path}.children[${i}]`))
+    }
+  }
+
+  blocks.forEach((block, i) => collect(block, `blocks[${i}]`))
+}
+
+// ============================================================
+// Tool Definition
+// ============================================================
 
 /**
- * Tool to validate an editor template structure
+ * Tool to validate Block[] structure
  */
-export const validateTemplateTool = {
-  name: "validate_puck_template",
-  description: `Validates an editor template structure for correctness.
-Checks that all primitives exist, required props are present, and structure is valid.
-Returns validation issues and suggestions for fixes.`,
+export const validateBlocksTool = {
+  name: "validate_blocks",
+  description: `Validates Block[] structure for the page builder.
+Checks that all blocks have valid tags, required fields, and proper nesting.
+Returns validation issues and suggestions for fixes.
+
+IMPORTANT: This validates the NEW Block format (tag, className, children),
+NOT the old Puck format (type, props, slots).`,
 
   inputSchema: {
     type: "object" as const,
     properties: {
-      root: {
-        type: "object",
-        description: "The root ComponentNode to validate",
+      blocks: {
+        type: "array",
+        description: "Array of Block objects to validate",
       },
       strict: {
         type: "boolean",
         description: "Enable strict validation (warnings become errors)",
       },
     },
-    required: ["root"],
+    required: ["blocks"],
   },
 
-  async execute(
-    input: ValidateTemplateInput
-  ): Promise<AgentToolResult<ValidateTemplateOutput>> {
+  async execute(input: ValidateBlocksInput): Promise<AgentToolResult<ValidateBlocksOutput>> {
     try {
-      const issues: ValidationIssue[] = [];
-      const primitivesUsed = new Set<string>();
-      let totalNodes = 0;
-      let maxDepth = 0;
-      let hasSlots = false;
+      const issues: ValidationIssue[] = []
+      const stats = {
+        totalBlocks: 0,
+        maxDepth: 0,
+        tagsUsed: new Set<string>(),
+        hasAnimations: false,
+        hasBackgrounds: false,
+      }
 
-      // Get available primitives
-      const primitivesResult = await listPrimitivesTool.execute({});
-      const availablePrimitives = primitivesResult.success
-        ? primitivesResult.data!.primitives
-        : [];
-      const primitiveMap = new Map<string, PuckPrimitive>(
-        availablePrimitives.map((p) => [p.name.toLowerCase(), p])
-      );
+      // Handle different input formats
+      let blocks: unknown[]
 
-      // Recursive validation
-      function validateNode(node: ComponentNode, path: string, depth: number) {
-        totalNodes++;
-        maxDepth = Math.max(maxDepth, depth);
-
-        // Check type exists
-        if (!node.type) {
-          issues.push({
-            path,
-            type: "error",
-            message: "Missing component type",
-            suggestion: "Every component must have a type property",
-          });
-          return;
-        }
-
-        primitivesUsed.add(node.type);
-
-        // Check if primitive exists
-        const primitive = primitiveMap.get(node.type.toLowerCase());
-        if (!primitive) {
-          issues.push({
-            path,
-            type: "error",
-            message: `Unknown primitive: ${node.type}`,
-            suggestion: `Available primitives: ${availablePrimitives
-              .slice(0, 5)
-              .map((p) => p.name)
-              .join(", ")}...`,
-          });
-        } else {
-          // Validate required props
-          for (const propDef of primitive.props) {
-            if (propDef.required && !(propDef.name in (node.props || {}))) {
-              issues.push({
-                path: `${path}.props.${propDef.name}`,
-                type: "error",
-                message: `Missing required prop: ${propDef.name}`,
-                suggestion: `${propDef.name} (${propDef.type}): ${propDef.description}`,
-              });
-            }
-          }
-
-          // Validate prop types
-          if (node.props) {
-            for (const [propName, propValue] of Object.entries(node.props)) {
-              const propDef = primitive.props.find((p) => p.name === propName);
-              if (propDef) {
-                const typeError = validatePropType(
-                  propValue,
-                  propDef.type,
-                  propDef.options
-                );
-                if (typeError) {
-                  issues.push({
-                    path: `${path}.props.${propName}`,
-                    type: input.strict ? "error" : "warning",
-                    message: typeError,
-                  });
-                }
-              } else {
-                issues.push({
-                  path: `${path}.props.${propName}`,
-                  type: "warning",
-                  message: `Unknown prop: ${propName} on ${node.type}`,
-                  suggestion: `This prop may be ignored. Valid props: ${primitive.props
-                    .map((p) => p.name)
-                    .join(", ")}`,
-                });
-              }
-            }
-          }
-
-          // Validate slots
-          if (node.slots) {
-            hasSlots = true;
-            const validSlots = primitive.slots || [];
-
-            for (const [slotName, children] of Object.entries(node.slots)) {
-              if (!validSlots.includes(slotName)) {
-                issues.push({
-                  path: `${path}.slots.${slotName}`,
-                  type: "warning",
-                  message: `Unknown slot: ${slotName} on ${node.type}`,
-                  suggestion: validSlots.length
-                    ? `Valid slots: ${validSlots.join(", ")}`
-                    : `${node.type} does not have slots`,
-                });
-              }
-
-              if (Array.isArray(children)) {
-                children.forEach((child, index) => {
-                  validateNode(
-                    child,
-                    `${path}.slots.${slotName}[${index}]`,
-                    depth + 1
-                  );
-                });
-              }
-            }
-          }
+      if (Array.isArray(input.blocks)) {
+        blocks = input.blocks
+      } else if (typeof input.blocks === "object" && input.blocks !== null) {
+        // Single block
+        blocks = [input.blocks]
+        issues.push({
+          path: "input",
+          type: "warning",
+          message: "Input is a single block, wrapping in array",
+          suggestion: "Pass blocks as an array: [{ ... }]",
+        })
+      } else {
+        return {
+          success: false,
+          error: "Input must be an array of Block objects",
         }
       }
 
-      validateNode(input.root, "root", 0);
+      // Validate each block
+      blocks.forEach((block, i) => {
+        validateBlock(block, `blocks[${i}]`, 0, issues, stats, input.strict || false)
+      })
+
+      // Check for duplicate IDs
+      checkDuplicateIds(blocks as Block[], issues)
 
       // Check for excessive depth
-      if (maxDepth > 10) {
+      if (stats.maxDepth > 15) {
         issues.push({
-          path: "root",
+          path: "structure",
           type: "warning",
-          message: `Template is deeply nested (${maxDepth} levels)`,
-          suggestion: "Consider flattening the structure for better performance",
-        });
+          message: `Structure is deeply nested (${stats.maxDepth} levels)`,
+          suggestion: "Consider flattening for better performance",
+        })
       }
 
-      const hasErrors = issues.some((i) => i.type === "error");
+      const hasErrors = issues.some((i) => i.type === "error")
 
       return {
         success: true,
@@ -211,306 +423,67 @@ Returns validation issues and suggestions for fixes.`,
           valid: !hasErrors,
           issues,
           stats: {
-            totalNodes,
-            primitivesUsed: Array.from(primitivesUsed),
-            maxDepth,
-            hasSlots,
+            totalBlocks: stats.totalBlocks,
+            rootBlocks: blocks.length,
+            maxDepth: stats.maxDepth,
+            tagsUsed: Array.from(stats.tagsUsed),
+            hasAnimations: stats.hasAnimations,
+            hasBackgrounds: stats.hasBackgrounds,
           },
         },
-      };
+      }
     } catch (error) {
       return {
         success: false,
         error: `Validation failed: ${(error as Error).message}`,
-      };
+      }
     }
   },
-};
+}
 
-/**
- * Tool to suggest primitive mapping for a JSX element
- */
-export const suggestMappingTool = {
-  name: "suggest_primitive_mapping",
-  description: `Suggests the best editor primitive to use for a JSX element.
-Analyzes the element tag, attributes, and classes to recommend a mapping.
-Use this when unsure how to map a specific v0 element.`,
+// ============================================================
+// Standalone validation function (for use outside agent)
+// ============================================================
 
-  inputSchema: {
-    type: "object" as const,
-    properties: {
-      jsxElement: {
-        type: "string",
-        description: "The JSX element tag (e.g., 'div', 'h1', 'button')",
-      },
-      attributes: {
-        type: "object",
-        description: "Element attributes including className",
-      },
-      children: {
-        type: "string",
-        description: "Text content or description of children",
-      },
-    },
-    required: ["jsxElement", "attributes"],
-  },
+export interface ValidationResult {
+  valid: boolean
+  errors: string[]
+  warnings: string[]
+}
 
-  async execute(
-    input: SuggestMappingInput
-  ): Promise<AgentToolResult<SuggestMappingOutput>> {
-    try {
-      const { jsxElement, attributes, children } = input;
-      const className = attributes.className || attributes.class || "";
+export function validateBlocks(blocks: unknown): ValidationResult {
+  const errors: string[] = []
+  const warnings: string[] = []
 
-      // Element-based mapping rules
-      const elementMappings: Record<
-        string,
-        { primitive: string; confidence: "high" | "medium" | "low" }
-      > = {
-        h1: { primitive: "Heading", confidence: "high" },
-        h2: { primitive: "Heading", confidence: "high" },
-        h3: { primitive: "Heading", confidence: "high" },
-        h4: { primitive: "Heading", confidence: "high" },
-        h5: { primitive: "Heading", confidence: "high" },
-        h6: { primitive: "Heading", confidence: "high" },
-        p: { primitive: "Text", confidence: "high" },
-        span: { primitive: "Text", confidence: "medium" },
-        a: { primitive: "Link", confidence: "high" },
-        button: { primitive: "Button", confidence: "high" },
-        img: { primitive: "Image", confidence: "high" },
-        video: { primitive: "Video", confidence: "high" },
-        input: { primitive: "Input", confidence: "high" },
-        textarea: { primitive: "Textarea", confidence: "high" },
-        select: { primitive: "Select", confidence: "high" },
-        ul: { primitive: "List", confidence: "high" },
-        ol: { primitive: "List", confidence: "high" },
-        hr: { primitive: "Divider", confidence: "high" },
-        svg: { primitive: "Icon", confidence: "medium" },
-      };
+  if (!Array.isArray(blocks)) {
+    return { valid: false, errors: ["Input must be an array of Block objects"], warnings: [] }
+  }
 
-      // Check for direct mapping
-      if (elementMappings[jsxElement.toLowerCase()]) {
-        const mapping = elementMappings[jsxElement.toLowerCase()];
-        const props = extractPropsFromAttributes(
-          mapping.primitive,
-          attributes,
-          jsxElement,
-          children
-        );
+  const stats = {
+    totalBlocks: 0,
+    maxDepth: 0,
+    tagsUsed: new Set<string>(),
+    hasAnimations: false,
+    hasBackgrounds: false,
+  }
 
-        return {
-          success: true,
-          data: {
-            suggestedPrimitive: mapping.primitive,
-            confidence: mapping.confidence,
-            props,
-            reasoning: `${jsxElement} directly maps to ${mapping.primitive}`,
-          },
-        };
-      }
+  const issues: ValidationIssue[] = []
 
-      // For div/section, analyze classes to determine best mapping
-      if (["div", "section", "article", "main", "aside", "nav"].includes(jsxElement.toLowerCase())) {
-        const suggestion = analyzeContainerClasses(className);
-        const props = extractPropsFromAttributes(
-          suggestion.primitive,
-          attributes,
-          jsxElement,
-          children
-        );
+  blocks.forEach((block, i) => {
+    validateBlock(block, `[${i}]`, 0, issues, stats, false)
+  })
 
-        return {
-          success: true,
-          data: {
-            suggestedPrimitive: suggestion.primitive,
-            confidence: suggestion.confidence,
-            props,
-            reasoning: suggestion.reasoning,
-            alternatives: suggestion.alternatives,
-          },
-        };
-      }
+  checkDuplicateIds(blocks as Block[], issues)
 
-      // Unknown element - suggest Container as fallback
-      return {
-        success: true,
-        data: {
-          suggestedPrimitive: "Container",
-          confidence: "low",
-          props: extractPropsFromAttributes("Container", attributes, jsxElement, children),
-          reasoning: `Unknown element ${jsxElement} - using Container as fallback`,
-          alternatives: ["Flex", "Section"],
-        },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: `Suggestion failed: ${(error as Error).message}`,
-      };
+  for (const issue of issues) {
+    if (issue.type === "error") {
+      errors.push(`${issue.path}: ${issue.message}`)
+    } else {
+      warnings.push(`${issue.path}: ${issue.message}`)
     }
-  },
-};
-
-/**
- * Helper functions
- */
-
-function validatePropType(
-  value: unknown,
-  expectedType: string,
-  options?: string[]
-): string | null {
-  switch (expectedType) {
-    case "string":
-      if (typeof value !== "string") {
-        return `Expected string, got ${typeof value}`;
-      }
-      break;
-    case "number":
-      if (typeof value !== "number") {
-        return `Expected number, got ${typeof value}`;
-      }
-      break;
-    case "boolean":
-      if (typeof value !== "boolean") {
-        return `Expected boolean, got ${typeof value}`;
-      }
-      break;
-    case "select":
-      if (options && !options.includes(String(value))) {
-        return `Invalid option: ${value}. Valid options: ${options.join(", ")}`;
-      }
-      break;
-    case "array":
-      if (!Array.isArray(value)) {
-        return `Expected array, got ${typeof value}`;
-      }
-      break;
-    case "object":
-      if (typeof value !== "object" || value === null) {
-        return `Expected object, got ${typeof value}`;
-      }
-      break;
   }
-  return null;
+
+  return { valid: errors.length === 0, errors, warnings }
 }
 
-function analyzeContainerClasses(className: string): {
-  primitive: string;
-  confidence: "high" | "medium" | "low";
-  reasoning: string;
-  alternatives?: string[];
-} {
-  const classes = className.toLowerCase();
-
-  // Check for flex patterns
-  if (classes.includes("flex")) {
-    return {
-      primitive: "Flex",
-      confidence: "high",
-      reasoning: "Contains flex class - use Flex primitive",
-    };
-  }
-
-  // Check for grid patterns
-  if (classes.includes("grid")) {
-    return {
-      primitive: "Grid",
-      confidence: "high",
-      reasoning: "Contains grid class - use Grid primitive",
-    };
-  }
-
-  // Check for section/full-width patterns
-  if (
-    classes.includes("w-full") ||
-    classes.includes("min-h-screen") ||
-    classes.includes("py-") ||
-    classes.includes("px-")
-  ) {
-    return {
-      primitive: "Section",
-      confidence: "medium",
-      reasoning: "Full-width container with padding - likely a Section",
-      alternatives: ["Container"],
-    };
-  }
-
-  // Check for card patterns
-  if (
-    classes.includes("rounded") &&
-    (classes.includes("shadow") || classes.includes("border"))
-  ) {
-    return {
-      primitive: "Card",
-      confidence: "medium",
-      reasoning: "Rounded with shadow/border - likely a Card",
-      alternatives: ["Container"],
-    };
-  }
-
-  // Default to Container
-  return {
-    primitive: "Container",
-    confidence: "medium",
-    reasoning: "Generic container element",
-    alternatives: ["Flex", "Section", "Card"],
-  };
-}
-
-function extractPropsFromAttributes(
-  primitive: string,
-  attributes: Record<string, string>,
-  element: string,
-  children?: string
-): Record<string, unknown> {
-  const props: Record<string, unknown> = {};
-  const className = attributes.className || attributes.class || "";
-
-  // Extract common props based on primitive
-  switch (primitive) {
-    case "Heading":
-      if (children) props.text = children;
-      props.level = element.match(/h(\d)/)?.[1] || "2";
-      if (className.includes("text-center")) props.align = "center";
-      if (className.includes("text-right")) props.align = "right";
-      break;
-
-    case "Text":
-      if (children) props.text = children;
-      if (className.includes("text-center")) props.align = "center";
-      if (className.includes("text-right")) props.align = "right";
-      break;
-
-    case "Button":
-      if (children) props.text = children;
-      if (attributes.href) props.href = attributes.href;
-      break;
-
-    case "Link":
-      if (children) props.text = children;
-      props.href = attributes.href || "#";
-      if (attributes.target) props.target = attributes.target;
-      break;
-
-    case "Image":
-      props.src = attributes.src || "";
-      props.alt = attributes.alt || "";
-      break;
-
-    case "Container":
-    case "Flex":
-    case "Section":
-      // Extract layout-related props from Tailwind classes
-      const paddingMatch = className.match(/p-(\d+)/);
-      if (paddingMatch) props.padding = paddingMatch[1];
-
-      const roundedMatch = className.match(/rounded-?(\w+)?/);
-      if (roundedMatch) props.rounded = roundedMatch[1] || "md";
-      break;
-  }
-
-  return props;
-}
-
-export default { validateTemplateTool, suggestMappingTool };
+export default { validateBlocksTool, validateBlocks }

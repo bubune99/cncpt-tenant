@@ -14,10 +14,10 @@ export const dashboardArea: AuthenticatedAreaConfig = {
   id: 'dashboard',
   name: 'Dashboard',
   basePath: '/dashboard',
-  puckPagesPath: '/dashboard/pages',
+  cmsPagesPath: '/dashboard/pages',
   permission: undefined, // Any authenticated user
-  allowPuckPages: true,
-  puckPagesNavGroup: 'pages',
+  allowCmsPages: true,
+  cmsPagesNavGroup: 'pages',
   layout: {
     showSidebar: true,
     sidebarWidth: 240,
@@ -91,10 +91,10 @@ export const appArea: AuthenticatedAreaConfig = {
   id: 'app',
   name: 'App',
   basePath: '/app',
-  puckPagesPath: '/app/pages',
+  cmsPagesPath: '/app/pages',
   permission: undefined,
-  allowPuckPages: true,
-  puckPagesNavGroup: 'workspace',
+  allowCmsPages: true,
+  cmsPagesNavGroup: 'workspace',
   layout: {
     showSidebar: true,
     sidebarWidth: 260,
@@ -186,7 +186,7 @@ export function isAuthenticatedPath(path: string): boolean {
 /**
  * Get the CMS pages path for an area
  */
-export function getPuckPagesPath(areaId: string): string | undefined {
+export function getCmsPagesPath(areaId: string): string | undefined {
   const area = getAreaConfig(areaId);
-  return area?.puckPagesPath;
+  return area?.cmsPagesPath;
 }

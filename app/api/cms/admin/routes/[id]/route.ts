@@ -132,16 +132,16 @@ export const PUT = withPermission(
       // Handle type change
       if (body.type !== undefined) {
         const type = body.type.toUpperCase()
-        if (!['PUCK', 'CUSTOM', 'REDIRECT'].includes(type)) {
+        if (!['CMS', 'CUSTOM', 'REDIRECT'].includes(type)) {
           return NextResponse.json(
-            { error: 'Invalid type. Must be PUCK, CUSTOM, or REDIRECT' },
+            { error: 'Invalid type. Must be CMS, CUSTOM, or REDIRECT' },
             { status: 400 }
           )
         }
         updateData.type = type
 
         // Clear fields not relevant to new type
-        if (type !== 'PUCK') {
+        if (type !== 'CMS') {
           updateData.pageId = null
         }
         if (type !== 'CUSTOM') {

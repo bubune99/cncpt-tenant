@@ -1,8 +1,8 @@
 /**
- * Tailwind CSS → Puck Props Mapper
+ * Tailwind CSS → Editor Props Mapper
  *
  * Deterministic rules engine that converts Tailwind class arrays
- * into Puck component prop objects. Pure function, no side effects.
+ * into editor component prop objects. Pure function, no side effects.
  */
 
 export interface TailwindProps {
@@ -836,7 +836,7 @@ function mapDisplayClass(props: TailwindProps, cls: string): boolean {
 
   // Flex shrink/grow — recognized but not mapped to specific prop
   if (cls === "flex-1" || cls === "flex-grow" || cls === "flex-shrink-0" || cls === "flex-shrink" || cls === "flex-grow-0" || cls === "flex-none") {
-    return true; // recognized, no specific Puck prop
+    return true; // recognized, no specific editor prop
   }
 
   // Container class

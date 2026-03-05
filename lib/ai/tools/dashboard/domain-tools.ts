@@ -79,7 +79,7 @@ export function createDomainTools(userId: string) {
 
           if (status === "verified") {
             domains = await sql`
-              SELECT cd.*, s.emoji
+              SELECT cd.*
               FROM custom_domains cd
               JOIN subdomains s ON cd.subdomain = s.subdomain
               WHERE cd.subdomain = ${subdomain} AND cd.is_verified = true
@@ -87,7 +87,7 @@ export function createDomainTools(userId: string) {
             `
           } else if (status === "pending") {
             domains = await sql`
-              SELECT cd.*, s.emoji
+              SELECT cd.*
               FROM custom_domains cd
               JOIN subdomains s ON cd.subdomain = s.subdomain
               WHERE cd.subdomain = ${subdomain} AND cd.is_verified = false
@@ -95,7 +95,7 @@ export function createDomainTools(userId: string) {
             `
           } else {
             domains = await sql`
-              SELECT cd.*, s.emoji
+              SELECT cd.*
               FROM custom_domains cd
               JOIN subdomains s ON cd.subdomain = s.subdomain
               WHERE cd.subdomain = ${subdomain}
@@ -105,7 +105,7 @@ export function createDomainTools(userId: string) {
         } else {
           if (status === "verified") {
             domains = await sql`
-              SELECT cd.*, s.emoji
+              SELECT cd.*
               FROM custom_domains cd
               JOIN subdomains s ON cd.subdomain = s.subdomain
               WHERE s.user_id = ${userId} AND cd.is_verified = true
@@ -113,7 +113,7 @@ export function createDomainTools(userId: string) {
             `
           } else if (status === "pending") {
             domains = await sql`
-              SELECT cd.*, s.emoji
+              SELECT cd.*
               FROM custom_domains cd
               JOIN subdomains s ON cd.subdomain = s.subdomain
               WHERE s.user_id = ${userId} AND cd.is_verified = false
@@ -121,7 +121,7 @@ export function createDomainTools(userId: string) {
             `
           } else {
             domains = await sql`
-              SELECT cd.*, s.emoji
+              SELECT cd.*
               FROM custom_domains cd
               JOIN subdomains s ON cd.subdomain = s.subdomain
               WHERE s.user_id = ${userId}
@@ -142,7 +142,6 @@ export function createDomainTools(userId: string) {
           domains: domains.map((d) => ({
             domain: d.domain,
             subdomain: d.subdomain,
-            emoji: d.emoji,
             isVerified: d.is_verified,
             isPrimary: d.is_primary,
             createdAt: d.created_at,
@@ -171,7 +170,7 @@ export function createDomainTools(userId: string) {
 
       try {
         const domainResult = await sql`
-          SELECT cd.*, s.emoji, s.user_id
+          SELECT cd.*, s.user_id
           FROM custom_domains cd
           JOIN subdomains s ON cd.subdomain = s.subdomain
           WHERE cd.domain = ${domain}
@@ -199,7 +198,6 @@ export function createDomainTools(userId: string) {
         return {
           domain: d.domain,
           subdomain: d.subdomain,
-          emoji: d.emoji,
           isVerified: d.is_verified,
           isPrimary: d.is_primary,
           createdAt: d.created_at,
@@ -237,7 +235,7 @@ export function createDomainTools(userId: string) {
 
       try {
         const domainResult = await sql`
-          SELECT cd.*, s.emoji, s.user_id
+          SELECT cd.*, s.user_id
           FROM custom_domains cd
           JOIN subdomains s ON cd.subdomain = s.subdomain
           WHERE cd.domain = ${domain}

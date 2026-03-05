@@ -1,16 +1,16 @@
 /**
  * Template Assembler
  *
- * Assembles decomposed sections into Puck template format,
- * ready for storage via the PuckTemplate API.
+ * Assembles decomposed sections into editor template format,
+ * ready for storage via the Template API.
  */
 
-import type { DecomposedSection, PuckContent, PuckComponent } from "./element-mapper";
+import type { DecomposedSection, EditorContent, EditorComponent } from "./element-mapper";
 import type { ThemeInfo } from "./theme-extractor";
 
 export interface ZipImportResult {
   sections: DecomposedSection[];
-  fullPage: PuckContent;
+  fullPage: EditorContent;
   theme: ThemeInfo;
   pageTitle: string;
 }
@@ -35,13 +35,13 @@ export function assembleResult(
 }
 
 /**
- * Build a full page PuckContent from all sections combined.
+ * Build a full page EditorContent from all sections combined.
  */
 function buildFullPage(
   sections: DecomposedSection[],
   pageTitle: string
-): PuckContent {
-  const allContent: PuckComponent[] = [];
+): EditorContent {
+  const allContent: EditorComponent[] = [];
 
   for (const section of sections) {
     // Flatten section content into the page
@@ -55,7 +55,7 @@ function buildFullPage(
 }
 
 /**
- * Build a PuckTemplate creation payload for a single section.
+ * Build a template creation payload for a single section.
  */
 export function buildTemplatePaylod(
   section: DecomposedSection,
@@ -65,7 +65,7 @@ export function buildTemplatePaylod(
   description: string;
   type: "SECTION" | "PAGE";
   compatibleConfigs: string[];
-  content: PuckContent;
+  content: EditorContent;
   category: string;
   tags: string[];
 } {
@@ -81,7 +81,7 @@ export function buildTemplatePaylod(
 }
 
 /**
- * Build a PuckTemplate creation payload for the full page.
+ * Build a template creation payload for the full page.
  */
 export function buildPageTemplatePayload(
   sections: DecomposedSection[],
@@ -92,7 +92,7 @@ export function buildPageTemplatePayload(
   description: string;
   type: "SECTION" | "PAGE";
   compatibleConfigs: string[];
-  content: PuckContent;
+  content: EditorContent;
   category: string;
   tags: string[];
 } {

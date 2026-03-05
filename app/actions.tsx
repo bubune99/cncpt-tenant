@@ -2,7 +2,6 @@
 
 import { redis } from "@/lib/redis"
 import { sql } from "@/lib/neon"
-import { isValidIcon } from "@/lib/subdomains"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { rootDomain, protocol } from "@/lib/utils"
@@ -28,7 +27,6 @@ export async function createSubdomainAction(prevState: any, formData: FormData) 
   }
 
   const subdomain = formData.get("subdomain") as string
-  const icon = formData.get("icon") as string
   const siteName = formData.get("siteName") as string || subdomain
   const contactEmail = formData.get("contactEmail") as string || user.primaryEmail || ""
 
@@ -36,15 +34,11 @@ export async function createSubdomainAction(prevState: any, formData: FormData) 
     return { success: false, error: "Subdomain is required" }
   }
 
-  // Icon is now optional - use default if not provided
-  const emoji = icon && isValidIcon(icon) ? icon : "🌐"
-
   const sanitizedSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, "")
 
   if (sanitizedSubdomain !== subdomain) {
     return {
       subdomain,
-      icon,
       success: false,
       error: "Subdomain can only have lowercase letters, numbers, and hyphens. Please try again.",
     }
@@ -54,7 +48,6 @@ export async function createSubdomainAction(prevState: any, formData: FormData) 
   if (sanitizedSubdomain.length < 3) {
     return {
       subdomain,
-      icon,
       success: false,
       error: "Subdomain must be at least 3 characters long.",
     }
@@ -64,7 +57,6 @@ export async function createSubdomainAction(prevState: any, formData: FormData) 
   if (RESERVED_SUBDOMAINS.includes(sanitizedSubdomain)) {
     return {
       subdomain,
-      icon,
       success: false,
       error: "This subdomain is reserved. Please choose another.",
     }
@@ -75,7 +67,6 @@ export async function createSubdomainAction(prevState: any, formData: FormData) 
   if (!canCreate.allowed) {
     return {
       subdomain,
-      icon,
       success: false,
       error: canCreate.reason || "You have reached your subdomain limit. Please upgrade your plan.",
       code: "PLAN_LIMIT_REACHED",
@@ -92,7 +83,6 @@ export async function createSubdomainAction(prevState: any, formData: FormData) 
     if (existingDb.length > 0) {
       return {
         subdomain,
-        icon,
         success: false,
         error: "This subdomain is already taken",
       }
@@ -103,7 +93,6 @@ export async function createSubdomainAction(prevState: any, formData: FormData) 
     if (existingRedis) {
       return {
         subdomain,
-        icon,
         success: false,
         error: "This subdomain is already taken",
       }
@@ -111,13 +100,12 @@ export async function createSubdomainAction(prevState: any, formData: FormData) 
 
     // Create subdomain in database with configuration
     await sql`
-      INSERT INTO subdomains (user_id, subdomain, emoji, site_name, contact_email, onboarding_completed)
-      VALUES (${user.id}, ${sanitizedSubdomain}, ${emoji}, ${siteName}, ${contactEmail}, false)
+      INSERT INTO subdomains (user_id, subdomain, site_name, contact_email, onboarding_completed)
+      VALUES (${user.id}, ${sanitizedSubdomain}, ${siteName}, ${contactEmail}, false)
     `
 
     // Also store in Redis for backwards compatibility during migration
     await redis.set(`subdomain:${sanitizedSubdomain}`, {
-      emoji,
       siteName,
       createdAt: Date.now(),
       userId: user.id,
@@ -143,7 +131,6 @@ export async function createSubdomainAction(prevState: any, formData: FormData) 
     console.error("[actions] Error creating subdomain:", error)
     return {
       subdomain,
-      icon,
       success: false,
       error: "Failed to create subdomain. Please try again.",
     }
@@ -200,7 +187,7 @@ export async function getUserSubdomains() {
   try {
     // Get subdomains from database first
     const dbSubdomains = await sql`
-      SELECT subdomain, emoji, created_at
+      SELECT subdomain, created_at
       FROM subdomains
       WHERE user_id = ${user.id}
       ORDER BY created_at DESC
@@ -209,7 +196,6 @@ export async function getUserSubdomains() {
     if (dbSubdomains.length > 0) {
       return dbSubdomains.map((row) => ({
         subdomain: row.subdomain as string,
-        emoji: (row.emoji as string) || "❓",
         created_at: new Date(row.created_at as string),
       }))
     }
@@ -228,7 +214,6 @@ export async function getUserSubdomains() {
         if (data?.userId === user.id) {
           return {
             subdomain,
-            emoji: data.emoji || "❓",
             created_at: new Date(data.createdAt || Date.now()),
           }
         }
@@ -250,22 +235,10 @@ export async function updateSubdomainAction(prevState: any, formData: FormData) 
   }
 
   const originalSubdomain = formData.get("originalSubdomain") as string
-  const newIcon = formData.get("icon") as string
-
-  // Icon is optional - only validate if provided
-  if (newIcon && !isValidIcon(newIcon)) {
-    return {
-      success: false,
-      error: "Please enter a valid emoji (maximum 10 characters)",
-    }
-  }
 
   const existingData = (await redis.get(`subdomain:${originalSubdomain}`)) as any
-  if (existingData && existingData.userId === user.id) {
-    await redis.set(`subdomain:${originalSubdomain}`, {
-      ...existingData,
-      ...(newIcon && { emoji: newIcon }),
-    })
+  if (!existingData || existingData.userId !== user.id) {
+    return { success: false, error: "Subdomain not found or access denied" }
   }
 
   revalidatePath("/dashboard")

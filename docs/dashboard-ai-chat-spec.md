@@ -66,7 +66,7 @@ components/
 #### `listSubdomains`
 - **Purpose**: List user's subdomains with stats
 - **Parameters**: `{ includeStats?: boolean }`
-- **Returns**: Array of subdomains with name, emoji, created date, visit count
+- **Returns**: Array of subdomains with name, created date, visit count
 - **Use case**: "Show me all my sites" / "How many subdomains do I have?"
 
 #### `getSubdomainDetails`

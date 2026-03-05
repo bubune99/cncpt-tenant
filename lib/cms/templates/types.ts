@@ -18,7 +18,7 @@ export interface SeedTemplate {
   thumbnail?: string;
 
   // The page content
-  content: PuckPageContent;
+  content: PageContent;
 
   // Metadata
   author?: string;
@@ -51,7 +51,7 @@ export type TemplateCategory =
 /**
  * Page content structure
  */
-export interface PuckPageContent {
+export interface PageContent {
   root: {
     props?: Record<string, unknown>;
   };

@@ -17,7 +17,7 @@ export async function GET() {
     // Gather all user data
     const [subdomains, teams, activityLogs] = await Promise.all([
       sql`
-        SELECT subdomain, emoji, created_at
+        SELECT subdomain, created_at
         FROM subdomains
         WHERE user_id = ${userId}
         ORDER BY created_at DESC

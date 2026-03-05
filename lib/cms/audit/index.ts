@@ -37,7 +37,7 @@ const SENSITIVE_FIELDS = new Set([
 // Fields with large payloads that should be summarized rather than stored in full
 const LARGE_FIELDS = new Set([
   'content',
-  'puckContent',
+  'pageContent',
   'customHeader',
   'customFooter',
   'customAnnouncement',

@@ -2,7 +2,7 @@
  * v0 ZIP Import Engine
  *
  * Pipeline orchestrator that converts v0.dev ZIP exports into
- * Puck-compatible JSON templates. Deterministic, no AI required.
+ * editor-compatible JSON templates. Deterministic, no AI required.
  *
  * Pipeline: ZIP → Extract → Parse → Theme → Map → Assemble
  */
@@ -20,7 +20,7 @@ export { mapTailwindClasses } from "./tailwind-mapper";
 export type { TailwindProps } from "./tailwind-mapper";
 
 export { mapSectionToComponents, resetIdCounter } from "./element-mapper";
-export type { PuckComponent, PuckContent, DecomposedSection } from "./element-mapper";
+export type { EditorComponent, EditorContent, DecomposedSection } from "./element-mapper";
 
 export {
   assembleResult,

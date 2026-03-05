@@ -96,7 +96,7 @@ function fromPageContent(content: unknown): { blocks: Block[]; layout?: PageLayo
     }
   }
 
-  // Not block editor content (could be Puck format or empty)
+  // Not block editor content (legacy format or empty)
   return { blocks: [] }
 }
 

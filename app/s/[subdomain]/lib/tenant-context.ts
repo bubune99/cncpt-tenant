@@ -12,7 +12,6 @@ export interface TenantContext {
   id: number;
   subdomain: string;
   userId: string | null;
-  emoji: string;
   maintenanceMode: boolean;
   maintenanceMessage: string | null;
 }
@@ -31,7 +30,6 @@ export async function getTenantContext(subdomain: string): Promise<TenantContext
     id: tenantData.id,
     subdomain: tenantData.subdomain,
     userId: tenantData.userId ?? null,
-    emoji: tenantData.emoji || '🏠',
     maintenanceMode: tenantData.maintenanceMode ?? false,
     maintenanceMessage: tenantData.maintenanceMsg ?? null,
   };

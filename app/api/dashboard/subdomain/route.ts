@@ -62,13 +62,6 @@ function isValidSubdomain(subdomain: string): { valid: boolean; error?: string }
   return { valid: true }
 }
 
-function isValidIcon(icon: string): boolean {
-  if (!icon || icon.length > 10) return false
-  // Allow emoji characters
-  const emojiRegex = /^[\p{Emoji}\p{Emoji_Component}]+$/u
-  return emojiRegex.test(icon)
-}
-
 /**
  * GET /api/dashboard/subdomain
  * List all subdomains for the authenticated user
@@ -85,7 +78,6 @@ export async function GET() {
       SELECT
         id,
         subdomain,
-        emoji,
         created_at,
         updated_at
       FROM subdomains
@@ -100,7 +92,6 @@ export async function GET() {
       subdomains: subdomains.map((s) => ({
         id: s.id,
         subdomain: s.subdomain,
-        emoji: s.emoji || "🌐",
         url: `${protocol}://${s.subdomain}.${rootDomain}`,
         createdAt: s.created_at,
         updatedAt: s.updated_at,
@@ -149,8 +140,6 @@ export async function POST(request: NextRequest) {
       referralOther,
       teamSize,
       techExperience,
-      // Legacy support
-      icon,
     } = body
 
     // Validate subdomain
@@ -198,7 +187,6 @@ export async function POST(request: NextRequest) {
       INSERT INTO subdomains (
         user_id,
         subdomain,
-        emoji,
         site_name,
         site_description,
         contact_email,
@@ -216,7 +204,6 @@ export async function POST(request: NextRequest) {
       VALUES (
         ${user.id},
         ${sanitizedSubdomain},
-        ${icon || "🌐"},
         ${siteName?.trim()},
         ${siteDescription?.trim() || null},
         ${contactEmail?.trim()},
@@ -361,7 +348,7 @@ async function initializeSubdomainFeatures(subdomainId: string, userId: string):
 
 /**
  * PATCH /api/dashboard/subdomain
- * Update a subdomain's emoji
+ * Update a subdomain
  */
 export async function PATCH(request: NextRequest) {
   try {
@@ -371,28 +358,19 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { subdomain, icon } = body
+    const { subdomain } = body
 
     if (!subdomain) {
       return NextResponse.json({ error: "Subdomain is required" }, { status: 400 })
-    }
-
-    // Validate icon
-    if (icon && !isValidIcon(icon)) {
-      return NextResponse.json(
-        { error: "Invalid emoji (maximum 10 characters)" },
-        { status: 400 }
-      )
     }
 
     // Update the subdomain (only if owned by user)
     const result = await sql`
       UPDATE subdomains
       SET
-        emoji = COALESCE(${icon || null}, emoji),
         updated_at = NOW()
       WHERE subdomain = ${subdomain} AND user_id = ${user.id}
-      RETURNING id, subdomain, emoji, updated_at
+      RETURNING id, subdomain, updated_at
     `
 
     if (result.length === 0) {
@@ -405,7 +383,7 @@ export async function PATCH(request: NextRequest) {
     // Log subdomain update activity
     await logPlatformActivity(
       "subdomain.update",
-      { subdomain, emoji: result[0].emoji },
+      { subdomain },
       {
         actorId: user.id,
         actorEmail: user.primaryEmail || undefined,
@@ -419,7 +397,6 @@ export async function PATCH(request: NextRequest) {
       subdomain: {
         id: result[0].id,
         subdomain: result[0].subdomain,
-        emoji: result[0].emoji,
         updatedAt: result[0].updated_at,
       },
     })

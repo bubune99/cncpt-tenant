@@ -12,23 +12,23 @@ import type {
   NavItem,
   NavigationUserContext,
   FilteredNavigation,
-  PuckPageRegistration,
+  CmsPageRegistration,
   AuthenticatedAreaConfig,
 } from './types';
 
 /**
  * Get CMS pages registered for an authenticated area
  */
-export async function getPuckPagesForArea(areaId: string): Promise<PuckPageRegistration[]> {
+export async function getCmsPagesForArea(areaId: string): Promise<CmsPageRegistration[]> {
   const area = getAreaConfig(areaId);
-  if (!area?.allowPuckPages || !area.puckPagesPath) {
+  if (!area?.allowCmsPages || !area.cmsPagesPath) {
     return [];
   }
 
   try {
     // Query pages that belong to this authenticated area
     // Pages are identified by their slug starting with the area's pages path
-    const pathPrefix = area.puckPagesPath.replace(/^\//, ''); // Remove leading slash
+    const pathPrefix = area.cmsPagesPath.replace(/^\//, ''); // Remove leading slash
 
     const pages = await prisma.page.findMany({
       where: {
@@ -66,15 +66,15 @@ export async function getPuckPagesForArea(areaId: string): Promise<PuckPageRegis
 /**
  * Convert CMS page registrations to nav items
  */
-function puckPagesToNavItems(pages: PuckPageRegistration[]): NavItem[] {
+function cmsPagesToNavItems(pages: CmsPageRegistration[]): NavItem[] {
   return pages
     .filter(page => page.showInNav !== false)
     .map(page => ({
-      id: `puck-page-${page.pageId}`,
+      id: `cms-page-${page.pageId}`,
       label: page.title,
       href: page.path,
       icon: page.icon || 'FileText',
-      isPuckPage: true,
+      isCmsPage: true,
       pageId: page.pageId,
       order: page.order ?? 999,
       visible: true,
@@ -87,19 +87,19 @@ function puckPagesToNavItems(pages: PuckPageRegistration[]): NavItem[] {
  */
 export function mergeNavigation(
   staticGroups: NavGroup[],
-  puckPages: PuckPageRegistration[],
-  puckPagesNavGroup?: string
+  cmsPages: CmsPageRegistration[],
+  cmsPagesNavGroup?: string
 ): NavGroup[] {
-  if (!puckPagesNavGroup || puckPages.length === 0) {
+  if (!cmsPagesNavGroup || cmsPages.length === 0) {
     return staticGroups;
   }
 
-  const puckNavItems = puckPagesToNavItems(puckPages);
+  const cmsNavItems = cmsPagesToNavItems(cmsPages);
 
   return staticGroups.map(group => {
-    if (group.id === puckPagesNavGroup) {
+    if (group.id === cmsPagesNavGroup) {
       // Merge CMS pages into this group
-      const allItems = [...group.items, ...puckNavItems];
+      const allItems = [...group.items, ...cmsNavItems];
       // Sort by order
       allItems.sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
       return { ...group, items: allItems };
@@ -163,20 +163,20 @@ export function filterNavigationByPermissions(
 export async function getAreaNavigation(
   areaId: string,
   userContext?: NavigationUserContext
-): Promise<{ groups: NavGroup[]; puckPages: PuckPageRegistration[] }> {
+): Promise<{ groups: NavGroup[]; cmsPages: CmsPageRegistration[] }> {
   const area = getAreaConfig(areaId);
   if (!area) {
-    return { groups: [], puckPages: [] };
+    return { groups: [], cmsPages: [] };
   }
 
   // Get CMS pages for this area
-  const puckPages = await getPuckPagesForArea(areaId);
+  const cmsPages = await getCmsPagesForArea(areaId);
 
   // Merge static nav with CMS pages
   let groups = mergeNavigation(
     area.staticNavGroups,
-    puckPages,
-    area.puckPagesNavGroup
+    cmsPages,
+    area.cmsPagesNavGroup
   );
 
   // Filter by permissions if user context provided
@@ -185,14 +185,14 @@ export async function getAreaNavigation(
     groups = filtered.groups;
   }
 
-  return { groups, puckPages };
+  return { groups, cmsPages };
 }
 
 /**
  * Register a new CMS page in an authenticated area's navigation
  * This is called when a page is created via the editor
  */
-export async function registerPuckPageForArea(
+export async function registerCmsPageForArea(
   pageId: string,
   areaId: string,
   options: {

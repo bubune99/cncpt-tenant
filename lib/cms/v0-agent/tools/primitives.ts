@@ -1,601 +1,324 @@
 /**
- * Editor Primitives Tool
+ * Block Schema Tool
  *
- * Provides information about available editor components/primitives
- * that v0 components can be mapped to.
+ * Provides information about the Block format and valid tags.
+ * Replaces the old Puck primitives tool.
+ *
+ * The page builder uses native HTML tags + Tailwind classes,
+ * NOT abstract primitives like "Container", "Heading", etc.
  */
 
-import { AgentToolResult, PuckPrimitive, PuckPropDefinition } from "../types";
+import { CONTAINER_TAGS, LEAF_TAGS, type BlockTag } from "@/lib/cms/block-editor/types"
+import type { AgentToolResult } from "../types"
 
-interface GetPrimitivesInput {
-  category?: string;
-  search?: string;
+// ============================================================
+// Block Schema Types
+// ============================================================
+
+interface TagInfo {
+  tag: BlockTag
+  type: "container" | "leaf"
+  description: string
+  canHaveChildren: boolean
+  commonAttributes?: string[]
+  commonClasses?: string[]
 }
 
-interface GetPrimitivesOutput {
-  primitives: PuckPrimitive[];
-  categories: string[];
+interface BlockSchemaOutput {
+  containerTags: TagInfo[]
+  leafTags: TagInfo[]
+  animationTypes: string[]
+  animationTriggers: string[]
+  example: string
 }
 
-interface GetPrimitiveInput {
-  name: string;
+interface GetTagInfoInput {
+  tag: string
 }
 
-/**
- * Tool to list available primitives
- */
+// ============================================================
+// Tag Information
+// ============================================================
+
+const TAG_INFO: Record<BlockTag, Omit<TagInfo, "tag" | "type" | "canHaveChildren">> = {
+  // Container tags
+  div: {
+    description: "Generic container for grouping and layout",
+    commonClasses: ["flex", "grid", "p-4", "gap-4", "rounded-lg", "bg-white", "shadow"],
+  },
+  section: {
+    description: "Semantic section of a page (hero, features, pricing, etc.)",
+    commonClasses: ["py-20", "px-6", "min-h-screen", "bg-slate-950"],
+  },
+  header: {
+    description: "Page or section header",
+    commonClasses: ["fixed", "top-0", "z-50", "px-6", "py-4", "bg-white/80", "backdrop-blur"],
+  },
+  footer: {
+    description: "Page footer",
+    commonClasses: ["py-12", "px-6", "bg-slate-900", "text-white"],
+  },
+  main: {
+    description: "Main content area of a page",
+    commonClasses: ["min-h-screen", "pt-20"],
+  },
+  nav: {
+    description: "Navigation container",
+    commonClasses: ["flex", "items-center", "gap-8"],
+  },
+  aside: {
+    description: "Sidebar or auxiliary content",
+    commonClasses: ["w-64", "p-4", "border-r"],
+  },
+  article: {
+    description: "Self-contained content (blog post, product card)",
+    commonClasses: ["prose", "max-w-2xl"],
+  },
+  ul: {
+    description: "Unordered list",
+    commonClasses: ["space-y-2", "list-disc", "pl-5"],
+  },
+  ol: {
+    description: "Ordered list",
+    commonClasses: ["space-y-2", "list-decimal", "pl-5"],
+  },
+  li: {
+    description: "List item",
+    commonClasses: ["flex", "items-center", "gap-2"],
+  },
+  figure: {
+    description: "Image with caption",
+    commonClasses: ["max-w-2xl", "mx-auto"],
+  },
+  form: {
+    description: "Form container",
+    commonClasses: ["space-y-6", "max-w-md"],
+    commonAttributes: ["action", "method"],
+  },
+  blockquote: {
+    description: "Quoted content",
+    commonClasses: ["border-l-4", "pl-4", "italic", "text-slate-600"],
+  },
+
+  // Leaf tags
+  h1: {
+    description: "Main page heading",
+    commonClasses: ["text-5xl", "font-bold", "text-white"],
+  },
+  h2: {
+    description: "Section heading",
+    commonClasses: ["text-4xl", "font-bold", "text-slate-900"],
+  },
+  h3: {
+    description: "Subsection heading",
+    commonClasses: ["text-2xl", "font-semibold", "text-slate-900"],
+  },
+  h4: {
+    description: "Minor heading",
+    commonClasses: ["text-xl", "font-semibold", "text-slate-900"],
+  },
+  h5: {
+    description: "Small heading",
+    commonClasses: ["text-lg", "font-semibold", "text-slate-900"],
+  },
+  h6: {
+    description: "Smallest heading",
+    commonClasses: ["text-base", "font-semibold", "text-slate-900"],
+  },
+  p: {
+    description: "Paragraph text",
+    commonClasses: ["text-lg", "text-slate-600", "leading-relaxed"],
+  },
+  span: {
+    description: "Inline text wrapper",
+    commonClasses: ["text-sm", "font-medium"],
+  },
+  a: {
+    description: "Link",
+    commonClasses: ["text-blue-600", "hover:underline", "transition-colors"],
+    commonAttributes: ["href", "target"],
+  },
+  img: {
+    description: "Image",
+    commonClasses: ["w-full", "h-auto", "rounded-lg", "object-cover"],
+    commonAttributes: ["src", "alt", "width", "height"],
+  },
+  button: {
+    description: "Clickable button",
+    commonClasses: ["px-6", "py-3", "rounded-lg", "bg-blue-600", "text-white", "font-semibold", "hover:bg-blue-500"],
+    commonAttributes: ["type", "disabled"],
+  },
+  hr: {
+    description: "Horizontal rule/divider",
+    commonClasses: ["border-slate-200", "my-8"],
+  },
+  input: {
+    description: "Form input",
+    commonClasses: ["w-full", "px-4", "py-3", "rounded-lg", "border", "border-slate-300"],
+    commonAttributes: ["type", "name", "placeholder", "required"],
+  },
+  textarea: {
+    description: "Multi-line text input",
+    commonClasses: ["w-full", "px-4", "py-3", "rounded-lg", "border", "border-slate-300", "resize-none"],
+    commonAttributes: ["name", "placeholder", "rows", "required"],
+  },
+  label: {
+    description: "Form label",
+    commonClasses: ["text-sm", "font-medium", "text-slate-700"],
+    commonAttributes: ["for"],
+  },
+  video: {
+    description: "Video element",
+    commonClasses: ["w-full", "rounded-lg"],
+    commonAttributes: ["src", "poster", "controls", "autoplay", "loop", "muted"],
+  },
+  svg: {
+    description: "SVG graphic/icon",
+    commonClasses: ["w-6", "h-6"],
+    commonAttributes: ["viewBox", "fill", "stroke"],
+  },
+  figcaption: {
+    description: "Figure caption",
+    commonClasses: ["text-sm", "text-slate-500", "mt-2", "text-center"],
+  },
+}
+
+// ============================================================
+// Tool: List Block Schema
+// ============================================================
+
 export const listPrimitivesTool = {
-  name: "list_puck_primitives",
-  description: `Lists all available editor primitives (components) that v0 elements can be mapped to.
-Returns component names, their props, and what they're used for.
-Use this to understand what building blocks are available for conversion.`,
+  name: "list_block_schema",
+  description: `Lists the Block schema - valid HTML tags and their usage.
+
+The page builder uses native HTML tags + Tailwind classes, NOT abstract primitives.
+
+CONTAINER TAGS (can have children): ${CONTAINER_TAGS.join(", ")}
+LEAF TAGS (use textContent, no children): ${LEAF_TAGS.join(", ")}
+
+Use this to understand what tags are available and how to use them.`,
 
   inputSchema: {
     type: "object" as const,
     properties: {
       category: {
         type: "string",
-        description:
-          "Filter by category (e.g., 'layout', 'content', 'form', 'media')",
-      },
-      search: {
-        type: "string",
-        description: "Search primitives by name or description",
+        description: 'Filter by "container" or "leaf" tags',
+        enum: ["container", "leaf"],
       },
     },
     required: [],
   },
 
-  async execute(
-    input: GetPrimitivesInput
-  ): Promise<AgentToolResult<GetPrimitivesOutput>> {
+  async execute(input: { category?: "container" | "leaf" }): Promise<AgentToolResult<BlockSchemaOutput>> {
     try {
-      let primitives = getAllPrimitives();
+      const containerTagInfo: TagInfo[] = CONTAINER_TAGS.map((tag) => ({
+        tag,
+        type: "container" as const,
+        canHaveChildren: true,
+        ...TAG_INFO[tag],
+      }))
 
-      // Filter by category
-      if (input.category) {
-        primitives = primitives.filter(
-          (p) => p.category.toLowerCase() === input.category!.toLowerCase()
-        );
-      }
+      const leafTagInfo: TagInfo[] = LEAF_TAGS.map((tag) => ({
+        tag,
+        type: "leaf" as const,
+        canHaveChildren: false,
+        ...TAG_INFO[tag],
+      }))
 
-      // Search
-      if (input.search) {
-        const searchLower = input.search.toLowerCase();
-        primitives = primitives.filter(
-          (p) =>
-            p.name.toLowerCase().includes(searchLower) ||
-            p.description.toLowerCase().includes(searchLower)
-        );
-      }
-
-      // Get unique categories
-      const categories = [
-        ...new Set(getAllPrimitives().map((p) => p.category)),
-      ];
+      // Filter if category specified
+      const filteredContainers = input.category === "leaf" ? [] : containerTagInfo
+      const filteredLeaves = input.category === "container" ? [] : leafTagInfo
 
       return {
         success: true,
         data: {
-          primitives,
-          categories,
+          containerTags: filteredContainers,
+          leafTags: filteredLeaves,
+          animationTypes: ["fadeIn", "slideUp", "slideDown", "slideLeft", "slideRight", "scale"],
+          animationTriggers: ["onMount", "inView", "hover"],
+          example: `{
+  "id": "sec-001",
+  "tag": "section",
+  "className": "py-20 px-6 bg-slate-950",
+  "label": "Hero",
+  "children": [
+    {
+      "id": "h1-001",
+      "tag": "h1",
+      "className": "text-5xl font-bold text-white text-center",
+      "textContent": "Welcome to Our Platform"
+    },
+    {
+      "id": "p-001",
+      "tag": "p",
+      "className": "text-xl text-white/60 mt-4 text-center",
+      "textContent": "Build something amazing today."
+    }
+  ]
+}`,
         },
-      };
+      }
     } catch (error) {
       return {
         success: false,
-        error: `Failed to list primitives: ${(error as Error).message}`,
-      };
+        error: `Failed to list schema: ${(error as Error).message}`,
+      }
     }
   },
-};
+}
 
-/**
- * Tool to get details about a specific primitive
- */
+// ============================================================
+// Tool: Get Tag Info
+// ============================================================
+
 export const getPrimitiveTool = {
-  name: "get_puck_primitive",
-  description: `Gets detailed information about a specific editor primitive.
-Returns full prop definitions, slots, and usage examples.
-Use this when you need to know exactly how to configure a specific component.`,
+  name: "get_tag_info",
+  description: `Gets detailed information about a specific HTML tag for the Block format.
+
+Returns common Tailwind classes and attributes for the tag.`,
 
   inputSchema: {
     type: "object" as const,
     properties: {
-      name: {
+      tag: {
         type: "string",
-        description: "The primitive name (e.g., 'Heading', 'Container')",
+        description: "The HTML tag to get info for (e.g., 'section', 'h1', 'button')",
       },
     },
-    required: ["name"],
+    required: ["tag"],
   },
 
-  async execute(
-    input: GetPrimitiveInput
-  ): Promise<AgentToolResult<PuckPrimitive>> {
+  async execute(input: GetTagInfoInput): Promise<AgentToolResult<TagInfo>> {
     try {
-      const primitive = getAllPrimitives().find(
-        (p) => p.name.toLowerCase() === input.name.toLowerCase()
-      );
+      const tag = input.tag.toLowerCase() as BlockTag
+      const info = TAG_INFO[tag]
 
-      if (!primitive) {
+      if (!info) {
         return {
           success: false,
-          error: `Primitive '${input.name}' not found. Use list_puck_primitives to see available options.`,
-        };
+          error: `Unknown tag "${input.tag}". Valid tags: ${[...CONTAINER_TAGS, ...LEAF_TAGS].join(", ")}`,
+        }
       }
+
+      const isContainer = CONTAINER_TAGS.includes(tag)
 
       return {
         success: true,
-        data: primitive,
-      };
+        data: {
+          tag,
+          type: isContainer ? "container" : "leaf",
+          canHaveChildren: isContainer,
+          ...info,
+        },
+      }
     } catch (error) {
       return {
         success: false,
-        error: `Failed to get primitive: ${(error as Error).message}`,
-      };
+        error: `Failed to get tag info: ${(error as Error).message}`,
+      }
     }
   },
-};
-
-/**
- * Get all available editor primitives
- * This should ideally be loaded from the editor config
- */
-function getAllPrimitives(): PuckPrimitive[] {
-  return [
-    // Layout primitives
-    {
-      name: "Container",
-      description:
-        "A flexible container with padding, margin, and background options. Use for grouping content.",
-      category: "layout",
-      props: [
-        prop("padding", "string", "Padding size (0-12 or Tailwind class)", false, "4"),
-        prop("margin", "string", "Margin size", false, "0"),
-        prop("background", "color", "Background color", false),
-        prop("rounded", "select", "Border radius", false, "none", [
-          "none",
-          "sm",
-          "md",
-          "lg",
-          "xl",
-          "full",
-        ]),
-        prop("border", "boolean", "Show border", false, false),
-        prop("shadow", "select", "Box shadow", false, "none", [
-          "none",
-          "sm",
-          "md",
-          "lg",
-          "xl",
-        ]),
-        prop("maxWidth", "select", "Maximum width", false, "none", [
-          "none",
-          "sm",
-          "md",
-          "lg",
-          "xl",
-          "2xl",
-          "full",
-        ]),
-      ],
-      slots: ["content"],
-    },
-    {
-      name: "Flex",
-      description: "Flexbox container for horizontal or vertical layouts.",
-      category: "layout",
-      props: [
-        prop("direction", "select", "Flex direction", false, "row", [
-          "row",
-          "column",
-          "row-reverse",
-          "column-reverse",
-        ]),
-        prop("justify", "select", "Justify content", false, "start", [
-          "start",
-          "center",
-          "end",
-          "between",
-          "around",
-          "evenly",
-        ]),
-        prop("align", "select", "Align items", false, "stretch", [
-          "start",
-          "center",
-          "end",
-          "stretch",
-          "baseline",
-        ]),
-        prop("gap", "string", "Gap between items", false, "4"),
-        prop("wrap", "boolean", "Allow wrapping", false, false),
-      ],
-      slots: ["children"],
-    },
-    {
-      name: "Grid",
-      description: "CSS Grid container for complex layouts.",
-      category: "layout",
-      props: [
-        prop("columns", "number", "Number of columns", false, 2),
-        prop("gap", "string", "Gap between items", false, "4"),
-        prop("columnsMd", "number", "Columns on medium screens", false),
-        prop("columnsLg", "number", "Columns on large screens", false),
-      ],
-      slots: ["children"],
-    },
-    {
-      name: "Section",
-      description: "Full-width section with optional background and padding.",
-      category: "layout",
-      props: [
-        prop("paddingY", "string", "Vertical padding", false, "16"),
-        prop("paddingX", "string", "Horizontal padding", false, "4"),
-        prop("background", "color", "Background color", false),
-        prop("backgroundImage", "string", "Background image URL", false),
-        prop("overlay", "boolean", "Show dark overlay on background", false, false),
-        prop("maxWidth", "select", "Content max width", false, "6xl", [
-          "sm",
-          "md",
-          "lg",
-          "xl",
-          "2xl",
-          "4xl",
-          "6xl",
-          "full",
-        ]),
-      ],
-      slots: ["content"],
-    },
-
-    // Content primitives
-    {
-      name: "Heading",
-      description: "Text heading (h1-h6) with size and style options.",
-      category: "content",
-      props: [
-        prop("text", "string", "Heading text content", true),
-        prop("level", "select", "Heading level (h1-h6)", false, "2", [
-          "1",
-          "2",
-          "3",
-          "4",
-          "5",
-          "6",
-        ]),
-        prop("size", "select", "Text size", false, "2xl", [
-          "xs",
-          "sm",
-          "base",
-          "lg",
-          "xl",
-          "2xl",
-          "3xl",
-          "4xl",
-          "5xl",
-        ]),
-        prop("weight", "select", "Font weight", false, "bold", [
-          "normal",
-          "medium",
-          "semibold",
-          "bold",
-          "extrabold",
-        ]),
-        prop("color", "color", "Text color", false),
-        prop("align", "select", "Text alignment", false, "left", [
-          "left",
-          "center",
-          "right",
-        ]),
-      ],
-    },
-    {
-      name: "Text",
-      description: "Paragraph or span text with styling options.",
-      category: "content",
-      props: [
-        prop("text", "string", "Text content", true),
-        prop("size", "select", "Text size", false, "base", [
-          "xs",
-          "sm",
-          "base",
-          "lg",
-          "xl",
-        ]),
-        prop("color", "color", "Text color", false),
-        prop("weight", "select", "Font weight", false, "normal", [
-          "normal",
-          "medium",
-          "semibold",
-          "bold",
-        ]),
-        prop("align", "select", "Text alignment", false, "left", [
-          "left",
-          "center",
-          "right",
-        ]),
-        prop("leading", "select", "Line height", false, "normal", [
-          "tight",
-          "snug",
-          "normal",
-          "relaxed",
-          "loose",
-        ]),
-      ],
-    },
-    {
-      name: "RichText",
-      description: "Rich text content with HTML/markdown support.",
-      category: "content",
-      props: [
-        prop("content", "string", "HTML or markdown content", true),
-        prop("format", "select", "Content format", false, "html", [
-          "html",
-          "markdown",
-        ]),
-      ],
-    },
-    {
-      name: "List",
-      description: "Ordered or unordered list.",
-      category: "content",
-      props: [
-        prop("items", "array", "List items", true),
-        prop("type", "select", "List type", false, "unordered", [
-          "ordered",
-          "unordered",
-        ]),
-        prop("icon", "string", "Custom icon for list items", false),
-      ],
-    },
-
-    // Interactive primitives
-    {
-      name: "Button",
-      description: "Clickable button with various styles.",
-      category: "interactive",
-      props: [
-        prop("text", "string", "Button text", true),
-        prop("variant", "select", "Button style", false, "primary", [
-          "primary",
-          "secondary",
-          "outline",
-          "ghost",
-          "link",
-        ]),
-        prop("size", "select", "Button size", false, "md", [
-          "sm",
-          "md",
-          "lg",
-        ]),
-        prop("href", "string", "Link URL (makes button a link)", false),
-        prop("fullWidth", "boolean", "Full width button", false, false),
-        prop("icon", "string", "Icon name", false),
-        prop("iconPosition", "select", "Icon position", false, "left", [
-          "left",
-          "right",
-        ]),
-      ],
-    },
-    {
-      name: "Link",
-      description: "Text link to another page or URL.",
-      category: "interactive",
-      props: [
-        prop("text", "string", "Link text", true),
-        prop("href", "string", "URL to link to", true),
-        prop("target", "select", "Link target", false, "_self", [
-          "_self",
-          "_blank",
-        ]),
-        prop("color", "color", "Link color", false),
-        prop("underline", "boolean", "Show underline", false, true),
-      ],
-    },
-
-    // Media primitives
-    {
-      name: "Image",
-      description: "Responsive image with optional caption.",
-      category: "media",
-      props: [
-        prop("src", "string", "Image URL", true),
-        prop("alt", "string", "Alt text for accessibility", true),
-        prop("width", "number", "Image width", false),
-        prop("height", "number", "Image height", false),
-        prop("objectFit", "select", "How image fits container", false, "cover", [
-          "cover",
-          "contain",
-          "fill",
-          "none",
-        ]),
-        prop("rounded", "select", "Border radius", false, "none", [
-          "none",
-          "sm",
-          "md",
-          "lg",
-          "full",
-        ]),
-        prop("caption", "string", "Image caption", false),
-      ],
-    },
-    {
-      name: "Icon",
-      description: "SVG icon from icon library.",
-      category: "media",
-      props: [
-        prop("name", "string", "Icon name from library", true),
-        prop("size", "select", "Icon size", false, "md", [
-          "xs",
-          "sm",
-          "md",
-          "lg",
-          "xl",
-        ]),
-        prop("color", "color", "Icon color", false),
-      ],
-    },
-    {
-      name: "Video",
-      description: "Embedded video player.",
-      category: "media",
-      props: [
-        prop("src", "string", "Video URL or embed code", true),
-        prop("type", "select", "Video type", false, "url", [
-          "url",
-          "youtube",
-          "vimeo",
-          "embed",
-        ]),
-        prop("autoplay", "boolean", "Autoplay video", false, false),
-        prop("controls", "boolean", "Show controls", false, true),
-        prop("loop", "boolean", "Loop video", false, false),
-        prop("muted", "boolean", "Mute video", false, false),
-      ],
-    },
-
-    // Card primitives
-    {
-      name: "Card",
-      description: "Card component with optional header, body, and footer.",
-      category: "card",
-      props: [
-        prop("variant", "select", "Card style", false, "elevated", [
-          "elevated",
-          "outlined",
-          "filled",
-        ]),
-        prop("padding", "string", "Inner padding", false, "4"),
-        prop("rounded", "select", "Border radius", false, "lg", [
-          "none",
-          "sm",
-          "md",
-          "lg",
-          "xl",
-        ]),
-      ],
-      slots: ["header", "body", "footer"],
-    },
-    {
-      name: "Badge",
-      description: "Small badge or tag for labels.",
-      category: "card",
-      props: [
-        prop("text", "string", "Badge text", true),
-        prop("variant", "select", "Badge style", false, "default", [
-          "default",
-          "primary",
-          "secondary",
-          "success",
-          "warning",
-          "error",
-        ]),
-        prop("size", "select", "Badge size", false, "md", ["sm", "md", "lg"]),
-      ],
-    },
-
-    // Form primitives
-    {
-      name: "Input",
-      description: "Text input field.",
-      category: "form",
-      props: [
-        prop("label", "string", "Input label", false),
-        prop("placeholder", "string", "Placeholder text", false),
-        prop("type", "select", "Input type", false, "text", [
-          "text",
-          "email",
-          "password",
-          "number",
-          "tel",
-          "url",
-        ]),
-        prop("required", "boolean", "Is required", false, false),
-        prop("disabled", "boolean", "Is disabled", false, false),
-      ],
-    },
-    {
-      name: "Textarea",
-      description: "Multi-line text input.",
-      category: "form",
-      props: [
-        prop("label", "string", "Input label", false),
-        prop("placeholder", "string", "Placeholder text", false),
-        prop("rows", "number", "Number of rows", false, 4),
-        prop("required", "boolean", "Is required", false, false),
-      ],
-    },
-    {
-      name: "Select",
-      description: "Dropdown select input.",
-      category: "form",
-      props: [
-        prop("label", "string", "Select label", false),
-        prop("options", "array", "Select options", true),
-        prop("placeholder", "string", "Placeholder text", false),
-        prop("required", "boolean", "Is required", false, false),
-      ],
-    },
-    {
-      name: "Checkbox",
-      description: "Checkbox input.",
-      category: "form",
-      props: [
-        prop("label", "string", "Checkbox label", true),
-        prop("checked", "boolean", "Is checked", false, false),
-        prop("disabled", "boolean", "Is disabled", false, false),
-      ],
-    },
-
-    // Utility primitives
-    {
-      name: "Spacer",
-      description: "Adds vertical or horizontal space.",
-      category: "utility",
-      props: [
-        prop("size", "string", "Space size (Tailwind spacing)", false, "4"),
-        prop("direction", "select", "Space direction", false, "vertical", [
-          "vertical",
-          "horizontal",
-        ]),
-      ],
-    },
-    {
-      name: "Divider",
-      description: "Horizontal or vertical divider line.",
-      category: "utility",
-      props: [
-        prop("direction", "select", "Divider direction", false, "horizontal", [
-          "horizontal",
-          "vertical",
-        ]),
-        prop("color", "color", "Divider color", false),
-        prop("thickness", "string", "Line thickness", false, "1"),
-      ],
-    },
-  ];
 }
 
-/**
- * Helper to create prop definitions
- */
-function prop(
-  name: string,
-  type: PuckPropDefinition["type"],
-  description: string,
-  required: boolean,
-  defaultValue?: unknown,
-  options?: string[]
-): PuckPropDefinition {
-  return {
-    name,
-    type,
-    description,
-    required,
-    default: defaultValue,
-    options,
-  };
-}
-
-export default { listPrimitivesTool, getPrimitiveTool };
+export default { listPrimitivesTool, getPrimitiveTool }

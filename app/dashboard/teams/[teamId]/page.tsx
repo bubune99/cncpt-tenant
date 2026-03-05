@@ -79,7 +79,6 @@ type TeamSubdomain = {
   id: string
   subdomain: string
   accessLevel: string
-  emoji: string | null
   owner: { email: string } | null
 }
 
@@ -486,9 +485,6 @@ export default function TeamDashboardPage() {
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="text-2xl">
-                          {subdomain.emoji || "🌐"}
-                        </div>
                         <div>
                           <p className="font-medium">{subdomain.subdomain}</p>
                           <p className="text-sm text-gray-500">

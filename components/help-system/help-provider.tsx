@@ -28,6 +28,7 @@ import { getDefaultContent } from './default-content'
 import { HelpOverlay } from './help-overlay'
 import { HelpMessageBar } from './help-message-bar'
 import { HelpTooltip } from './help-tooltip'
+import { JoyrideRunner } from './joyride-runner'
 
 // Create context
 const HelpContext = createContext<HelpContextValue | null>(null)
@@ -66,6 +67,7 @@ export function HelpProvider({
 
   // Walkthrough state
   const [isWalkthroughActive, setIsWalkthroughActive] = useState(false)
+  const [activeTour, setActiveTour] = useState<HelpTour | null>(null)
   const [availableTours, setAvailableTours] = useState<HelpTour[]>([])
 
   // Content update tracking (for AI integration)
@@ -254,21 +256,57 @@ export function HelpProvider({
   }, [])
 
   // Start walkthrough
-  const startWalkthrough = useCallback((tourSlug?: string) => {
-    setIsWalkthroughActive(true)
-    // Exit help mode if active
-    setHelpMode((prev) => ({
-      ...prev,
-      isActive: false,
-      selectedElement: null,
-      content: null,
-      visibleElements: [],
-    }))
-    // TODO: Load and start specific tour
-  }, [])
+  const startWalkthrough = useCallback(
+    async (tourSlug?: string) => {
+      // Exit help mode if active
+      setHelpMode((prev) => ({
+        ...prev,
+        isActive: false,
+        selectedElement: null,
+        content: null,
+        visibleElements: [],
+      }))
+
+      let tour: HelpTour | null = null
+
+      if (tourSlug) {
+        // Look up by slug in local state first
+        tour = availableTours.find((t) => t.slug === tourSlug) ?? null
+
+        // If not found locally, try fetching from API
+        if (!tour) {
+          try {
+            const params = new URLSearchParams({ slug: tourSlug })
+            if (storeId) params.set('storeId', storeId)
+            const response = await fetch(`/api/cms/help/tours?${params}`)
+            if (response.ok) {
+              const data = await response.json()
+              if (Array.isArray(data) && data.length > 0) {
+                tour = data[0]
+              } else if (data && !Array.isArray(data)) {
+                tour = data
+              }
+            }
+          } catch {
+            console.debug('Failed to fetch tour:', tourSlug)
+          }
+        }
+      } else {
+        // No slug specified — use first available tour
+        tour = availableTours[0] ?? null
+      }
+
+      if (tour) {
+        setActiveTour(tour)
+        setIsWalkthroughActive(true)
+      }
+    },
+    [availableTours, storeId]
+  )
 
   // Stop walkthrough
   const stopWalkthrough = useCallback(() => {
+    setActiveTour(null)
     setIsWalkthroughActive(false)
   }, [])
 
@@ -346,6 +384,15 @@ export function HelpProvider({
           <HelpMessageBar />
           {helpMode.selectedElement && <HelpTooltip />}
         </>
+      )}
+
+      {/* Walkthrough tour runner */}
+      {isWalkthroughActive && activeTour && (
+        <JoyrideRunner
+          tour={activeTour}
+          onComplete={stopWalkthrough}
+          onSkip={stopWalkthrough}
+        />
       )}
     </HelpContext.Provider>
   )

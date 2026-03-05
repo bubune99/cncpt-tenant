@@ -260,8 +260,8 @@ export async function POST(request: NextRequest) {
         where: { userId: user.id },
       });
 
-      // Delete Puck templates
-      await tx.puckTemplate.deleteMany({
+      // Delete page templates
+      await tx.pageTemplate.deleteMany({
         where: { createdById: user.id },
       });
 

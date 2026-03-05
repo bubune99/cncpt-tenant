@@ -50,6 +50,7 @@ import {
 } from "./store"
 import { ConversationHistory } from "./conversation-history"
 import ReactMarkdown from "react-markdown"
+import { WizardMessage } from "./wizard-message"
 
 // Generate unique IDs
 function generateUUID(): string {
@@ -74,6 +75,32 @@ function hasToolInvocations(message: UIMessage): boolean {
       type === "tool-invocation" ||
       type === "tool-call" ||
       type.startsWith("tool-")
+    )
+  })
+}
+
+// Extract wizard data from tool invocation results in a message
+function getWizardFromMessage(message: UIMessage): { wizard: any } | null {
+  if (!message.parts) return null
+  for (const part of message.parts) {
+    if ((part as any).type === "tool-invocation" || (part as any).type === "tool-result") {
+      const result = (part as any).result
+      if (result?.action === "inline_wizard" && result?.wizard) {
+        return { wizard: result.wizard }
+      }
+    }
+  }
+  return null
+}
+
+// Check if tool invocations are still pending (no result yet)
+function hasActiveToolInvocations(message: UIMessage): boolean {
+  if (!message.parts) return false
+  return message.parts.some((p) => {
+    const part = p as any
+    return (
+      (part.type === "tool-invocation" || part.type === "tool-call") &&
+      part.state !== "result"
     )
   })
 }
@@ -626,7 +653,14 @@ export function ChatPanel({ className }: ChatPanelProps) {
                                 <ReactMarkdown>
                                   {getMessageText(message)}
                                 </ReactMarkdown>
-                                {hasToolInvocations(message) && (
+                                {(() => {
+                                  const wizardData = getWizardFromMessage(message)
+                                  if (wizardData) {
+                                    return <WizardMessage wizard={wizardData.wizard} />
+                                  }
+                                  return null
+                                })()}
+                                {hasActiveToolInvocations(message) && (
                                   <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
                                     <Loader2 className="h-3 w-3 animate-spin" />
                                     Working on it...

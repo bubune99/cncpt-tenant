@@ -31,10 +31,10 @@ pnpm tenant users setup <email>                        # Interactive wizard: cre
 ### Subdomains
 
 ```bash
-pnpm tenant subdomains list                            # Table: subdomain, emoji, owner, maintenance, created
+pnpm tenant subdomains list                            # Table: subdomain, owner, maintenance, created
 pnpm tenant subdomains list --owner <email>            # Filter by owner
 pnpm tenant subdomains get <subdomain>                 # Full detail: owner, teams, auth config, content counts
-pnpm tenant subdomains create <name> --owner <email> --emoji "🎨"
+pnpm tenant subdomains create <name> --owner <email>
 pnpm tenant subdomains delete <subdomain>              # Delete with confirmation
 pnpm tenant subdomains assign <subdomain> <email>      # Transfer ownership
 pnpm tenant subdomains maintenance <subdomain> on      # Enable maintenance mode

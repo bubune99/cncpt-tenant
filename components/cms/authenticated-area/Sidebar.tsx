@@ -99,8 +99,8 @@ export function AuthenticatedAreaSidebar({
           active
             ? 'bg-primary text-primary-foreground'
             : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-          item.isPuckPage && 'border-l-2 border-transparent',
-          item.isPuckPage && active && 'border-l-primary'
+          item.isCmsPage && 'border-l-2 border-transparent',
+          item.isCmsPage && active && 'border-l-primary'
         )}
       >
         {item.icon && <DynamicIcon name={item.icon} className="h-4 w-4 shrink-0" />}
@@ -124,7 +124,7 @@ export function AuthenticatedAreaSidebar({
 
   const renderNavGroup = (group: NavGroup) => {
     const isExpanded = expandedGroups.has(group.id);
-    const hasPuckPages = group.items.some(item => item.isPuckPage);
+    const hasCmsPages = group.items.some(item => item.isCmsPage);
 
     return (
       <div key={group.id} className="space-y-1">
@@ -136,7 +136,7 @@ export function AuthenticatedAreaSidebar({
           >
             <span>{group.label}</span>
             <div className="flex items-center gap-1">
-              {hasPuckPages && canCreatePages && onCreatePage && (
+              {hasCmsPages && canCreatePages && onCreatePage && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -167,7 +167,7 @@ export function AuthenticatedAreaSidebar({
             {group.items.map(renderNavItem)}
 
             {/* Empty state for CMS pages group */}
-            {hasPuckPages === false &&
+            {hasCmsPages === false &&
               group.items.length === 0 &&
               canCreatePages &&
               onCreatePage && (

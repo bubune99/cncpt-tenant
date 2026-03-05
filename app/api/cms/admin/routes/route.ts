@@ -111,14 +111,14 @@ export const POST = withPermission(
 
       // Validate type-specific fields
       const type = body.type.toUpperCase()
-      if (!['PUCK', 'CUSTOM', 'REDIRECT'].includes(type)) {
+      if (!['CMS', 'CUSTOM', 'REDIRECT'].includes(type)) {
         return NextResponse.json(
-          { error: 'Invalid type. Must be PUCK, CUSTOM, or REDIRECT' },
+          { error: 'Invalid type. Must be CMS, CUSTOM, or REDIRECT' },
           { status: 400 }
         )
       }
 
-      if (type === 'PUCK' && !body.pageId) {
+      if (type === 'CMS' && !body.pageId) {
         return NextResponse.json(
           { error: 'Page ID is required for CMS page type' },
           { status: 400 }
@@ -140,7 +140,7 @@ export const POST = withPermission(
       }
 
       // Validate page exists if CMS page type
-      if (type === 'PUCK') {
+      if (type === 'CMS') {
         const page = await prisma.page.findUnique({
           where: { id: body.pageId },
         })
@@ -168,7 +168,7 @@ export const POST = withPermission(
         data: {
           slug,
           type,
-          pageId: type === 'PUCK' ? body.pageId : null,
+          pageId: type === 'CMS' ? body.pageId : null,
           componentKey: type === 'CUSTOM' ? body.componentKey : null,
           redirectUrl: type === 'REDIRECT' ? body.redirectUrl : null,
           redirectCode: type === 'REDIRECT' ? (body.redirectCode || 307) : null,

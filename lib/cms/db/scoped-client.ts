@@ -15,7 +15,7 @@ import { prisma } from './index';
 // Field name mapping: some models use non-standard field names for the user FK
 const USER_FIELD_MAP: Record<string, string> = {
   Media: 'uploadedById',
-  PuckTemplate: 'createdById',
+  PageTemplate: 'createdById',
   BlogPost: 'authorId',
 };
 
@@ -37,7 +37,7 @@ const USER_SCOPED_MODELS = new Set([
 const WRITE_SCOPED_MODELS = new Set([
   'BlogPost',
   'BlogComment',
-  'PuckTemplate',
+  'PageTemplate',
 ]);
 
 const READ_OPERATIONS = new Set([

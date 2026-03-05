@@ -1,41 +1,64 @@
 /**
  * Save Template Tool
  *
- * Saves the converted template to the database
+ * Saves the converted Block template to the database.
+ * Updated to use Block format instead of Puck.
  */
 
-import { AgentToolResult, PuckTemplate, ComponentNode } from "../types";
+import type { Block } from "@/lib/cms/block-editor/types"
+import { CONTAINER_TAGS, LEAF_TAGS } from "@/lib/cms/block-editor/types"
+import type { AgentToolResult, BlockTemplate } from "../types"
 
 interface SaveTemplateInput {
-  name: string;
-  description: string;
-  category: string;
-  tags?: string[];
-  root: ComponentNode;
-  sourceUrl?: string;
-  thumbnail?: string;
+  name: string
+  description: string
+  category: string
+  tags?: string[]
+  blocks: Block[]
+  sourceUrl?: string
+  thumbnail?: string
 }
 
 interface SaveTemplateOutput {
-  id: string;
-  name: string;
-  slug: string;
-  url: string;
+  id: string
+  name: string
+  slug: string
+  url: string
 }
 
 interface UpdateTemplateInput {
-  id: string;
-  updates: Partial<SaveTemplateInput>;
+  id: string
+  updates: Partial<SaveTemplateInput>
 }
 
+const ALL_TAGS = [...CONTAINER_TAGS, ...LEAF_TAGS]
+
 /**
- * Tool to save a new template
+ * Tool to save a new Block template
  */
 export const saveTemplateTool = {
-  name: "save_puck_template",
-  description: `Saves the converted component as a template in the database.
+  name: "save_template",
+  description: `Saves the converted component as a Block template in the database.
 The template can then be used in the page builder.
-Returns the template ID and URL for accessing it.`,
+
+IMPORTANT: This expects Block format (tag, className, children), NOT Puck format (type, props, slots).
+
+Example input:
+{
+  "name": "Hero Section",
+  "description": "A hero section with title and CTA",
+  "category": "Hero",
+  "blocks": [
+    {
+      "id": "sec-001",
+      "tag": "section",
+      "className": "py-20 px-4 bg-slate-950",
+      "children": [
+        { "id": "h1-001", "tag": "h1", "className": "text-5xl font-bold text-white", "textContent": "Welcome" }
+      ]
+    }
+  ]
+}`,
 
   inputSchema: {
     type: "object" as const,
@@ -50,17 +73,16 @@ Returns the template ID and URL for accessing it.`,
       },
       category: {
         type: "string",
-        description:
-          "Template category (e.g., 'Hero', 'Cards', 'Pricing', 'Testimonials')",
+        description: "Template category (e.g., 'Hero', 'Cards', 'Pricing', 'Testimonials')",
       },
       tags: {
         type: "array",
         items: { type: "string" },
         description: "Optional tags for search/filtering",
       },
-      root: {
-        type: "object",
-        description: "The root ComponentNode of the template",
+      blocks: {
+        type: "array",
+        description: "Array of Block objects (the template content)",
       },
       sourceUrl: {
         type: "string",
@@ -71,28 +93,26 @@ Returns the template ID and URL for accessing it.`,
         description: "Optional thumbnail image URL",
       },
     },
-    required: ["name", "description", "category", "root"],
+    required: ["name", "description", "category", "blocks"],
   },
 
-  async execute(
-    input: SaveTemplateInput
-  ): Promise<AgentToolResult<SaveTemplateOutput>> {
+  async execute(input: SaveTemplateInput): Promise<AgentToolResult<SaveTemplateOutput>> {
     try {
-      // Validate the component tree
-      const validationResult = validateComponentTree(input.root);
+      // Validate the blocks
+      const validationResult = validateBlocks(input.blocks)
       if (!validationResult.valid) {
         return {
           success: false,
-          error: `Invalid component tree: ${validationResult.errors.join(", ")}`,
-        };
+          error: `Invalid blocks: ${validationResult.errors.join(", ")}`,
+        }
       }
 
-      // Extract metadata from the tree
-      const primitivesUsed = extractPrimitivesUsed(input.root);
-      const assetCount = countAssets(input.root);
+      // Extract metadata from the blocks
+      const tagsUsed = extractTagsUsed(input.blocks)
+      const assetCount = countAssets(input.blocks)
 
       // Generate slug
-      const slug = generateSlug(input.name);
+      const slug = generateSlug(input.name)
 
       // Save to database via API
       const response = await fetch("/api/cms/templates", {
@@ -106,26 +126,30 @@ Returns the template ID and URL for accessing it.`,
           description: input.description,
           category: input.category,
           tags: input.tags || [],
-          content: input.root,
+          content: {
+            version: "2.0",
+            blocks: input.blocks,
+          },
           sourceUrl: input.sourceUrl,
           thumbnail: input.thumbnail,
           metadata: {
-            primitivesUsed,
+            tagsUsed,
             assetCount,
             source: "v0-import",
+            format: "block", // Mark as new Block format
           },
         }),
-      });
+      })
 
       if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json()
         return {
           success: false,
           error: `Failed to save template: ${error.message || response.statusText}`,
-        };
+        }
       }
 
-      const result = await response.json();
+      const result = await response.json()
 
       return {
         success: true,
@@ -135,22 +159,22 @@ Returns the template ID and URL for accessing it.`,
           slug: result.slug,
           url: `/admin/templates/${result.id}`,
         },
-      };
+      }
     } catch (error) {
       return {
         success: false,
         error: `Failed to save template: ${(error as Error).message}`,
-      };
+      }
     }
   },
-};
+}
 
 /**
  * Tool to update an existing template
  */
 export const updateTemplateTool = {
-  name: "update_puck_template",
-  description: `Updates an existing template in the database.
+  name: "update_template",
+  description: `Updates an existing Block template in the database.
 Use this to fix or improve a previously saved template.`,
 
   inputSchema: {
@@ -162,25 +186,33 @@ Use this to fix or improve a previously saved template.`,
       },
       updates: {
         type: "object",
-        description: "Fields to update (name, description, category, tags, root)",
+        description: "Fields to update (name, description, category, tags, blocks)",
       },
     },
     required: ["id", "updates"],
   },
 
-  async execute(
-    input: UpdateTemplateInput
-  ): Promise<AgentToolResult<SaveTemplateOutput>> {
+  async execute(input: UpdateTemplateInput): Promise<AgentToolResult<SaveTemplateOutput>> {
     try {
-      // Validate if root is being updated
-      if (input.updates.root) {
-        const validationResult = validateComponentTree(input.updates.root);
+      // Validate if blocks are being updated
+      if (input.updates.blocks) {
+        const validationResult = validateBlocks(input.updates.blocks)
         if (!validationResult.valid) {
           return {
             success: false,
-            error: `Invalid component tree: ${validationResult.errors.join(", ")}`,
-          };
+            error: `Invalid blocks: ${validationResult.errors.join(", ")}`,
+          }
         }
+      }
+
+      // Prepare update payload
+      const updatePayload: Record<string, unknown> = { ...input.updates }
+      if (input.updates.blocks) {
+        updatePayload.content = {
+          version: "2.0",
+          blocks: input.updates.blocks,
+        }
+        delete updatePayload.blocks
       }
 
       // Update via API
@@ -189,18 +221,18 @@ Use this to fix or improve a previously saved template.`,
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(input.updates),
-      });
+        body: JSON.stringify(updatePayload),
+      })
 
       if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json()
         return {
           success: false,
           error: `Failed to update template: ${error.message || response.statusText}`,
-        };
+        }
       }
 
-      const result = await response.json();
+      const result = await response.json()
 
       return {
         success: true,
@@ -210,102 +242,99 @@ Use this to fix or improve a previously saved template.`,
           slug: result.slug,
           url: `/admin/templates/${result.id}`,
         },
-      };
+      }
     } catch (error) {
       return {
         success: false,
         error: `Failed to update template: ${(error as Error).message}`,
-      };
+      }
     }
   },
-};
+}
 
 /**
  * Helper functions
  */
 
 interface ValidationResult {
-  valid: boolean;
-  errors: string[];
+  valid: boolean
+  errors: string[]
 }
 
-function validateComponentTree(node: ComponentNode): ValidationResult {
-  const errors: string[] = [];
+function validateBlocks(blocks: Block[]): ValidationResult {
+  const errors: string[] = []
 
-  function validate(n: ComponentNode, path: string) {
+  function validate(block: Block, path: string) {
     // Check required fields
-    if (!n.type) {
-      errors.push(`Missing type at ${path}`);
+    if (!block.id) {
+      errors.push(`Missing id at ${path}`)
     }
 
-    if (!n.props) {
-      errors.push(`Missing props at ${path}`);
+    if (!block.tag) {
+      errors.push(`Missing tag at ${path}`)
+    } else if (!ALL_TAGS.includes(block.tag)) {
+      errors.push(`Invalid tag "${block.tag}" at ${path}`)
     }
 
-    // Validate slots recursively
-    if (n.slots) {
-      for (const [slotName, children] of Object.entries(n.slots)) {
-        if (Array.isArray(children)) {
-          children.forEach((child, index) => {
-            validate(child, `${path}.slots.${slotName}[${index}]`);
-          });
-        }
-      }
+    if (typeof block.className !== "string") {
+      errors.push(`Missing className at ${path}`)
+    }
+
+    // Check leaf tags don't have children
+    if (LEAF_TAGS.includes(block.tag) && block.children?.length) {
+      errors.push(`Leaf tag "${block.tag}" cannot have children at ${path}`)
+    }
+
+    // Validate children recursively
+    if (block.children) {
+      block.children.forEach((child, index) => {
+        validate(child, `${path}.children[${index}]`)
+      })
     }
   }
 
-  validate(node, "root");
+  blocks.forEach((block, i) => validate(block, `blocks[${i}]`))
 
   return {
     valid: errors.length === 0,
     errors,
-  };
+  }
 }
 
-function extractPrimitivesUsed(node: ComponentNode): string[] {
-  const primitives = new Set<string>();
+function extractTagsUsed(blocks: Block[]): string[] {
+  const tags = new Set<string>()
 
-  function collect(n: ComponentNode) {
-    primitives.add(n.type);
-
-    if (n.slots) {
-      for (const children of Object.values(n.slots)) {
-        if (Array.isArray(children)) {
-          children.forEach(collect);
-        }
-      }
+  function collect(block: Block) {
+    tags.add(block.tag)
+    if (block.children) {
+      block.children.forEach(collect)
     }
   }
 
-  collect(node);
-  return Array.from(primitives);
+  blocks.forEach(collect)
+  return Array.from(tags)
 }
 
-function countAssets(node: ComponentNode): number {
-  let count = 0;
+function countAssets(blocks: Block[]): number {
+  let count = 0
 
-  function traverse(n: ComponentNode) {
-    // Check for asset props
-    if (n.props) {
-      if (n.props.src && typeof n.props.src === "string") {
-        count++;
-      }
-      if (n.props.backgroundImage && typeof n.props.backgroundImage === "string") {
-        count++;
-      }
+  function traverse(block: Block) {
+    // Check for asset in attrs
+    if (block.attrs?.src) {
+      count++
     }
-
-    if (n.slots) {
-      for (const children of Object.values(n.slots)) {
-        if (Array.isArray(children)) {
-          children.forEach(traverse);
-        }
-      }
+    // Check for background image
+    if (block.background?.url) {
+      count++
+    }
+    // Recurse
+    if (block.children) {
+      block.children.forEach(traverse)
     }
   }
 
-  traverse(node);
-  return count;
+  blocks.forEach(traverse)
+  return count
 }
 
 function generateSlug(name: string): string {
@@ -313,7 +342,7 @@ function generateSlug(name: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
-    .substring(0, 50);
+    .substring(0, 50)
 }
 
-export default { saveTemplateTool, updateTemplateTool };
+export default { saveTemplateTool, updateTemplateTool }

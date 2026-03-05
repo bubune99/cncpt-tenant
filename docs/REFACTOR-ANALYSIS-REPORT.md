@@ -29,7 +29,7 @@ The `tsconfig.json` maps `@/*` to `./*` (project root) and **excludes** `package
 |---|---|---|
 | `@/components/cms/*` | 80+ unique imports | `components/cms/` (217 files) |
 | `@/lib/cms/*` | 200+ unique imports | `lib/cms/` (248 files) |
-| `@/puck/*` | 39 occurrences in 20 files | `puck/` (132 files) |
+| `@/puck/*` | 39 occurrences in 20 files | `puck/` (132 files) — **removed, migrated to block editor** |
 | `@/hooks/*` | Various | `hooks/` (13 files) |
 | `@/exports/cms/*` | Various | `exports/cms/` (7 files) |
 
@@ -37,7 +37,7 @@ The `tsconfig.json` maps `@/*` to `./*` (project root) and **excludes** `package
 
 The workspace package is dead weight:
 - 895 TypeScript files that are never imported
-- Maintains outdated Puck dependencies (`@puckeditor/core`, `@puckeditor/cloud-client`, `@puckeditor/plugin-ai`)
+- Maintains outdated editor dependencies (`@puckeditor/core`, `@puckeditor/cloud-client`, `@puckeditor/plugin-ai`) — **now removed**
 - Has its own `prisma/` schema, `node_modules/`, build config (tsup, tsconfig.build)
 - The `build` script in root `package.json` runs `pnpm --filter @cncpt/cms build` for nothing
 - Remove `@cncpt/cms` from `package.json` dependencies
@@ -109,7 +109,7 @@ These are used in code but declared only in `packages/cms/package.json`, not in 
 - `@prisma/client`, `@prisma/adapter-pg`, `prisma`
 - `@tiptap/*` (all 11 packages) - blog editor
 - `@codemirror/*` - code editor
-- `@puckeditor/core` - still used in tenant puck/ pages (needs Puck removal first)
+- ~~`@puckeditor/core`~~ - **removed** (migrated to custom block editor)
 - `@stripe/react-stripe-js`, `@stripe/stripe-js` - payment UI
 - `@xyflow/react` - workflow editor (may be removable per n8n decision)
 - `shippo` - shipping
@@ -164,16 +164,16 @@ Notable cycles that should be resolved:
 
 ---
 
-## 8. Puck Visual Editor: Still Active in Tenant
+## 8. Puck Visual Editor: Removed from Tenant
 
-Despite being removed from the CMS project, Puck is still **actively used** in the tenant:
-- `puck/` directory (132 files) - Puck component configs, blocks, plugins
-- `@puckeditor/core` dependency in `packages/cms/package.json`
-- Active `@/puck/` imports in 20 files (admin pages, editor, email design)
-- API routes: `app/api/cms/puck/route.ts`, `app/api/cms/puck/[...all]/route.ts`, `app/api/cms/puck/chat/route.ts`
-- Page builder pages: `app/s/[subdomain]/admin/pages/[id]/puck/page.tsx`
+Puck has been fully removed from the tenant project and replaced with the custom block editor:
+- `puck/` directory (132 files) — **deleted**
+- `@puckeditor/core` dependency — **removed**
+- All `@/puck/` imports (20 files) — **migrated to block editor**
+- API routes migrated to `/api/cms/blocks/` and `/api/admin/pages/`
+- Page builder uses custom block editor at `admin/pages/[id]/editor`
 
-**Decision needed**: Should tenant also migrate to the custom block editor, or keep Puck?
+**Decision completed**: Tenant uses the custom block editor (same as CMS project).
 
 ---
 
@@ -195,9 +195,9 @@ Despite being removed from the CMS project, Puck is still **actively used** in t
 2. Remove 32 unused env vars from `.env` files
 3. Document which vars are required vs optional
 
-### Phase 3: Puck Decision (Requires Human Input)
-- If keeping Puck: Move `@puckeditor/core` and related deps to root `package.json`
-- If removing Puck: Migrate all 20 files importing from `@/puck/` to custom block editor
+### Phase 3: Block Editor Migration ✅
+- ~~Puck removed~~ — all 20 files migrated to custom block editor
+- `@puckeditor/core` and related deps removed from project
 
 ### Phase 4: Code Quality
 1. Resolve 12 circular dependency cycles
@@ -213,7 +213,7 @@ Despite being removed from the CMS project, Puck is still **actively used** in t
 | `packages/cms/src/` | 895 | **DELETE** - unused |
 | `components/cms/` | 217 | KEEP - canonical |
 | `lib/cms/` | 248 | KEEP - canonical |
-| `puck/` | 132 | KEEP (pending Puck decision) |
+| `puck/` | 132 | **REMOVED** — migrated to block editor |
 | `hooks/` | 13 | KEEP - canonical |
 | `exports/cms/` | 7 | KEEP - barrel files |
 | `app/` (tenant routes) | ~200 | KEEP - tenant app |

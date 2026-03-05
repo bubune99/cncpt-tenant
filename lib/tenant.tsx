@@ -4,7 +4,6 @@ import { notFound } from "next/navigation"
 export interface TenantData {
   id: number
   subdomain: string
-  emoji: string
   userId: string | null
   createdAt: Date
   maintenanceMode: boolean
@@ -60,7 +59,6 @@ export async function getTenantData(subdomain: string): Promise<TenantData | nul
     select: {
       id: true,
       subdomain: true,
-      emoji: true,
       userId: true,
       createdAt: true,
       maintenanceMode: true,
@@ -73,7 +71,6 @@ export async function getTenantData(subdomain: string): Promise<TenantData | nul
   return {
     id: result.id,
     subdomain: result.subdomain,
-    emoji: result.emoji,
     userId: result.userId,
     createdAt: result.createdAt,
     maintenanceMode: result.maintenanceMode,
@@ -279,7 +276,6 @@ export async function getTenantBySubdomain(subdomain: string) {
   return {
     id: result.id,
     subdomain: result.subdomain,
-    emoji: result.emoji,
     user_id: result.userId,
     created_at: result.createdAt,
     site_title: s?.siteTitle || null,
@@ -306,7 +302,6 @@ export async function requireTenantOwnership(subdomain: string, userId: string):
     select: {
       id: true,
       subdomain: true,
-      emoji: true,
       userId: true,
       createdAt: true,
       maintenanceMode: true,
@@ -321,7 +316,6 @@ export async function requireTenantOwnership(subdomain: string, userId: string):
   return {
     id: result.id,
     subdomain: result.subdomain,
-    emoji: result.emoji,
     userId: result.userId,
     createdAt: result.createdAt,
     maintenanceMode: result.maintenanceMode,

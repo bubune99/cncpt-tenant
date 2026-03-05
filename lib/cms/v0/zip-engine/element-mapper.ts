@@ -1,7 +1,7 @@
 /**
  * Element Mapper
  *
- * Maps ParsedElement trees (from the AST parser) to Puck component JSON.
+ * Maps ParsedElement trees (from the AST parser) to editor component JSON.
  * Uses the Tailwind mapper for style extraction and ThemeInfo for colors/fonts.
  */
 
@@ -9,16 +9,16 @@ import type { ParsedElement, ParsedSection, DataArray } from "./ast-parser";
 import { mapTailwindClasses, type TailwindProps } from "./tailwind-mapper";
 import type { ThemeInfo } from "./theme-extractor";
 
-// Puck component instance in the content array
-export interface PuckComponent {
+// Editor component instance in the content array
+export interface EditorComponent {
   type: string;
   props: Record<string, unknown>;
 }
 
-// Puck content format (what gets stored in templates)
-export interface PuckContent {
+// Editor content format (what gets stored in templates)
+export interface EditorContent {
   root: { props: Record<string, unknown> };
-  content: PuckComponent[];
+  content: EditorComponent[];
 }
 
 // Decomposed section with metadata
@@ -26,7 +26,7 @@ export interface DecomposedSection {
   name: string;
   type: "header" | "footer" | "hero" | "section";
   componentCount: number;
-  content: PuckContent;
+  content: EditorContent;
   sourceFile: string;
 }
 
@@ -44,7 +44,7 @@ export function resetIdCounter() {
 }
 
 /**
- * Map a parsed section to Puck components.
+ * Map a parsed section to editor components.
  */
 export function mapSectionToComponents(
   section: ParsedSection,
@@ -55,7 +55,7 @@ export function mapSectionToComponents(
 
   const sectionType = section.sectionType === "unknown" ? "section" : section.sectionType;
 
-  let components: PuckComponent[];
+  let components: EditorComponent[];
 
   switch (sectionType) {
     case "header":
@@ -82,20 +82,20 @@ export function mapSectionToComponents(
 }
 
 /**
- * Map a header/navigation section to Puck Header component.
+ * Map a header/navigation section to Header component.
  */
 function mapHeaderSection(
   section: ParsedSection,
   theme: ThemeInfo
-): PuckComponent[] {
+): EditorComponent[] {
   const root = section.rootElement;
   if (!root) return [createDefaultHeader()];
 
   const tw = mapTailwindClasses(root.classes);
 
   // Collect all link-like elements and text/button elements
-  const navLinks: PuckComponent[] = [];
-  const ctaButtons: PuckComponent[] = [];
+  const navLinks: EditorComponent[] = [];
+  const ctaButtons: EditorComponent[] = [];
   let logoText = "";
 
   function collectHeaderChildren(el: ParsedElement) {
@@ -209,20 +209,20 @@ function mapHeaderSection(
 }
 
 /**
- * Map a footer section to Puck Footer component.
+ * Map a footer section to Footer component.
  */
 function mapFooterSection(
   section: ParsedSection,
   theme: ThemeInfo
-): PuckComponent[] {
+): EditorComponent[] {
   const root = section.rootElement;
   if (!root) return [createDefaultFooter()];
 
   const tw = mapTailwindClasses(root.classes);
 
   // Find column groups in the footer
-  const columns: PuckComponent[][] = [];
-  const socialLinks: PuckComponent[] = [];
+  const columns: EditorComponent[][] = [];
+  const socialLinks: EditorComponent[] = [];
 
   function collectFooterChildren(el: ParsedElement, depth: number) {
     // Look for grid/flex containers that represent column groups
@@ -266,7 +266,7 @@ function mapFooterSection(
   collectFooterChildren(root, 0);
 
   // Build column slots
-  const columnSlots: Record<string, PuckComponent[]> = {};
+  const columnSlots: Record<string, EditorComponent[]> = {};
   const count = Math.min(columns.length, 4);
   for (let i = 0; i < count; i++) {
     columnSlots[`column${i + 1}`] = columns[i];
@@ -306,12 +306,12 @@ function mapFooterSection(
 }
 
 /**
- * Map a generic section (hero, about, features, etc.) to Puck components.
+ * Map a generic section (hero, about, features, etc.) to editor components.
  */
 function mapGenericSection(
   section: ParsedSection,
   theme: ThemeInfo
-): PuckComponent[] {
+): EditorComponent[] {
   const root = section.rootElement;
   if (!root) return [];
 
@@ -355,14 +355,14 @@ function mapGenericSection(
 }
 
 /**
- * Recursively map a ParsedElement to Puck component(s).
+ * Recursively map a ParsedElement to editor component(s).
  */
 function mapElementToComponents(
   el: ParsedElement,
   dataArrays: DataArray[],
   theme: ThemeInfo,
   depth: number
-): PuckComponent[] {
+): EditorComponent[] {
   // Skip SVG elements
   if (el.tag === "svg" || el.tag === "path" || el.tag === "circle" || el.tag === "rect") {
     return [];
@@ -393,7 +393,7 @@ function mapElementToComponents(
 
   const tw = mapTailwindClasses(el.classes);
 
-  // Map specific HTML tags to Puck components
+  // Map specific HTML tags to editor components
   switch (el.tag) {
     case "h1":
     case "h2":
@@ -465,7 +465,7 @@ function mapDivElement(
   dataArrays: DataArray[],
   theme: ThemeInfo,
   depth: number
-): PuckComponent[] {
+): EditorComponent[] {
   const children = el.children.flatMap((c) =>
     mapElementToComponents(c, dataArrays, theme, depth + 1)
   );
@@ -516,7 +516,7 @@ function mapContainerElement(
   dataArrays: DataArray[],
   theme: ThemeInfo,
   depth: number
-): PuckComponent[] {
+): EditorComponent[] {
   const children = el.children.flatMap((c) =>
     mapElementToComponents(c, dataArrays, theme, depth + 1)
   );
@@ -529,15 +529,15 @@ function mapContainerElement(
 }
 
 /**
- * Expand a data array into repeated Puck components.
+ * Expand a data array into repeated editor components.
  */
 function expandDataArray(
   dataArray: DataArray,
   template: ParsedElement,
   theme: ThemeInfo,
   depth: number
-): PuckComponent[] {
-  const components: PuckComponent[] = [];
+): EditorComponent[] {
+  const components: EditorComponent[] = [];
 
   for (const item of dataArray.items) {
     // Create a component from the template, substituting data values
@@ -556,11 +556,11 @@ function mapTemplateWithData(
   data: Record<string, unknown>,
   theme: ThemeInfo,
   depth: number
-): PuckComponent | null {
+): EditorComponent | null {
   const tw = mapTailwindClasses(template.classes);
 
   // Build children recursively
-  const children: PuckComponent[] = [];
+  const children: EditorComponent[] = [];
 
   for (const child of template.children) {
     if (child.tag === "svg" || child.tag === "path") continue;
@@ -704,7 +704,7 @@ function resolveDataValue(
 
 // ========== Component Creators ==========
 
-function createHeading(el: ParsedElement, tw: TailwindProps): PuckComponent {
+function createHeading(el: ParsedElement, tw: TailwindProps): EditorComponent {
   const level = el.tag as "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
   const text = el.textContent || getDeepText(el) || "Heading";
 
@@ -720,7 +720,7 @@ function createHeading(el: ParsedElement, tw: TailwindProps): PuckComponent {
   };
 }
 
-function createText(el: ParsedElement, tw: TailwindProps): PuckComponent {
+function createText(el: ParsedElement, tw: TailwindProps): EditorComponent {
   const text = el.textContent || getDeepText(el) || "Text content";
 
   return {
@@ -739,7 +739,7 @@ function createButton(
   tw: TailwindProps,
   theme: ThemeInfo,
   forceVariant?: "primary" | "secondary" | "outline" | "link"
-): PuckComponent {
+): EditorComponent {
   const label = el.textContent || getDeepText(el) || "Button";
 
   let variant: "primary" | "secondary" | "outline" = "primary";
@@ -763,7 +763,7 @@ function createButton(
   };
 }
 
-function createImage(el: ParsedElement, tw: TailwindProps): PuckComponent {
+function createImage(el: ParsedElement, tw: TailwindProps): EditorComponent {
   return {
     type: "Image",
     props: {
@@ -778,7 +778,7 @@ function createImage(el: ParsedElement, tw: TailwindProps): PuckComponent {
   };
 }
 
-function createNavLink(el: ParsedElement, tw: TailwindProps): PuckComponent {
+function createNavLink(el: ParsedElement, tw: TailwindProps): EditorComponent {
   return {
     type: "NavLink",
     props: {
@@ -788,10 +788,10 @@ function createNavLink(el: ParsedElement, tw: TailwindProps): PuckComponent {
   };
 }
 
-function createGrid(tw: TailwindProps, children: PuckComponent[]): PuckComponent {
+function createGrid(tw: TailwindProps, children: EditorComponent[]): EditorComponent {
   // Distribute children into column slots
   const cols = tw.gridColumns || 3;
-  const columnSlots: Record<string, PuckComponent[]> = {};
+  const columnSlots: Record<string, EditorComponent[]> = {};
 
   for (let i = 0; i < Math.min(cols, 6); i++) {
     columnSlots[`column${i}`] = [];
@@ -816,7 +816,7 @@ function createGrid(tw: TailwindProps, children: PuckComponent[]): PuckComponent
   };
 }
 
-function createFlex(tw: TailwindProps, children: PuckComponent[]): PuckComponent {
+function createFlex(tw: TailwindProps, children: EditorComponent[]): EditorComponent {
   return {
     type: "Flex",
     props: {
@@ -830,7 +830,7 @@ function createFlex(tw: TailwindProps, children: PuckComponent[]): PuckComponent
   };
 }
 
-function createContainer(tw: TailwindProps, children: PuckComponent[]): PuckComponent {
+function createContainer(tw: TailwindProps, children: EditorComponent[]): EditorComponent {
   return {
     type: "Container",
     props: {
@@ -847,7 +847,7 @@ function createContainer(tw: TailwindProps, children: PuckComponent[]): PuckComp
   };
 }
 
-function createDefaultHeader(): PuckComponent {
+function createDefaultHeader(): EditorComponent {
   return {
     type: "Header",
     props: {
@@ -872,7 +872,7 @@ function createDefaultHeader(): PuckComponent {
   };
 }
 
-function createDefaultFooter(): PuckComponent {
+function createDefaultFooter(): EditorComponent {
   return {
     type: "Footer",
     props: {
@@ -988,8 +988,8 @@ function buildBackground(tw: TailwindProps): Record<string, unknown> {
 function extractColumnContent(
   el: ParsedElement,
   dataArrays: DataArray[]
-): PuckComponent[] {
-  const components: PuckComponent[] = [];
+): EditorComponent[] {
+  const components: EditorComponent[] = [];
 
   // Find title/heading
   for (const child of el.children) {
@@ -1051,8 +1051,8 @@ function extractColumnContent(
 function extractFooterLinks(
   el: ParsedElement,
   dataArrays: DataArray[]
-): PuckComponent[] {
-  const links: PuckComponent[] = [];
+): EditorComponent[] {
+  const links: EditorComponent[] = [];
 
   function walkForLinks(node: ParsedElement) {
     // Check for .map() data expansion
@@ -1128,16 +1128,16 @@ function detectSocialPlatform(el: ParsedElement): string | null {
   return null;
 }
 
-function countComponents(components: PuckComponent[]): number {
+function countComponents(components: EditorComponent[]): number {
   let count = 0;
   for (const comp of components) {
     count++;
     // Count nested content
     for (const [key, value] of Object.entries(comp.props)) {
       if (Array.isArray(value)) {
-        count += countComponents(value as PuckComponent[]);
+        count += countComponents(value as EditorComponent[]);
       } else if (key === "content" && Array.isArray(value)) {
-        count += countComponents(value as PuckComponent[]);
+        count += countComponents(value as EditorComponent[]);
       }
     }
   }

@@ -29,7 +29,7 @@ export async function GET(
 
     // Get subdomains
     const subdomains = await sql`
-      SELECT subdomain, emoji, created_at FROM subdomains WHERE user_id = ${userId}
+      SELECT subdomain, created_at FROM subdomains WHERE user_id = ${userId}
     `
 
     // Get teams
@@ -62,7 +62,6 @@ export async function GET(
       },
       subdomains: subdomains.map((s) => ({
         subdomain: s.subdomain,
-        emoji: s.emoji,
         createdAt: s.created_at,
       })),
       teams: teams.map((t) => ({

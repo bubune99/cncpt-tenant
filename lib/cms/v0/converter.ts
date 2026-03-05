@@ -1,24 +1,24 @@
 /**
  * v0 Component Converter
  *
- * Converts parsed v0 components to ComponentConfig format.
+ * Converts parsed v0 components to EditorComponentConfig format.
  */
 
 import {
   ParsedV0Component,
   ParsedProp,
-  PuckComponentConfig,
-  PuckField,
-  PuckFieldType,
+  EditorComponentConfig,
+  EditorField,
+  EditorFieldType,
 } from "./types";
 
 /**
  * Convert parsed v0 component to ComponentConfig
  */
-export function convertToPuckConfig(
+export function convertToEditorConfig(
   parsed: ParsedV0Component
-): PuckComponentConfig {
-  const fields: Record<string, PuckField> = {};
+): EditorComponentConfig {
+  const fields: Record<string, EditorField> = {};
   const defaultProps: Record<string, unknown> = {};
 
   // Convert each prop to an editor field
@@ -56,8 +56,8 @@ export function convertToPuckConfig(
 /**
  * Convert a parsed prop to an editor field
  */
-function convertPropToField(prop: ParsedProp): PuckField | null {
-  const baseField: Partial<PuckField> = {
+function convertPropToField(prop: ParsedProp): EditorField | null {
+  const baseField: Partial<EditorField> = {
     label: formatLabel(prop.name),
   };
 
@@ -70,13 +70,13 @@ function convertPropToField(prop: ParsedProp): PuckField | null {
       return {
         ...baseField,
         type: "text",
-      } as PuckField;
+      } as EditorField;
 
     case "number":
       return {
         ...baseField,
         type: "number",
-      } as PuckField;
+      } as EditorField;
 
     case "boolean":
       return {
@@ -86,7 +86,7 @@ function convertPropToField(prop: ParsedProp): PuckField | null {
           { label: "Yes", value: "true" },
           { label: "No", value: "false" },
         ],
-      } as PuckField;
+      } as EditorField;
 
     case "select":
       if (prop.options) {
@@ -97,31 +97,31 @@ function convertPropToField(prop: ParsedProp): PuckField | null {
             label: formatLabel(opt),
             value: opt,
           })),
-        } as PuckField;
+        } as EditorField;
       }
       return {
         ...baseField,
         type: "text",
-      } as PuckField;
+      } as EditorField;
 
     case "color":
       return {
         ...baseField,
         type: "custom",
         // Custom color picker would be implemented separately
-      } as PuckField;
+      } as EditorField;
 
     case "object":
       return {
         ...baseField,
         type: "object",
-      } as PuckField;
+      } as EditorField;
 
     case "array":
       return {
         ...baseField,
         type: "array",
-      } as PuckField;
+      } as EditorField;
 
     case "function":
     case "node":
@@ -132,7 +132,7 @@ function convertPropToField(prop: ParsedProp): PuckField | null {
       return {
         ...baseField,
         type: "text",
-      } as PuckField;
+      } as EditorField;
   }
 }
 
@@ -184,9 +184,9 @@ export function ${componentName}Wrapper(props) {
 /**
  * Generate editor config as a string for storage
  */
-export function generatePuckConfigString(
+export function generateEditorConfigString(
   parsed: ParsedV0Component,
-  config: PuckComponentConfig
+  config: EditorComponentConfig
 ): string {
   const fieldsJson = JSON.stringify(config.fields, null, 2);
   const defaultPropsJson = JSON.stringify(config.defaultProps, null, 2);
@@ -203,9 +203,9 @@ export function generatePuckConfigString(
 /**
  * Create a component from stored config
  */
-export function createPuckComponent(
+export function createEditorComponent(
   storedConfig: string
-): PuckComponentConfig | null {
+): EditorComponentConfig | null {
   try {
     const config = JSON.parse(storedConfig);
 

@@ -62,15 +62,15 @@ export interface ParsedImport {
 }
 
 // ComponentConfig type (simplified)
-export interface PuckComponentConfig {
+export interface EditorComponentConfig {
   label: string;
-  fields: Record<string, PuckField>;
+  fields: Record<string, EditorField>;
   defaultProps: Record<string, unknown>;
   render: (props: Record<string, unknown>) => React.ReactNode;
 }
 
-export interface PuckField {
-  type: PuckFieldType;
+export interface EditorField {
+  type: EditorFieldType;
   label?: string;
   options?: { label: string; value: string }[];
   defaultValue?: unknown;
@@ -80,7 +80,7 @@ export interface PuckField {
   placeholder?: string;
 }
 
-export type PuckFieldType =
+export type EditorFieldType =
   | "text"
   | "textarea"
   | "number"
@@ -105,7 +105,7 @@ export interface CustomComponent {
   sourceUrl?: string; // Original v0 URL if available
 
   // Editor configuration
-  puckConfig: string; // JSON stringified PuckComponentConfig
+  editorConfig: string; // JSON stringified EditorComponentConfig
 
   // Metadata
   version: number;
@@ -132,7 +132,7 @@ export interface V0ImportResult {
   success: boolean;
   component?: CustomComponent;
   parsed?: ParsedV0Component;
-  puckConfig?: PuckComponentConfig;
+  editorConfig?: EditorComponentConfig;
   errors?: string[];
   warnings?: string[];
   requiredSetup?: string[];

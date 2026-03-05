@@ -31,7 +31,7 @@ export async function GET(
     const enrichedSubdomains = await Promise.all(
       subdomains.map(async (ts) => {
         const subdomainResult = await sql`
-          SELECT emoji, user_id, created_at FROM subdomains WHERE subdomain = ${ts.subdomain}
+          SELECT user_id, created_at FROM subdomains WHERE subdomain = ${ts.subdomain}
         `
         const subdomainData = subdomainResult[0]
 
@@ -53,7 +53,6 @@ export async function GET(
 
         return {
           ...ts,
-          emoji: subdomainData?.emoji || null,
           owner: ownerInfo,
           subdomainCreatedAt: subdomainData?.created_at || null,
         }

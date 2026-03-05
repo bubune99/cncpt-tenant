@@ -12,7 +12,7 @@ import {
   CreatePageFromTemplateResult,
   V0PageImportRequest,
   V0PageImportResult,
-  PuckPageContent,
+  PageContent,
 } from "./types";
 import { getV0ImportAgent } from "../v0-agent";
 
@@ -119,7 +119,7 @@ export async function importV0AsPage(
     }
 
     // Convert template to page content
-    const pageContent: PuckPageContent = {
+    const pageContent: PageContent = {
       root: { props: {} },
       content: [importResult.template.root],
       zones: {},
@@ -139,7 +139,7 @@ export async function importV0AsPage(
     // Optionally save as a reusable template too
     let savedTemplate = null;
     try {
-      savedTemplate = await prisma.puckTemplate.create({
+      savedTemplate = await prisma.pageTemplate.create({
         data: {
           name: importResult.template.name,
           slug: `v0-${Date.now()}`,

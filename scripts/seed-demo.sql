@@ -3,8 +3,8 @@
 
 -- First, create the demo subdomain (using 'system' as the owner for demo purposes)
 -- Note: user_id is set to 'demo-system' - this is a special ID for the demo
-INSERT INTO subdomains (user_id, subdomain, emoji, site_name, contact_email, onboarding_completed)
-VALUES ('demo-system', 'demo', '🎯', 'CNCPT Demo Store', 'demo@cncptweb.com', true)
+INSERT INTO subdomains (user_id, subdomain, site_name, contact_email, onboarding_completed)
+VALUES ('demo-system', 'demo', 'CNCPT Demo Store', 'demo@cncptweb.com', true)
 ON CONFLICT (subdomain) DO UPDATE SET
   site_name = 'CNCPT Demo Store',
   contact_email = 'demo@cncptweb.com',

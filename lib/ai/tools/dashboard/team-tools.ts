@@ -148,7 +148,7 @@ export function createTeamTools(userId: string) {
         `
 
         const subdomains = await sql`
-          SELECT ts.subdomain, ts.access_level, s.emoji
+          SELECT ts.subdomain, ts.access_level
           FROM team_subdomains ts
           JOIN subdomains s ON ts.subdomain = s.subdomain
           WHERE ts.team_id = ${teamId}
@@ -342,7 +342,6 @@ export function createTeamTools(userId: string) {
           SELECT
             ts.subdomain,
             ts.access_level,
-            s.emoji,
             ts2.site_title
           FROM team_subdomains ts
           JOIN subdomains s ON ts.subdomain = s.subdomain

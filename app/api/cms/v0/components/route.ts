@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
  * - category?: string
  * - tags?: string[]
  * - sourceCode: string (required)
- * - puckConfig: object (required) - editor component configuration
+ * - editorConfig: object (required) - editor component configuration
  */
 export async function POST(request: NextRequest) {
   try {
@@ -140,11 +140,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Validate required fields
-    if (!body.name || !body.displayName || !body.sourceCode || !body.puckConfig) {
+    if (!body.name || !body.displayName || !body.sourceCode || !body.editorConfig) {
       return NextResponse.json(
         {
           error: "Missing required fields",
-          required: ["name", "displayName", "sourceCode", "puckConfig"],
+          required: ["name", "displayName", "sourceCode", "editorConfig"],
         },
         { status: 400 }
       );
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
         category: body.category || "Custom",
         tags: body.tags || [],
         sourceCode: body.sourceCode,
-        puckConfig: body.puckConfig,
+        editorConfig: body.editorConfig,
         language: body.language || "typescript",
         dependencies: body.dependencies || [],
         complexity: body.complexity || "simple",

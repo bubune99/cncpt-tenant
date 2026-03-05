@@ -2,66 +2,66 @@
  * v0 Import Agent
  *
  * Uses Claude to intelligently convert v0.dev components
- * into editor templates.
+ * into Block templates (NOT Puck primitives).
  *
- * Supports both official Anthropic SDK and Vercel AI SDK.
+ * The output is Block[] format with native HTML tags + Tailwind classes.
  */
 
-import { V0_IMPORT_SYSTEM_PROMPT, V0_IMPORT_EXAMPLES } from "./prompts/system";
-import { fetchV0Tool } from "./tools/fetch-v0";
-import { listPrimitivesTool, getPrimitiveTool } from "./tools/primitives";
-import { uploadAssetTool, uploadMultipleAssetsTool } from "./tools/upload-asset";
-import { saveTemplateTool, updateTemplateTool } from "./tools/save-template";
-import { validateTemplateTool, suggestMappingTool } from "./tools/validate";
-import {
+import { V0_IMPORT_SYSTEM_PROMPT, V0_IMPORT_EXAMPLES } from "./prompts/system"
+import { fetchV0Tool } from "./tools/fetch-v0"
+import { listPrimitivesTool, getPrimitiveTool } from "./tools/primitives"
+import { uploadAssetTool, uploadMultipleAssetsTool } from "./tools/upload-asset"
+import { saveTemplateTool, updateTemplateTool } from "./tools/save-template"
+import { validateBlocksTool } from "./tools/validate"
+import type {
   V0ImportRequest,
   V0ImportResult,
-  PuckTemplate,
+  BlockTemplate,
   AgentToolResult,
-} from "./types";
+} from "./types"
 
 // Dynamic import for Anthropic SDK
 type AnthropicClient = {
   messages: {
-    create: (params: AnthropicCreateParams) => Promise<AnthropicResponse>;
-  };
-};
+    create: (params: AnthropicCreateParams) => Promise<AnthropicResponse>
+  }
+}
 
 interface AnthropicCreateParams {
-  model: string;
-  max_tokens: number;
-  system: string;
-  tools: AnthropicTool[];
-  messages: AnthropicMessage[];
+  model: string
+  max_tokens: number
+  system: string
+  tools: AnthropicTool[]
+  messages: AnthropicMessage[]
 }
 
 interface AnthropicTool {
-  name: string;
-  description: string;
-  input_schema: Record<string, unknown>;
+  name: string
+  description: string
+  input_schema: Record<string, unknown>
 }
 
 interface AnthropicMessage {
-  role: "user" | "assistant";
-  content: AnthropicContent[] | string;
+  role: "user" | "assistant"
+  content: AnthropicContent[] | string
 }
 
 interface AnthropicContent {
-  type: "text" | "tool_use" | "tool_result";
-  text?: string;
-  id?: string;
-  name?: string;
-  input?: unknown;
-  tool_use_id?: string;
-  content?: string;
+  type: "text" | "tool_use" | "tool_result"
+  text?: string
+  id?: string
+  name?: string
+  input?: unknown
+  tool_use_id?: string
+  content?: string
 }
 
 interface AnthropicResponse {
-  content: AnthropicContent[];
-  stop_reason: "end_turn" | "tool_use" | "max_tokens";
+  content: AnthropicContent[]
+  stop_reason: "end_turn" | "tool_use" | "max_tokens"
 }
 
-// Tool definitions for Claude
+// Tool definitions for Claude (updated to Block format)
 const tools: AnthropicTool[] = [
   {
     name: fetchV0Tool.name,
@@ -99,16 +99,11 @@ const tools: AnthropicTool[] = [
     input_schema: updateTemplateTool.inputSchema as Record<string, unknown>,
   },
   {
-    name: validateTemplateTool.name,
-    description: validateTemplateTool.description,
-    input_schema: validateTemplateTool.inputSchema as Record<string, unknown>,
+    name: validateBlocksTool.name,
+    description: validateBlocksTool.description,
+    input_schema: validateBlocksTool.inputSchema as Record<string, unknown>,
   },
-  {
-    name: suggestMappingTool.name,
-    description: suggestMappingTool.description,
-    input_schema: suggestMappingTool.inputSchema as Record<string, unknown>,
-  },
-];
+]
 
 // Tool executor map
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -120,55 +115,52 @@ const toolExecutors: Record<string, (input: any) => Promise<AgentToolResult>> = 
   [uploadMultipleAssetsTool.name]: uploadMultipleAssetsTool.execute,
   [saveTemplateTool.name]: saveTemplateTool.execute,
   [updateTemplateTool.name]: updateTemplateTool.execute,
-  [validateTemplateTool.name]: validateTemplateTool.execute,
-  [suggestMappingTool.name]: suggestMappingTool.execute,
-};
+  [validateBlocksTool.name]: validateBlocksTool.execute,
+}
 
 export interface V0ImportAgentConfig {
-  apiKey?: string;
-  model?: string;
-  maxIterations?: number;
-  verbose?: boolean;
+  apiKey?: string
+  model?: string
+  maxIterations?: number
+  verbose?: boolean
 }
 
 /**
  * Load Anthropic SDK dynamically
- * Uses Function constructor to avoid TypeScript static analysis errors
  */
 async function loadAnthropicClient(apiKey?: string): Promise<AnthropicClient> {
   try {
-    // Use Function constructor to dynamically import without TypeScript checking
-    const importFn = new Function("moduleName", "return import(moduleName)");
-    const module = await importFn("@anthropic-ai/sdk");
-    const Anthropic = module.default || module.Anthropic;
+    const importFn = new Function("moduleName", "return import(moduleName)")
+    const module = await importFn("@anthropic-ai/sdk")
+    const Anthropic = module.default || module.Anthropic
 
     if (!Anthropic) {
-      throw new Error("Could not find Anthropic constructor in module");
+      throw new Error("Could not find Anthropic constructor in module")
     }
 
     return new Anthropic({
       apiKey: apiKey || process.env.ANTHROPIC_API_KEY,
-    }) as unknown as AnthropicClient;
+    }) as unknown as AnthropicClient
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+    const message = error instanceof Error ? error.message : "Unknown error"
     throw new Error(
       `Anthropic SDK not available: ${message}. Run: npm install @anthropic-ai/sdk`
-    );
+    )
   }
 }
 
 export class V0ImportAgent {
-  private client: AnthropicClient | null = null;
-  private apiKey?: string;
-  private model: string;
-  private maxIterations: number;
-  private verbose: boolean;
+  private client: AnthropicClient | null = null
+  private apiKey?: string
+  private model: string
+  private maxIterations: number
+  private verbose: boolean
 
   constructor(config: V0ImportAgentConfig = {}) {
-    this.apiKey = config.apiKey;
-    this.model = config.model || "claude-sonnet-4-20250514";
-    this.maxIterations = config.maxIterations || 20;
-    this.verbose = config.verbose || false;
+    this.apiKey = config.apiKey
+    this.model = config.model || "claude-sonnet-4-20250514"
+    this.maxIterations = config.maxIterations || 20
+    this.verbose = config.verbose || false
   }
 
   /**
@@ -176,32 +168,32 @@ export class V0ImportAgent {
    */
   private async ensureClient(): Promise<AnthropicClient> {
     if (!this.client) {
-      this.client = await loadAnthropicClient(this.apiKey);
+      this.client = await loadAnthropicClient(this.apiKey)
     }
-    return this.client;
+    return this.client
   }
 
   /**
-   * Import a v0 component and convert it to an editor template
+   * Import a v0 component and convert it to a Block template
    */
   async importComponent(request: V0ImportRequest): Promise<V0ImportResult> {
-    const client = await this.ensureClient();
+    const client = await this.ensureClient()
 
     const messages: AnthropicMessage[] = [
       {
         role: "user",
         content: this.buildUserPrompt(request),
       },
-    ];
+    ]
 
-    let iterations = 0;
-    let finalResult: V0ImportResult | null = null;
+    let iterations = 0
+    let finalResult: V0ImportResult | null = null
 
     while (iterations < this.maxIterations) {
-      iterations++;
+      iterations++
 
       if (this.verbose) {
-        console.log(`[V0Agent] Iteration ${iterations}`);
+        console.log(`[V0Agent] Iteration ${iterations}`)
       }
 
       const response = await client.messages.create({
@@ -210,44 +202,43 @@ export class V0ImportAgent {
         system: V0_IMPORT_SYSTEM_PROMPT + "\n\n" + V0_IMPORT_EXAMPLES,
         tools,
         messages,
-      });
+      })
 
-      // Process the response
-      const assistantContent: AnthropicContent[] = [];
-      const toolResults: AnthropicContent[] = [];
+      const assistantContent: AnthropicContent[] = []
+      const toolResults: AnthropicContent[] = []
 
       for (const block of response.content) {
-        assistantContent.push(block);
+        assistantContent.push(block)
 
         if (block.type === "tool_use") {
           if (this.verbose) {
-            console.log(`[V0Agent] Tool call: ${block.name}`);
+            console.log(`[V0Agent] Tool call: ${block.name}`)
           }
 
-          const executor = toolExecutors[block.name!];
+          const executor = toolExecutors[block.name!]
           if (!executor) {
             toolResults.push({
               type: "tool_result",
               tool_use_id: block.id,
               content: JSON.stringify({ success: false, error: `Unknown tool: ${block.name}` }),
-            });
-            continue;
+            })
+            continue
           }
 
           try {
-            const result = await executor(block.input);
+            const result = await executor(block.input)
             toolResults.push({
               type: "tool_result",
               tool_use_id: block.id,
               content: JSON.stringify(result),
-            });
+            })
 
-            // Check if this was a save_puck_template call
-            if (block.name === "save_puck_template" && result.success) {
+            // Check if this was a save_template call
+            if (block.name === "save_template" && result.success) {
               finalResult = {
                 success: true,
-                template: result.data as unknown as PuckTemplate,
-              };
+                template: result.data as unknown as BlockTemplate,
+              }
             }
           } catch (error) {
             toolResults.push({
@@ -257,39 +248,35 @@ export class V0ImportAgent {
                 success: false,
                 error: (error as Error).message,
               }),
-            });
+            })
           }
         }
 
         if (block.type === "text" && this.verbose) {
-          console.log(`[V0Agent] ${block.text?.substring(0, 200)}...`);
+          console.log(`[V0Agent] ${block.text?.substring(0, 200)}...`)
         }
       }
 
-      // Add assistant message
       messages.push({
         role: "assistant",
         content: assistantContent,
-      });
+      })
 
-      // If there were tool calls, add results and continue
       if (toolResults.length > 0) {
         messages.push({
           role: "user",
           content: toolResults,
-        });
+        })
       }
 
-      // Check if we're done
       if (response.stop_reason === "end_turn") {
         if (finalResult) {
-          return finalResult;
+          return finalResult
         }
 
-        // Agent finished without saving - extract any errors from the conversation
         const lastAssistantMessage = response.content.find(
           (block: AnthropicContent) => block.type === "text"
-        );
+        )
         return {
           success: false,
           errors: [
@@ -297,46 +284,50 @@ export class V0ImportAgent {
               ? lastAssistantMessage.text || "Agent finished without creating a template"
               : "Agent finished without creating a template",
           ],
-        };
+        }
       }
     }
 
     return {
       success: false,
       errors: [`Max iterations (${this.maxIterations}) reached without completing import`],
-    };
+    }
   }
 
   /**
    * Build the user prompt for the import request
    */
   private buildUserPrompt(request: V0ImportRequest): string {
-    let prompt = `Import this v0.dev component and convert it to an editor template.\n\n`;
+    let prompt = `Import this v0.dev component and convert it to Block format.\n\n`
 
-    prompt += `**v0 URL:** ${request.url}\n\n`;
+    prompt += `**v0 URL:** ${request.url}\n\n`
 
     if (request.name) {
-      prompt += `**Preferred Name:** ${request.name}\n`;
+      prompt += `**Preferred Name:** ${request.name}\n`
     }
 
     if (request.category) {
-      prompt += `**Category:** ${request.category}\n`;
+      prompt += `**Category:** ${request.category}\n`
     }
 
     if (request.description) {
-      prompt += `**Description:** ${request.description}\n`;
+      prompt += `**Description:** ${request.description}\n`
     }
 
-    prompt += `\n## Instructions\n`;
-    prompt += `1. First, fetch the component code using the fetch_v0_component tool\n`;
-    prompt += `2. List available primitives to understand your options\n`;
-    prompt += `3. Analyze the component and plan the conversion\n`;
-    prompt += `4. Upload any images/assets found\n`;
-    prompt += `5. Build the component tree mapping JSX to primitives\n`;
-    prompt += `6. Validate the result\n`;
-    prompt += `7. Save the template\n`;
+    prompt += `\n## Instructions\n`
+    prompt += `1. First, fetch the component code using the fetch_v0_component tool\n`
+    prompt += `2. List the block schema to understand valid tags with list_block_schema\n`
+    prompt += `3. Analyze the component and plan the conversion\n`
+    prompt += `4. Upload any images/assets found\n`
+    prompt += `5. Build the Block[] array mapping JSX to native HTML tags + Tailwind classes\n`
+    prompt += `6. Validate the result with validate_blocks\n`
+    prompt += `7. Save the template with save_template\n`
+    prompt += `\n## CRITICAL: Output Format\n`
+    prompt += `You MUST output Block format with native HTML tags (div, section, h1, p, button, etc.)\n`
+    prompt += `NOT Puck primitives (Container, Heading, Text, Button, etc.)\n`
+    prompt += `Preserve Tailwind classes EXACTLY as they appear in the original v0 code.\n`
 
-    return prompt;
+    return prompt
   }
 
   /**
@@ -346,23 +337,23 @@ export class V0ImportAgent {
     code: string,
     options: Omit<V0ImportRequest, "url"> = {}
   ): Promise<V0ImportResult> {
-    const client = await this.ensureClient();
+    const client = await this.ensureClient()
 
     const messages: AnthropicMessage[] = [
       {
         role: "user",
         content: this.buildCodePrompt(code, options),
       },
-    ];
+    ]
 
-    let iterations = 0;
-    let finalResult: V0ImportResult | null = null;
+    let iterations = 0
+    let finalResult: V0ImportResult | null = null
 
     while (iterations < this.maxIterations) {
-      iterations++;
+      iterations++
 
       if (this.verbose) {
-        console.log(`[V0Agent] Iteration ${iterations}`);
+        console.log(`[V0Agent] Iteration ${iterations}`)
       }
 
       const response = await client.messages.create({
@@ -371,17 +362,17 @@ export class V0ImportAgent {
         system: V0_IMPORT_SYSTEM_PROMPT + "\n\n" + V0_IMPORT_EXAMPLES,
         tools,
         messages,
-      });
+      })
 
-      const assistantContent: AnthropicContent[] = [];
-      const toolResults: AnthropicContent[] = [];
+      const assistantContent: AnthropicContent[] = []
+      const toolResults: AnthropicContent[] = []
 
       for (const block of response.content) {
-        assistantContent.push(block);
+        assistantContent.push(block)
 
         if (block.type === "tool_use") {
           if (this.verbose) {
-            console.log(`[V0Agent] Tool call: ${block.name}`);
+            console.log(`[V0Agent] Tool call: ${block.name}`)
           }
 
           // Skip fetch tool for code-based import
@@ -393,33 +384,33 @@ export class V0ImportAgent {
                 success: true,
                 data: { code, name: options.name },
               }),
-            });
-            continue;
+            })
+            continue
           }
 
-          const executor = toolExecutors[block.name!];
+          const executor = toolExecutors[block.name!]
           if (!executor) {
             toolResults.push({
               type: "tool_result",
               tool_use_id: block.id,
               content: JSON.stringify({ success: false, error: `Unknown tool: ${block.name}` }),
-            });
-            continue;
+            })
+            continue
           }
 
           try {
-            const result = await executor(block.input);
+            const result = await executor(block.input)
             toolResults.push({
               type: "tool_result",
               tool_use_id: block.id,
               content: JSON.stringify(result),
-            });
+            })
 
-            if (block.name === "save_puck_template" && result.success) {
+            if (block.name === "save_template" && result.success) {
               finalResult = {
                 success: true,
-                template: result.data as unknown as PuckTemplate,
-              };
+                template: result.data as unknown as BlockTemplate,
+              }
             }
           } catch (error) {
             toolResults.push({
@@ -429,7 +420,7 @@ export class V0ImportAgent {
                 success: false,
                 error: (error as Error).message,
               }),
-            });
+            })
           }
         }
       }
@@ -437,23 +428,23 @@ export class V0ImportAgent {
       messages.push({
         role: "assistant",
         content: assistantContent,
-      });
+      })
 
       if (toolResults.length > 0) {
         messages.push({
           role: "user",
           content: toolResults,
-        });
+        })
       }
 
       if (response.stop_reason === "end_turn") {
         if (finalResult) {
-          return finalResult;
+          return finalResult
         }
 
         const lastAssistantMessage = response.content.find(
           (block: AnthropicContent) => block.type === "text"
-        );
+        )
         return {
           success: false,
           errors: [
@@ -461,56 +452,60 @@ export class V0ImportAgent {
               ? lastAssistantMessage.text || "Agent finished without creating a template"
               : "Agent finished without creating a template",
           ],
-        };
+        }
       }
     }
 
     return {
       success: false,
       errors: [`Max iterations (${this.maxIterations}) reached without completing import`],
-    };
+    }
   }
 
   private buildCodePrompt(
     code: string,
     options: Omit<V0ImportRequest, "url">
   ): string {
-    let prompt = `Convert this React component code to an editor template.\n\n`;
+    let prompt = `Convert this React component code to Block format.\n\n`
 
-    prompt += `**Component Code:**\n\`\`\`tsx\n${code}\n\`\`\`\n\n`;
+    prompt += `**Component Code:**\n\`\`\`tsx\n${code}\n\`\`\`\n\n`
 
     if (options.name) {
-      prompt += `**Preferred Name:** ${options.name}\n`;
+      prompt += `**Preferred Name:** ${options.name}\n`
     }
 
     if (options.category) {
-      prompt += `**Category:** ${options.category}\n`;
+      prompt += `**Category:** ${options.category}\n`
     }
 
     if (options.description) {
-      prompt += `**Description:** ${options.description}\n`;
+      prompt += `**Description:** ${options.description}\n`
     }
 
-    prompt += `\n## Instructions\n`;
-    prompt += `1. List available primitives to understand your options\n`;
-    prompt += `2. Analyze the component structure\n`;
-    prompt += `3. Upload any images/assets found in the code\n`;
-    prompt += `4. Build the component tree mapping JSX to primitives\n`;
-    prompt += `5. Validate the result\n`;
-    prompt += `6. Save the template\n`;
+    prompt += `\n## Instructions\n`
+    prompt += `1. List the block schema to understand valid tags with list_block_schema\n`
+    prompt += `2. Analyze the component structure\n`
+    prompt += `3. Upload any images/assets found in the code\n`
+    prompt += `4. Build the Block[] array mapping JSX to native HTML tags + Tailwind classes\n`
+    prompt += `5. Validate the result with validate_blocks\n`
+    prompt += `6. Save the template with save_template\n`
+    prompt += `\n## CRITICAL: Output Format\n`
+    prompt += `You MUST output Block format with native HTML tags (div, section, h1, p, button, etc.)\n`
+    prompt += `NOT Puck primitives (Container, Heading, Text, Button, etc.)\n`
+    prompt += `Preserve Tailwind classes EXACTLY as they appear in the original code.\n`
 
-    return prompt;
+    return prompt
   }
 }
 
 // Export singleton instance
-let defaultAgent: V0ImportAgent | null = null;
+let defaultAgent: V0ImportAgent | null = null
 
 export function getV0ImportAgent(config?: V0ImportAgentConfig): V0ImportAgent {
   if (!defaultAgent || config) {
-    defaultAgent = new V0ImportAgent(config);
+    defaultAgent = new V0ImportAgent(config)
   }
-  return defaultAgent;
+  return defaultAgent
 }
 
-export default V0ImportAgent;
+export default V0ImportAgent

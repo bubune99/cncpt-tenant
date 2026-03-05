@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
     let savedTemplate;
     if (!createPage && result.template) {
       try {
-        savedTemplate = await prisma.puckTemplate.create({
+        savedTemplate = await prisma.pageTemplate.create({
           data: {
             name: result.template.name,
             slug: `v0-${Date.now()}`,

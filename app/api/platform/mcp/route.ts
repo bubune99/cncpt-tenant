@@ -122,7 +122,7 @@ const handler = createMcpHandler(
           }
 
           const subdomainsResult = await sql`
-            SELECT s.id, s.subdomain, s.emoji, s.user_id, s.created_at,
+            SELECT s.id, s.subdomain, s.user_id, s.created_at,
                    (SELECT COUNT(*) FROM team_subdomains WHERE subdomain = s.subdomain) as team_share_count
             FROM subdomains s
             ${sql.unsafe(whereClause)}
@@ -156,7 +156,6 @@ const handler = createMcpHandler(
           const subdomains = subdomainsResult.map(s => ({
             id: s.id,
             subdomain: s.subdomain,
-            emoji: s.emoji,
             userId: s.user_id,
             owner: userMap.get(s.user_id as string) || null,
             createdAt: s.created_at,
@@ -240,7 +239,6 @@ const handler = createMcpHandler(
             subdomain: {
               id: s.id,
               name: s.subdomain,
-              emoji: s.emoji,
               userId: s.user_id,
               createdAt: s.created_at
             },
@@ -330,7 +328,7 @@ const handler = createMcpHandler(
 
           // Get user's subdomains
           const subdomains = await sql`
-            SELECT subdomain, emoji, created_at
+            SELECT subdomain, created_at
             FROM subdomains
             WHERE user_id = ${userId}
             ORDER BY created_at DESC
@@ -357,7 +355,6 @@ const handler = createMcpHandler(
             },
             subdomains: subdomains.map(s => ({
               name: s.subdomain,
-              emoji: s.emoji,
               createdAt: s.created_at
             })),
             teams: teams.map(t => ({

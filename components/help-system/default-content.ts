@@ -347,7 +347,7 @@ Other domains will redirect to the primary domain.`,
     summary: 'Overview of a single site.',
     details: `Each site card displays:
 
-- Site name and emoji
+- Site name
 - Subdomain URL
 - Creation date
 - Quick action buttons

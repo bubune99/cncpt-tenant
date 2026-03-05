@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
       analyticsEvents,
       apiKeys,
       roleAssignments,
-      puckTemplates,
+      pageTemplates,
       emailSubscriber,
     ] = await Promise.all([
       // Personal addresses
@@ -267,8 +267,8 @@ export async function GET(request: NextRequest) {
         },
       }),
 
-      // Puck templates
-      prisma.puckTemplate.findMany({
+      // Page templates
+      prisma.pageTemplate.findMany({
         where: { createdById: user.id },
         select: {
           name: true,
@@ -356,7 +356,7 @@ export async function GET(request: NextRequest) {
         role: ra.role.name,
         assignedAt: ra.createdAt,
       })),
-      puckTemplates,
+      pageTemplates,
     };
 
     // Record timestamp for rate limiting

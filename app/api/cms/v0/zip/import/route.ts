@@ -1,7 +1,7 @@
 /**
  * v0 ZIP Import API
  *
- * POST /api/v0/zip/import — creates PuckTemplates and/or Pages from
+ * POST /api/v0/zip/import — creates PageTemplates and/or Pages from
  * previously analyzed sections.
  */
 
@@ -26,7 +26,7 @@ function generateSlug(name: string): string {
 }
 
 export const POST = withPermission(
-  PERMISSIONS.PUCK_TEMPLATES_CREATE,
+  PERMISSIONS.TEMPLATES_CREATE,
   async (request: NextRequest, context: AuthContext) => {
     try {
       const formData = await request.formData();
@@ -71,14 +71,14 @@ export const POST = withPermission(
         const payload = buildTemplatePaylod(section);
 
         let slug = generateSlug(payload.name);
-        const existing = await prisma.puckTemplate.findUnique({
+        const existing = await prisma.pageTemplate.findUnique({
           where: { slug },
         });
         if (existing) {
           slug = `${slug}-${Date.now()}`;
         }
 
-        const template = await prisma.puckTemplate.create({
+        const template = await prisma.pageTemplate.create({
           data: {
             name: payload.name,
             slug,
@@ -110,14 +110,14 @@ export const POST = withPermission(
         );
 
         let slug = generateSlug(pagePayload.name);
-        const existing = await prisma.puckTemplate.findUnique({
+        const existing = await prisma.pageTemplate.findUnique({
           where: { slug },
         });
         if (existing) {
           slug = `${slug}-${Date.now()}`;
         }
 
-        const pageTemplate = await prisma.puckTemplate.create({
+        const pageTemplate = await prisma.pageTemplate.create({
           data: {
             name: pagePayload.name,
             slug,
@@ -145,8 +145,8 @@ export const POST = withPermission(
       await logAuditEvent({
         userId: context.user.id,
         userEmail: context.user.email,
-        action: "puck_template.create",
-        targetType: "puck_template",
+        action: "page_template.create",
+        targetType: "page_template",
         targetId: createdTemplates[0]?.id || "",
         details: {
           zipFilename: file.name,

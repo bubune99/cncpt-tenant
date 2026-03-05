@@ -10,7 +10,7 @@ import { cache } from 'react'
 export type { RouteType } from '@prisma/client'
 
 export interface ResolvedRoute {
-  type: 'PUCK' | 'CUSTOM' | 'REDIRECT' | 'NOT_FOUND'  // 'PUCK' is a Prisma enum value for CMS-managed pages
+  type: 'CMS' | 'CUSTOM' | 'REDIRECT' | 'NOT_FOUND'  // 'CMS' is a Prisma enum value for CMS-managed pages
   // For CMS pages
   pageId?: string
   pageContent?: unknown
@@ -55,7 +55,7 @@ export const getRouteConfig = cache(async (slug: string): Promise<ResolvedRoute>
   }
 
   switch (routeConfig.type) {
-    case 'PUCK':
+    case 'CMS':
       if (!routeConfig.page) {
         return { type: 'NOT_FOUND' }
       }
@@ -64,7 +64,7 @@ export const getRouteConfig = cache(async (slug: string): Promise<ResolvedRoute>
         return { type: 'NOT_FOUND' }
       }
       return {
-        type: 'PUCK',
+        type: 'CMS',
         pageId: routeConfig.page.id,
         pageContent: routeConfig.page.content,
         pageTitle: routeConfig.page.title,

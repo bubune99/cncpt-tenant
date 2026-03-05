@@ -8,14 +8,12 @@ export const ADMIN_EMAILS = [
 
 // Temporary admin mode for testing
 // Set this to true to allow ANY authenticated user to access admin features
-const ALLOW_ALL_USERS_AS_ADMIN = true; // WARNING: Set to false in production!
+const ALLOW_ALL_USERS_AS_ADMIN = false;
 
 export function isAdminUser(email: string | null | undefined): boolean {
   if (!email) return false;
   
-  // Temporary: Allow all authenticated users to be admin
   if (ALLOW_ALL_USERS_AS_ADMIN) {
-    console.log('[Admin Config] Allowing user as admin (test mode):', email);
     return true;
   }
   

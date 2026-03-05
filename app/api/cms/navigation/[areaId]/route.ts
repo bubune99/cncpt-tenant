@@ -40,14 +40,14 @@ export async function GET(
       : undefined;
 
     // Get navigation with CMS pages
-    const { groups, puckPages } = await getAreaNavigation(areaId, userContext);
+    const { groups, cmsPages } = await getAreaNavigation(areaId, userContext);
 
     return NextResponse.json({
       areaId,
       areaName: area.name,
       basePath: area.basePath,
       groups,
-      puckPages,
+      cmsPages,
       layout: area.layout,
     });
   } catch (error) {

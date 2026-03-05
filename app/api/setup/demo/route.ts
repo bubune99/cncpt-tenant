@@ -148,8 +148,8 @@ export async function POST(request: NextRequest) {
 
     // Create demo subdomain
     const result = await sql`
-      INSERT INTO subdomains (user_id, subdomain, emoji, site_name, contact_email, onboarding_completed)
-      VALUES ('demo-system', 'demo', '🎯', ${DEMO_CONFIG.siteName}, ${DEMO_CONFIG.contactEmail}, true)
+      INSERT INTO subdomains (user_id, subdomain, site_name, contact_email, onboarding_completed)
+      VALUES ('demo-system', 'demo', ${DEMO_CONFIG.siteName}, ${DEMO_CONFIG.contactEmail}, true)
       RETURNING id
     `;
 
@@ -166,7 +166,6 @@ export async function POST(request: NextRequest) {
 
     // Also store in Redis for compatibility
     await redis.set(`subdomain:demo`, {
-      emoji: "🎯",
       siteName: DEMO_CONFIG.siteName,
       createdAt: Date.now(),
       userId: "demo-system",

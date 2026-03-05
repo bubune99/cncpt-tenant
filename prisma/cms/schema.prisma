@@ -50,7 +50,7 @@ model User {
   apiKeys ApiKey[]
 
   // Page templates created by this user
-  puckTemplates PuckTemplate[]
+  pageTemplates PageTemplate[]
 
   // Canva integration
   canvaConnection CanvaConnection?
@@ -1242,7 +1242,7 @@ model RouteConfig {
   tenantId Int?       @map("tenant_id")
   tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  // For PUCK type (CMS page) - which page to render at this route
+  // For CMS type (CMS page) - which page to render at this route
   pageId String? @unique
   page   Page?   @relation(fields: [pageId], references: [id], onDelete: Cascade)
 
@@ -1268,7 +1268,7 @@ model RouteConfig {
 }
 
 enum RouteType {
-  PUCK // Render a CMS page from the database
+  CMS @map("PUCK") // Render a CMS page from the database
   CUSTOM // Render a custom-coded React component
   REDIRECT // Redirect to another URL
 }
@@ -2204,12 +2204,12 @@ enum EmailTemplateCategory {
 // PAGE TEMPLATES (Reusable Page Sections & Layouts)
 // =============================================================================
 
-model PuckTemplate {
+model PageTemplate {
   id                String           @id @default(cuid())
   name              String
   slug              String           @unique
   description       String?          @db.Text
-  type              PuckTemplateType @default(SECTION)
+  type              PageTemplateType @default(SECTION)
   compatibleConfigs String[] // ["blog", "pages", "email", "ecommerce", "plugin", "layout", "dashboard"]
   content           Json // Page Data: { root, content, zones }
   category          String? // "Hero Sections", "Pricing", "CTAs", etc.
@@ -2229,7 +2229,7 @@ model PuckTemplate {
   @@map("puck_templates")
 }
 
-enum PuckTemplateType {
+enum PageTemplateType {
   SECTION // Reusable block or small group of components
   PAGE // Full page layout with multiple sections
 }
@@ -3742,7 +3742,7 @@ model CustomComponent {
   sourceUrl  String? // Original v0.dev URL if imported
 
   // Editor configuration (stored as JSON)
-  puckConfig Json // Complete component configuration
+  editorConfig Json // Complete component configuration
 
   // Status and versioning
   version     Int             @default(1)
@@ -3908,7 +3908,6 @@ model AdminUser {
 model Subdomain {
   id              Int      @id @default(autoincrement())
   subdomain       String   @unique
-  emoji           String
   userId          String?  @map("user_id")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @default(now()) @map("updated_at")
@@ -3945,10 +3944,29 @@ model Subdomain {
   customFields   CustomField[]
   digitalAssets  DigitalAsset[]
   workflows      OrderWorkflow[]
+  onboardingChecklists OnboardingChecklist[]
 
   @@index([subdomain])
   @@index([userId], map: "idx_subdomains_user_id")
   @@map("subdomains")
+}
+
+// Onboarding checklist per user per subdomain
+model OnboardingChecklist {
+  id            String    @id @default(cuid())
+  userId        String
+  subdomainId   Int
+  items         Json      // [{key, title, completed, completedAt, url}]
+  dismissed     Boolean   @default(false)
+  completedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  subdomain     Subdomain @relation(fields: [subdomainId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, subdomainId])
+  @@index([userId])
+  @@map("onboarding_checklists")
 }
 
 // Subscription tiers table (main app managed)

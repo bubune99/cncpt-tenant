@@ -357,6 +357,19 @@ function CreateSubdomainContent() {
         throw new Error(data.error || "Failed to create subdomain")
       }
 
+      // Initialize onboarding checklist for the new subdomain
+      if (data.subdomain?.id) {
+        try {
+          await fetch("/api/dashboard/onboarding", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ subdomainId: data.subdomain.id }),
+          })
+        } catch {
+          // Non-blocking — checklist will be created on first GET if this fails
+        }
+      }
+
       if (data.redirectUrl) {
         window.location.href = data.redirectUrl
       } else {

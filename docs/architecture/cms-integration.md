@@ -104,10 +104,10 @@ The `admin-shell.tsx` provides the CMS navigation structure:
 ### Phase 3: Component Integration (Next)
 - [ ] Import CMS components from `packages/cms/src/components`
 - [ ] Connect to subdomain-scoped database queries
-- [ ] Integrate Puck editor for page building
+- [x] Integrate block editor for page building
 - [ ] Products management page
 - [ ] Orders management page
-- [ ] Pages builder with Puck
+- [x] Pages builder with block editor
 
 ### Phase 4: White Labeling
 - [ ] Load site branding from subdomain config
@@ -166,7 +166,7 @@ Components are adapted by:
 
 ## Future Enhancements
 
-- [ ] Real-time collaboration in Puck editor
+- [ ] Real-time collaboration in block editor
 - [ ] Version history for pages
 - [ ] Scheduled publishing
 - [ ] Multi-language support

@@ -69,7 +69,7 @@ const FEATURE_EXPLANATIONS = {
       "Subdomains are your individual sites on the platform. Each subdomain (like 'mysite.cncpt.io') can have its own content, settings, and custom domains.",
     howToUse: [
       "Create a new subdomain from the dashboard overview",
-      "Choose an emoji and name for your subdomain",
+      "Choose a name for your subdomain",
       "Access the CMS to add content",
       "Optionally add custom domains",
     ],
@@ -399,7 +399,7 @@ export const getHelp = tool({
           "Go to the Dashboard overview",
           "Click 'Create Subdomain' button",
           "Enter a name for your subdomain",
-          "Choose an emoji (optional)",
+          "Configure site settings",
           "Click 'Create'",
         ],
         tips: [

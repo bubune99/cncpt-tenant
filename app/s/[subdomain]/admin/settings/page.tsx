@@ -112,6 +112,7 @@ export default function SettingsPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const [settings, setSettings] = useState<StoreSettings>({
     general: {
@@ -190,7 +191,7 @@ export default function SettingsPage() {
     setIsSaving(true);
     try {
       const response = await fetch('/api/cms/settings', {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
         },
@@ -233,6 +234,63 @@ export default function SettingsPage() {
       }
     }));
     setHasChanges(true);
+  };
+
+  const handleChangePassword = () => {
+    window.location.href = '/handler/account-settings';
+  };
+
+  const handleEnable2FA = () => {
+    window.location.href = '/handler/account-settings';
+  };
+
+  const handleExportData = async () => {
+    setIsExporting(true);
+    try {
+      const response = await fetch('/api/cms/account/export');
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `data-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      toast.success("Data exported successfully");
+    } catch (error) {
+      toast.error("Failed to export data. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDeleteStore = async () => {
+    setIsDeleting(true);
+    try {
+      const response = await fetch('/api/cms/account/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: 'DELETE_MY_ACCOUNT' }),
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Deletion failed');
+      }
+      toast.success("Store deleted successfully. Redirecting...");
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 2000);
+    } catch (error) {
+      toast.error((error as Error).message || "Failed to delete store. Please try again.");
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+      setDeleteConfirmation('');
+    }
   };
 
   if (user === undefined) {
@@ -760,7 +818,7 @@ export default function SettingsPage() {
                   <Label>Password</Label>
                   <p className="text-sm text-muted-foreground">Change your account password</p>
                 </div>
-                <Button variant="outline">Change Password</Button>
+                <Button variant="outline" onClick={handleChangePassword}>Change Password</Button>
               </div>
 
               <Separator />
@@ -770,7 +828,7 @@ export default function SettingsPage() {
                   <Label>Two-Factor Authentication</Label>
                   <p className="text-sm text-muted-foreground">Add extra security to your account</p>
                 </div>
-                <Button variant="outline">
+                <Button variant="outline" onClick={handleEnable2FA}>
                   <Shield className="mr-2 h-4 w-4" />
                   Enable 2FA
                 </Button>
@@ -789,9 +847,13 @@ export default function SettingsPage() {
                   <div className="font-medium">Export Data</div>
                   <div className="text-sm text-muted-foreground">Download all your store data</div>
                 </div>
-                <Button variant="outline">
-                  <Download className="mr-2 h-4 w-4" />
-                  Export
+                <Button variant="outline" onClick={handleExportData} disabled={isExporting}>
+                  {isExporting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="mr-2 h-4 w-4" />
+                  )}
+                  {isExporting ? 'Exporting...' : 'Export'}
                 </Button>
               </div>
               <Separator />
@@ -895,6 +957,7 @@ export default function SettingsPage() {
             <Button
               variant="destructive"
               disabled={deleteConfirmation !== 'DELETE' || isDeleting}
+              onClick={handleDeleteStore}
             >
               {isDeleting ? (
                 <>

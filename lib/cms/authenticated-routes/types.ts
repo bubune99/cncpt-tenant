@@ -22,7 +22,7 @@ export interface NavItem {
   /** Permission required to see this item */
   permission?: string;
   /** Is this a CMS-managed page? */
-  isPuckPage?: boolean;
+  isCmsPage?: boolean;
   /** Page ID if CMS-managed */
   pageId?: string;
   /** Sort order */
@@ -66,15 +66,15 @@ export interface AuthenticatedAreaConfig {
   /** Base path (e.g., '/dashboard') */
   basePath: string;
   /** Path prefix for CMS-managed pages (e.g., '/dashboard/pages') */
-  puckPagesPath?: string;
+  cmsPagesPath?: string;
   /** Hardcoded navigation groups */
   staticNavGroups: NavGroup[];
   /** Permission required to access this area */
   permission?: string;
   /** Allow CMS to create pages in this area */
-  allowPuckPages?: boolean;
+  allowCmsPages?: boolean;
   /** Where to show CMS pages in nav (group ID) */
-  puckPagesNavGroup?: string;
+  cmsPagesNavGroup?: string;
   /** Layout configuration */
   layout?: {
     /** Show sidebar */
@@ -91,7 +91,7 @@ export interface AuthenticatedAreaConfig {
 /**
  * CMS page registration for an authenticated area
  */
-export interface PuckPageRegistration {
+export interface CmsPageRegistration {
   /** Page ID from database */
   pageId: string;
   /** Page title */
@@ -119,7 +119,7 @@ export interface NavigationState {
   /** Static navigation from config */
   staticNav: NavGroup[];
   /** Dynamic CMS pages */
-  puckPages: PuckPageRegistration[];
+  cmsPages: CmsPageRegistration[];
   /** Merged navigation */
   mergedNav: NavGroup[];
   /** Currently active path */
