@@ -290,6 +290,7 @@ model ApiKey {
   userId      String
   name        String // Human-readable name: "Production MCP", "CI/CD Bot"
   description String?
+  projectName String? // Project this key is for (e.g., "sassy-dame-storefront")
 
   // Key hash - never store the raw key
   keyHash String @unique

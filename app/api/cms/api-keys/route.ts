@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
         id: true,
         name: true,
         description: true,
+        projectName: true,
         keyPrefix: true,
         scopes: true,
         rateLimitTier: true,
@@ -51,6 +52,7 @@ export async function GET(request: NextRequest) {
         id: key.id,
         name: key.name,
         description: key.description,
+        projectName: key.projectName,
         keyPrefix: key.keyPrefix,
         scopes: key.scopes,
         rateLimitTier: key.rateLimitTier,
@@ -89,7 +91,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, description, scopes, expiresInDays, rateLimitTier } = body
+    const { name, description, projectName, scopes, expiresInDays, rateLimitTier } = body
 
     if (!name?.trim()) {
       return NextResponse.json(
@@ -139,6 +141,7 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         name: name.trim(),
         description: description?.trim() || null,
+        projectName: projectName?.trim() || null,
         keyHash: hash,
         keyPrefix: prefix,
         scopes: requestedScopes,
@@ -149,6 +152,7 @@ export async function POST(request: NextRequest) {
         id: true,
         name: true,
         description: true,
+        projectName: true,
         keyPrefix: true,
         scopes: true,
         rateLimitTier: true,
@@ -163,6 +167,7 @@ export async function POST(request: NextRequest) {
         id: apiKey.id,
         name: apiKey.name,
         description: apiKey.description,
+        projectName: apiKey.projectName,
         keyPrefix: apiKey.keyPrefix,
         scopes: apiKey.scopes,
         rateLimitTier: apiKey.rateLimitTier,

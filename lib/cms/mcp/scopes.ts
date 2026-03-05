@@ -25,6 +25,10 @@ export const MCP_SCOPES = {
   PAGES_READ: "pages:read",
   PAGES_WRITE: "pages:write",
 
+  // Content delivery scopes (public content API)
+  CONTENT_READ: "content:read",
+  CONTENT_WRITE: "content:write",
+
   // Media scopes
   MEDIA_READ: "media:read",
   MEDIA_WRITE: "media:write",
@@ -59,6 +63,8 @@ export const SCOPE_GROUPS = {
   "Content Management": [
     MCP_SCOPES.PAGES_READ,
     MCP_SCOPES.PAGES_WRITE,
+    MCP_SCOPES.CONTENT_READ,
+    MCP_SCOPES.CONTENT_WRITE,
     MCP_SCOPES.BLOG_READ,
     MCP_SCOPES.BLOG_WRITE,
     MCP_SCOPES.MEDIA_READ,
@@ -123,6 +129,22 @@ export const SCOPE_PRESETS = {
       MCP_SCOPES.ANALYTICS_READ,
     ],
   },
+  "Content Delivery (Read)": {
+    description: "Read-only access to pages and partials via content API",
+    scopes: [
+      MCP_SCOPES.CONTENT_READ,
+      MCP_SCOPES.PAGES_READ,
+    ],
+  },
+  "Content Delivery (Read/Write)": {
+    description: "Full content management via content delivery API",
+    scopes: [
+      MCP_SCOPES.CONTENT_READ,
+      MCP_SCOPES.CONTENT_WRITE,
+      MCP_SCOPES.PAGES_READ,
+      MCP_SCOPES.PAGES_WRITE,
+    ],
+  },
   "Full Access": {
     description: "Complete access to all resources",
     scopes: [MCP_SCOPES.ALL],
@@ -141,6 +163,8 @@ export const SCOPE_DESCRIPTIONS: Record<string, string> = {
   [MCP_SCOPES.BLOG_WRITE]: "Create, update, delete blog posts",
   [MCP_SCOPES.PAGES_READ]: "View CMS pages",
   [MCP_SCOPES.PAGES_WRITE]: "Create, update, delete pages",
+  [MCP_SCOPES.CONTENT_READ]: "Read pages and partials via content delivery API",
+  [MCP_SCOPES.CONTENT_WRITE]: "Create, update, delete pages and partials via content delivery API",
   [MCP_SCOPES.MEDIA_READ]: "View media library",
   [MCP_SCOPES.MEDIA_WRITE]: "Upload, update, delete media",
   [MCP_SCOPES.CUSTOMERS_READ]: "View customer profiles",
