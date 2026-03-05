@@ -8,8 +8,8 @@ const cspDirectives = [
   // Fallback for directives not explicitly listed
   "default-src 'self'",
 
-  // Scripts: self + unsafe-eval (react-live) + Stripe + Shippo + analytics + Vercel
-  "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://js.goshippo.com https://www.googletagmanager.com https://www.google-analytics.com https://plausible.io https://vercel.live",
+  // Scripts: self + unsafe-eval (react-live) + Stripe + Shippo + analytics + Vercel + v0
+  "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://js.goshippo.com https://www.googletagmanager.com https://www.google-analytics.com https://plausible.io https://vercel.live https://v0.dev https://*.v0.dev https://v0.app https://*.v0.app",
 
   // Styles: self + inline (required by block editor and inline style props)
   "style-src 'self' 'unsafe-inline'",
@@ -21,10 +21,10 @@ const cspDirectives = [
   "font-src 'self' data:",
 
   // XHR / fetch / WebSocket connections
-  "connect-src 'self' wss: https://*.stack-auth.com https://*.stripe.com https://www.google-analytics.com https://plausible.io https://*.r2.dev https://*.r2.cloudflarestorage.com https://*.amazonaws.com https://vercel.live",
+  "connect-src 'self' wss: https://*.stack-auth.com https://*.stripe.com https://www.google-analytics.com https://plausible.io https://*.r2.dev https://*.r2.cloudflarestorage.com https://*.amazonaws.com https://vercel.live https://v0.dev https://*.v0.dev https://v0.app https://*.v0.app",
 
-  // Iframes: Stripe checkout/3DS, Shippo, YouTube (TipTap), Vercel toolbar
-  "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://js.goshippo.com https://www.youtube.com https://vercel.live",
+  // Iframes: Stripe checkout/3DS, Shippo, YouTube (TipTap), Vercel toolbar, v0
+  "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://js.goshippo.com https://www.youtube.com https://vercel.live https://v0.dev https://*.v0.dev https://v0.app https://*.v0.app",
 
   // Media (audio/video): self + storage providers
   "media-src 'self' https://*.r2.dev https://*.r2.cloudflarestorage.com https://*.amazonaws.com",
@@ -38,8 +38,8 @@ const cspDirectives = [
   // Form targets
   "form-action 'self'",
 
-  // Ancestors — equivalent to X-Frame-Options: DENY but more granular
-  "frame-ancestors 'none'",
+  // Ancestors — allow v0.dev to embed in iframe for preview; otherwise deny
+  "frame-ancestors 'self' https://v0.dev https://*.v0.dev https://v0.app https://*.v0.app",
 
   // Upgrade insecure requests in production
   "upgrade-insecure-requests",
@@ -90,9 +90,11 @@ const nextConfig = {
             value: ContentSecurityPolicy,
           },
           {
-            // Prevent the page from being embedded in iframes (clickjacking)
+            // X-Frame-Options is superseded by CSP frame-ancestors above.
+            // SAMEORIGIN allows v0.dev's iframe embedding while still blocking
+            // arbitrary sites in older browsers that don't support CSP frame-ancestors.
             key: "X-Frame-Options",
-            value: "DENY",
+            value: "SAMEORIGIN",
           },
           {
             // Prevent MIME-type sniffing
