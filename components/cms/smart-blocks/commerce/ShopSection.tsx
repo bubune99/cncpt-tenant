@@ -26,7 +26,7 @@ export default function ShopSection({ block, data, className }: SmartBlockProps)
 
   // Config from block attributes/commerce
   const collection = block.commerce?.handle || block.attrs?.['data-collection'] || ''
-  const maxProducts = block.commerce?.limit ?? Number(block.attrs?.['data-max-products']) || 12
+  const maxProducts = (block.commerce?.limit ?? Number(block.attrs?.['data-max-products'])) || 12
   const showFilters = block.attrs?.['data-show-filters'] !== 'false'
   const columns = Number(block.attrs?.['data-columns']) || 4
   const heading = block.textContent || block.attrs?.['data-heading'] || ''
