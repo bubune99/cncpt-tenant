@@ -24,6 +24,8 @@ export interface SavedPage {
   thumbnail?: string
   /** Visual diff baseline screenshot (data URL) */
   baseline?: string
+  /** Component dependency manifest — resolved imports for AI context */
+  sourceDeps?: Record<string, unknown> | null
 }
 
 export interface CustomTemplate {
@@ -113,6 +115,7 @@ function apiResponseToSavedPage(data: Record<string, unknown>): SavedPage {
     createdAt: (data.createdAt as string) || new Date().toISOString(),
     updatedAt: (data.updatedAt as string) || new Date().toISOString(),
     publishedAt: (data.publishedAt as string) || undefined,
+    sourceDeps: (data.sourceDeps as Record<string, unknown>) || null,
   }
 }
 

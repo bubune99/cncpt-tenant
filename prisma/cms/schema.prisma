@@ -1210,6 +1210,11 @@ model Page {
   // Visual editor content (JSON)
   content Json?
 
+  // Original React/JSX source code (for AI refinement pipeline)
+  sourceCode String? @db.Text
+  // Component dependency manifest for AI context (resolved during project import)
+  sourceDeps Json?
+
   // SEO
   metaTitle       String?
   metaDescription String?
@@ -4411,6 +4416,7 @@ model Partial {
   description String?
   category    PartialCategory
   content     Json // { version: "2.0", blocks: Block[] }
+  sourceCode  String? @db.Text // Original React/JSX source code
   thumbnail   String? // Preview screenshot URL
   isDefault   Boolean         @default(false) // Active default for this category
   status      String          @default("DRAFT") // DRAFT | PUBLISHED

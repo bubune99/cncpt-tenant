@@ -79,6 +79,7 @@ export const GET = withPermission(
         customFooter: page.customFooter,
         showAnnouncement: page.showAnnouncement,
         customAnnouncement: page.customAnnouncement,
+        sourceDeps: (page as Record<string, unknown>).sourceDeps || null,
         createdAt: page.createdAt,
         updatedAt: page.updatedAt,
         publishedAt: page.publishedAt,
@@ -252,6 +253,11 @@ export const PUT = withPermission(
         updateData.customAnnouncement = body.customAnnouncement
       }
 
+      // Handle source deps (component dependency manifest from project import)
+      if (body.sourceDeps !== undefined) {
+        updateData.sourceDeps = body.sourceDeps
+      }
+
       const updatedPage = await prisma.page.update({
         where: { id },
         data: updateData,
@@ -302,6 +308,7 @@ export const PUT = withPermission(
         customFooter: updatedPage.customFooter,
         showAnnouncement: updatedPage.showAnnouncement,
         customAnnouncement: updatedPage.customAnnouncement,
+        sourceDeps: (updatedPage as Record<string, unknown>).sourceDeps || null,
         createdAt: updatedPage.createdAt,
         updatedAt: updatedPage.updatedAt,
         publishedAt: updatedPage.publishedAt,

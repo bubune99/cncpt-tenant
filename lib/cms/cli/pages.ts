@@ -10,6 +10,8 @@ import {
 } from "./utils"
 import { importFromReact, exportToReact } from "../block-editor/serialization"
 import { countBlocks, flattenTree } from "../block-editor/tree-utils"
+import { resolveVariantClasses } from "../block-editor/dependency-context"
+import type { SourceDeps } from "../block-editor/dependency-context"
 import { validateSlug } from "../slug"
 import {
   validatePageWrite, isMultiTenant, printPreflightSummary,
@@ -43,6 +45,7 @@ export async function handlePages(action: string, args: string[], flags: Record<
     case "set-slug": return pagesSetSlug(args[0], args[1])
     case "set-layout": return pagesSetLayout(args[0], flags)
     case "export": return pagesExport(args[0], flags)
+    case "deps": return pagesDeps(args[0])
     default:
       error(`Unknown pages action: ${action}`)
       info(`Run ${c.cyan("cms help pages")} for available commands.`)
@@ -385,6 +388,78 @@ async function pagesExport(slug: string, flags: Record<string, string | boolean>
   } else {
     console.log(jsx)
   }
+}
+
+// ── deps ───────────────────────────────────────────────────────────
+
+async function pagesDeps(slug: string) {
+  if (!slug) { error("Usage: cms pages deps <slug>"); return }
+
+  // Try with and without leading slash
+  const normalizedSlug = slug.startsWith("/") ? slug.slice(1) : slug
+  const page = await prisma.page.findUnique({
+    where: { slug: normalizedSlug },
+    select: { title: true, slug: true, sourceDeps: true },
+  })
+
+  if (!page) { error(`Page not found: ${normalizedSlug}`); return }
+
+  const sourceDeps = page.sourceDeps as unknown as SourceDeps | null
+  if (!sourceDeps || !sourceDeps.components || Object.keys(sourceDeps.components).length === 0) {
+    info("No dependency context stored for this page.")
+    if (!sourceDeps) {
+      info(`Import a project with ${c.cyan("cms import <path>")} to generate dependency data.`)
+    }
+    return
+  }
+
+  heading(`Page: ${page.title} (/${page.slug})`)
+
+  const components = Object.entries(sourceDeps.components)
+  if (components.length > 0) {
+    console.log(`\n  ${c.bold("Component Dependencies:")}`)
+
+    for (const [name, dep] of components) {
+      console.log(`\n    ${c.bold(c.cyan(name))} ${c.dim(`(${dep.file})`)}`)
+      console.log(`      Renders: ${c.cyan(`<${dep.renders}>`)}`)
+
+      if (dep.defaultClasses) {
+        console.log(`      Base:    ${c.dim(truncate(dep.defaultClasses, 70))}`)
+      }
+
+      // Variant table
+      if (dep.variants && Object.keys(dep.variants).length > 0) {
+        console.log(`      ${c.bold("Variants:")}`)
+
+        for (const [variantName, valueMap] of Object.entries(dep.variants)) {
+          console.log(`        ${c.yellow(variantName)}:`)
+          for (const [valueName, classes] of Object.entries(valueMap)) {
+            const isDefault = dep.defaultVariants?.[variantName] === valueName
+            const defaultTag = isDefault ? c.green(" (default)") : ""
+            console.log(`          ${valueName}${defaultTag}: ${c.dim(truncate(classes, 60))}`)
+          }
+        }
+      }
+
+      // Default resolution
+      if (dep.variants && dep.defaultVariants && Object.keys(dep.defaultVariants).length > 0) {
+        const resolved = resolveVariantClasses(dep)
+        console.log(`      ${c.bold("Default resolution:")} ${c.dim(truncate(resolved, 70))}`)
+      }
+
+      // Other props
+      if (dep.props && dep.props.length > 0) {
+        console.log(`      Props:   ${dep.props.join(", ")}`)
+      }
+    }
+  }
+
+  // Unresolved imports
+  if (sourceDeps.unresolved && sourceDeps.unresolved.length > 0) {
+    console.log(`\n  ${c.bold("Unresolved imports:")} ${c.dim(sourceDeps.unresolved.join(", "))}`)
+  }
+
+  console.log()
 }
 
 // Re-export the tree printer for blocks module

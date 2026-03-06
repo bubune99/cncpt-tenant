@@ -30,6 +30,7 @@ import { handleRoutes, handleLinks } from "@/lib/cms/cli/routes"
 import { handleUsers } from "@/lib/cms/cli/users"
 import { handleRoles } from "@/lib/cms/cli/roles"
 import { handlePermissions } from "@/lib/cms/cli/permissions-cli"
+import { handleImport } from "@/lib/cms/cli/import-cli"
 
 async function main() {
   // Skip node and script path: argv[0]=node, argv[1]=script
@@ -106,6 +107,10 @@ async function main() {
       break
     case "permissions":
       await handlePermissions(action, args, flags)
+      break
+    case "import":
+      // For import, the "action" is actually the first arg (the path)
+      await handleImport([action, ...args], flags)
       break
     default:
       error(`Unknown domain: ${domain}`)

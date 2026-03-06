@@ -34,6 +34,7 @@ const DOMAINS: Record<string, DomainDef> = {
       { usage: "pages set-slug <old> <new>", description: "Rename page slug" },
       { usage: "pages set-layout <slug>", description: "Set header/footer mode", flags: ["--header <GLOBAL|CUSTOM|NONE>", "--footer <GLOBAL|CUSTOM|NONE>"] },
       { usage: "pages export <slug>", description: "Export to JSX", flags: ["-o <path>"] },
+      { usage: "pages deps <slug>", description: "Show component dependency manifest (CVA variants, resolved classes)" },
     ],
   },
   partials: {
@@ -61,6 +62,10 @@ const DOMAINS: Record<string, DomainDef> = {
       { usage: "blocks remove <page-slug> <block-id>", description: "Remove block by ID" },
       { usage: "blocks tree <page-slug>", description: "Print block tree" },
       { usage: "blocks set <page-slug> <block-id>", description: "Update block properties", flags: ["--text \"content\"", "--class \"tailwind classes\"", "--attr key=value"] },
+      { usage: "blocks export <slug>", description: "Export current blocks as JSX", flags: ["--o <path>", "--source"] },
+      { usage: "blocks diff <slug>", description: "Diff blocks vs stored sourceCode", flags: ["--all"] },
+      { usage: "blocks sync <slug>", description: "Re-parse sourceCode and update blocks", flags: ["--dry-run", "--all"] },
+      { usage: "blocks resolve <page-slug> \"<Component prop=val ...>\" [text]", description: "Resolve component usage to a block via dependency context", flags: ["--json"] },
     ],
   },
   routes: {
@@ -107,6 +112,16 @@ const DOMAINS: Record<string, DomainDef> = {
       { usage: "permissions check <email> <permission>", description: "Test if user has specific permission" },
     ],
   },
+  import: {
+    label: "Import",
+    description: "Import React/Next.js projects into the CMS",
+    commands: [
+      { usage: "import <path>", description: "Interactive walkthrough import" },
+      { usage: "import <path> --scan", description: "Scan only (preview, no DB writes)" },
+      { usage: "import <path> --status PUBLISHED", description: "Import all as PUBLISHED" },
+      { usage: "import <path> --prefix <slug-prefix>", description: "Add prefix to all slugs" },
+    ],
+  },
 }
 
 export function printHelp(domain?: string) {
@@ -148,6 +163,7 @@ export function printHelp(domain?: string) {
   console.log(`  ${c.dim("$")} cms users get admin@example.com`)
   console.log(`  ${c.dim("$")} cms permissions check admin@example.com pages.edit`)
   console.log(`  ${c.dim("$")} cms links check`)
+  console.log(`  ${c.dim("$")} cms import ./my-project`)
   console.log(`  ${c.dim("$")} cms --tenant my-site pages list`)
 
   console.log(`\n${c.bold("MORE HELP")}`)

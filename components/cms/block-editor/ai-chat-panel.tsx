@@ -357,6 +357,7 @@ export function AIChatPanel() {
             id,
             pageState: stripParentIds(editorRef.current.state.blocks),
             selectedBlockId: editorRef.current.state.selectedBlockId,
+            sourceDeps: editorRef.current.state.currentPage?.sourceDeps || undefined,
           },
         }),
       }),

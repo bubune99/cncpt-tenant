@@ -30,6 +30,12 @@ import { checkCredits, useCredits } from '@/lib/ai-credits';
 import { isSuperAdmin } from '@/lib/super-admin';
 import { NextRequest } from 'next/server';
 import { withTenant } from '@/lib/cms/api/tenant';
+import {
+  extractImportNames,
+  formatDepsForPrompt,
+  formatImportNamesForPrompt,
+  type SourceDeps,
+} from '@/lib/cms/block-editor/dependency-context';
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
@@ -183,7 +189,7 @@ const kofiTools = { ...buildingTools, ...teachingTools };
 /*  Kofi system prompt                                                  */
 /* ------------------------------------------------------------------ */
 
-function buildKofiPrompt(pageState: unknown[], selectedBlockId?: string | null): string {
+function buildKofiPrompt(pageState: unknown[], selectedBlockId?: string | null, hasSourceCode?: boolean): string {
   const blockCount = Array.isArray(pageState) ? pageState.length : 0;
 
   return `You are **Kofi** — an AI page builder tutor. You help users create, understand, and improve web pages using HTML elements and Tailwind CSS classes.
@@ -239,7 +245,17 @@ ${selectedBlockId ? `The user has selected block \`${selectedBlockId}\`. Priorit
 - Friendly and encouraging — celebrate good design choices
 - Concise but thorough — explain design decisions without rambling
 - Proactive — if you see a potential issue while building, mention it
-- Use Markdown formatting for prose (bold, lists, headings)`;
+- Use Markdown formatting for prose (bold, lists, headings)${hasSourceCode ? `
+
+## Source Code Reference
+This page was imported from a React project. The original source code is provided for context.
+1. The source is READ-ONLY reference — never output source code modifications
+2. Use it to understand the INTENT and structure the user wanted
+3. Map React components to equivalent block structures
+4. Preserve the visual hierarchy and layout patterns from the source
+5. When the source uses Tailwind classes, carry them over to blocks directly
+6. Translate JSX composition (nested components) into nested block trees
+7. When component dependency information is provided, use it to translate imported components into concrete HTML blocks. For example, if the deps say Button renders as \`<button>\` with specific Tailwind classes, use those exact classes when building the block equivalent` : ''}`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -258,6 +274,8 @@ const requestSchema = z.object({
   ),
   pageState: z.array(z.any()).optional(),
   selectedBlockId: z.string().nullable().optional(),
+  sourceCode: z.string().nullable().optional(),
+  sourceDeps: z.any().nullable().optional(),
 });
 
 /* ------------------------------------------------------------------ */
@@ -355,7 +373,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { messages, pageState, selectedBlockId } = parsed.data;
+    const { messages, pageState, selectedBlockId, sourceCode, sourceDeps } = parsed.data;
 
     // Build model messages for AI SDK
     const modelMessages: ModelMessage[] = messages.map((m) => {
@@ -383,8 +401,24 @@ export async function POST(request: NextRequest) {
       modelMessages.splice(Math.min(1, modelMessages.length), 0, pageContext);
     }
 
+    // Inject component dependency context
+    if (sourceDeps || sourceCode) {
+      let depsContext: string | undefined
+      if (sourceDeps) {
+        depsContext = formatDepsForPrompt(sourceDeps as SourceDeps)
+      } else if (sourceCode) {
+        depsContext = formatImportNamesForPrompt(extractImportNames(sourceCode))
+      }
+      if (depsContext) {
+        modelMessages.splice(Math.min(3, modelMessages.length), 0, {
+          role: 'system' as const,
+          content: depsContext,
+        })
+      }
+    }
+
     const model = getLanguageModel(DEFAULT_CHAT_MODEL);
-    const systemPrompt = buildKofiPrompt(pageState || [], selectedBlockId);
+    const systemPrompt = buildKofiPrompt(pageState || [], selectedBlockId, !!(sourceCode || sourceDeps));
 
     const stream = createUIMessageStream({
       execute: async ({ writer: dataStream }) => {
