@@ -324,6 +324,61 @@ export const DASHBOARD_PRESETS: Record<DashboardPreset, Partial<DashboardConfig>
   },
 };
 
+// ─── Admin Dashboard Layout Types ────────────────────────────────────
+
+/**
+ * Widget types available in the admin dashboard
+ */
+export type AdminWidgetType =
+  | 'metrics-overview'
+  | 'revenue-chart'
+  | 'order-volume'
+  | 'traffic-chart'
+  | 'quick-actions'
+  | 'recent-orders'
+  | 'content-stats'
+  | 'top-products'
+  | 'conversion-rate'
+  | 'customer-growth'
+  | 'system-health';
+
+/**
+ * Registry metadata for an admin widget
+ */
+export interface AdminWidgetMeta {
+  type: AdminWidgetType;
+  title: string;
+  description: string;
+  icon: string;
+  category: string;
+  defaultW: number;
+  defaultH: number;
+  minW: number;
+  minH: number;
+}
+
+/**
+ * A positioned widget instance in the admin dashboard layout
+ */
+export interface AdminWidgetInstance {
+  id: string;
+  type: AdminWidgetType;
+  title: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  visible: boolean;
+}
+
+/**
+ * Admin dashboard layout (grid-based)
+ */
+export interface AdminDashboardLayout {
+  version: number;
+  widgets: AdminWidgetInstance[];
+}
+
 /**
  * Get default dashboard configuration for a preset
  */

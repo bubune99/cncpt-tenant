@@ -14,6 +14,7 @@ import type {
   StorageSettings,
   AiSettings,
   SecuritySettings,
+  CaptchaSettings,
   EnvVarStatus,
 } from './types'
 import {
@@ -24,6 +25,7 @@ import {
   DEFAULT_STORAGE_SETTINGS,
   DEFAULT_AI_SETTINGS,
   DEFAULT_SECURITY_SETTINGS,
+  DEFAULT_CAPTCHA_SETTINGS,
 } from './types'
 
 // Keys that should be encrypted in the database
@@ -223,6 +225,10 @@ export async function getAiSettings(): Promise<AiSettings> {
 
 export async function getSecuritySettings(): Promise<SecuritySettings> {
   return getSettings('security', DEFAULT_SECURITY_SETTINGS)
+}
+
+export async function getCaptchaSettings(): Promise<CaptchaSettings> {
+  return getSettings('security', DEFAULT_CAPTCHA_SETTINGS)
 }
 
 /**

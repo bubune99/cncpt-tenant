@@ -15,10 +15,61 @@ import {
   DASHBOARD_PRESETS,
 } from './types';
 
+import { getDefaultAdminLayout } from './widgets';
+import type { AdminDashboardLayout } from './types';
+
 // Re-export types
 export * from './types';
 
 const DASHBOARD_SETTINGS_KEY = 'dashboard.config';
+const ADMIN_LAYOUT_SETTINGS_KEY = 'dashboard.admin_layout';
+
+/**
+ * Get the admin dashboard layout
+ */
+export async function getAdminDashboardLayout(): Promise<AdminDashboardLayout> {
+  try {
+    const setting = await prisma.setting.findFirst({
+      where: { key: ADMIN_LAYOUT_SETTINGS_KEY, tenantId: null },
+    });
+
+    if (setting?.value) {
+      return JSON.parse(setting.value) as AdminDashboardLayout;
+    }
+  } catch (error) {
+    console.error('Error loading admin dashboard layout:', error);
+  }
+
+  return getDefaultAdminLayout();
+}
+
+/**
+ * Save the admin dashboard layout
+ */
+export async function saveAdminDashboardLayout(layout: AdminDashboardLayout): Promise<AdminDashboardLayout> {
+  const existingSetting = await prisma.setting.findFirst({
+    where: { key: ADMIN_LAYOUT_SETTINGS_KEY, tenantId: null },
+  });
+
+  if (existingSetting) {
+    await prisma.setting.update({
+      where: { id: existingSetting.id },
+      data: { value: JSON.stringify(layout) },
+    });
+  } else {
+    await prisma.setting.create({
+      data: {
+        key: ADMIN_LAYOUT_SETTINGS_KEY,
+        value: JSON.stringify(layout),
+        group: 'dashboard',
+        encrypted: false,
+        tenantId: null,
+      },
+    });
+  }
+
+  return layout;
+}
 
 /**
  * Get the current dashboard configuration

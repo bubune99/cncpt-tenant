@@ -28,13 +28,10 @@ export const GET = withContentAuth(
   async (_request: NextRequest, { tenant }: ContentAuthContext) => {
     try {
       // Fetch site settings and tenant settings in parallel
+      // Prisma tenant middleware auto-injects tenantId since we're inside runWithTenant()
       const [siteSettings, tenantSetting, features] = await Promise.all([
-        prisma.siteSettings.findFirst({
-          where: { tenantId: tenant.tenantId },
-        }),
-        prisma.tenantSetting.findFirst({
-          where: { tenantId: tenant.tenantId },
-        }),
+        prisma.siteSettings.findFirst(),
+        prisma.tenantSetting.findFirst(),
         resolveFeatureConfig(tenant.tenantId),
       ])
 

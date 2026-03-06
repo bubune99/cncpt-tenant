@@ -121,6 +121,17 @@ export interface AiSettings {
   usageTracking: AiUsageTrackingSettings
 }
 
+// CAPTCHA settings
+export interface CaptchaSettings {
+  provider: 'turnstile' | 'none'
+  siteKey?: string
+  secretKey?: string
+}
+
+export const DEFAULT_CAPTCHA_SETTINGS: CaptchaSettings = {
+  provider: 'none',
+}
+
 // Security settings
 export interface SecuritySettings {
   allowRegistration: boolean

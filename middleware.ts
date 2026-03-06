@@ -72,9 +72,14 @@ export async function middleware(request: NextRequest) {
 
   // SECURITY: Strip any incoming x-subdomain header to prevent spoofing.
   // This header must ONLY be set by this middleware, never by the client.
-  // We create a new headers object without x-subdomain for all downstream processing.
+  // EXCEPTION: Content delivery API routes (/api/cms/content/*) are designed
+  // for external SDK/CLI access and accept client-supplied x-subdomain headers.
+  // These routes authenticate via API key, so spoofing risk is mitigated.
   const requestHeaders = new Headers(request.headers)
-  requestHeaders.delete("x-subdomain")
+  const isContentApiRoute = pathname.startsWith("/api/cms/content")
+  if (!isContentApiRoute) {
+    requestHeaders.delete("x-subdomain")
+  }
 
   // Maintenance mode check
   if (process.env.MAINTENANCE_MODE === "true") {

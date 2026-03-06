@@ -19,6 +19,7 @@
  */
 
 import { PrismaClient, Prisma } from "@prisma/client"
+import { AsyncLocalStorage } from "node:async_hooks"
 
 // ============================================================================
 // Transaction-based tenant context (recommended for RLS)
@@ -119,26 +120,42 @@ export function createSuperAdminClient(prisma: PrismaClient) {
 // ============================================================================
 
 /**
- * Tenant context store using AsyncLocalStorage for per-request tenant ID.
- * This avoids passing tenantId through every function call.
+ * Tenant context store using AsyncLocalStorage for per-request isolation.
+ * Each async execution context (request) gets its own tenant state,
+ * preventing concurrent requests from leaking tenant IDs across requests.
  */
-let currentTenantId: number | null = null
-let isSuperAdmin = false
+interface TenantStore {
+  tenantId: number | null
+  isSuperAdmin: boolean
+}
+
+// Cache in globalThis to survive HMR — must be the same instance as the one
+// captured by the Prisma $extends callback to avoid stale references.
+const globalForTenant = globalThis as unknown as {
+  __tenantStorage?: AsyncLocalStorage<TenantStore>
+}
+const tenantStorage = globalForTenant.__tenantStorage ??= new AsyncLocalStorage<TenantStore>()
 
 export function setCurrentTenant(tenantId: number | null) {
-  currentTenantId = tenantId
+  const store = tenantStorage.getStore()
+  if (store) {
+    store.tenantId = tenantId
+  }
 }
 
 export function getCurrentTenant(): number | null {
-  return currentTenantId
+  return tenantStorage.getStore()?.tenantId ?? null
 }
 
 export function setSuperAdmin(value: boolean) {
-  isSuperAdmin = value
+  const store = tenantStorage.getStore()
+  if (store) {
+    store.isSuperAdmin = value
+  }
 }
 
 export function getIsSuperAdmin(): boolean {
-  return isSuperAdmin
+  return tenantStorage.getStore()?.isSuperAdmin ?? false
 }
 
 /**
@@ -210,7 +227,7 @@ export function applyTenantMiddleware(prisma: PrismaClient) {
         const tenantId = getCurrentTenant()
 
         // Skip if no tenant context is set (platform-level operations)
-        if (tenantId === null || isSuperAdmin) {
+        if (tenantId === null || getIsSuperAdmin()) {
           return query(args)
         }
 
@@ -297,29 +314,14 @@ export async function runWithTenant<T>(
   tenantId: number,
   fn: () => Promise<T>
 ): Promise<T> {
-  const previousTenantId = currentTenantId
-  const previousSuperAdmin = isSuperAdmin
-  try {
-    currentTenantId = tenantId
-    isSuperAdmin = false
-    return await fn()
-  } finally {
-    currentTenantId = previousTenantId
-    isSuperAdmin = previousSuperAdmin
-  }
+  const store: TenantStore = { tenantId, isSuperAdmin: false }
+  return tenantStorage.run(store, fn)
 }
 
 /**
  * Run a function with SuperAdmin context (bypasses tenant filtering).
  */
 export async function runAsSuperAdmin<T>(fn: () => Promise<T>): Promise<T> {
-  const previousTenantId = currentTenantId
-  const previousSuperAdmin = isSuperAdmin
-  try {
-    isSuperAdmin = true
-    return await fn()
-  } finally {
-    currentTenantId = previousTenantId
-    isSuperAdmin = previousSuperAdmin
-  }
+  const store: TenantStore = { tenantId: null, isSuperAdmin: true }
+  return tenantStorage.run(store, fn)
 }
