@@ -8,20 +8,24 @@
  */
 
 import { BlockRenderer } from '@/components/cms/page-wrapper/block-renderer';
+import { InteractionPreview } from '@/components/cms/block-editor/interaction-preview';
 import type { Block } from '@/lib/cms/block-editor/types';
 import { getSmartBlock, isSmartBlock } from '@/lib/cms/block-editor/smart-blocks/registry';
 import DOMPurify from 'isomorphic-dompurify';
-import { Component, ErrorInfo, ReactNode, useMemo } from 'react';
+import { Component, ErrorInfo, ReactNode, useMemo, useCallback } from 'react';
 
 // Side-effect imports — register smart block components in the registry
 import '@/components/cms/smart-blocks/commerce';
 import '@/components/cms/smart-blocks/dashboard';
+import '@/components/cms/smart-blocks/partials';
 
 export interface BlockPageRendererProps {
   blocks: Block[];
   className?: string;
   /** Serialized smart block data: blockId -> { key: value } */
   smartBlockData?: Record<string, Record<string, unknown>>;
+  /** CSS theme variables extracted from source project (injected at render time) */
+  themeCSS?: string;
 }
 
 /**
@@ -98,10 +102,13 @@ function sanitizeBlocks(blocks: Block[]): Block[] {
 /**
  * Renders block editor content for public page display.
  */
-export function BlockPageRenderer({ blocks, className = '', smartBlockData = {} }: BlockPageRendererProps) {
+export function BlockPageRenderer({ blocks, className = '', smartBlockData = {}, themeCSS }: BlockPageRendererProps) {
   const sanitizedBlocks = useMemo(() => sanitizeBlocks(blocks), [blocks]);
 
-  const renderBlock = (block: Block) => {
+  // Use a ref to break the circular dep between renderBlock ↔ renderChildren
+  const renderBlock = useCallback((block: Block) => {
+    const renderChildrenInner = (children: Block[]) => children.map(renderBlock);
+
     // Check if this is a registered smart block
     if (isSmartBlock(block.componentName)) {
       const def = getSmartBlock(block.componentName!)
@@ -112,19 +119,30 @@ export function BlockPageRenderer({ blocks, className = '', smartBlockData = {} 
       }
     }
     // Default: render via BlockRenderer
-    return (
+    const rendered = (
       <BlockRenderer
         key={block.id}
         block={block}
-        renderChildren={renderChildren}
+        renderChildren={renderChildrenInner}
         isPreview
       />
     )
-  }
 
-  const renderChildren = (children: Block[]) => {
-    return children.map((child) => renderBlock(child));
-  };
+    // Wrap with InteractionPreview if block has overlay content
+    if (block.interaction) {
+      return (
+        <InteractionPreview
+          key={`interaction-${block.id}`}
+          interaction={block.interaction}
+          trigger={rendered}
+          renderBlocks={(overlayBlocks) => overlayBlocks.map(renderBlock)}
+        />
+      )
+    }
+
+    return rendered
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [smartBlockData]);
 
   if (!sanitizedBlocks || sanitizedBlocks.length === 0) {
     return (
@@ -138,6 +156,9 @@ export function BlockPageRenderer({ blocks, className = '', smartBlockData = {} 
 
   return (
     <div className={`block-content ${className}`}>
+      {themeCSS && (
+        <style dangerouslySetInnerHTML={{ __html: themeCSS }} />
+      )}
       <BlockErrorBoundary>
         {sanitizedBlocks.map((block) => renderBlock(block))}
       </BlockErrorBoundary>

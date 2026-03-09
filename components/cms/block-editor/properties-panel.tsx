@@ -11,7 +11,9 @@ import { Slider } from "@/components/cms/ui/slider"
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/cms/ui/select"
@@ -35,19 +37,22 @@ import {
   Database,
   Link2,
   Component,
-  ExternalLink,
   Monitor,
   Tablet,
   Smartphone,
   Eye,
 } from "lucide-react"
-import type { Block, BlockTag, BlockAnimation, BlockBackground, BlockResponsive, CommerceBinding, CommerceProvider } from "@/lib/cms/block-editor/types"
+import { ExternalLink, MousePointerClick, PanelLeft, MessageSquare, ChevronDown, CircleHelp } from "lucide-react"
+import type { Block, BlockTag, BlockAnimation, BlockBackground, BlockResponsive, BlockInteraction, InteractionType, CommerceBinding, CommerceProvider } from "@/lib/cms/block-editor/types"
 import { usePartials, usePartial } from "@/lib/cms/api/domains/partials/hooks"
 import { COMMERCE_PROVIDERS } from "@/lib/cms/block-editor/block-templates"
 import { isContainerTag, CONTAINER_TAGS, LEAF_TAGS } from "@/lib/cms/block-editor/types"
 import { getSmartBlock, type EditorField } from "@/lib/cms/block-editor/smart-blocks/registry"
 import { cn } from "@/lib/cms/utils"
 import { Switch } from "@/components/cms/ui/switch"
+import { isInteractiveAnimation } from "@/lib/cms/block-editor/types"
+import { getMotionWrapper } from "@/lib/cms/block-editor/motion-wrappers/registry"
+import "@/components/cms/block-editor/motion-wrappers"
 import { ColorPicker } from "./color-picker"
 import { BackgroundModal } from "./background-modal"
 import { ImagePickerModal } from "./image-picker-modal"
@@ -322,13 +327,27 @@ function AttrsEditor({ attrs, onChange }: { attrs: Record<string, string>; onCha
 /* ------------------------------------------------------------------ */
 
 const ANIM_TYPES = [
-  { value: "none", label: "None" },
-  { value: "fadeIn", label: "Fade In" },
-  { value: "slideUp", label: "Slide Up" },
-  { value: "slideDown", label: "Slide Down" },
-  { value: "slideLeft", label: "Slide Left" },
-  { value: "slideRight", label: "Slide Right" },
-  { value: "scale", label: "Scale" },
+  { value: "none", label: "None", group: null },
+  { value: "fadeIn", label: "Fade In", group: null },
+  { value: "slideUp", label: "Slide Up", group: null },
+  { value: "slideDown", label: "Slide Down", group: null },
+  { value: "slideLeft", label: "Slide Left", group: null },
+  { value: "slideRight", label: "Slide Right", group: null },
+  { value: "scale", label: "Scale", group: null },
+  // Interactive - Cursor
+  { value: "tilt3d", label: "3D Tilt", group: "Interactive" },
+  { value: "mouseGlow", label: "Mouse Glow", group: "Interactive" },
+  { value: "magnetic", label: "Magnetic", group: "Interactive" },
+  { value: "spotlight", label: "Spotlight", group: "Interactive" },
+  { value: "parallaxDepth", label: "Parallax Depth", group: "Interactive" },
+  // Interactive - Autonomous
+  { value: "floatIdle", label: "Float", group: "Motion" },
+  { value: "morphBlob", label: "Morph Blob", group: "Motion" },
+  { value: "marquee", label: "Marquee", group: "Motion" },
+  // Interactive - Text
+  { value: "textReveal", label: "Text Reveal", group: "Text" },
+  { value: "countUp", label: "Count Up", group: "Text" },
+  { value: "textPath", label: "Text Path", group: "Text" },
 ] as const
 
 const ANIM_TRIGGERS = [
@@ -342,22 +361,48 @@ function AnimationEditor({ animation, onChange }: { animation?: BlockAnimation; 
   const trigger = animation?.trigger ?? "onMount"
   const duration = animation?.duration ?? 0.5
   const delay = animation?.delay ?? 0
+  const isInteractive = isInteractiveAnimation(type)
+  const wrapperConfig = isInteractive ? getMotionWrapper(type) : undefined
+
+  // Group animation types for the dropdown
+  const groups = new Map<string | null, typeof ANIM_TYPES[number][]>()
+  for (const t of ANIM_TYPES) {
+    const g = t.group
+    if (!groups.has(g)) groups.set(g, [])
+    groups.get(g)!.push(t)
+  }
 
   return (
     <div className="flex flex-col gap-3">
       <PropertyField label="Effect">
         <Select value={type} onValueChange={(v) => {
           if (v === "none") { onChange(undefined); return }
-          onChange({ ...animation, type: v as BlockAnimation["type"], trigger, duration, delay })
+          const newIsInteractive = isInteractiveAnimation(v)
+          if (newIsInteractive) {
+            const wrapper = getMotionWrapper(v)
+            onChange({ type: v as BlockAnimation["type"], interactiveConfig: wrapper?.defaultConfig ? { ...wrapper.defaultConfig } : {} })
+          } else {
+            onChange({ ...animation, type: v as BlockAnimation["type"], trigger, duration, delay, interactiveConfig: undefined })
+          }
         }}>
           <SelectTrigger className="h-8 bg-input text-foreground text-xs"><SelectValue placeholder="None" /></SelectTrigger>
           <SelectContent>
-            {ANIM_TYPES.map((t) => <SelectItem key={t.value} value={t.value} className="text-xs">{t.label}</SelectItem>)}
+            {Array.from(groups.entries()).map(([group, items]) => {
+              if (!group) {
+                return items.map((t) => <SelectItem key={t.value} value={t.value} className="text-xs">{t.label}</SelectItem>)
+              }
+              return (
+                <SelectGroup key={group}>
+                  <SelectLabel className="text-[10px] uppercase tracking-wider text-muted-foreground/70 px-2 py-1">{group}</SelectLabel>
+                  {items.map((t) => <SelectItem key={t.value} value={t.value} className="text-xs">{t.label}</SelectItem>)}
+                </SelectGroup>
+              )
+            })}
           </SelectContent>
         </Select>
       </PropertyField>
 
-      {type !== "none" && (
+      {type !== "none" && !isInteractive && (
         <>
           <PropertyField label="Trigger">
             <Select value={trigger} onValueChange={(v) => onChange({ ...animation, type: type as BlockAnimation["type"], trigger: v as BlockAnimation["trigger"], duration, delay })}>
@@ -380,6 +425,201 @@ function AnimationEditor({ animation, onChange }: { animation?: BlockAnimation; 
                 className="w-full accent-primary"
               />
             </PropertyField>
+          </div>
+        </>
+      )}
+
+      {isInteractive && wrapperConfig && (
+        <div className="flex flex-col gap-2 p-2 rounded-md bg-muted/30 border border-border/50">
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{wrapperConfig.label} Settings</span>
+          {wrapperConfig.editorFields.map((field) => {
+            const configVal = animation?.interactiveConfig?.[field.key] ?? field.defaultValue
+            return (
+              <PropertyField key={field.key} label={field.label}>
+                {field.type === "slider" && (
+                  <div className="flex items-center gap-2">
+                    <input type="range"
+                      min={field.min ?? 0} max={field.max ?? 100} step={field.step ?? 1}
+                      value={configVal as number ?? field.min ?? 0}
+                      onChange={(e) => onChange({
+                        ...animation,
+                        type: type as BlockAnimation["type"],
+                        interactiveConfig: { ...(animation?.interactiveConfig || {}), [field.key]: parseFloat(e.target.value) }
+                      })}
+                      className="w-full accent-primary"
+                    />
+                    <span className="text-[10px] text-muted-foreground w-8 text-right">{configVal as number}</span>
+                  </div>
+                )}
+                {field.type === "select" && (
+                  <Select value={String(configVal ?? "")} onValueChange={(v) => onChange({
+                    ...animation,
+                    type: type as BlockAnimation["type"],
+                    interactiveConfig: { ...(animation?.interactiveConfig || {}), [field.key]: v }
+                  })}>
+                    <SelectTrigger className="h-7 bg-input text-foreground text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {field.options?.map((o) => <SelectItem key={o.value} value={String(o.value)} className="text-xs">{o.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                )}
+                {field.type === "toggle" && (
+                  <Switch checked={!!configVal} onCheckedChange={(v) => onChange({
+                    ...animation,
+                    type: type as BlockAnimation["type"],
+                    interactiveConfig: { ...(animation?.interactiveConfig || {}), [field.key]: v }
+                  })} />
+                )}
+                {field.type === "color" && (
+                  <Input
+                    type="color"
+                    value={String(configVal ?? "#8b5cf6")}
+                    onChange={(e) => onChange({
+                      ...animation,
+                      type: type as BlockAnimation["type"],
+                      interactiveConfig: { ...(animation?.interactiveConfig || {}), [field.key]: e.target.value }
+                    })}
+                    className="h-7 w-full p-0.5 cursor-pointer"
+                  />
+                )}
+              </PropertyField>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/*  Interaction (Overlay/Popup) Editor                                  */
+/* ------------------------------------------------------------------ */
+
+const INTERACTION_TYPES: { value: InteractionType | "none"; label: string }[] = [
+  { value: "none", label: "None" },
+  { value: "sheet", label: "Sheet / Drawer" },
+  { value: "dialog", label: "Dialog / Modal" },
+  { value: "popover", label: "Popover" },
+  { value: "dropdown", label: "Dropdown Menu" },
+  { value: "tooltip", label: "Tooltip" },
+  { value: "collapsible", label: "Collapsible" },
+  { value: "alert-dialog", label: "Alert Dialog" },
+]
+
+function InteractionEditor({
+  interaction,
+  onChange,
+  onEditContent,
+}: {
+  interaction?: BlockInteraction
+  onChange: (i: BlockInteraction | undefined) => void
+  onEditContent?: () => void
+}) {
+  const type = interaction?.type || "none"
+  const contentCount = interaction?.content?.length || 0
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Type selector */}
+      <PropertyField label="Type">
+        <Select value={type} onValueChange={(v) => {
+          if (v === "none") {
+            onChange(undefined)
+          } else {
+            onChange({
+              type: v as InteractionType,
+              trigger: v === "tooltip" ? "hover" : "click",
+              content: interaction?.content || [],
+              config: interaction?.config,
+            })
+          }
+        }}>
+          <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {INTERACTION_TYPES.map((t) => (
+              <SelectItem key={t.value} value={t.value} className="text-xs">{t.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </PropertyField>
+
+      {type !== "none" && (
+        <>
+          {/* Trigger type */}
+          <PropertyField label="Trigger">
+            <Select value={interaction?.trigger || "click"} onValueChange={(v) => {
+              onChange({ ...interaction!, trigger: v as "click" | "hover" })
+            }}>
+              <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="click" className="text-xs">Click</SelectItem>
+                <SelectItem value="hover" className="text-xs">Hover</SelectItem>
+              </SelectContent>
+            </Select>
+          </PropertyField>
+
+          {/* Config fields based on type */}
+          {(type === "sheet") && (
+            <PropertyField label="Side">
+              <Select value={interaction?.config?.side || "right"} onValueChange={(v) => {
+                onChange({ ...interaction!, config: { ...interaction?.config, side: v } })
+              }}>
+                <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="left" className="text-xs">Left</SelectItem>
+                  <SelectItem value="right" className="text-xs">Right</SelectItem>
+                  <SelectItem value="top" className="text-xs">Top</SelectItem>
+                  <SelectItem value="bottom" className="text-xs">Bottom</SelectItem>
+                </SelectContent>
+              </Select>
+            </PropertyField>
+          )}
+
+          {(type === "sheet" || type === "dialog" || type === "alert-dialog") && (
+            <>
+              <PropertyField label="Title">
+                <Input
+                  value={interaction?.config?.title || ""}
+                  onChange={(e) => onChange({ ...interaction!, config: { ...interaction?.config, title: e.target.value || undefined } })}
+                  className="h-7 text-xs"
+                  placeholder="Optional title..."
+                />
+              </PropertyField>
+              <PropertyField label="Description">
+                <Input
+                  value={interaction?.config?.description || ""}
+                  onChange={(e) => onChange({ ...interaction!, config: { ...interaction?.config, description: e.target.value || undefined } })}
+                  className="h-7 text-xs"
+                  placeholder="Optional description..."
+                />
+              </PropertyField>
+            </>
+          )}
+
+          {/* Content summary and edit button */}
+          <div className="flex flex-col gap-2 p-2 rounded-md bg-orange-500/10 border border-orange-500/20">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-orange-400">
+                Overlay Content
+              </span>
+              <span className="text-[10px] text-muted-foreground">
+                {contentCount} block{contentCount !== 1 ? "s" : ""}
+              </span>
+            </div>
+            <p className="text-[10px] text-muted-foreground leading-relaxed">
+              Overlay content is rendered when triggered. Use Preview mode to test interactivity.
+            </p>
+            {onEditContent && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onEditContent}
+                className="h-7 text-xs border-orange-500/30 text-orange-400 hover:bg-orange-500/10"
+              >
+                <MousePointerClick size={12} className="mr-1" />
+                Edit Overlay Content
+              </Button>
+            )}
           </div>
         </>
       )}
@@ -635,11 +875,11 @@ function SmartBlockField({ field, block, onUpdate }: {
   const target = field.target || "attrs"
   let currentValue: unknown = field.defaultValue
   if (target === "commerce" && block.commerce) {
-    currentValue = (block.commerce as Record<string, unknown>)[field.key] ?? field.defaultValue
+    currentValue = (block.commerce as unknown as Record<string, unknown>)[field.key] ?? field.defaultValue
   } else if (target === "attrs" && block.attrs) {
     currentValue = block.attrs[field.key] ?? field.defaultValue
   } else if (target === "root") {
-    currentValue = (block as Record<string, unknown>)[field.key] ?? field.defaultValue
+    currentValue = (block as unknown as Record<string, unknown>)[field.key] ?? field.defaultValue
   }
 
   switch (field.type) {
@@ -1351,6 +1591,19 @@ export function PropertiesPanel() {
             <AnimationEditor
               animation={block.animation}
               onChange={(anim) => updateBlock(block.id, { animation: anim })}
+            />
+          </PropertySection>
+
+          <Separator />
+
+          {/* Interaction (Overlay/Popup) */}
+          <PropertySection title="Interaction" icon={MousePointerClick} defaultOpen={!!block.interaction}>
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="text-[10px] text-muted-foreground">Overlay content for popups, sheets, dialogs</span>
+            </div>
+            <InteractionEditor
+              interaction={block.interaction}
+              onChange={(interaction) => updateBlock(block.id, { interaction })}
             />
           </PropertySection>
 

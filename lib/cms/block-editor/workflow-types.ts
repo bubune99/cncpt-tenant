@@ -88,6 +88,28 @@ export interface ShowDesignErrorOutput {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Agent Tool Output Types (media / image generation)                  */
+/* ------------------------------------------------------------------ */
+
+export interface SearchMediaOutput {
+  media: Array<{
+    id: string
+    url: string
+    filename: string
+    alt: string | null
+    width: number | null
+    height: number | null
+    mimeType: string
+  }>
+}
+
+export interface GenerateImageOutput {
+  url: string
+  mediaId: string
+  prompt: string
+}
+
+/* ------------------------------------------------------------------ */
 /*  Tool name constants                                                 */
 /* ------------------------------------------------------------------ */
 
@@ -101,6 +123,11 @@ export const KOFI_TOOL_NAMES = [
   "explainDesign",
   "suggestImprovement",
   "showDesignError",
+  "searchMedia",
+  "generateImage",
+  "analyzeDesign",
+  "importAndAnalyze",
+  "repairBlock",
 ] as const
 
 export type KofiToolName = (typeof KOFI_TOOL_NAMES)[number]
@@ -120,14 +147,17 @@ export function extractDesignWorkflows(messages: UIMessage[]): DesignWorkflow[] 
     let colorIdx = 0
 
     for (const part of msg.parts) {
-      if (part.type !== "tool-invocation") continue
+      // AI SDK v6: tool parts have type "tool-<toolName>"
+      if (part.type !== "tool-spotlightBlock") continue
       const toolPart = part as unknown as {
-        type: "tool-invocation"
-        toolInvocation: { toolName: string; state: string; args: Record<string, unknown> }
+        type: "tool-spotlightBlock"
+        state: string
+        input: Record<string, unknown>
+        output?: Record<string, unknown>
       }
-      if (toolPart.toolInvocation.toolName !== "spotlightBlock") continue
+      if (toolPart.state !== "output-available") continue
 
-      const args = toolPart.toolInvocation.args as unknown as SpotlightBlockOutput
+      const args = (toolPart.output ?? toolPart.input) as unknown as SpotlightBlockOutput
       const color = args.color || SPOTLIGHT_COLORS[colorIdx % SPOTLIGHT_COLORS.length]
       colorIdx++
 

@@ -50,6 +50,9 @@ import {
   PopoverTrigger,
 } from '../ui/popover';
 
+// TipTap extensions add commands dynamically — TypeScript can't infer them from the base ChainedCommands type
+const chain = (editor: Editor) => editor.chain().focus() as any;
+
 interface EditorToolbarProps {
   editor: Editor;
   onLinkClick: () => void;
@@ -132,10 +135,10 @@ export default function EditorToolbar({
 
   const setHeading = (value: string) => {
     if (value === 'p') {
-      editor.chain().focus().setParagraph().run();
+      chain(editor).setParagraph().run();
     } else {
       const level = parseInt(value) as 1 | 2 | 3 | 4;
-      editor.chain().focus().toggleHeading({ level }).run();
+      chain(editor).toggleHeading({ level }).run();
     }
   };
 
@@ -144,14 +147,14 @@ export default function EditorToolbar({
       <div className="flex flex-wrap items-center gap-0.5 border-b bg-muted/30 p-1">
         {/* Undo/Redo */}
         <ToolbarButton
-          onClick={() => (editor.chain().focus() as any).undo().run()}
+          onClick={() => chain(editor).undo().run()}
           disabled={!(editor.can() as any).undo()}
           tooltip="Undo (Ctrl+Z)"
         >
           <Undo className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
-          onClick={() => (editor.chain().focus() as any).redo().run()}
+          onClick={() => chain(editor).redo().run()}
           disabled={!(editor.can() as any).redo()}
           tooltip="Redo (Ctrl+Y)"
         >
@@ -178,35 +181,35 @@ export default function EditorToolbar({
 
         {/* Text Formatting */}
         <ToolbarButton
-          onClick={() => editor.chain().focus().toggleBold().run()}
+          onClick={() => chain(editor).toggleBold().run()}
           isActive={editor.isActive('bold')}
           tooltip="Bold (Ctrl+B)"
         >
           <Bold className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
-          onClick={() => editor.chain().focus().toggleItalic().run()}
+          onClick={() => chain(editor).toggleItalic().run()}
           isActive={editor.isActive('italic')}
           tooltip="Italic (Ctrl+I)"
         >
           <Italic className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
-          onClick={() => editor.chain().focus().toggleUnderline().run()}
+          onClick={() => chain(editor).toggleUnderline().run()}
           isActive={editor.isActive('underline')}
           tooltip="Underline (Ctrl+U)"
         >
           <UnderlineIcon className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
-          onClick={() => editor.chain().focus().toggleStrike().run()}
+          onClick={() => chain(editor).toggleStrike().run()}
           isActive={editor.isActive('strike')}
           tooltip="Strikethrough"
         >
           <Strikethrough className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
-          onClick={() => editor.chain().focus().toggleCode().run()}
+          onClick={() => chain(editor).toggleCode().run()}
           isActive={editor.isActive('code')}
           tooltip="Inline Code"
         >
@@ -235,14 +238,14 @@ export default function EditorToolbar({
                   className="w-6 h-6 rounded border hover:scale-110 transition-transform"
                   style={{ backgroundColor: color.value }}
                   onClick={() =>
-                    editor.chain().focus().toggleHighlight({ color: color.value }).run()
+                    chain(editor).toggleHighlight({ color: color.value }).run()
                   }
                   title={color.name}
                 />
               ))}
               <button
                 className="w-6 h-6 rounded border bg-background hover:bg-muted flex items-center justify-center"
-                onClick={() => editor.chain().focus().unsetHighlight().run()}
+                onClick={() => chain(editor).unsetHighlight().run()}
                 title="Remove highlight"
               >
                 <RemoveFormatting className="h-3 w-3" />
@@ -271,9 +274,9 @@ export default function EditorToolbar({
                   style={{ color: color.value }}
                   onClick={() => {
                     if (color.value === 'inherit') {
-                      editor.chain().focus().unsetColor().run();
+                      chain(editor).unsetColor().run();
                     } else {
-                      editor.chain().focus().setColor(color.value).run();
+                      chain(editor).setColor(color.value).run();
                     }
                   }}
                   title={color.name}
@@ -289,28 +292,28 @@ export default function EditorToolbar({
 
         {/* Alignment */}
         <ToolbarButton
-          onClick={() => editor.chain().focus().setTextAlign('left').run()}
+          onClick={() => chain(editor).setTextAlign('left').run()}
           isActive={editor.isActive({ textAlign: 'left' })}
           tooltip="Align Left"
         >
           <AlignLeft className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
-          onClick={() => editor.chain().focus().setTextAlign('center').run()}
+          onClick={() => chain(editor).setTextAlign('center').run()}
           isActive={editor.isActive({ textAlign: 'center' })}
           tooltip="Align Center"
         >
           <AlignCenter className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
-          onClick={() => editor.chain().focus().setTextAlign('right').run()}
+          onClick={() => chain(editor).setTextAlign('right').run()}
           isActive={editor.isActive({ textAlign: 'right' })}
           tooltip="Align Right"
         >
           <AlignRight className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
-          onClick={() => editor.chain().focus().setTextAlign('justify').run()}
+          onClick={() => chain(editor).setTextAlign('justify').run()}
           isActive={editor.isActive({ textAlign: 'justify' })}
           tooltip="Justify"
         >
@@ -321,14 +324,14 @@ export default function EditorToolbar({
 
         {/* Lists */}
         <ToolbarButton
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          onClick={() => chain(editor).toggleBulletList().run()}
           isActive={editor.isActive('bulletList')}
           tooltip="Bullet List"
         >
           <List className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          onClick={() => chain(editor).toggleOrderedList().run()}
           isActive={editor.isActive('orderedList')}
           tooltip="Numbered List"
         >
@@ -339,21 +342,21 @@ export default function EditorToolbar({
 
         {/* Blocks */}
         <ToolbarButton
-          onClick={() => editor.chain().focus().toggleBlockquote().run()}
+          onClick={() => chain(editor).toggleBlockquote().run()}
           isActive={editor.isActive('blockquote')}
           tooltip="Quote"
         >
           <Quote className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
-          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+          onClick={() => chain(editor).toggleCodeBlock().run()}
           isActive={editor.isActive('codeBlock')}
           tooltip="Code Block"
         >
           <CodeSquare className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
-          onClick={() => editor.chain().focus().setHorizontalRule().run()}
+          onClick={() => chain(editor).setHorizontalRule().run()}
           tooltip="Horizontal Rule"
         >
           <Minus className="h-4 w-4" />
@@ -371,7 +374,7 @@ export default function EditorToolbar({
         </ToolbarButton>
         {editor.isActive('link') && (
           <ToolbarButton
-            onClick={() => editor.chain().focus().unsetLink().run()}
+            onClick={() => chain(editor).unsetLink().run()}
             tooltip="Remove Link"
           >
             <Unlink className="h-4 w-4" />
@@ -388,7 +391,7 @@ export default function EditorToolbar({
 
         {/* Clear Formatting */}
         <ToolbarButton
-          onClick={() => editor.chain().focus().clearNodes().unsetAllMarks().run()}
+          onClick={() => chain(editor).clearNodes().unsetAllMarks().run()}
           tooltip="Clear Formatting"
         >
           <RemoveFormatting className="h-4 w-4" />

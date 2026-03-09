@@ -1,9 +1,20 @@
 import { z } from "zod"
-import type { Block, BlockTag, BlockAnimation, BlockBackground, BlockResponsive, PageDocument, ExportFramework, CommerceBinding } from "./types"
-import { CONTAINER_TAGS, LEAF_TAGS, isContainerTag } from "./types"
+import type { Block, BlockTag, BlockAnimation, BlockBackground, BlockResponsive, BlockInteraction, InteractionType, PageDocument, ExportFramework, CommerceBinding } from "./types"
+import { CONTAINER_TAGS, LEAF_TAGS, isContainerTag, isInteractiveAnimation, isKnownTag } from "./types"
 import { generateId, rehydrateParentIds, stripParentIds } from "./tree-utils"
+import { importFromReactAST } from "./ast-parser"
 
 const ALL_TAGS_SET = new Set<string>([...CONTAINER_TAGS, ...LEAF_TAGS])
+
+/** Check if a string value is a JSX expression (wrapped in braces) */
+function isExpression(val: string): boolean {
+  return val.startsWith("{") && val.endsWith("}")
+}
+
+/** Unwrap expression braces: "{foo.bar}" → "foo.bar" */
+function unwrapExpression(val: string): string {
+  return val.slice(1, -1)
+}
 
 // ============================================================
 // Code Editor JSX Serialization (Lossless Round-Trip)
@@ -42,9 +53,10 @@ function serializeBlockForEditor(block: Block, indent: number): string {
   const pad = "  ".repeat(indent)
   const isSelfClosing = SELF_CLOSING_TAGS.includes(block.tag)
   const anim = block.animation
-  const useMotionTag = !!anim?.type
+  const useMotionTag = !!anim?.type && !isInteractiveAnimation(anim.type)
 
-  // Determine the tag name: motion.div for animated blocks, plain tag otherwise
+  // Determine the tag name: motion.div for simple animated blocks, plain tag otherwise
+  // Interactive animations use wrapper components, not motion tags
   const tagName = useMotionTag ? `motion.${block.tag}` : block.tag
 
   // Build attributes array
@@ -70,7 +82,10 @@ function serializeBlockForEditor(block: Block, indent: number): string {
         // Boolean attribute: render as bare attribute (JSX treats as true)
         attrs.push(key)
       } else if (val !== "") {
-        if (val.includes('"') || val.includes("'") || val.includes("{") || val.includes("}")) {
+        if (isExpression(val)) {
+          // Expression value: emit as key={expression} (preserves round-trip)
+          attrs.push(`${key}={${unwrapExpression(val)}}`)
+        } else if (val.includes('"') || val.includes("'") || val.includes("{") || val.includes("}")) {
           attrs.push(`${key}={\`${val.replace(/`/g, "\\`")}\`}`)
         } else {
           attrs.push(`${key}="${val}"`)
@@ -85,7 +100,12 @@ function serializeBlockForEditor(block: Block, indent: number): string {
   // Label emitted as JSX comment before the element, not as data attribute
 
   // Animation as motion props (instead of data-animation JSON)
-  if (anim?.type && anim.type !== "custom") {
+  // Interactive presets serialize as data-animation JSON (they use wrapper components, not motion props)
+  if (anim?.type && isInteractiveAnimation(anim.type)) {
+    const animData: Record<string, unknown> = { type: anim.type }
+    if (anim.interactiveConfig) animData.interactiveConfig = anim.interactiveConfig
+    attrs.push(`data-animation={${JSON.stringify(JSON.stringify(animData))}}`)
+  } else if (anim?.type && anim.type !== "custom") {
     const preset = ANIMATION_PRESETS[anim.type]
     if (preset) {
       if (anim.trigger === "inView") {
@@ -137,6 +157,16 @@ function serializeBlockForEditor(block: Block, indent: number): string {
     attrs.push(`data-partial-overrides={${JSON.stringify(JSON.stringify(block.partialOverrides))}}`)
   }
 
+  // Data bindings (expression → field mappings)
+  if (block.bindings && Object.keys(block.bindings).length > 0) {
+    attrs.push(`data-bindings={${JSON.stringify(JSON.stringify(block.bindings))}}`)
+  }
+
+  // Interaction (overlay content)
+  if (block.interaction) {
+    attrs.push(`data-interaction={${JSON.stringify(JSON.stringify(block.interaction))}}`)
+  }
+
   const attrStr = attrs.length > 0 ? " " + attrs.join(" ") : ""
 
   // Label comment emitted before the element
@@ -155,10 +185,14 @@ function serializeBlockForEditor(block: Block, indent: number): string {
   }
 
   if (block.textContent) {
+    // Expression text content: wrap in braces for JSX
+    const textOut = isExpression(block.textContent)
+      ? `{${unwrapExpression(block.textContent)}}`
+      : block.textContent
     if (block.textContent.includes("\n") || block.textContent.length > 60) {
-      return `${labelComment}${pad}<${tagName}${attrStr}>\n${pad}  ${block.textContent}\n${pad}</${tagName}>`
+      return `${labelComment}${pad}<${tagName}${attrStr}>\n${pad}  ${textOut}\n${pad}</${tagName}>`
     }
-    return `${labelComment}${pad}<${tagName}${attrStr}>${block.textContent}</${tagName}>`
+    return `${labelComment}${pad}<${tagName}${attrStr}>${textOut}</${tagName}>`
   }
 
   if (isContainerTag(block.tag)) return `${labelComment}${pad}<${tagName}${attrStr}></${tagName}>`
@@ -303,8 +337,17 @@ function tokenizeJSX(source: string): Token[] {
         i++
       }
       const content = source.slice(start, i - 1).trim()
-      const unwrapped = content.replace(/^["'`](.*)["'`]$/, "$1")
-      tokens.push({ type: "expression", content: unwrapped })
+      // If the expression is a simple string literal, unwrap to plain text
+      const stringLiteralMatch = content.match(/^["'`]([\s\S]*)["'`]$/)
+      if (stringLiteralMatch) {
+        tokens.push({ type: "expression", content: stringLiteralMatch[1] })
+      } else if (content.startsWith("/*")) {
+        // JSX comment — preserve as expression for comment handling
+        tokens.push({ type: "expression", content })
+      } else {
+        // Real expression — preserve with brace markers so it round-trips
+        tokens.push({ type: "expression", content: `{${content}}` })
+      }
       continue
     }
 
@@ -479,11 +522,60 @@ function frameToBlockFromEditor(frame: ParseFrame): Block {
     try { responsive = JSON.parse(parsedAttrs["data-responsive"]) } catch { /* ignore */ }
   }
 
+  // Data bindings
+  let parsedBindings: Record<string, string> | undefined
+  if (parsedAttrs["data-bindings"]) {
+    try { parsedBindings = JSON.parse(parsedAttrs["data-bindings"]) } catch { /* ignore */ }
+  }
+
   // Partial reference fields
   const partialId = parsedAttrs["data-partial-id"]
   let partialOverrides: Record<string, Partial<Pick<Block, 'textContent' | 'className' | 'attrs'>>> | undefined
   if (parsedAttrs["data-partial-overrides"]) {
     try { partialOverrides = JSON.parse(parsedAttrs["data-partial-overrides"]) } catch { /* ignore */ }
+  }
+
+  // Interaction (overlay content preserved from import)
+  let interaction: BlockInteraction | undefined
+  // Editor round-trip: data-interaction JSON
+  if (parsedAttrs["data-interaction"]) {
+    try { interaction = JSON.parse(parsedAttrs["data-interaction"]) } catch { /* ignore */ }
+  }
+  // Import path: data-interaction-* individual attrs
+  if (!interaction && parsedAttrs["data-interaction-type"]) {
+    const iType = parsedAttrs["data-interaction-type"] as InteractionType
+    const contentJSX = parsedAttrs["data-interaction-content"]
+      ?.replace(/&amp;/g, "&")
+      .replace(/&quot;/g, '"')
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+    let contentBlocks: Block[] = []
+    if (contentJSX) {
+      // Parse the overlay content JSX into blocks (recursive call)
+      try {
+        const parsed = parseJSX(contentJSX)
+        contentBlocks = parsed
+      } catch { /* ignore parse errors in overlay content */ }
+    }
+    interaction = {
+      type: iType,
+      trigger: (iType === "tooltip" ? "hover" : "click") as "click" | "hover",
+      content: contentBlocks,
+      config: {},
+    }
+    if (parsedAttrs["data-interaction-side"]) {
+      interaction.config!.side = parsedAttrs["data-interaction-side"]
+    }
+    if (parsedAttrs["data-interaction-title"]) {
+      interaction.config!.title = parsedAttrs["data-interaction-title"]
+    }
+    if (parsedAttrs["data-interaction-description"]) {
+      interaction.config!.description = parsedAttrs["data-interaction-description"]
+    }
+    // Clean empty config
+    if (interaction.config && Object.keys(interaction.config).length === 0) {
+      delete interaction.config
+    }
   }
 
   // Handle PartialRef pseudo-tag
@@ -497,7 +589,13 @@ function frameToBlockFromEditor(frame: ParseFrame): Block {
     "data-animation", "data-background", "data-commerce", "data-responsive",
     "data-component", "data-framework",
     "data-partial-id", "data-partial-overrides",
+    "data-bindings",
+    "data-interaction-type", "data-interaction-content", "data-interaction-side",
+    "data-interaction-title", "data-interaction-description", "data-interaction",
     "initial", "animate", "whileInView", "whileHover", "transition", "viewport", "exit",
+    // React-internal props that must never be stored in block attrs
+    "key", "ref", "children", "dangerouslySetInnerHTML",
+    "suppressHydrationWarning", "suppressContentEditableWarning",
   ]
   // Boolean HTML attributes that are valid with empty string value
   const booleanAttrSet = new Set([
@@ -505,6 +603,7 @@ function frameToBlockFromEditor(frame: ParseFrame): Block {
     "disabled", "checked", "readonly", "required", "multiple",
     "hidden", "novalidate", "allowfullscreen",
   ])
+  const bindings: Record<string, string> = {}
   for (const [key, val] of Object.entries(parsedAttrs)) {
     if (specialKeys.includes(key)) continue
     if (val === undefined) continue
@@ -514,14 +613,29 @@ function frameToBlockFromEditor(frame: ParseFrame): Block {
       continue
     }
     if (val === "") continue
+    // Extract expression-valued attrs as bindings
+    // {product.image.url} → binding on attrs.src, placeholder value
+    const exprMatch = val.match(/^\{([a-zA-Z_$][\w$]*(?:\.[a-zA-Z_$][\w$]*)*)\}$/)
+    if (exprMatch) {
+      bindings[`attrs.${key}`] = exprMatch[1]
+      // Use a sensible placeholder for the static value
+      const placeholder = key === "src" ? "/placeholder.svg"
+        : key === "href" ? "#"
+        : key === "alt" ? exprMatch[1].split(".").pop() || ""
+        : exprMatch[1].split(".").pop() || ""
+      if (placeholder) htmlAttrs[key] = placeholder
+      continue
+    }
     htmlAttrs[key] = val
   }
 
+  // Accept any tag — known HTML tags and custom components (e.g., "MyButton")
+  // Store the original component name if it's not a known HTML tag
   let tag: BlockTag = resolvedTag as BlockTag
-  if (!ALL_TAGS_SET.has(resolvedTag) && !isPartialRef) tag = "div"
+  const isCustomTag = !ALL_TAGS_SET.has(resolvedTag) && !isPartialRef
   if (isPartialRef) tag = "div" as BlockTag
 
-  const isContainer = CONTAINER_TAGS.includes(tag)
+  const isContainer = isContainerTag(tag)
 
   const block: Block = { id: blockId, tag, className }
 
@@ -536,10 +650,15 @@ function frameToBlockFromEditor(frame: ParseFrame): Block {
   if (locked) block.locked = true
   if (label) block.label = label
   if (componentName) block.componentName = componentName
+  else if (isCustomTag) block.componentName = resolvedTag
   if (isPartialRef && !componentName) block.componentName = "PartialReference"
   if (frameworkRequirement) block.frameworkRequirement = frameworkRequirement
   if (partialId) block.partialId = partialId
   if (partialOverrides) block.partialOverrides = partialOverrides
+  // Merge bindings: data-bindings attr + expression-extracted bindings from attrs
+  const mergedBindings = { ...parsedBindings, ...bindings }
+  if (Object.keys(mergedBindings).length > 0) block.bindings = mergedBindings
+  if (interaction) block.interaction = interaction
 
   return block
 }
@@ -581,9 +700,16 @@ function parseAttributesEnhanced(attrStr: string): Record<string, string> {
         }
         i++
       }
-      let value = attrStr.slice(start, i - 1).trim()
-      value = value.replace(/^["'`](.*)["'`]$/, "$1")
-      attrs[name] = value
+      const rawValue = attrStr.slice(start, i - 1).trim()
+      // If the expression is a simple string literal, unwrap to plain string
+      // and unescape JSON-style escape sequences (\" → ", \\ → \)
+      const strMatch = rawValue.match(/^["'`]([\s\S]*)["'`]$/)
+      if (strMatch) {
+        attrs[name] = strMatch[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\')
+      } else {
+        // Real expression — preserve with brace markers for round-trip
+        attrs[name] = `{${rawValue}}`
+      }
       continue
     }
 
@@ -628,15 +754,8 @@ export interface ExportOptions {
 // Zod Schema for validation
 // ============================================================
 
-const TagEnum = z.enum([
-  "div","section","header","footer","main","nav","aside","article",
-  "h1","h2","h3","h4","h5","h6",
-  "p","span","a","img","button",
-  "ul","ol","li","hr",
-  "blockquote","figure","figcaption",
-  "form","input","textarea","label",
-  "video","svg",
-])
+// Accept any tag — known HTML tags plus custom components
+const TagEnum = z.string()
 
 const AnimationSchema = z.object({
   type: z.enum(["fadeIn","slideUp","slideDown","slideLeft","slideRight","scale","custom"]).optional(),
@@ -1044,7 +1163,9 @@ function blockToJSX(block: Block, indent: number, framework: ExportFramework = "
   }
 
   // Determine the tag name (motion.div, motion.section, etc.)
-  const useMotion = anim?.type && anim.type !== "custom"
+  // Interactive presets don't use motion.* tags — they use wrapper components
+  const isInteractive = anim?.type && isInteractiveAnimation(anim.type)
+  const useMotion = anim?.type && anim.type !== "custom" && !isInteractive
   let Tag = useMotion ? `motion.${block.tag}` : block.tag
 
   // Next.js specific: use Image and Link components
@@ -1075,7 +1196,12 @@ function blockToJSX(block: Block, indent: number, framework: ExportFramework = "
   }
 
   // Animation attributes
-  if (anim?.type && anim.type !== "custom") {
+  if (isInteractive && anim?.type) {
+    // Interactive presets: export as data-animation JSON (same as editor serialization)
+    const animData: Record<string, unknown> = { type: anim.type }
+    if (anim.interactiveConfig) animData.interactiveConfig = anim.interactiveConfig
+    attrParts.push(`data-animation={${JSON.stringify(JSON.stringify(animData))}}`)
+  } else if (anim?.type && anim.type !== "custom") {
     const preset = ANIMATION_PRESETS[anim.type]
     if (preset) {
       if (anim.trigger === "inView") {
@@ -1100,6 +1226,14 @@ function blockToJSX(block: Block, indent: number, framework: ExportFramework = "
     if (c.whileInView) attrParts.push(`whileInView={${JSON.stringify(c.whileInView)}}`)
     if (c.whileHover) attrParts.push(`whileHover={${JSON.stringify(c.whileHover)}}`)
     if (c.transition) attrParts.push(`transition={${JSON.stringify(c.transition)}}`)
+  }
+
+  // Commerce binding as data-commerce JSON (for re-import)
+  if (block.commerce) {
+    attrParts.push(`data-commerce={${JSON.stringify(JSON.stringify(block.commerce))}}`)
+  }
+  if (block.componentName) {
+    attrParts.push(`data-component="${block.componentName}"`)
   }
 
   const attrStr = attrParts.length > 0 ? " " + attrParts.join(" ") : ""
@@ -1194,7 +1328,207 @@ function blockToHydrogenComponent(block: Block, indent: number): string {
 // HTML/JSX Import (stack-based parser)
 // ============================================================
 
+/**
+ * Import external JSX/TSX code into Block[].
+ *
+ * Uses the AST parser (Babel) for robust handling of:
+ * - JSX expressions ({condition && <div>}, ternaries, .map())
+ * - TypeScript types/interfaces
+ * - Arrow function / concise arrow / export default components
+ * - Template literal classNames
+ * - Inline style objects
+ *
+ * Falls back to the regex parser if AST parsing fails entirely.
+ */
 export function importFromReact(code: string): { blocks: Block[]; errors: string[] } {
+  // Primary path: AST parser
+  let result: { blocks: Block[]; errors: string[] } | null = null
+  try {
+    const astResult = importFromReactAST(code)
+    if (astResult.blocks.length > 0) result = astResult
+  } catch {
+    // AST parser failed — fall through to regex
+  }
+
+  // Fallback: regex-based parser (handles malformed/partial JSX)
+  if (!result) result = importFromReactRegex(code)
+
+  // Post-process: clean up any remaining raw JSX expressions in textContent
+  cleanupRawExpressions(result.blocks)
+
+  return result
+}
+
+/**
+ * Post-process blocks to replace raw JSX expressions like {section.title},
+ * {link.label}, {category.shortLabel.split(...)} etc. with readable placeholders.
+ *
+ * This catches expressions that survive the AST/regex parser — typically from
+ * deeply nested inlined components or complex patterns the parser couldn't fully resolve.
+ */
+function cleanupRawExpressions(blocks: Block[]): void {
+  // Lazy-import to avoid circular deps at module level
+  const { expressionToPlaceholder } = require("./ast-parser")
+
+  for (const block of blocks) {
+    if (block.textContent) {
+      // 1. Strip JSX comments: {/* ... */}
+      block.textContent = block.textContent.replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
+
+      // 2. Strip code fragments that aren't renderable
+      block.textContent = block.textContent
+        // Function declarations: ") } function Foo(...) {"
+        .replace(/\)\s*\}\s*function\s+\w+[\s\S]*$/g, "")
+        // Arrow function callbacks: "(item) => (", "(section) => {"
+        .replace(/\(\w+\)\s*=>\s*[({]/g, "")
+        // Logical expressions: "{isHovered && ("
+        .replace(/\{[\w$.]+\s*&&\s*\(?/g, "")
+        // Map/filter/etc fragments: "{items.map((item) =>"
+        .replace(/\{[\w$.]+\.(?:map|filter|forEach|reduce|find|some|every)\s*\(/g, "")
+        // Array map: "{[0,1,2].map(..." or "{[0, 1, 2, 3, 4, 5].map("
+        .replace(/\{\[[\d\s,]*\]\.map\s*\([^)]*$/g, "")
+        .replace(/\{\[[\d\s,]*\]\.map\([^)]*\)\s*=>\s*\(?/g, "")
+        // Object.keys/entries/values: "{Object.keys(nav.megaMenu..."
+        .replace(/\{Object\.(?:keys|values|entries)\([^)]*\)[\s\S]*$/g, "")
+        // JSX tags as text: "<a href={link.href}...", "<SomeComponent ...>"
+        .replace(/<a\s+href=\{[^}]+\}[^>]*>/g, "")
+        .replace(/<[A-Z]\w+(?:\s[^>]*)?\/?>/g, "")
+        // Bare "const" / "let" / "var" declarations that leaked through
+        .replace(/\bconst\s+\w+\s*=[\s\S]*$/g, "")
+        // JSX tags with expressions in attributes: "<a key={link.href..."
+        .replace(/<\w+\s+\w+=\{[^}]*\}[^>]*>/g, "")
+        // Ternary/comparison expressions: "{x === y ? ("  or  "{x ? (" or "{x ? value : other}"
+        .replace(/\{[\w$.]+\s*[?!=<>]+[\s\S]*?\s*\?\s*\(?/g, "")
+        .replace(/\{[\w$.]+\s*[?!=<>]+[^}]*\}/g, "")
+        // Standalone "> {" prefix from JSX like: "> {lines.length > 0 && ("
+        .replace(/^>\s*\{[\w$.]+[^}]*$/g, "")
+        .replace(/^>\s+/g, "")
+        // Remaining multi-line code blocks that start with "{"
+        .replace(/\{[\w$.]+\s*\?\s*\([^)]*\)\s*:\s*\(/g, "")
+        // Arrow function callbacks as text: "(item) => (", "(link, index) => ("
+        .replace(/^\s*\(\w+(?:\s*,\s*\w+)*\)\s*=>\s*[\w({[]/g, "")
+        .replace(/\(\w+\)\s*=>\s*\w+\.\w+/g, "")
+        // HTML tags as text: "<a href="/products">", extract just the visible text
+        .replace(/<a\s+href="[^"]*"[^>]*>\s*/g, "")
+        .replace(/<\/a>/g, "")
+        // Standalone "> )" or "> ) " prefix, also just ">"
+        .replace(/^>\s*\)\s*/g, "")
+        .replace(/^>\s*$/g, "")
+
+      // 3. Extract JSX expressions as data bindings + readable placeholders.
+      // Simple property access: {section.title} → binding "section.title", placeholder "Title"
+      block.textContent = block.textContent.replace(
+        /\{([a-zA-Z_$][\w$]*(?:\.[a-zA-Z_$][\w$]*)*)\}/g,
+        (_match, expr: string) => {
+          // Store as a binding so the SDK can wire it to real data
+          if (!block.bindings) block.bindings = {}
+          block.bindings["textContent"] = expr
+          return expressionToPlaceholder(expr)
+        }
+      )
+
+      // Complex method-call expressions: {items.map(...)} → ""
+      block.textContent = block.textContent.replace(
+        /\{[a-zA-Z_$][\w$.]*(?:\.[a-zA-Z_$][\w$]*)*(?:\([^)]*\))+[^}]*\}/g,
+        (_match) => {
+          const nameMatch = _match.match(/\.(\w+)\(/)
+          if (nameMatch) return expressionToPlaceholder(nameMatch[1])
+          return ""
+        }
+      )
+
+      // 5. Catch-all: remove any remaining {expression} that contains code operators
+      //    (===, !==, &&, ||, =>, ?, :, etc.)
+      block.textContent = block.textContent.replace(
+        /\{[^}]*(?:===|!==|&&|\|\||=>|\?\s*\(|:\s*\()[^}]*\}?/g, ""
+      )
+      // Handle {new Date()...} → static year
+      block.textContent = block.textContent.replace(
+        /\{new\s+Date\(\)\.getFullYear\(\)\}/g, String(new Date().getFullYear())
+      )
+
+      // 6. Remove leftover code artifacts
+      block.textContent = block.textContent
+        .replace(/\)\s*\)\s*\}/g, "")           // "))}"
+        .replace(/\)\s*\}/g, "")                 // ")}"
+        .replace(/^\s*[)}\]]{1,5}\s*$/g, "")    // Lines that are just closing brackets
+        .replace(/>\s*$/g, "")                   // Trailing ">" from stripped tags
+        .replace(/^\s*\}\s+/g, "")              // Leading "} " from stripped code
+        .replace(/^\s*\)\s*$/g, "")             // Standalone ")"
+        .replace(/^>\s*\)\s*/g, "")             // Leading "> )" from stripped JSX
+        .replace(/^>\s*$/g, "")                  // Standalone ">"
+        // Array literal artifacts: "{[0, 1, 2, 3, 4, 5].map("
+        .replace(/\{\[[\d\s,]*\]\.\w+\([^)]*$/g, "")
+        // Code fragment leaks: "ink.hasMegaMenu && link.key ? ( ) : ("
+        .replace(/\w+\.\w+\s*&&\s*\w+[\s\S]*?\?\s*\([^)]*\)\s*:\s*\(/g, "")
+        // Partial code: "itemCount > 0 && ("
+        .replace(/\w+\s*[><=!]+\s*\d+\s*&&\s*\(/g, "")
+        // Standalone "> )" or leading code fragments
+        .replace(/^[>)\s]+$/g, "")
+        .replace(/\s+/g, " ")                    // Normalize whitespace
+        .trim()
+
+      // If textContent became empty after cleanup, remove it
+      if (!block.textContent) {
+        delete block.textContent
+      }
+    }
+
+    // Clean up React-internal attrs that leaked through
+    if (block.attrs) {
+      delete block.attrs["key"]
+      delete block.attrs["ref"]
+      delete block.attrs["children"]
+      delete block.attrs["dangerouslySetInnerHTML"]
+      delete block.attrs["suppressHydrationWarning"]
+      delete block.attrs["suppressContentEditableWarning"]
+
+      // Extract expression-valued attrs as bindings + replace with placeholders
+      for (const [k, v] of Object.entries(block.attrs)) {
+        if (typeof v !== "string") continue
+        // Template literal expressions: ${...}
+        if (/^\$\{.*\}$/.test(v)) { delete block.attrs[k]; continue }
+        // JSX expression attrs: {product.image.url} → binding
+        const exprMatch = v.match(/^\{([a-zA-Z_$][\w$]*(?:\.[a-zA-Z_$][\w$]*)*)\}$/)
+        if (exprMatch) {
+          if (!block.bindings) block.bindings = {}
+          block.bindings[`attrs.${k}`] = exprMatch[1]
+          // Replace with sensible placeholder
+          if (k === "src") block.attrs[k] = "/placeholder.svg"
+          else if (k === "href") block.attrs[k] = "#"
+          else if (k === "alt") block.attrs[k] = exprMatch[1].split(".").pop() || ""
+          else { delete block.attrs[k] }  // Remove other expression attrs
+          continue
+        }
+        // Complex expression attrs (method calls, ternaries, etc.) — remove
+        if (v.startsWith("{") && v.endsWith("}") && v.length > 2) {
+          delete block.attrs[k]
+          continue
+        }
+      }
+      if (Object.keys(block.attrs).length === 0) delete block.attrs
+    }
+
+    // Remove empty className
+    if (block.className === "") block.className = ""  // keep as-is for now, but could delete
+
+    // Remove empty children arrays (they're noise and cause isContainer bugs)
+    if (block.children && block.children.length === 0) {
+      delete block.children
+    }
+
+    // Recurse into children
+    if (block.children) {
+      cleanupRawExpressions(block.children)
+    }
+  }
+}
+
+/**
+ * Legacy regex-based JSX parser. Used as fallback when AST parser fails,
+ * and internally for editor round-trip (parseJSXToBlocks uses parseJSX directly).
+ */
+function importFromReactRegex(code: string): { blocks: Block[]; errors: string[] } {
   const errors: string[] = []
   try {
     let cleaned = code
@@ -1374,7 +1708,42 @@ function frameToBlock(frame: StackFrame): Block | null {
     delete parsedAttrs[key]
   }
 
-  const isContainer = CONTAINER_TAGS.includes(tag as BlockTag)
+  // Extract interaction data from data-interaction-* attrs (import path)
+  let interaction: BlockInteraction | undefined
+  if (parsedAttrs["data-interaction-type"]) {
+    const iType = parsedAttrs["data-interaction-type"] as InteractionType
+    const contentJSX = parsedAttrs["data-interaction-content"]
+      ?.replace(/&amp;/g, "&")
+      .replace(/&quot;/g, '"')
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+    let contentBlocks: Block[] = []
+    if (contentJSX) {
+      try {
+        contentBlocks = parseJSX(contentJSX)
+      } catch { /* ignore parse errors in overlay content */ }
+    }
+    interaction = {
+      type: iType,
+      trigger: (iType === "tooltip" ? "hover" : "click") as "click" | "hover",
+      content: contentBlocks,
+    }
+    const config: BlockInteraction["config"] = {}
+    if (parsedAttrs["data-interaction-side"]) config.side = parsedAttrs["data-interaction-side"]
+    if (parsedAttrs["data-interaction-title"]) config.title = parsedAttrs["data-interaction-title"]
+    if (parsedAttrs["data-interaction-description"]) config.description = parsedAttrs["data-interaction-description"]
+    if (Object.keys(config).length > 0) interaction.config = config
+  }
+  // Remove interaction attrs so they don't leak into block.attrs
+  for (const key of ["data-interaction-type", "data-interaction-content", "data-interaction-side", "data-interaction-title", "data-interaction-description", "data-interaction"]) {
+    delete parsedAttrs[key]
+  }
+  // Also remove React-internal attrs
+  for (const key of ["key", "ref", "children", "dangerouslySetInnerHTML", "suppressHydrationWarning", "suppressContentEditableWarning"]) {
+    delete parsedAttrs[key]
+  }
+
+  const isContainer = isContainerTag(tag as BlockTag)
 
   const block: Block = {
     id: generateId(),
@@ -1391,6 +1760,9 @@ function frameToBlock(frame: StackFrame): Block | null {
   }
   if (animation) {
     block.animation = animation
+  }
+  if (interaction) {
+    block.interaction = interaction
   }
   return block
 }

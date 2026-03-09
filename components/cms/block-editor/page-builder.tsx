@@ -63,6 +63,7 @@ import {
 import { useState, useCallback, useEffect, useRef } from "react"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { BlockRenderer } from "./block-renderer"
+import { InteractionPreview } from "./interaction-preview"
 import { ScreenshotDialog } from "./screenshot-dialog"
 import { DesignBrowserDialog } from "./design-browser-dialog"
 import type { Block } from "@/lib/cms/block-editor/types"
@@ -71,19 +72,27 @@ import { toast } from "sonner"
 import { captureScreenshot, compareScreenshots, type DiffResult } from "@/lib/cms/block-editor/screenshot"
 
 function PreviewRenderer({ blocks }: { blocks: Block[] }) {
-  const renderChildren = (children: Block[]) => {
-    return children.map((child) => (
-      <BlockRenderer key={child.id} block={child} renderChildren={renderChildren} isPreview />
-    ))
+  const renderBlock = (block: Block): React.ReactNode => {
+    const rendered = (
+      <BlockRenderer key={block.id} block={block} renderChildren={renderChildren} isPreview />
+    )
+    // Wrap with InteractionPreview if block has overlay content
+    if (block.interaction) {
+      return (
+        <InteractionPreview
+          key={`interaction-${block.id}`}
+          interaction={block.interaction}
+          trigger={rendered}
+          renderBlocks={(overlayBlocks) => overlayBlocks.map(renderBlock)}
+        />
+      )
+    }
+    return rendered
   }
 
-  return (
-    <>
-      {blocks.map((block) => (
-        <BlockRenderer key={block.id} block={block} renderChildren={renderChildren} isPreview />
-      ))}
-    </>
-  )
+  const renderChildren = (children: Block[]) => children.map(renderBlock)
+
+  return <>{blocks.map(renderBlock)}</>
 }
 
 function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hidePageMeta?: boolean }) {

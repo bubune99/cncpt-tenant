@@ -34,6 +34,9 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/cms/utils"
 
+// TipTap extensions add commands dynamically — TypeScript can't infer them from the base ChainedCommands type
+const chain = (editor: Editor) => editor.chain().focus() as any
+
 interface RichTextEditorProps {
   content: string
   onChange: (html: string) => void
@@ -159,35 +162,35 @@ function Toolbar({ editor }: { editor: Editor | null }) {
       {/* Text formatting */}
       <ToolbarButton
         active={editor.isActive("bold")}
-        onClick={() => editor.chain().focus().toggleBold().run()}
+        onClick={() => chain(editor).toggleBold().run()}
         title="Bold (Ctrl+B)"
       >
         <Bold size={14} />
       </ToolbarButton>
       <ToolbarButton
         active={editor.isActive("italic")}
-        onClick={() => editor.chain().focus().toggleItalic().run()}
+        onClick={() => chain(editor).toggleItalic().run()}
         title="Italic (Ctrl+I)"
       >
         <Italic size={14} />
       </ToolbarButton>
       <ToolbarButton
         active={editor.isActive("underline")}
-        onClick={() => editor.chain().focus().toggleUnderline().run()}
+        onClick={() => chain(editor).toggleUnderline().run()}
         title="Underline (Ctrl+U)"
       >
         <UnderlineIcon size={14} />
       </ToolbarButton>
       <ToolbarButton
         active={editor.isActive("strike")}
-        onClick={() => editor.chain().focus().toggleStrike().run()}
+        onClick={() => chain(editor).toggleStrike().run()}
         title="Strikethrough"
       >
         <Strikethrough size={14} />
       </ToolbarButton>
       <ToolbarButton
         active={editor.isActive("code")}
-        onClick={() => editor.chain().focus().toggleCode().run()}
+        onClick={() => chain(editor).toggleCode().run()}
         title="Code"
       >
         <Code size={14} />
@@ -203,21 +206,21 @@ function Toolbar({ editor }: { editor: Editor | null }) {
       {/* Text alignment */}
       <ToolbarButton
         active={editor.isActive({ textAlign: "left" })}
-        onClick={() => editor.chain().focus().setTextAlign("left").run()}
+        onClick={() => chain(editor).setTextAlign("left").run()}
         title="Align left"
       >
         <AlignLeft size={14} />
       </ToolbarButton>
       <ToolbarButton
         active={editor.isActive({ textAlign: "center" })}
-        onClick={() => editor.chain().focus().setTextAlign("center").run()}
+        onClick={() => chain(editor).setTextAlign("center").run()}
         title="Align center"
       >
         <AlignCenter size={14} />
       </ToolbarButton>
       <ToolbarButton
         active={editor.isActive({ textAlign: "right" })}
-        onClick={() => editor.chain().focus().setTextAlign("right").run()}
+        onClick={() => chain(editor).setTextAlign("right").run()}
         title="Align right"
       >
         <AlignRight size={14} />
@@ -228,21 +231,21 @@ function Toolbar({ editor }: { editor: Editor | null }) {
       {/* Lists */}
       <ToolbarButton
         active={editor.isActive("bulletList")}
-        onClick={() => editor.chain().focus().toggleBulletList().run()}
+        onClick={() => chain(editor).toggleBulletList().run()}
         title="Bullet list"
       >
         <List size={14} />
       </ToolbarButton>
       <ToolbarButton
         active={editor.isActive("orderedList")}
-        onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        onClick={() => chain(editor).toggleOrderedList().run()}
         title="Numbered list"
       >
         <ListOrdered size={14} />
       </ToolbarButton>
       <ToolbarButton
         active={editor.isActive("blockquote")}
-        onClick={() => editor.chain().focus().toggleBlockquote().run()}
+        onClick={() => chain(editor).toggleBlockquote().run()}
         title="Blockquote"
       >
         <Quote size={14} />
@@ -252,15 +255,15 @@ function Toolbar({ editor }: { editor: Editor | null }) {
 
       {/* Undo/Redo */}
       <ToolbarButton
-        onClick={() => (editor.chain().focus() as unknown as { undo: () => { run: () => void } }).undo().run()}
-        disabled={!(editor.can() as unknown as { undo: () => boolean }).undo()}
+        onClick={() => chain(editor).undo().run()}
+        disabled={!(editor.can() as any).undo()}
         title="Undo (Ctrl+Z)"
       >
         <Undo size={14} />
       </ToolbarButton>
       <ToolbarButton
-        onClick={() => (editor.chain().focus() as unknown as { redo: () => { run: () => void } }).redo().run()}
-        disabled={!(editor.can() as unknown as { redo: () => boolean }).redo()}
+        onClick={() => chain(editor).redo().run()}
+        disabled={!(editor.can() as any).redo()}
         title="Redo (Ctrl+Y)"
       >
         <Redo size={14} />
@@ -405,19 +408,19 @@ export function InlineRichTextEditor({
       <div className="absolute -top-8 left-0 z-30 flex items-center gap-0.5 p-1 rounded-md shadow-lg bg-card border border-border">
         <ToolbarButton
           active={editor.isActive("bold")}
-          onClick={() => editor.chain().focus().toggleBold().run()}
+          onClick={() => chain(editor).toggleBold().run()}
         >
           <Bold size={12} />
         </ToolbarButton>
         <ToolbarButton
           active={editor.isActive("italic")}
-          onClick={() => editor.chain().focus().toggleItalic().run()}
+          onClick={() => chain(editor).toggleItalic().run()}
         >
           <Italic size={12} />
         </ToolbarButton>
         <ToolbarButton
           active={editor.isActive("underline")}
-          onClick={() => editor.chain().focus().toggleUnderline().run()}
+          onClick={() => chain(editor).toggleUnderline().run()}
         >
           <UnderlineIcon size={12} />
         </ToolbarButton>

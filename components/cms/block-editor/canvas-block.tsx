@@ -2,25 +2,47 @@
 
 import { useCallback, useRef, useState } from "react"
 import type { Block } from "@/lib/cms/block-editor/types"
-import { isContainerTag } from "@/lib/cms/block-editor/types"
+import { isContainerTag, isInteractiveAnimation } from "@/lib/cms/block-editor/types"
 import { useEditor } from "@/lib/cms/block-editor/editor-context"
 import { BlockRenderer } from "./block-renderer"
+import { generateId } from "@/lib/cms/block-editor/tree-utils"
 import { BlockContextMenu } from "./block-context-menu"
 import { SpotlightRing, useBlockSpotlight } from "./block-spotlight"
 import { getSmartBlock } from "@/lib/cms/block-editor/smart-blocks/registry"
+import { usePartial } from "@/lib/cms/api/domains/partials/hooks"
 import {
   GripVertical,
   Copy,
   Trash2,
   ChevronRight,
   Play,
+  Plus,
   Move,
   Component,
+  Layers,
   Monitor,
   Tablet,
   Smartphone,
+  Sparkles,
+  MousePointerClick,
 } from "lucide-react"
 import { cn } from "@/lib/cms/utils"
+import { toast } from "sonner"
+
+const MAX_NESTING_DEPTH = 15
+
+/**
+ * Neutralize classes that break out of the canvas container.
+ * `fixed` positioning escapes the editor layout, so convert to `absolute`.
+ * Also cap z-index to prevent blocks from covering editor UI.
+ */
+function sanitizeClassForCanvas(className: string | undefined): string {
+  if (!className) return ""
+  return className
+    .replace(/\bfixed\b/g, "absolute")
+    .replace(/\bz-\[?\d{3,}\]?/g, "z-10") // cap huge z-indexes
+    .replace(/\bz-50\b/g, "z-10")
+}
 
 // Tags that support inline text editing
 const EDITABLE_TAGS = ["h1", "h2", "h3", "h4", "h5", "h6", "p", "span", "a", "button", "label", "figcaption"]
@@ -40,18 +62,18 @@ interface CanvasBlockProps {
 function isHorizontalLayout(className: string): boolean {
   if (!className) return false
   const classes = className.split(/\s+/)
-  
+
   // Check for flex without flex-col (default flex is row)
   const hasFlex = classes.some(c => c === "flex" || c === "inline-flex")
   const hasFlexCol = classes.some(c => c === "flex-col" || c === "flex-column")
   const hasFlexRow = classes.some(c => c === "flex-row")
-  
+
   if (hasFlex && (hasFlexRow || !hasFlexCol)) return true
-  
+
   // Check for grid with multiple columns
   const hasGridCols = classes.some(c => /^grid-cols-[2-9]|^grid-cols-1[0-2]/.test(c))
   if (hasGridCols) return true
-  
+
   return false
 }
 
@@ -64,6 +86,7 @@ export function CanvasBlock({ block, index, parentId, depth = 0, parentIsHorizon
     duplicateBlock,
     moveBlock,
     addBlockFromTemplate,
+    addBlockRaw,
     setDragState,
     updateBlock,
   } = useEditor()
@@ -224,30 +247,51 @@ export function CanvasBlock({ block, index, parentId, depth = 0, parentIsHorizon
 
       const draggedBlockId = e.dataTransfer.getData("application/block-id")
       const paletteLabel = e.dataTransfer.getData("application/palette-label")
+      const partialIdDrop = e.dataTransfer.getData("application/partial-id")
 
       if (draggedBlockId === block.id) return
 
+      const insertPartialRef = (targetParent: string | null, targetIndex?: number) => {
+        addBlockRaw({
+          id: generateId(),
+          tag: "div",
+          className: "",
+          componentName: "PartialReference",
+          partialId: partialIdDrop,
+        }, targetParent, targetIndex)
+      }
+
       if (dropPosition === "inside" && isContainer) {
+        if (depth >= MAX_NESTING_DEPTH) {
+          toast.warning("Maximum nesting depth reached (15 levels)")
+          return
+        }
         if (draggedBlockId) {
           moveBlock(draggedBlockId, block.id, block.children?.length || 0)
+        } else if (partialIdDrop) {
+          insertPartialRef(block.id, block.children?.length || 0)
         } else if (paletteLabel) {
           addBlockFromTemplate(paletteLabel, block.id)
         }
       } else if (dropPosition === "before") {
         if (draggedBlockId) {
           moveBlock(draggedBlockId, parentId, index)
+        } else if (partialIdDrop) {
+          insertPartialRef(parentId, index)
         } else if (paletteLabel) {
           addBlockFromTemplate(paletteLabel, parentId, index)
         }
       } else if (dropPosition === "after") {
         if (draggedBlockId) {
           moveBlock(draggedBlockId, parentId, index + 1)
+        } else if (partialIdDrop) {
+          insertPartialRef(parentId, index + 1)
         } else if (paletteLabel) {
           addBlockFromTemplate(paletteLabel, parentId, index + 1)
         }
       }
     },
-    [block.id, block.children, dropPosition, isContainer, parentId, index, moveBlock, addBlockFromTemplate]
+    [block.id, block.children, dropPosition, isContainer, parentId, index, moveBlock, addBlockFromTemplate, addBlockRaw]
   )
 
   // ---- CHILDREN RENDERING (recursive) ----
@@ -275,19 +319,17 @@ export function CanvasBlock({ block, index, parentId, depth = 0, parentIsHorizon
   return (
     <BlockContextMenu block={block} parentId={parentId} index={index}>
       <div className={cn("relative", parentIsHorizontal && "inline-block")} data-block-id={block.id}>
-        {/* Drop indicator BEFORE - enhanced styling */}
+        {/* Drop indicator BEFORE */}
         {dropPosition === "before" && (
           <div className={cn(
-            "absolute z-20 bg-primary transition-all",
-            parentIsHorizontal 
-              ? "w-[3px] h-full left-0 top-0 bottom-0 rounded-full" 
-              : "h-[3px] w-full left-0 -top-1 rounded-full"
+            "absolute z-20 flex items-center justify-center transition-all",
+            parentIsHorizontal
+              ? "w-6 h-6 -left-3 top-1/2 -translate-y-1/2"
+              : "w-6 h-6 left-1/2 -translate-x-1/2 -top-3"
           )}>
-            {/* Indicator dot */}
-            <div className={cn(
-              "absolute w-2 h-2 rounded-full bg-primary border-2 border-background",
-              parentIsHorizontal ? "-left-[2.5px] top-0" : "left-0 -top-[2.5px]"
-            )} />
+            <div className="w-5 h-5 rounded-full bg-primary/20 backdrop-blur-sm border border-primary/40 flex items-center justify-center">
+              <Plus size={10} className="text-primary/70" />
+            </div>
           </div>
         )}
 
@@ -332,7 +374,7 @@ export function CanvasBlock({ block, index, parentId, depth = 0, parentIsHorizon
 
           {/* Floating toolbar */}
           {(isSelected || isHovered) && !isEditing && (
-            <div 
+            <div
               className="absolute -top-8 left-1 z-20 flex items-center gap-0.5 rounded-md px-1 py-0.5 shadow-lg bg-card border border-border cursor-grab active:cursor-grabbing"
               onMouseDown={(e) => {
                 // Allow toolbar to initiate drag on the parent block
@@ -352,9 +394,22 @@ export function CanvasBlock({ block, index, parentId, depth = 0, parentIsHorizon
               </span>
 
               {block.animation?.type && (
-                <span className="flex items-center gap-0.5 text-[9px] font-medium px-1.5 py-0.5 rounded bg-primary/15 text-primary" title={`Animation: ${block.animation.type}`}>
-                  <Play size={8} />
+                <span className={cn(
+                  "flex items-center gap-0.5 text-[9px] font-medium px-1.5 py-0.5 rounded",
+                  isInteractiveAnimation(block.animation.type)
+                    ? "bg-violet-500/15 text-violet-400"
+                    : "bg-primary/15 text-primary"
+                )} title={`Animation: ${block.animation.type}`}>
+                  {isInteractiveAnimation(block.animation.type) ? <Sparkles size={8} /> : <Play size={8} />}
                   {block.animation.type}
+                </span>
+              )}
+
+              {block.interaction && (
+                <span className="flex items-center gap-0.5 text-[9px] font-medium px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-400"
+                  title={`Interaction: ${block.interaction.type} (${block.interaction.content?.length || 0} blocks)`}>
+                  <MousePointerClick size={8} />
+                  {block.interaction.type}
                 </span>
               )}
 
@@ -413,33 +468,33 @@ export function CanvasBlock({ block, index, parentId, depth = 0, parentIsHorizon
               ref={editableRef}
               contentEditable
               suppressContentEditableWarning
-              className={`${block.className || ""} outline-none ring-2 ring-primary/50 bg-primary/5`}
+              className={`${sanitizeClassForCanvas(block.className)} outline-none ring-2 ring-primary/50 bg-primary/5`}
               onInput={(e) => setEditText(e.currentTarget.textContent || "")}
               onBlur={saveEdit}
               onKeyDown={handleEditKeyDown}
             >
               {editText}
             </div>
+          ) : block.componentName === "PartialReference" && block.partialId ? (
+            <PartialInlineRenderer block={block} />
           ) : block.componentName && getSmartBlock(block.componentName) ? (
             <SmartBlockPlaceholder block={block} />
           ) : (
-            <BlockRenderer block={block} renderChildren={renderChildren} />
+            <BlockRenderer block={{ ...block, className: sanitizeClassForCanvas(block.className) }} renderChildren={renderChildren} />
           )}
         </div>
 
-        {/* Drop indicator AFTER - enhanced styling */}
+        {/* Drop indicator AFTER */}
         {dropPosition === "after" && (
           <div className={cn(
-            "absolute z-20 bg-primary transition-all",
-            parentIsHorizontal 
-              ? "w-[3px] h-full right-0 top-0 bottom-0 rounded-full" 
-              : "h-[3px] w-full left-0 -bottom-1 rounded-full"
+            "absolute z-20 flex items-center justify-center transition-all",
+            parentIsHorizontal
+              ? "w-6 h-6 -right-3 top-1/2 -translate-y-1/2"
+              : "w-6 h-6 left-1/2 -translate-x-1/2 -bottom-3"
           )}>
-            {/* Indicator dot */}
-            <div className={cn(
-              "absolute w-2 h-2 rounded-full bg-primary border-2 border-background",
-              parentIsHorizontal ? "-right-[2.5px] top-0" : "left-0 -bottom-[2.5px]"
-            )} />
+            <div className="w-5 h-5 rounded-full bg-primary/20 backdrop-blur-sm border border-primary/40 flex items-center justify-center">
+              <Plus size={10} className="text-primary/70" />
+            </div>
           </div>
         )}
       </div>
@@ -475,9 +530,80 @@ function SmartBlockPlaceholder({ block }: { block: Block }) {
   )
 }
 
+/* ---- Partial Inline Renderer ---- */
+function PartialInlineRenderer({ block }: { block: Block }) {
+  const { data: partial, isLoading } = usePartial(block.partialId ?? null)
+
+  const partialBlocks = extractPartialBlocks(partial?.content)
+  const name = partial?.name ?? (isLoading ? "Loading..." : "Unknown Partial")
+
+  // While loading or if no blocks, show a compact placeholder
+  if (isLoading || !partialBlocks.length) {
+    return (
+      <div className={cn(
+        "flex items-center gap-2 rounded-md border border-dashed px-4 py-3",
+        "bg-cyan-500/5 border-cyan-500/20 text-cyan-300"
+      )}>
+        <Layers size={14} className="text-cyan-400" />
+        <span className="text-xs text-cyan-200">{isLoading ? "Loading partial..." : name}</span>
+      </div>
+    )
+  }
+
+  // Render the partial's blocks inline with a subtle border + label
+  return (
+    <div className="relative">
+      {/* Partial label badge */}
+      <div className="absolute -top-2.5 left-3 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20">
+        <Layers size={10} className="text-cyan-400" />
+        <span className="text-[9px] font-medium text-cyan-400">{name}</span>
+        <a
+          href={`/admin/partials/${block.partialId}/editor`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[9px] text-cyan-500 hover:text-cyan-300 ml-1"
+          onClick={(e) => e.stopPropagation()}
+        >
+          edit
+        </a>
+      </div>
+      {/* Render partial blocks using BlockRenderer (read-only preview) */}
+      <div className="border border-cyan-500/10 rounded-md overflow-hidden">
+        {partialBlocks.map((b) => (
+          <PartialBlockPreview key={b.id} block={b} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** Recursively renders blocks from a partial as a read-only preview */
+function PartialBlockPreview({ block }: { block: Block }) {
+  const renderChildren = useCallback(
+    (children: Block[]) => children.map((child) => <PartialBlockPreview key={child.id} block={child} />),
+    []
+  )
+  return (
+    <BlockRenderer
+      block={{ ...block, className: sanitizeClassForCanvas(block.className) }}
+      renderChildren={renderChildren}
+      isPreview
+    />
+  )
+}
+
+function extractPartialBlocks(content: unknown): Block[] {
+  if (!content || typeof content !== "object") return []
+  const doc = content as Record<string, unknown>
+  const blocks = (doc.version === "2.0" && Array.isArray(doc.blocks))
+    ? doc.blocks
+    : Array.isArray(content) ? content : []
+  return blocks as Block[]
+}
+
 /* ---- Empty canvas drop zone ---- */
 export function EmptyCanvasDropZone() {
-  const { addBlockFromTemplate } = useEditor()
+  const { addBlockFromTemplate, addBlockRaw } = useEditor()
   const [isOver, setIsOver] = useState(false)
 
   return (
@@ -494,6 +620,17 @@ export function EmptyCanvasDropZone() {
       onDrop={(e) => {
         e.preventDefault()
         setIsOver(false)
+        const partialIdDrop = e.dataTransfer.getData("application/partial-id")
+        if (partialIdDrop) {
+          addBlockRaw({
+            id: generateId(),
+            tag: "div",
+            className: "",
+            componentName: "PartialReference",
+            partialId: partialIdDrop,
+          }, null)
+          return
+        }
         const paletteLabel = e.dataTransfer.getData("application/palette-label")
         if (paletteLabel) {
           addBlockFromTemplate(paletteLabel, null)

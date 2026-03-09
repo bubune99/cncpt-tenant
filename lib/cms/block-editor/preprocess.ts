@@ -1,17 +1,19 @@
 /**
  * V0/React Import Preprocessing Pipeline
  *
- * Transforms v0.dev/React code into parser-friendly JSX BEFORE importFromReact() runs.
+ * Transforms v0.dev/React code into parser-friendly JSX BEFORE the AST parser runs.
  * This is purely string-based — it transforms JSX source code, not Block objects.
  *
  * Pipeline:
- *   1. Strip React boilerplate (imports, hooks, types, function wrappers)
- *   2. Resolve dynamic className builders (cn, clsx, twMerge)
- *   3. Map shadcn/ui components to HTML + Tailwind
- *   4. Convert Next.js components (Image → img, Link → a)
- *   5. Strip event handlers, preserve as data attrs
- *   6. Flatten JSX expressions in attributes
- *   7. Handle conditional rendering
+ *   1. Resolve dynamic className builders (cn, clsx, twMerge)
+ *   1b. Strip overlay/popout content (Sheet, Dialog, etc.)
+ *   1c. Normalize Lucide icons → <span data-icon="..." />
+ *   2. Map shadcn/ui components to HTML + Tailwind
+ *   3. Convert Next.js components (Image → img, Link → a)
+ *   4. Strip event handlers, preserve as data attrs
+ *
+ * NOTE: Boilerplate stripping, JSX expression flattening, and conditional rendering
+ * are handled by the AST parser (ast-parser.ts) — NOT here.
  */
 
 import type { Block } from "./types"
@@ -19,7 +21,7 @@ import type { Block } from "./types"
 // ── Types ────────────────────────────────────────────────────────────
 
 export interface PreprocessWarning {
-  type: "unknown-component" | "stripped-handler" | "conditional-render" | "binding-flattened" | "inline-style-stripped"
+  type: "unknown-component" | "stripped-handler"
   message: string
   original?: string
 }
@@ -179,68 +181,29 @@ const SHADCN_MAP: Record<string, ComponentMapping> = {
   ResizablePanel: { tag: "div", classes: "flex-1" },
   ResizablePanelGroup: { tag: "div", classes: "flex h-full w-full" },
   ResizableHandle: { tag: "div", classes: "relative flex w-px items-center justify-center bg-border" },
+
+  // Framer Motion wrappers — transparent (strip tags, keep children)
+  AnimatePresence: { tag: "div", classes: "" },
+
+  // forwardRef type params that leak as component names
+  HTMLButtonElement: { tag: "button", classes: "" },
+  HTMLDivElement: { tag: "div", classes: "" },
+  HTMLHeadingElement: { tag: "h2", classes: "" },
+  HTMLParagraphElement: { tag: "p", classes: "" },
+  HTMLInputElement: { tag: "input", classes: "" },
+  HTMLAnchorElement: { tag: "a", classes: "" },
+  HTMLFormElement: { tag: "form", classes: "" },
+  HTMLSpanElement: { tag: "span", classes: "" },
+  HTMLImageElement: { tag: "img", classes: "" },
+  HTMLLIElement: { tag: "li", classes: "" },
+  HTMLUListElement: { tag: "ul", classes: "" },
+  HTMLOListElement: { tag: "ol", classes: "" },
+  HTMLTableElement: { tag: "table", classes: "" },
+  HTMLSelectElement: { tag: "select", classes: "" },
+  HTMLTextAreaElement: { tag: "textarea", classes: "" },
 }
 
-// ── Step 1: Strip React Boilerplate ──────────────────────────────────
-
-function stripBoilerplate(code: string): string {
-  let cleaned = code
-
-  // Remove "use client" / "use server" directives
-  cleaned = cleaned.replace(/^["']use (?:client|server)["'];?\s*\n?/gm, "")
-
-  // Remove import statements (multiline)
-  cleaned = cleaned.replace(/import\s+(?:(?:\{[^}]*\}|[\w*]+(?:\s*,\s*\{[^}]*\})?)\s+from\s+)?["'][^"']*["'];?\s*\n?/g, "")
-
-  // Remove TypeScript type/interface declarations
-  cleaned = cleaned.replace(/(?:export\s+)?(?:type|interface)\s+\w+[\s\S]*?(?:\n\}|=\s*[^;]+;)\s*\n?/g, "")
-
-  // Remove const type assertions and type annotations on standalone lines
-  cleaned = cleaned.replace(/^type\s+\w+\s*=\s*[^;]+;\s*\n?/gm, "")
-
-  // Remove hook declarations: const [x, setX] = useState(...)
-  cleaned = cleaned.replace(/const\s+\[[\w\s,]+\]\s*=\s*(?:React\.)?useState\s*(?:<[^>]*>)?\([^)]*\);?\s*\n?/g, "")
-
-  // Remove useEffect blocks
-  cleaned = cleaned.replace(/(?:React\.)?useEffect\s*\(\s*\(\)\s*=>\s*\{[\s\S]*?\}\s*,\s*\[[^\]]*\]\s*\);?\s*\n?/g, "")
-
-  // Remove useCallback blocks
-  cleaned = cleaned.replace(/const\s+\w+\s*=\s*(?:React\.)?useCallback\s*\([\s\S]*?\}\s*,\s*\[[^\]]*\]\s*\);?\s*\n?/g, "")
-
-  // Remove useMemo blocks
-  cleaned = cleaned.replace(/const\s+\w+\s*=\s*(?:React\.)?useMemo\s*\([\s\S]*?\}\s*,\s*\[[^\]]*\]\s*\);?\s*\n?/g, "")
-
-  // Remove useRef declarations
-  cleaned = cleaned.replace(/const\s+\w+\s*=\s*(?:React\.)?useRef\s*(?:<[^>]*>)?\([^)]*\);?\s*\n?/g, "")
-
-  // Remove standalone const/let/var declarations (non-function, non-JSX)
-  cleaned = cleaned.replace(/^(?:const|let|var)\s+\w+\s*(?::\s*\w+(?:<[^>]*>)?\s*)?=\s*(?:(?!=>)[^;{])+;\s*\n?/gm, "")
-
-  // Unwrap: export default function Name(...) { return (...) }
-  cleaned = cleaned.replace(/export\s+default\s+function\s+\w+\s*\([^)]*\)\s*(?::\s*[\w.<>[\]| ]+)?\s*\{/g, "")
-
-  // Unwrap: function Name(...) { return (...) }
-  cleaned = cleaned.replace(/function\s+\w+\s*\([^)]*\)\s*(?::\s*[\w.<>[\]| ]+)?\s*\{/g, "")
-
-  // Unwrap: const Name = (...) => { return (...) } or (...) => (...)
-  cleaned = cleaned.replace(/(?:export\s+(?:default\s+)?)?(?:const|let)\s+\w+\s*(?::\s*[\w.<>[\]| ]+)?\s*=\s*(?:\([^)]*\)|[\w]+)\s*(?::\s*[\w.<>[\]| ]+)?\s*=>\s*[\({]?\s*/g, "")
-
-  // Remove return ( wrapper
-  cleaned = cleaned.replace(/return\s*\(\s*/g, "")
-
-  // Remove trailing ); } at end
-  cleaned = cleaned.replace(/\)\s*;?\s*\}\s*;?\s*$/g, "")
-
-  // Remove React Fragment wrappers
-  cleaned = cleaned.replace(/^\s*<>\s*\n?/, "")
-  cleaned = cleaned.replace(/\s*<\/>\s*$/, "")
-  cleaned = cleaned.replace(/^\s*<React\.Fragment>\s*\n?/, "")
-  cleaned = cleaned.replace(/\s*<\/React\.Fragment>\s*$/, "")
-
-  return cleaned.trim()
-}
-
-// ── Step 2: Resolve Dynamic className Builders ───────────────────────
+// ── Step 1: Resolve Dynamic className Builders ───────────────────────
 
 function resolveClassNameBuilders(code: string): string {
   // Match className={cn(...)} or className={clsx(...)} or className={twMerge(...)}
@@ -289,7 +252,95 @@ function extractStringLiterals(input: string): string[] {
   return results
 }
 
-// ── Step 3: Map Shadcn/UI Components ─────────────────────────────────
+// ── Step 1c: Normalize Lucide Icons ──────────────────────────────────
+//
+// Lucide icon components (<ShoppingBag />, <Star className="h-4 w-4" />, etc.)
+// are unknown custom tags that render as nothing. Convert them to
+// <span data-icon="IconName" ... aria-hidden="true" /> so the block renderer
+// can display an icon placeholder.
+
+const LUCIDE_ICONS = new Set([
+  "ShoppingBag", "ShoppingCart", "Printer", "Star", "Heart", "ArrowRight",
+  "ArrowLeft", "ChevronRight", "ChevronDown", "ChevronUp", "ChevronLeft",
+  "Plus", "Minus", "X", "Check", "Search", "Menu", "Home", "Settings",
+  "User", "Users", "Mail", "Phone", "MapPin", "Calendar", "Clock", "Camera",
+  "Image", "Video", "Music", "File", "Folder", "Download", "Upload", "Share",
+  "Share2", "ExternalLink", "Link", "Copy", "Trash", "Trash2", "Edit", "Edit2",
+  "Eye", "EyeOff", "Lock", "Unlock", "Key", "Shield", "AlertTriangle",
+  "AlertCircle", "Info", "HelpCircle", "CheckCircle", "XCircle", "Gift",
+  "Sparkles", "Zap", "Flame", "Sun", "Moon", "Cloud", "Package", "Award",
+  "Trophy", "Target", "Flag", "Bookmark", "Tag", "Hash", "AtSign", "Globe",
+  "Wifi", "Bluetooth", "Battery", "Monitor", "Smartphone", "Tablet", "Laptop",
+  "Server", "Database", "Code", "Terminal", "GitBranch", "Github", "Twitter",
+  "Facebook", "Instagram", "Linkedin", "Youtube", "Paintbrush", "Palette",
+  "Scissors", "Layers", "Grid", "Layout", "Sidebar", "PanelLeft", "Move",
+  "GripVertical", "MoreHorizontal", "MoreVertical", "Filter", "SortAsc",
+  "SortDesc", "RefreshCw", "RotateCcw", "Play", "Pause", "SkipForward",
+  "SkipBack", "Volume", "VolumeX", "Mic", "MicOff", "Headphones", "Bell",
+  "BellOff", "MessageSquare", "MessageCircle", "Send", "Inbox", "Archive",
+  "Save", "FileText", "Clipboard", "List", "ListOrdered", "Table", "BarChart",
+  "PieChart", "LineChart", "Activity", "TrendingUp", "TrendingDown",
+  "DollarSign", "CreditCard", "Wallet", "Receipt", "Store", "Truck",
+  "Navigation", "Compass", "Map", "Building", "Warehouse", "Factory", "Wrench",
+  "Tool", "Hammer", "Lightbulb", "Rocket", "Plane", "Car", "Train", "Bus",
+  "Bike", "Footprints", "PartyPopper", "Ticket", "Crown",
+  // Additional common ones
+  "ArrowUp", "ArrowDown", "RotateCw", "Maximize", "Minimize", "LogIn",
+  "LogOut", "Power", "Loader", "Loader2", "AlertOctagon", "ThumbsUp",
+  "ThumbsDown", "StarHalf", "CircleDot", "Circle", "Square", "Triangle",
+  "Hexagon", "Pen", "PenTool", "Type", "Bold", "Italic", "Underline",
+  "AlignLeft", "AlignCenter", "AlignRight", "AlignJustify", "Indent",
+  "Outdent", "WrapText", "Crop", "ZoomIn", "ZoomOut", "Aperture",
+])
+
+function normalizeLucideIcons(code: string, componentsMapped: string[]): string {
+  let result = code
+
+  // Build a regex alternation from icon names for efficient matching
+  // We process self-closing and open/close tags separately
+
+  // Self-closing: <IconName /> or <IconName className="..." />
+  result = result.replace(
+    /<([A-Z][A-Za-z0-9]*)((?:\s+(?:[^>]|=\{[^}]*\}))*?)\s*\/>/g,
+    (_match, name: string, attrs: string) => {
+      if (!LUCIDE_ICONS.has(name)) return _match
+
+      if (!componentsMapped.includes(name)) componentsMapped.push(name)
+
+      // Inject data-icon and aria-hidden, preserve existing attrs
+      const hasAriaHidden = /aria-hidden/.test(attrs)
+      const ariaAttr = hasAriaHidden ? "" : ' aria-hidden="true"'
+      return `<span data-icon="${name}"${attrs}${ariaAttr} />`
+    }
+  )
+
+  // Opening tag: <IconName className="...">
+  result = result.replace(
+    /<([A-Z][A-Za-z0-9]*)((?:\s+(?:[^>]|=\{[^}]*\}))*?)>/g,
+    (_match, name: string, attrs: string) => {
+      if (!LUCIDE_ICONS.has(name)) return _match
+
+      if (!componentsMapped.includes(name)) componentsMapped.push(name)
+
+      const hasAriaHidden = /aria-hidden/.test(attrs)
+      const ariaAttr = hasAriaHidden ? "" : ' aria-hidden="true"'
+      return `<span data-icon="${name}"${attrs}${ariaAttr}>`
+    }
+  )
+
+  // Closing tag: </IconName> → </span>
+  result = result.replace(
+    /<\/([A-Z][A-Za-z0-9]*)>/g,
+    (_match, name: string) => {
+      if (!LUCIDE_ICONS.has(name)) return _match
+      return "</span>"
+    }
+  )
+
+  return result
+}
+
+// ── Step 2: Map Shadcn/UI Components ─────────────────────────────────
 
 function mapShadcnComponents(code: string, warnings: PreprocessWarning[], componentsMapped: string[]): string {
   let result = code
@@ -365,41 +416,44 @@ function mapShadcnComponents(code: string, warnings: PreprocessWarning[], compon
     result = result.replace(closeRe, `</${mapping.tag}>`)
   }
 
-  // Handle unknown PascalCase components (not in our map, not HTML elements)
+  // Handle remaining icon-like components not caught by Lucide normalization (step 1c).
+  // Self-closing PascalCase tags with icon sizing classes → span[data-icon]
   result = result.replace(
-    /<([A-Z][A-Za-z0-9]*(?:\.[A-Z][A-Za-z0-9]*)?)((?:\s+(?:[^>]|=\{[^}]*\}))*?)\s*\/>/g,
+    /<([A-Z][A-Za-z0-9]*)((?:\s+(?:[^>]|=\{[^}]*\}))*?)\s*\/>/g,
     (_match, name: string, attrs: string) => {
-      // Skip motion.* components — the parser handles those natively
-      if (name.startsWith("motion.")) return _match
-      warnings.push({
-        type: "unknown-component",
-        message: `Unknown component <${name} /> mapped to <div>`,
-        original: name,
-      })
-      return `<div data-original-component="${name}"${attrs} />`
+      // Skip if already handled by SHADCN_MAP or Lucide normalization
+      if (SHADCN_MAP[name]) return _match
+      if (LUCIDE_ICONS.has(name)) return _match  // Already handled in step 1c
+      if (name.startsWith("motion")) return _match
+      // Check if this looks like an icon (has size classes like h-4 w-4, or no attrs at all)
+      const isLikelyIcon = /className=["'][^"']*(?:h-\d|w-\d|size-\d)/.test(attrs) || !attrs.trim()
+      if (isLikelyIcon && /^[A-Z][a-z]/.test(name)) {
+        if (!componentsMapped.includes(name)) componentsMapped.push(name)
+        return `<span data-icon="${name}"${attrs} aria-hidden="true" />`
+      }
+      return _match
     }
   )
 
-  result = result.replace(
-    /<([A-Z][A-Za-z0-9]*(?:\.[A-Z][A-Za-z0-9]*)?)((?:\s+(?:[^>]|=\{[^}]*\}))*?)>/g,
-    (_match, name: string, attrs: string) => {
-      if (name.startsWith("motion.")) return _match
-      warnings.push({
-        type: "unknown-component",
-        message: `Unknown component <${name}> mapped to <div>`,
-        original: name,
-      })
-      return `<div data-original-component="${name}"${attrs}>`
-    }
-  )
-
-  result = result.replace(
-    /<\/([A-Z][A-Za-z0-9]*(?:\.[A-Z][A-Za-z0-9]*)?)>/g,
-    (_match, name: string) => {
-      if (name.startsWith("motion.")) return _match
-      return `</div>`
-    }
-  )
+  // Unknown PascalCase components are now preserved as-is.
+  // The parser accepts any tag — custom components get tag=ComponentName
+  // and componentName=ComponentName automatically.
+  // We just log them for informational purposes.
+  const unknownComponentRe = /<([A-Z][A-Za-z0-9]*(?:\.[A-Z][A-Za-z0-9]*)?)[\s/>]/g
+  let ucMatch
+  const seen = new Set<string>()
+  while ((ucMatch = unknownComponentRe.exec(result)) !== null) {
+    const name = ucMatch[1]
+    if (name.startsWith("motion.")) continue
+    if (SHADCN_MAP[name]) continue
+    if (seen.has(name)) continue
+    seen.add(name)
+    warnings.push({
+      type: "unknown-component",
+      message: `Custom component <${name}> preserved as-is`,
+      original: name,
+    })
+  }
 
   return result
 }
@@ -444,7 +498,264 @@ function mergeWithExistingClasses(attrs: string, mappingClasses: string): { attr
   return { attrs: cleanedAttrs, classes: allClasses.replace(/\s+/g, " ").trim() }
 }
 
-// ── Step 4: Convert Next.js Components ───────────────────────────────
+// ── Step 1b: Extract Overlay/Popout Content as Interactions ───────────
+//
+// State-dependent overlay components (Sheet, Dialog, Popover, DropdownMenu, etc.)
+// can't render as static HTML — they need JS state to toggle open/close.
+//
+// Instead of stripping them entirely, we EXTRACT the overlay content and store it
+// as a data-interaction attribute on the trigger element. The parser then stores
+// this as block.interaction, and the renderer/SDK can hydrate it at runtime.
+//
+// Pattern:
+//   <Sheet>
+//     <SheetTrigger asChild><button>Open</button></SheetTrigger>
+//     <SheetContent side="left"><nav>...</nav></SheetContent>
+//   </Sheet>
+//
+// Becomes:
+//   <button data-interaction-type="sheet" data-interaction-side="left"
+//           data-interaction-content="<nav>...</nav>">Open</button>
+
+/** Map overlay wrapper tag → interaction type */
+const OVERLAY_TYPE_MAP: Record<string, string> = {
+  Sheet: "sheet",
+  Dialog: "dialog",
+  AlertDialog: "alert-dialog",
+  Popover: "popover",
+  DropdownMenu: "dropdown",
+  Tooltip: "tooltip",
+  HoverCard: "tooltip",
+  Collapsible: "collapsible",
+  Command: "dialog",
+}
+
+/** Content tags for each overlay type — the part that appears when triggered */
+const OVERLAY_CONTENT_TAG_MAP: Record<string, string> = {
+  Sheet: "SheetContent",
+  Dialog: "DialogContent",
+  AlertDialog: "AlertDialogContent",
+  Popover: "PopoverContent",
+  DropdownMenu: "DropdownMenuContent",
+  Tooltip: "TooltipContent",
+  HoverCard: "HoverCardContent",
+  Collapsible: "CollapsibleContent",
+  Command: "CommandList",
+}
+
+/** Tags inside overlay content that provide metadata (title, description) */
+const OVERLAY_META_TAGS: Record<string, string> = {
+  SheetTitle: "title",
+  SheetDescription: "description",
+  DialogTitle: "title",
+  DialogDescription: "description",
+  AlertDialogTitle: "title",
+  AlertDialogDescription: "description",
+}
+
+/** All overlay-related tags that should be stripped/transformed */
+const ALL_OVERLAY_TAGS = new Set([
+  "SheetContent", "SheetHeader", "SheetTitle", "SheetDescription",
+  "DialogContent", "DialogHeader", "DialogTitle", "DialogDescription", "DialogFooter",
+  "PopoverContent",
+  "DropdownMenuContent", "DropdownMenuItem", "DropdownMenuSeparator",
+  "TooltipContent",
+  "HoverCardContent",
+  "AlertDialogContent",
+  "CollapsibleContent",
+  "CommandList", "CommandInput", "CommandGroup", "CommandItem",
+  "Sheet", "Dialog", "AlertDialog", "Popover", "DropdownMenu",
+  "Tooltip", "HoverCard", "Collapsible", "Command",
+])
+
+/**
+ * Extract content between a matched tag pair, handling nesting.
+ * Returns { inner, endIndex } or null if no match.
+ * Matches the exact tag name (won't confuse Sheet with SheetContent).
+ */
+function extractTagContent(code: string, tagName: string, startFrom: number): { inner: string; endIndex: number } | null {
+  // Match opening tag: <TagName> or <TagName attr="...">
+  // Must be followed by whitespace or > (not more word chars, to avoid Sheet matching SheetContent)
+  const openRe = new RegExp(`<${tagName}(?=\\s|>)((?:\\s+[^>]*)?)>`)
+  const openMatch = openRe.exec(code.slice(startFrom))
+  if (!openMatch) return null
+
+  const openStart = startFrom + openMatch.index
+  const afterOpen = openStart + openMatch[0].length
+  const closeTag = `</${tagName}>`
+
+  // Simple character scan to find matching close tag
+  let depth = 1
+  let pos = afterOpen
+  while (pos < code.length && depth > 0) {
+    const nextClose = code.indexOf(closeTag, pos)
+    if (nextClose === -1) break // malformed
+
+    // Count any opening tags between pos and nextClose
+    const openScanRe = new RegExp(`<${tagName}(?=\\s|>)`, "g")
+    const segment = code.slice(pos, nextClose)
+    let openInSegment
+    while ((openInSegment = openScanRe.exec(segment)) !== null) {
+      // Check if it's self-closing by scanning ahead
+      const afterName = pos + openInSegment.index + tagName.length + 1
+      const restOfTag = code.slice(afterName, code.indexOf(">", afterName) + 1)
+      if (!restOfTag.endsWith("/>")) {
+        depth++ // Real opening tag, not self-closing
+      }
+    }
+
+    depth-- // For the close tag we found
+    if (depth === 0) {
+      return {
+        inner: code.slice(afterOpen, nextClose),
+        endIndex: nextClose + closeTag.length,
+      }
+    }
+    pos = nextClose + closeTag.length
+  }
+  return null
+}
+
+/**
+ * Extract attributes from an opening tag string.
+ */
+function extractTagAttrs(code: string, tagName: string, startFrom: number): Record<string, string> {
+  const re = new RegExp(`<${tagName}((?:\\s+[^>]*)?)>`)
+  const match = re.exec(code.slice(startFrom))
+  if (!match) return {}
+
+  const attrStr = match[1] || ""
+  const attrs: Record<string, string> = {}
+  const attrRe = /(\w+)=["']([^"']*?)["']/g
+  let m
+  while ((m = attrRe.exec(attrStr)) !== null) {
+    attrs[m[1]] = m[2]
+  }
+  return attrs
+}
+
+/**
+ * Extract overlay content and convert to interaction data attributes on the trigger.
+ * This preserves ALL content — trigger children become the visible block,
+ * overlay content becomes data-interaction-content for runtime hydration.
+ */
+function extractOverlayContent(code: string, warnings: PreprocessWarning[]): string {
+  let result = code
+  let foundOverlays = false
+
+  for (const [wrapperTag, interactionType] of Object.entries(OVERLAY_TYPE_MAP)) {
+    const contentTag = OVERLAY_CONTENT_TAG_MAP[wrapperTag]
+    const triggerTag = `${wrapperTag}Trigger`
+
+    // Process each wrapper occurrence
+    let safetyCount = 0
+    // Check for exact tag match (not SheetContent when looking for Sheet)
+    const wrapperCheckRe = new RegExp(`<${wrapperTag}[\\s>]`)
+    while (wrapperCheckRe.test(result) && safetyCount < 50) {
+      safetyCount++
+
+      const wrapperContent = extractTagContent(result, wrapperTag, 0)
+      if (!wrapperContent) break
+
+      foundOverlays = true
+      const inner = wrapperContent.inner
+
+      // Extract trigger content
+      let triggerJSX = ""
+      const triggerContent = extractTagContent(inner, triggerTag, 0)
+      if (triggerContent) {
+        triggerJSX = triggerContent.inner.trim()
+      }
+
+      // Extract overlay content (what appears when triggered)
+      let overlayJSX = ""
+      const overlayContent = extractTagContent(inner, contentTag, 0)
+      if (overlayContent) {
+        overlayJSX = overlayContent.inner.trim()
+      }
+
+      // Extract metadata (title, description) from inside the overlay
+      let overlayTitle = ""
+      let overlayDescription = ""
+      for (const [metaTag, metaType] of Object.entries(OVERLAY_META_TAGS)) {
+        if (!overlayJSX.includes(`<${metaTag}`)) continue
+        const metaContent = extractTagContent(overlayJSX, metaTag, 0)
+        if (metaContent) {
+          if (metaType === "title") overlayTitle = metaContent.inner.trim()
+          if (metaType === "description") overlayDescription = metaContent.inner.trim()
+        }
+      }
+
+      // Extract config attrs from the content tag (e.g., side="left")
+      const contentAttrs = extractTagAttrs(inner, contentTag, 0)
+      const side = contentAttrs.side || ""
+
+      // Build interaction data attributes for the trigger
+      const interactionAttrs: string[] = [
+        `data-interaction-type="${interactionType}"`,
+      ]
+      if (side) interactionAttrs.push(`data-interaction-side="${side}"`)
+      if (overlayTitle) interactionAttrs.push(`data-interaction-title="${overlayTitle}"`)
+      if (overlayDescription) interactionAttrs.push(`data-interaction-description="${overlayDescription}"`)
+
+      // Store the overlay content as an escaped data attribute
+      // The parser will deserialize this into block.interaction.content
+      if (overlayJSX) {
+        // Clean overlay content: strip metadata wrappers (SheetHeader, DialogHeader, etc.)
+        let cleanedOverlay = overlayJSX
+        // Remove header/footer wrappers but keep their content
+        for (const stripTag of ["SheetHeader", "DialogHeader", "DialogFooter", "SheetDescription", "DialogDescription", "SheetTitle", "DialogTitle"]) {
+          cleanedOverlay = cleanedOverlay.replace(
+            new RegExp(`<${stripTag}(?:\\s+[^>]*)?>([\\s\\S]*?)</${stripTag}>`, "g"),
+            "$1"
+          )
+          cleanedOverlay = cleanedOverlay.replace(
+            new RegExp(`<${stripTag}(?:\\s+[^>]*)?\\s*/>`, "g"),
+            ""
+          )
+        }
+        cleanedOverlay = cleanedOverlay.trim()
+
+        if (cleanedOverlay) {
+          // Escape for use as attribute value (double-encode quotes)
+          const escaped = cleanedOverlay
+            .replace(/&/g, "&amp;")
+            .replace(/"/g, "&quot;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+          interactionAttrs.push(`data-interaction-content="${escaped}"`)
+        }
+      }
+
+      // Build the replacement: inject interaction attrs into the trigger's root element
+      let replacement: string
+      if (triggerJSX) {
+        // Inject interaction attrs into the first element of the trigger content
+        const firstTagRe = /^(\s*<\w+)/
+        const injected = triggerJSX.replace(firstTagRe, `$1 ${interactionAttrs.join(" ")}`)
+        replacement = injected !== triggerJSX ? injected : triggerJSX
+      } else {
+        // No trigger — create a placeholder div with interaction data
+        replacement = `<div ${interactionAttrs.join(" ")} />`
+      }
+
+      // Replace the entire wrapper with the annotated trigger
+      const wrapperStart = result.indexOf(`<${wrapperTag}`)
+      result = result.slice(0, wrapperStart) + replacement + result.slice(wrapperContent.endIndex)
+    }
+  }
+
+  if (foundOverlays) {
+    warnings.push({
+      type: "stripped-handler",
+      message: `Extracted overlay content as interaction data (preserves Sheet, Dialog, Dropdown, etc. for runtime hydration)`,
+    })
+  }
+
+  return result
+}
+
+// ── Step 3: Convert Next.js Components ───────────────────────────────
 
 function convertNextjsComponents(code: string): string {
   let result = code
@@ -481,7 +792,7 @@ function convertNextjsComponents(code: string): string {
   return result
 }
 
-// ── Step 5: Strip Event Handlers ─────────────────────────────────────
+// ── Step 4: Strip Event Handlers ─────────────────────────────────────
 
 function stripEventHandlers(code: string, warnings: PreprocessWarning[], handlersStripped: string[]): string {
   const handlerRe = /\s*(on[A-Z]\w*)=\{[^}]*\}/g
@@ -500,165 +811,6 @@ function stripEventHandlers(code: string, warnings: PreprocessWarning[], handler
   })
 }
 
-// ── Step 6: Flatten JSX Expressions in Attributes ────────────────────
-
-function flattenJSXExpressions(code: string, warnings: PreprocessWarning[], bindingsFlattened: string[]): string {
-  let result = code
-
-  // Handle style={{...}} → strip, add data-had-inline-style
-  result = result.replace(
-    /\s*style=\{\{[^}]*\}\}/g,
-    () => {
-      warnings.push({
-        type: "inline-style-stripped",
-        message: "Inline style object stripped",
-      })
-      return ` data-had-inline-style="true"`
-    }
-  )
-
-  // Handle src={expression} → src="/placeholder.svg" data-binding-src="expression"
-  result = result.replace(
-    /\bsrc=\{([^}]+)\}/g,
-    (_match, expr: string) => {
-      const binding = expr.trim()
-      if (!bindingsFlattened.includes(`src:${binding}`)) {
-        bindingsFlattened.push(`src:${binding}`)
-        warnings.push({
-          type: "binding-flattened",
-          message: `Dynamic src binding flattened: ${binding}`,
-          original: binding,
-        })
-      }
-      return `src="/placeholder.svg" data-binding-src="${escapeAttr(binding)}"`
-    }
-  )
-
-  // Handle href={expression} → href="#" data-binding-href="expression"
-  result = result.replace(
-    /\bhref=\{([^}]+)\}/g,
-    (_match, expr: string) => {
-      const binding = expr.trim()
-      if (!bindingsFlattened.includes(`href:${binding}`)) {
-        bindingsFlattened.push(`href:${binding}`)
-        warnings.push({
-          type: "binding-flattened",
-          message: `Dynamic href binding flattened: ${binding}`,
-          original: binding,
-        })
-      }
-      return `href="#" data-binding-href="${escapeAttr(binding)}"`
-    }
-  )
-
-  // Handle alt={expression} → alt="Image" data-binding-alt="expression"
-  result = result.replace(
-    /\balt=\{([^}]+)\}/g,
-    (_match, expr: string) => {
-      const binding = expr.trim()
-      if (!bindingsFlattened.includes(`alt:${binding}`)) {
-        bindingsFlattened.push(`alt:${binding}`)
-      }
-      return `alt="Image" data-binding-alt="${escapeAttr(binding)}"`
-    }
-  )
-
-  // Handle other expression attributes: key={...}, id={...}, etc.
-  // But NOT className (handled separately) and NOT data- attributes
-  result = result.replace(
-    /\b((?!className|data-|on[A-Z])[a-zA-Z]+)=\{([^}]+)\}/g,
-    (_match, attrName: string, expr: string) => {
-      // Skip if this is a known safe string-value attribute already handled
-      if (["src", "href", "alt"].includes(attrName)) return _match
-
-      const binding = expr.trim()
-      // If it's a simple string/number literal, keep it
-      if (/^["'].*["']$/.test(binding) || /^\d+$/.test(binding)) {
-        return `${attrName}=${binding}`
-      }
-
-      if (!bindingsFlattened.includes(`${attrName}:${binding}`)) {
-        bindingsFlattened.push(`${attrName}:${binding}`)
-      }
-      return `data-binding-${attrName}="${escapeAttr(binding)}"`
-    }
-  )
-
-  return result
-}
-
-function escapeAttr(value: string): string {
-  return value.replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-}
-
-// ── Step 7: Handle Conditional Rendering ─────────────────────────────
-
-function handleConditionalRendering(code: string, warnings: PreprocessWarning[]): string {
-  let result = code
-
-  // Handle {condition && <JSX>} → keep <JSX>, strip condition
-  // Match: { expression && <tag or (  — capture the JSX part
-  result = result.replace(
-    /\{[^{}]*?&&\s*(\([^)]*\)|<[\s\S]*?(?:\/>|<\/\w+>))\s*\}/g,
-    (_match, jsx: string) => {
-      warnings.push({
-        type: "conditional-render",
-        message: "Conditional render (&&) unwrapped — always showing element",
-      })
-      // Unwrap parens if present
-      let unwrapped = jsx.trim()
-      if (unwrapped.startsWith("(") && unwrapped.endsWith(")")) {
-        unwrapped = unwrapped.slice(1, -1).trim()
-      }
-      return unwrapped
-    }
-  )
-
-  // Handle {condition ? <A> : <B>} → keep truthy branch <A>
-  // Simplified: match ternary with JSX on both branches
-  result = result.replace(
-    /\{[^{}]*?\?\s*(\([^)]*\)|<[\s\S]*?(?:\/>|<\/\w+>))\s*:\s*(?:\([^)]*\)|<[\s\S]*?(?:\/>|<\/\w+>)|null|undefined|"")\s*\}/g,
-    (_match, truthyBranch: string) => {
-      warnings.push({
-        type: "conditional-render",
-        message: "Ternary render unwrapped — keeping truthy branch",
-      })
-      let unwrapped = truthyBranch.trim()
-      if (unwrapped.startsWith("(") && unwrapped.endsWith(")")) {
-        unwrapped = unwrapped.slice(1, -1).trim()
-      }
-      return unwrapped
-    }
-  )
-
-  // Remove .map() calls that produce JSX — keep placeholder
-  result = result.replace(
-    /\{[\w.]+\.map\s*\(\s*(?:\([^)]*\)|[\w]+)\s*=>\s*(?:\([\s\S]*?\)|<[\s\S]*?(?:\/>|<\/\w+>))\s*\)\s*\}/g,
-    (_match) => {
-      warnings.push({
-        type: "conditional-render",
-        message: "Array .map() rendering stripped — static content preserved",
-      })
-      // Try to extract the JSX template from the map body
-      const jsxMatch = _match.match(/=>\s*(?:\(\s*)?([\s\S]*?)(?:\s*\))?\s*\)\s*\}$/)
-      if (jsxMatch) {
-        let template = jsxMatch[1].trim()
-        // Remove key prop
-        template = template.replace(/\s*key=\{[^}]*\}/g, "")
-        return template
-      }
-      return "<!-- map rendering removed -->"
-    }
-  )
-
-  // Clean up remaining JSX expression wrappers containing just text
-  // {" "} → space, {"text"} → text
-  result = result.replace(/\{"([^"]*)"\}/g, "$1")
-  result = result.replace(/\{'([^']*)'\}/g, "$1")
-
-  return result
-}
-
 // ── Main Pipeline ────────────────────────────────────────────────────
 
 export function preprocessForImport(code: string): PreprocessResult {
@@ -667,26 +819,31 @@ export function preprocessForImport(code: string): PreprocessResult {
   const handlersStripped: string[] = []
   const bindingsFlattened: string[] = []
 
-  // Step 1: Strip React boilerplate
-  let processed = stripBoilerplate(code)
+  let processed = code
 
-  // Step 2: Resolve className builders (cn, clsx, twMerge)
+  // Step 1: Resolve className builders (cn, clsx, twMerge)
   processed = resolveClassNameBuilders(processed)
 
-  // Step 3: Map shadcn/ui components to HTML + Tailwind
+  // Step 1b: Extract overlay content as interaction data (Sheet, Dialog, etc.)
+  // Must run BEFORE shadcn mapping so we can match original component names
+  processed = extractOverlayContent(processed, warnings)
+
+  // Step 1c: Normalize Lucide icons → <span data-icon="..." />
+  // Must run BEFORE shadcn mapping so icons aren't caught by the generic
+  // unknown-component handler
+  processed = normalizeLucideIcons(processed, componentsMapped)
+
+  // Step 2: Map shadcn/ui components to HTML + Tailwind
   processed = mapShadcnComponents(processed, warnings, componentsMapped)
 
-  // Step 4: Convert Next.js components (Image → img, Link → a)
+  // Step 3: Convert Next.js components (Image → img, Link → a)
   processed = convertNextjsComponents(processed)
 
-  // Step 5: Strip event handlers
+  // Step 4: Strip event handlers
   processed = stripEventHandlers(processed, warnings, handlersStripped)
 
-  // Step 6: Flatten JSX expressions in attributes
-  processed = flattenJSXExpressions(processed, warnings, bindingsFlattened)
-
-  // Step 7: Handle conditional rendering
-  processed = handleConditionalRendering(processed, warnings)
+  // Step 5: Strip React-internal props (key, ref) from JSX before parsing
+  processed = stripReactInternalProps(processed)
 
   return {
     code: processed,
@@ -695,6 +852,20 @@ export function preprocessForImport(code: string): PreprocessResult {
     handlersStripped,
     bindingsFlattened,
   }
+}
+
+// ── Step 5: Strip React-Internal Props ────────────────────────────────
+
+function stripReactInternalProps(code: string): string {
+  return code
+    // key="..." or key='...'
+    .replace(/\s+key=["'][^"']*["']/g, "")
+    // key={...}
+    .replace(/\s+key=\{[^}]*\}/g, "")
+    // ref={...}
+    .replace(/\s+ref=\{[^}]*\}/g, "")
+    // suppressHydrationWarning, suppressContentEditableWarning (bare or with value)
+    .replace(/\s+suppress(?:Hydration|ContentEditable)Warning(?:=\{[^}]*\})?/g, "")
 }
 
 // ── Post-Import Validation ───────────────────────────────────────────
@@ -726,10 +897,7 @@ export function validateImport(blocks: Block[], preprocessResult: PreprocessResu
           warnings.push(`Event handler stripped: ${key.replace("data-had-", "")}`)
           quality -= 2
         }
-        if (key === "data-original-component") {
-          warnings.push(`Unknown component "${block.attrs[key]}" mapped to div`)
-          quality -= 5
-        }
+        // data-original-component no longer used — custom tags preserved natively
       }
     }
 

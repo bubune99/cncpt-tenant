@@ -6,6 +6,7 @@
  */
 
 import type { Block, PageLayout, PageDocument } from "./types"
+import { formatSlug as slugify } from "../slug"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -24,6 +25,8 @@ export interface SavedPage {
   thumbnail?: string
   /** Visual diff baseline screenshot (data URL) */
   baseline?: string
+  /** Original React source code — AI reference for block refinement */
+  sourceCode?: string | null
   /** Component dependency manifest — resolved imports for AI context */
   sourceDeps?: Record<string, unknown> | null
 }
@@ -53,14 +56,8 @@ export function generateId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`
 }
 
-export function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .slice(0, 50)
-}
+/** @deprecated Use `formatSlug` from `@/lib/cms/slug` instead */
+export { formatSlug as slugify } from "../slug"
 
 function safeJsonParse<T>(json: string | null, fallback: T): T {
   if (!json) return fallback
@@ -115,6 +112,7 @@ function apiResponseToSavedPage(data: Record<string, unknown>): SavedPage {
     createdAt: (data.createdAt as string) || new Date().toISOString(),
     updatedAt: (data.updatedAt as string) || new Date().toISOString(),
     publishedAt: (data.publishedAt as string) || undefined,
+    sourceCode: (data.sourceCode as string) || null,
     sourceDeps: (data.sourceDeps as Record<string, unknown>) || null,
   }
 }
