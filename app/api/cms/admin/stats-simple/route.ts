@@ -6,12 +6,11 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
-import { withTenant } from '@/lib/cms/api/tenant'
+import { withAuth } from '@/lib/cms/permissions/middleware'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
+export const GET = withAuth(async (_request, _context) => {
   try {
     // Get counts in parallel
     const [
@@ -46,5 +45,4 @@ export async function GET(request: NextRequest) {
       },
     })
   }
-  })
-}
+})

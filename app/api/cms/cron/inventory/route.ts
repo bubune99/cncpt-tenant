@@ -19,10 +19,10 @@ import {
 
 export const dynamic = 'force-dynamic'
 
-// Verify cron secret for security
+// Verify cron secret for security (fail closed — deny if not configured)
 function verifyCronSecret(request: NextRequest): boolean {
   const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret) return true; // Allow if not configured
+  if (!cronSecret) return false; // Deny if not configured
 
   const authHeader = request.headers.get('authorization');
   return authHeader === `Bearer ${cronSecret}`;

@@ -4,6 +4,7 @@ import { getTenantContext, shouldShowMaintenance } from '../lib/tenant-context';
 import { getTenantBranding } from '@/lib/cms/branding';
 import { MaintenancePage } from '@/components/cms/storefront';
 import { MobileNav } from './mobile-nav';
+import { CartMergeOnLogin } from '@/components/cms/smart-blocks/commerce/CartMergeOnLogin';
 
 export default async function StorefrontLayout({
   children,
@@ -91,6 +92,9 @@ export default async function StorefrontLayout({
           <MobileNav links={navLinks} />
         </div>
       </header>
+
+      {/* Merge anonymous cart into user cart on login */}
+      <CartMergeOnLogin />
 
       {/* Main content */}
       <main className="flex-1">{children}</main>

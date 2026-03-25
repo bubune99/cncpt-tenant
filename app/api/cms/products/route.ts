@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
 import type { ProductStatus, ProductType, Prisma } from '@prisma/client'
 import { withTenant } from '@/lib/cms/api/tenant'
+import { stackServerApp } from '@/lib/cms/stack'
 
 export const dynamic = 'force-dynamic'
 
@@ -129,10 +130,16 @@ export async function GET(request: NextRequest) {
   })
 }
 
-// POST - Create product
+// POST - Create product (requires authentication)
 export async function POST(request: NextRequest) {
   return withTenant(request, async (tenant) => {
     try {
+      // Auth check - only authenticated users can create products
+      const user = await stackServerApp.getUser()
+      if (!user) {
+        return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+      }
+
       const body = await request.json()
 
       const {

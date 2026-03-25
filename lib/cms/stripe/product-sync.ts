@@ -6,6 +6,7 @@
 
 import Stripe from 'stripe'
 import { prisma } from '../db'
+import { safeDecrypt } from '../encryption'
 import type {
   Product,
   ProductVariant,
@@ -13,24 +14,27 @@ import type {
   Media,
 } from '@prisma/client'
 
-// Get Stripe client
+// Get Stripe client — uses safeDecrypt for DB-stored encrypted keys
 let stripeClient: Stripe | null = null
+let stripeClientKey: string | null = null
 
 async function getStripeClient(): Promise<Stripe> {
-  if (stripeClient) return stripeClient
-
   const settings = await prisma.setting.findMany({
     where: { key: { startsWith: 'stripe.' } },
   })
 
-  const secretKey = settings.find((s) => s.key === 'stripe.secretKey')?.value ||
-    process.env.STRIPE_SECRET_KEY
+  const rawKey = settings.find((s) => s.key === 'stripe.secretKey')?.value
+  const secretKey = rawKey ? safeDecrypt(rawKey) : process.env.STRIPE_SECRET_KEY
 
   if (!secretKey) {
     throw new Error('Stripe secret key not configured')
   }
 
+  // Recreate client if key changed
+  if (stripeClient && stripeClientKey === secretKey) return stripeClient
+
   stripeClient = new Stripe(secretKey, { apiVersion: '2025-02-24.acacia' })
+  stripeClientKey = secretKey
   return stripeClient
 }
 

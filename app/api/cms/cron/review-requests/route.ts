@@ -24,11 +24,11 @@ export const dynamic = 'force-dynamic'
 // POST - Send review request emails
 export async function POST(request: NextRequest) {
   try {
-    // Optional: verify cron secret for security
+    // Verify cron secret for security (fail closed — deny if not configured)
     const cronSecret = request.headers.get('x-cron-secret');
     const expectedSecret = process.env.CRON_SECRET;
 
-    if (expectedSecret && cronSecret !== expectedSecret) {
+    if (!expectedSecret || cronSecret !== expectedSecret) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }

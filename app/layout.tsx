@@ -14,16 +14,40 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "CNCPT Web",
+    default: "CNCPT Web — The CMS That Grows With You",
     template: "%s | CNCPT Web",
   },
-  description: "Build, manage, and scale your web presence with CNCPT Web.",
+  description:
+    "Build websites, manage products, publish content, and run marketing campaigns. One platform, unlimited possibilities.",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "32x32" },
       { url: "/favicon.svg", type: "image/svg+xml" },
     ],
     apple: "/CNCPT_Web_logo_navy.png",
+  },
+  openGraph: {
+    title: "CNCPT Web — The CMS That Grows With You",
+    description:
+      "Build websites, manage products, publish content, and run marketing campaigns. One platform, unlimited possibilities.",
+    url: "https://cncptweb.com",
+    siteName: "CNCPT Web",
+    type: "website",
+    images: [
+      {
+        url: "/CNCPT_Web_logo_navy.png",
+        width: 1200,
+        height: 630,
+        alt: "CNCPT Web",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "CNCPT Web — The CMS That Grows With You",
+    description:
+      "Build websites, manage products, publish content, and run marketing campaigns. One platform, unlimited possibilities.",
+    images: ["/CNCPT_Web_logo_navy.png"],
   },
 }
 

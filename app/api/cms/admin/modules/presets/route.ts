@@ -5,18 +5,14 @@
  */
 
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
 import { applyPreset, MODULE_PRESETS } from "@/lib/cms/modules/presets"
-import { withTenant } from "@/lib/cms/api/tenant"
+import { withPermission } from "@/lib/cms/permissions/middleware"
 
-export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
-    return NextResponse.json({ ok: true, data: MODULE_PRESETS })
-  })
-}
+export const GET = withPermission('settings.view', async () => {
+  return NextResponse.json({ ok: true, data: MODULE_PRESETS })
+})
 
-export async function POST(request: NextRequest) {
-  return withTenant(request, async () => {
+export const POST = withPermission('settings.edit', async (request) => {
   const body = await request.json()
   const { presetId } = body as { presetId: string }
 
@@ -36,5 +32,4 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     )
   }
-  })
-}
+})

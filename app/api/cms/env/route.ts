@@ -18,11 +18,27 @@ import {
   clearEnvCache,
 } from '@/lib/cms/env'
 import type { EnvCategory } from '@/lib/cms/env/types'
+import { stackServerApp } from '@/lib/cms/stack'
+import { isSuperAdmin } from '@/lib/super-admin'
 
 export const dynamic = 'force-dynamic'
 
+async function requirePlatformAdmin(): Promise<NextResponse | null> {
+  const user = await stackServerApp.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const isAdmin = await isSuperAdmin(user.id)
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Forbidden: platform admin access required' }, { status: 403 })
+  }
+  return null
+}
+
 export async function GET(request: NextRequest) {
   try {
+    const authError = await requirePlatformAdmin()
+    if (authError) return authError
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category') as EnvCategory | null
     const healthCheck = searchParams.get('health') === 'true'
@@ -51,6 +67,9 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const authError = await requirePlatformAdmin()
+    if (authError) return authError
+
     const body = await request.json()
     const { key, value } = body
 
@@ -98,6 +117,9 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const authError = await requirePlatformAdmin()
+    if (authError) return authError
+
     const body = await request.json()
     const { key } = body
 

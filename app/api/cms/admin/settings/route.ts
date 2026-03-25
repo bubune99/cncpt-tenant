@@ -10,27 +10,24 @@ import {
   updateSettings,
   type SettingGroup,
 } from '@/lib/cms/settings'
-import { withTenant } from '@/lib/cms/api/tenant'
+import { withPermission } from '@/lib/cms/permissions/middleware'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
-    try {
-      const settings = await getAllSettings()
-      return NextResponse.json({ success: true, settings })
-    } catch (error) {
-      console.error('Error fetching settings:', error)
-      return NextResponse.json(
-        { success: false, error: 'Failed to fetch settings' },
-        { status: 500 }
-      )
-    }
-  })
-}
+export const GET = withPermission('settings.view', async (_request, _context) => {
+  try {
+    const settings = await getAllSettings()
+    return NextResponse.json({ success: true, settings })
+  } catch (error) {
+    console.error('Error fetching settings:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch settings' },
+      { status: 500 }
+    )
+  }
+})
 
-export async function PATCH(request: NextRequest) {
-  return withTenant(request, async () => {
+export const PATCH = withPermission('settings.edit', async (request, _context) => {
     try {
       const body = await request.json()
       const { group, settings } = body as { group: SettingGroup; settings: Record<string, unknown> }
@@ -66,5 +63,4 @@ export async function PATCH(request: NextRequest) {
         { status: 500 }
       )
     }
-  })
-}
+})

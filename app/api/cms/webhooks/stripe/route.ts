@@ -1,19 +1,47 @@
 /**
  * Stripe Webhook Handler
  *
- * Handles payment events from Stripe
+ * Handles payment events from Stripe for the CMS commerce system.
+ * Includes idempotency protection — each event ID is tracked to prevent
+ * double-processing on Stripe retries.
  *
- * POST /api/webhooks/stripe - Receive Stripe events
+ * POST /api/cms/webhooks/stripe - Receive Stripe events
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
 import { constructWebhookEvent } from '@/lib/cms/stripe'
 import { sendOrderConfirmation, sendRefundNotification } from '@/lib/cms/notifications'
-import { deductStockForOrder, releaseSessionReservations } from '@/lib/cms/inventory'
+import { deductStockForOrder } from '@/lib/cms/inventory'
 import type Stripe from 'stripe'
 
 export const dynamic = 'force-dynamic'
+
+// =============================================================================
+// IDEMPOTENCY: Check if we've already processed this event
+// =============================================================================
+
+async function isEventProcessed(eventId: string): Promise<boolean> {
+  const existing = await prisma.webhookEvent.findUnique({
+    where: { id: eventId },
+  })
+  return !!existing
+}
+
+async function markEventProcessed(eventId: string, eventType: string): Promise<void> {
+  await prisma.webhookEvent.create({
+    data: {
+      id: eventId,
+      source: 'stripe',
+      type: eventType,
+      processed: true,
+    },
+  })
+}
+
+// =============================================================================
+// STATUS MAPPING
+// =============================================================================
 
 // Map Stripe payment status to our order status
 function mapPaymentToOrderStatus(
@@ -28,6 +56,10 @@ function mapPaymentToOrderStatus(
       return 'PENDING'
   }
 }
+
+// =============================================================================
+// MAIN HANDLER
+// =============================================================================
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,6 +83,14 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid signature' },
         { status: 401 }
       )
+    }
+
+    // =========================================================================
+    // IDEMPOTENCY CHECK: Skip if already processed, return 200 to acknowledge
+    // =========================================================================
+    if (await isEventProcessed(event.id)) {
+      console.log(`Webhook event ${event.id} already processed, skipping`)
+      return NextResponse.json({ received: true, duplicate: true })
     }
 
     // Handle the event
@@ -120,6 +160,9 @@ export async function POST(request: NextRequest) {
         console.log(`Unhandled event type: ${event.type}`)
     }
 
+    // Mark event as processed AFTER successful handling
+    await markEventProcessed(event.id, event.type)
+
     return NextResponse.json({ received: true })
   } catch (error) {
     console.error('Webhook processing error:', error)
@@ -130,20 +173,35 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// =============================================================================
+// EVENT HANDLERS
+// =============================================================================
+
 async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   const orderId = session.metadata?.orderId
 
   if (orderId) {
-    await prisma.order.update({
-      where: { id: orderId },
+    // Only transition from PENDING — prevents re-processing if webhook arrives twice
+    const updated = await prisma.order.updateMany({
+      where: {
+        id: orderId,
+        status: 'PENDING',
+      },
       data: {
         status: 'PROCESSING',
+        paymentStatus: 'PAID',
         stripePaymentIntentId: session.payment_intent as string,
         paidAt: new Date(),
       },
     })
 
-    console.log(`Order ${orderId} marked as paid`)
+    if (updated.count === 0) {
+      // Order was already updated (not PENDING) — skip side effects
+      console.log(`Order ${orderId} already processed (not in PENDING state), skipping`)
+      return
+    }
+
+    console.log(`Order ${orderId} marked as paid via checkout.session.completed`)
 
     // Deduct stock from reservations
     try {
@@ -174,14 +232,19 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
 
   // Store payment record
   if (session.payment_intent) {
-    await prisma.payment.create({
-      data: {
+    // Use upsert to avoid duplicate payment records
+    await prisma.payment.upsert({
+      where: { stripePaymentIntentId: session.payment_intent as string },
+      create: {
         orderId: orderId || undefined,
         stripePaymentIntentId: session.payment_intent as string,
         amount: (session.amount_total || 0) / 100,
         currency: session.currency || 'usd',
         status: 'SUCCEEDED',
         customerEmail: session.customer_email || undefined,
+      },
+      update: {
+        status: 'SUCCEEDED',
       },
     })
   }
@@ -225,12 +288,16 @@ async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
 async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
   const orderId = paymentIntent.metadata?.orderId
 
-  // Update order if linked
+  // Update order if linked — only from PENDING to avoid duplicate transitions
   if (orderId) {
-    await prisma.order.update({
-      where: { id: orderId },
+    await prisma.order.updateMany({
+      where: {
+        id: orderId,
+        status: 'PENDING',
+      },
       data: {
         status: 'PROCESSING',
+        paymentStatus: 'PAID',
         stripePaymentIntentId: paymentIntent.id,
         paidAt: new Date(),
       },
@@ -247,8 +314,6 @@ async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
 }
 
 async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
-  const orderId = paymentIntent.metadata?.orderId
-
   // Update payment record
   await prisma.payment.updateMany({
     where: { stripePaymentIntentId: paymentIntent.id },
@@ -388,7 +453,7 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   console.log(`Invoice ${invoice.id} payment failed`)
 }
 
-// Handle GET for webhook verification
+// Health check endpoint
 export async function GET() {
   return NextResponse.json({
     status: 'ok',

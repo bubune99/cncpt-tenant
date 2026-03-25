@@ -17,7 +17,7 @@ export default function AddToCartButton({ block, className }: SmartBlockProps) {
     if (!productId || loading) return
     setLoading(true)
     try {
-      const res = await fetch('/api/cms/cart', {
+      const res = await fetch('/api/cms/cart/items', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ productId, variantId, quantity }),

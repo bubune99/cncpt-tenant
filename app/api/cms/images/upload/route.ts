@@ -1,15 +1,19 @@
 /**
- * Image Upload API - Upload images to R2
+ * Image Upload API - Upload images to R2 (tenant-scoped)
+ *
+ * SECURITY: Uses uploadTenantMedia to ensure files are stored under
+ * the tenant's namespace (tenants/{subdomain}/...) preventing
+ * cross-tenant file access.
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { uploadImage, getStorageConfig } from "@/lib/cms/r2";
-import { withTenant } from '@/lib/cms/api/tenant';
+import { uploadTenantMedia, getStorageConfig } from "@/lib/cms/r2";
+import { withRequiredTenantContext } from '@/lib/cms/tenant-context';
+import type { MediaCategory } from "@/lib/cms/r2";
 
 export const dynamic = 'force-dynamic'
 
-export async function POST(request: NextRequest) {
-  return withTenant(request, async () => {
+export const POST = withRequiredTenantContext(async (request: NextRequest, tenantContext) => {
   const storageConfig = await getStorageConfig();
   if (!storageConfig.isConfigured) {
     return NextResponse.json(
@@ -21,7 +25,7 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
-    const category = (formData.get("category") as string) || "uploads";
+    const category = (formData.get("category") as string) || "media/images";
 
     if (!file) {
       return NextResponse.json(
@@ -51,8 +55,14 @@ export async function POST(request: NextRequest) {
     // Convert file to buffer
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Upload to R2
-    const result = await uploadImage(buffer, file.name, category, file.type);
+    // Upload to R2 under the tenant's namespace
+    const result = await uploadTenantMedia(
+      tenantContext.subdomain,
+      buffer,
+      file.name,
+      category as MediaCategory,
+      file.type
+    );
 
     if (!result) {
       return NextResponse.json(
@@ -72,5 +82,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-  })
-}
+})

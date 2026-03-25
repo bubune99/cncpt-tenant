@@ -2,12 +2,23 @@
  * Dynamic Sitemap.xml Route Handler (Tenant-Scoped)
  *
  * Generates a sitemap for the current subdomain/tenant only.
+ * URLs use the correct subdomain.rootdomain format for multi-tenant.
  */
 
 import { prisma, runWithTenant } from '@/lib/cms/db'
 import { getTenantContext } from '../lib/tenant-context'
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'localhost:3000'
+
+/** Escape special XML characters in URLs */
+function escapeXml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+}
 
 interface SitemapEntry {
   url: string
@@ -189,11 +200,11 @@ export async function GET(_request: Request, { params }: SitemapRouteProps) {
     generateSitemapEntries(tenantContext.id, baseUrl)
   )
 
-  // Generate XML
+  // Generate XML with properly escaped URLs
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${entries.map(entry => `  <url>
-    <loc>${entry.url}</loc>
+    <loc>${escapeXml(entry.url)}</loc>
     <lastmod>${entry.lastModified.toISOString()}</lastmod>
     <changefreq>${entry.changeFrequency}</changefreq>
     <priority>${entry.priority}</priority>
@@ -203,6 +214,7 @@ ${entries.map(entry => `  <url>
   return new Response(xml, {
     headers: {
       'Content-Type': 'application/xml',
+      'Cache-Control': 'public, max-age=3600, s-maxage=3600',
     },
   })
 }

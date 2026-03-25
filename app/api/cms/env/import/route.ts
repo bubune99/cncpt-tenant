@@ -6,11 +6,21 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { importEnvVars, clearEnvCache } from '@/lib/cms/env'
+import { stackServerApp } from '@/lib/cms/stack'
+import { isSuperAdmin } from '@/lib/super-admin'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await stackServerApp.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const isAdmin = await isSuperAdmin(user.id)
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Forbidden: platform admin access required' }, { status: 403 })
+    }
     const body = await request.json()
     const { envString, overwrite = false } = body
 

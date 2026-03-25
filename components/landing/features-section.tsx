@@ -24,8 +24,8 @@ const features = [
     Icon: ShoppingBag,
     name: "Product Management",
     description: "Inventory tracking, variants, bulk operations. Everything you need to run your store.",
-    href: "#",
-    cta: "Learn more",
+    href: "/register",
+    cta: "Get started",
     className: "lg:col-start-2 lg:col-end-3",
     background: (
       <div className="absolute inset-0 bg-gradient-to-br from-[#c2410c]/10 to-transparent" />
@@ -35,8 +35,8 @@ const features = [
     Icon: FileText,
     name: "Content & Blog",
     description: "Rich editor with SEO tools, scheduling, categories. Publish content that ranks.",
-    href: "#",
-    cta: "Learn more",
+    href: "/register",
+    cta: "Get started",
     className: "lg:col-start-3 lg:col-end-4",
     background: (
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent" />
@@ -46,8 +46,8 @@ const features = [
     Icon: Mail,
     name: "Email Marketing",
     description: "Beautiful campaigns, automation, analytics. Turn visitors into loyal customers.",
-    href: "#",
-    cta: "Learn more",
+    href: "/register",
+    cta: "Get started",
     className: "lg:col-start-2 lg:col-end-3",
     background: (
       <div className="absolute inset-0 bg-gradient-to-br from-[#1e3a5f]/10 to-transparent" />
@@ -57,8 +57,8 @@ const features = [
     Icon: Sparkles,
     name: "AI Assistant",
     description: "Generate copy, optimize content, answer questions. Your intelligent co-pilot.",
-    href: "#",
-    cta: "Learn more",
+    href: "/register",
+    cta: "Get started",
     className: "lg:col-start-3 lg:col-end-4",
     background: (
       <div className="absolute inset-0 bg-gradient-to-br from-[#c2410c]/10 to-transparent" />
@@ -68,8 +68,8 @@ const features = [
     Icon: BarChart3,
     name: "Analytics",
     description: "Real-time insights, conversion tracking, customer journeys. Make data-driven decisions.",
-    href: "#",
-    cta: "Learn more",
+    href: "/register",
+    cta: "Get started",
     className: "lg:row-start-3 lg:col-start-1 lg:col-end-4",
     background: (
       <div className="absolute inset-0 bg-gradient-to-r from-[#1e3a5f]/5 via-transparent to-[#c2410c]/5" />

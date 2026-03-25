@@ -19,8 +19,13 @@ export default function CartSummary({ block, className }: SmartBlockProps) {
       const res = await fetch('/api/cms/cart')
       if (res.ok) {
         const data = await res.json()
-        const items = data.items || []
-        const total = items.reduce(
+        const cartData = data.cart
+        if (!cartData) {
+          setCart({ items: [], total: 0, itemCount: 0 })
+          return
+        }
+        const items = cartData.items || []
+        const total = cartData.total ?? items.reduce(
           (sum: number, i: { quantity: number; price: number }) => sum + i.quantity * i.price,
           0
         )

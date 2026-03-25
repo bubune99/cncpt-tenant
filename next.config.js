@@ -21,7 +21,7 @@ const cspDirectives = [
   "font-src 'self' data:",
 
   // XHR / fetch / WebSocket connections
-  "connect-src 'self' wss: https://*.stack-auth.com https://*.stripe.com https://www.google-analytics.com https://plausible.io https://*.r2.dev https://*.r2.cloudflarestorage.com https://*.amazonaws.com https://vercel.live https://v0.dev https://*.v0.dev https://v0.app https://*.v0.app",
+  "connect-src 'self' wss://*.stack-auth.com wss://vercel.live wss://*.v0.dev wss://*.v0.app https://*.stack-auth.com https://*.stripe.com https://www.google-analytics.com https://plausible.io https://*.r2.dev https://*.r2.cloudflarestorage.com https://*.amazonaws.com https://vercel.live https://v0.dev https://*.v0.dev https://v0.app https://*.v0.app",
 
   // Iframes: Stripe checkout/3DS, Shippo, YouTube (TipTap), Vercel toolbar, v0
   "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://js.goshippo.com https://www.youtube.com https://vercel.live https://v0.dev https://*.v0.dev https://v0.app https://*.v0.app",

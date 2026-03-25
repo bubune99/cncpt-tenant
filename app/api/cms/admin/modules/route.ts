@@ -9,20 +9,17 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { prisma } from "@/lib/cms/db"
 import { clearModuleCache } from "@/lib/cms/modules/registry"
-import { withTenant } from "@/lib/cms/api/tenant"
+import { withPermission } from "@/lib/cms/permissions/middleware"
 
-export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
+export const GET = withPermission('settings.view', async (_request, _context) => {
   const modules = await prisma.cmsModule.findMany({
     orderBy: { sortOrder: "asc" },
   })
 
   return NextResponse.json({ ok: true, data: modules })
-  })
-}
+})
 
-export async function PATCH(request: NextRequest) {
-  return withTenant(request, async () => {
+export const PATCH = withPermission('settings.edit', async (request, _context) => {
   const body = await request.json()
   const { slug, enabled, config } = body as {
     slug: string
@@ -66,5 +63,4 @@ export async function PATCH(request: NextRequest) {
   clearModuleCache()
 
   return NextResponse.json({ ok: true, data: updated })
-  })
-}
+})

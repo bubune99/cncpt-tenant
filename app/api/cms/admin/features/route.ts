@@ -7,7 +7,6 @@
  */
 
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
 import { prisma, getCurrentTenant } from "@/lib/cms/db"
 import {
   resolveFeatureConfig,
@@ -17,7 +16,7 @@ import {
   getSubFeatures,
   MODULE_FEATURES,
 } from "@/lib/cms/features"
-import { withTenant } from "@/lib/cms/api/tenant"
+import { withPermission } from "@/lib/cms/permissions/middleware"
 
 /**
  * GET /api/cms/admin/features
@@ -25,8 +24,7 @@ import { withTenant } from "@/lib/cms/api/tenant"
  * Returns the resolved feature config for the current tenant
  * plus metadata about each feature for the settings UI.
  */
-export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
+export const GET = withPermission('settings.view', async () => {
   const tenantId = getCurrentTenant()
   const config = await resolveFeatureConfig(tenantId ?? undefined)
   const features = await getResolvedFeatures(tenantId ?? undefined)
@@ -52,8 +50,7 @@ export async function GET(request: NextRequest) {
       features: grouped,
     },
   })
-  })
-}
+})
 
 /**
  * PATCH /api/cms/admin/features
@@ -61,8 +58,7 @@ export async function GET(request: NextRequest) {
  * Toggle one or more features.
  * Body: { key: string, enabled: boolean } | { features: Record<string, boolean> }
  */
-export async function PATCH(request: NextRequest) {
-  return withTenant(request, async () => {
+export const PATCH = withPermission('settings.edit', async (request) => {
   const tenantId = getCurrentTenant()
   const body = await request.json()
 
@@ -144,8 +140,7 @@ export async function PATCH(request: NextRequest) {
     ok: true,
     data: { config: newConfig },
   })
-  })
-}
+})
 
 /**
  * PUT /api/cms/admin/features
@@ -153,8 +148,7 @@ export async function PATCH(request: NextRequest) {
  * Replace the entire feature config (preset application).
  * Body: { config: Record<string, boolean> }
  */
-export async function PUT(request: NextRequest) {
-  return withTenant(request, async () => {
+export const PUT = withPermission('settings.edit', async (request) => {
   const tenantId = getCurrentTenant()
   const body = await request.json()
   const { config } = body as { config: Record<string, boolean> }
@@ -188,8 +182,7 @@ export async function PUT(request: NextRequest) {
     ok: true,
     data: { config: newConfig },
   })
-  })
-}
+})
 
 // ---------------------------------------------------------------------------
 //  Helpers

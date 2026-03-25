@@ -111,13 +111,13 @@ export async function POST(request: NextRequest) {
 
     const session = await createCheckoutSession(sessionRequest)
 
-    // Update order with checkout session ID if applicable
+    // Update order with checkout session ID — keep status as PENDING until
+    // Stripe webhook confirms payment (checkout.session.completed)
     if (body.orderId) {
       await prisma.order.update({
         where: { id: body.orderId },
         data: {
           stripeSessionId: session.sessionId,
-          status: 'PROCESSING',
         },
       })
     }

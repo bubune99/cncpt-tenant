@@ -32,12 +32,29 @@ export async function POST(request: NextRequest) {
     const validTypes = ['BUG', 'FEATURE', 'GENERAL', 'OTHER'];
     const feedbackType = validTypes.includes(type) ? type : 'GENERAL';
 
+    // SECURITY: If tenantId is provided, verify the user owns that tenant
+    // to prevent users from associating feedback with arbitrary tenants
+    let validatedTenantId: number | null = null;
+    if (tenantId) {
+      const parsedTenantId = parseInt(tenantId, 10);
+      if (!isNaN(parsedTenantId)) {
+        const ownsSubdomain = await prisma.subdomain.findFirst({
+          where: { id: parsedTenantId, userId: user.id },
+          select: { id: true },
+        });
+        if (ownsSubdomain) {
+          validatedTenantId = parsedTenantId;
+        }
+        // Silently ignore invalid tenantId - don't leak info about other tenants
+      }
+    }
+
     const feedback = await prisma.feedback.create({
       data: {
         userId: user.id,
         userEmail: user.primaryEmail || '',
         userName: user.displayName || undefined,
-        tenantId: tenantId ? parseInt(tenantId, 10) : null,
+        tenantId: validatedTenantId,
         type: feedbackType,
         subject: subject?.trim() || null,
         message: message.trim(),

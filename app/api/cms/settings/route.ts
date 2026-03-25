@@ -13,12 +13,11 @@ import {
   getEnvVarStatus,
 } from '@/lib/cms/settings'
 import type { SettingGroup } from '@/lib/cms/settings/types'
-import { withTenant } from '@/lib/cms/api/tenant'
+import { withPermission } from '@/lib/cms/permissions/middleware'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
+export const GET = withPermission('settings.view', async (request, _context) => {
     try {
       const { searchParams } = new URL(request.url)
       const group = searchParams.get('group')
@@ -43,11 +42,9 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       )
     }
-  })
-}
+})
 
-export async function PUT(request: NextRequest) {
-  return withTenant(request, async () => {
+export const PUT = withPermission('settings.edit', async (request, _context) => {
     try {
       const body = await request.json()
       const { group, settings } = body
@@ -107,5 +104,4 @@ export async function PUT(request: NextRequest) {
         { status: 500 }
       )
     }
-  })
-}
+})

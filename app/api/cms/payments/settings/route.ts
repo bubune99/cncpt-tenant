@@ -10,12 +10,11 @@ import { prisma } from '@/lib/cms/db'
 import { getStripeSettings, clearStripeSettingsCache } from '@/lib/cms/stripe'
 import { encrypt } from '@/lib/cms/encryption'
 import type { StripeSettings } from '@/lib/cms/stripe/types'
-import { withTenant } from '@/lib/cms/api/tenant'
+import { withPermission } from '@/lib/cms/permissions/middleware'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
+export const GET = withPermission('settings.view', async (_request, _context) => {
   try {
     const settings = await getStripeSettings()
 
@@ -34,11 +33,9 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
-  })
-}
+})
 
-export async function PUT(request: NextRequest) {
-  return withTenant(request, async () => {
+export const PUT = withPermission('settings.edit', async (request, _context) => {
   try {
     const body: Partial<StripeSettings> = await request.json()
 
@@ -132,5 +129,4 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     )
   }
-  })
-}
+})

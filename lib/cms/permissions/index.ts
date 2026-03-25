@@ -150,12 +150,35 @@ export async function hasPermission(
 /**
  * Check permission against a pre-loaded user permission set
  * (Use this in loops to avoid repeated DB queries)
+ *
+ * DENY overrides always take priority over any ALLOW, including wildcards.
+ * A DENY on "products.view" blocks access even if the user has "*" from a role.
  */
 export function checkPermission(
   userPerms: UserWithPermissions,
   requiredPermission: string
 ): PermissionCheckResult {
-  // Check for super admin first
+  // Check DENY overrides FIRST — they override everything including wildcards
+  const denyOverride = userPerms.overrides.find(
+    (o) => o.type === 'DENY' && (
+      o.permission === requiredPermission ||
+      // DENY with wildcards (e.g., "products.*" denies "products.view")
+      permissionMatches(o.permission, requiredPermission)
+    )
+  )
+
+  if (denyOverride) {
+    return {
+      allowed: false,
+      reason: denyOverride.reason || 'Permission explicitly denied',
+      source: {
+        type: 'override',
+        id: denyOverride.id,
+      },
+    }
+  }
+
+  // Check for super admin wildcard (only after confirming no DENY)
   if (userPerms.permissions.has('*')) {
     return {
       allowed: true,
@@ -196,22 +219,6 @@ export function checkPermission(
       }
 
       return { allowed: true }
-    }
-  }
-
-  // Check if explicitly denied
-  const denyOverride = userPerms.overrides.find(
-    (o) => o.type === 'DENY' && o.permission === requiredPermission
-  )
-
-  if (denyOverride) {
-    return {
-      allowed: false,
-      reason: denyOverride.reason || 'Permission explicitly denied',
-      source: {
-        type: 'override',
-        id: denyOverride.id,
-      },
     }
   }
 

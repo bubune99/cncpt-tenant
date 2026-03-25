@@ -21,15 +21,15 @@ const sections = [
     title: "Company",
     links: [
       { name: "Book Call", href: "/book" },
-      { name: "About", href: "#" },
-      { name: "Contact", href: "#" },
+      { name: "About", href: "/docs" },
+      { name: "Contact", href: "/book" },
     ],
   },
   {
     title: "Legal",
     links: [
-      { name: "Privacy", href: "#" },
-      { name: "Terms", href: "#" },
+      { name: "Privacy", href: "/legal/privacy" },
+      { name: "Terms", href: "/legal/terms" },
     ],
   },
 ]
@@ -60,7 +60,7 @@ export function Footer({ mounted, resolvedTheme }: FooterProps) {
 
           {sections.map((section) => (
             <div key={section.title}>
-              <h4 className="text-sm font-medium text-foreground mb-4">{section.title}</h4>
+              <h3 className="text-sm font-medium text-foreground mb-4">{section.title}</h3>
               <ul className="space-y-3">
                 {section.links.map((link) => (
                   <li key={link.name}>
@@ -82,14 +82,21 @@ export function Footer({ mounted, resolvedTheme }: FooterProps) {
             &copy; {new Date().getFullYear()} CNCPT Web. All rights reserved.
           </p>
           <div className="flex items-center gap-4 mt-4 md:mt-0">
-            {["Twitter", "GitHub", "Discord"].map((social) => (
-              <Link
-                key={social}
-                href="#"
+            {[
+              { name: "Twitter", href: "https://x.com/cncptweb" },
+              { name: "GitHub", href: "https://github.com/cncptweb" },
+              { name: "Discord", href: "https://discord.gg/cncptweb" },
+            ].map((social) => (
+              <a
+                key={social.name}
+                href={social.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Follow CNCPT Web on ${social.name}`}
                 className="text-sm text-muted-foreground/60 hover:text-foreground transition-colors"
               >
-                {social}
-              </Link>
+                {social.name}
+              </a>
             ))}
           </div>
         </div>

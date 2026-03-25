@@ -6,7 +6,6 @@
  */
 
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
 import { prisma, getCurrentTenant } from "@/lib/cms/db"
 import {
   FEATURE_PRESETS,
@@ -15,15 +14,14 @@ import {
   clearFeatureCache,
   MODULE_FEATURES,
 } from "@/lib/cms/features"
-import { withTenant } from "@/lib/cms/api/tenant"
+import { withPermission } from "@/lib/cms/permissions/middleware"
 
 /**
  * GET /api/cms/admin/features/presets
  *
  * List all available vertical presets.
  */
-export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
+export const GET = withPermission('settings.view', async () => {
   return NextResponse.json({
     ok: true,
     data: FEATURE_PRESETS.map((p) => ({
@@ -35,16 +33,14 @@ export async function GET(request: NextRequest) {
       tags: p.tags,
     })),
   })
-  })
-}
+})
 
 /**
  * POST /api/cms/admin/features/presets
  *
  * Apply a preset. Body: { presetId: string }
  */
-export async function POST(request: NextRequest) {
-  return withTenant(request, async () => {
+export const POST = withPermission('settings.edit', async (request) => {
   const tenantId = getCurrentTenant()
   const body = await request.json()
   const { presetId } = body as { presetId: string }
@@ -99,5 +95,4 @@ export async function POST(request: NextRequest) {
       config,
     },
   })
-  })
-}
+})

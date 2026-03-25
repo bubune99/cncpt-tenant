@@ -11,6 +11,32 @@ import { addUserPurchasedCredits, addPurchasedCredits } from "@/lib/ai-credits"
 import { sql } from "@/lib/neon"
 import type Stripe from "stripe"
 
+// Idempotency: track processed event IDs to prevent double-processing on retries
+async function isEventProcessed(eventId: string): Promise<boolean> {
+  try {
+    const result = await sql`
+      SELECT id FROM webhook_events WHERE id = ${eventId} LIMIT 1
+    `
+    return result.length > 0
+  } catch {
+    // Table may not exist yet — treat as not processed
+    return false
+  }
+}
+
+async function markEventProcessed(eventId: string, eventType: string): Promise<void> {
+  try {
+    await sql`
+      INSERT INTO webhook_events (id, source, type, processed, created_at)
+      VALUES (${eventId}, 'stripe_platform', ${eventType}, true, NOW())
+      ON CONFLICT (id) DO NOTHING
+    `
+  } catch {
+    // Table may not exist — log but don't fail
+    console.log("[platform-webhook] Could not record event (webhook_events table may not exist)")
+  }
+}
+
 export const dynamic = "force-dynamic"
 
 export async function POST(request: NextRequest) {
@@ -42,6 +68,12 @@ export async function POST(request: NextRequest) {
     if (metadata.platform !== "cncpt-web-hosting") {
       // Not our event, acknowledge but don't process
       return NextResponse.json({ received: true, skipped: true })
+    }
+
+    // Idempotency check: skip if already processed (Stripe may retry)
+    if (await isEventProcessed(event.id)) {
+      console.log(`[platform-webhook] Event ${event.id} already processed, skipping`)
+      return NextResponse.json({ received: true, duplicate: true })
     }
 
     console.log(`[platform-webhook] Processing ${event.type}`)
@@ -87,6 +119,9 @@ export async function POST(request: NextRequest) {
       default:
         console.log(`[platform-webhook] Unhandled event type: ${event.type}`)
     }
+
+    // Mark event as processed after successful handling
+    await markEventProcessed(event.id, event.type)
 
     return NextResponse.json({ received: true })
   } catch (error) {

@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { writeFile, readdir, readFile, mkdir } from "fs/promises"
 import { existsSync } from "fs"
 import { join } from "path"
+import { stackServerApp } from "@/lib/cms/stack"
 
 const SCREENSHOTS_DIR = join(process.cwd(), "public", "screenshots")
 
@@ -25,6 +26,11 @@ async function ensureDir() {
 // POST — Save a screenshot
 export async function POST(request: NextRequest) {
   try {
+    const user = await stackServerApp.getUser()
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = await request.json()
     const { dataUrl, slug, type = "current" } = body as {
       dataUrl: string
@@ -78,6 +84,11 @@ export async function POST(request: NextRequest) {
 // GET — List screenshots or get specific one
 export async function GET(request: NextRequest) {
   try {
+    const user = await stackServerApp.getUser()
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     await ensureDir()
 
     const { searchParams } = new URL(request.url)

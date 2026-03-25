@@ -425,6 +425,8 @@ const DEFAULT_RESERVATION_MINUTES = 15;
 
 /**
  * Reserve stock for a checkout session
+ * Uses a Prisma transaction with serializable isolation to prevent race conditions.
+ * The stock check + reservation creation happen atomically — no TOCTOU window.
  */
 export async function reserveStock(
   productId: string,
@@ -434,72 +436,80 @@ export async function reserveStock(
   reservationMinutes: number = DEFAULT_RESERVATION_MINUTES
 ): Promise<StockReservationResult> {
   try {
-    // Get current stock
-    let currentStock: number;
-    let trackInventory: boolean;
+    const result = await prisma.$transaction(async (tx) => {
+      // Step 1: Get current stock inside the transaction
+      let currentStock: number;
+      let trackInventory: boolean;
 
-    if (variantId) {
-      const variant = await prisma.productVariant.findUnique({
-        where: { id: variantId },
-        include: {
-          product: {
-            select: { trackInventory: true },
+      if (variantId) {
+        const variant = await tx.productVariant.findUnique({
+          where: { id: variantId },
+          include: {
+            product: {
+              select: { trackInventory: true },
+            },
           },
+        });
+        if (!variant) {
+          return { success: false as const, error: 'Variant not found' };
+        }
+        currentStock = variant.stock;
+        trackInventory = variant.product.trackInventory;
+      } else {
+        const product = await tx.product.findUnique({
+          where: { id: productId },
+          select: { stock: true, trackInventory: true },
+        });
+        if (!product) {
+          return { success: false as const, error: 'Product not found' };
+        }
+        currentStock = product.stock;
+        trackInventory = product.trackInventory;
+      }
+
+      // If not tracking inventory, always succeed
+      if (!trackInventory) {
+        return { success: true as const };
+      }
+
+      // Step 2: Calculate available stock (current - active reservations) inside same tx
+      const reservedStock = await tx.stockReservation.aggregate({
+        where: {
+          productId,
+          variantId: variantId || null,
+          released: false,
+          expiresAt: { gt: new Date() },
+        },
+        _sum: { quantity: true },
+      });
+
+      const availableStock = currentStock - (reservedStock._sum.quantity || 0);
+
+      if (availableStock < quantity) {
+        return { success: false as const, error: 'Insufficient stock' };
+      }
+
+      // Step 3: Create reservation atomically (same tx guarantees no concurrent inserts sneak in)
+      const expiresAt = new Date(Date.now() + reservationMinutes * 60 * 1000);
+
+      const reservation = await tx.stockReservation.create({
+        data: {
+          productId,
+          variantId: variantId || null,
+          quantity,
+          sessionId,
+          expiresAt,
         },
       });
-      if (!variant) {
-        return { success: false, error: 'Variant not found' };
-      }
-      currentStock = variant.stock;
-      trackInventory = variant.product.trackInventory;
-    } else {
-      const product = await prisma.product.findUnique({
-        where: { id: productId },
-        select: { stock: true, trackInventory: true },
-      });
-      if (!product) {
-        return { success: false, error: 'Product not found' };
-      }
-      currentStock = product.stock;
-      trackInventory = product.trackInventory;
-    }
 
-    // If not tracking inventory, always succeed
-    if (!trackInventory) {
-      return { success: true };
-    }
-
-    // Calculate available stock (current - active reservations)
-    const reservedStock = await prisma.stockReservation.aggregate({
-      where: {
-        productId,
-        variantId: variantId || null,
-        released: false,
-        expiresAt: { gt: new Date() },
-      },
-      _sum: { quantity: true },
+      return { success: true as const, reservationId: reservation.id };
+    }, {
+      // Serializable isolation prevents concurrent transactions from seeing stale stock
+      isolationLevel: 'Serializable',
+      timeout: 10000, // 10s timeout
     });
 
-    const availableStock = currentStock - (reservedStock._sum.quantity || 0);
-
-    if (availableStock < quantity) {
-      return { success: false, error: 'Insufficient stock' };
-    }
-
-    // Create reservation
-    const expiresAt = new Date(Date.now() + reservationMinutes * 60 * 1000);
-
-    const reservation = await prisma.stockReservation.create({
-      data: {
-        productId,
-        variantId: variantId || null,
-        quantity,
-        sessionId,
-        expiresAt,
-      },
-    });
-
-    return { success: true, reservationId: reservation.id };
+    return result;
   } catch (error) {
     console.error('Error reserving stock:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
@@ -557,40 +567,43 @@ export async function convertReservationsToOrder(sessionId: string, orderId: str
 
 /**
  * Deduct stock when order is confirmed/paid
- * Releases reservations after deducting actual stock
+ * Releases reservations after deducting actual stock.
+ * All operations run in a single transaction for atomicity.
  */
 export async function deductStockForOrder(orderId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const reservations = await prisma.stockReservation.findMany({
-      where: {
-        orderId,
-        released: false,
-      },
-    });
+    await prisma.$transaction(async (tx) => {
+      const reservations = await tx.stockReservation.findMany({
+        where: {
+          orderId,
+          released: false,
+        },
+      });
 
-    for (const reservation of reservations) {
-      if (reservation.variantId) {
-        await prisma.productVariant.update({
-          where: { id: reservation.variantId },
-          data: {
-            stock: { decrement: reservation.quantity },
-          },
-        });
-      } else {
-        await prisma.product.update({
-          where: { id: reservation.productId },
-          data: {
-            stock: { decrement: reservation.quantity },
-          },
+      for (const reservation of reservations) {
+        if (reservation.variantId) {
+          await tx.productVariant.update({
+            where: { id: reservation.variantId },
+            data: {
+              stock: { decrement: reservation.quantity },
+            },
+          });
+        } else {
+          await tx.product.update({
+            where: { id: reservation.productId },
+            data: {
+              stock: { decrement: reservation.quantity },
+            },
+          });
+        }
+
+        // Mark reservation as released (stock has been deducted)
+        await tx.stockReservation.update({
+          where: { id: reservation.id },
+          data: { released: true },
         });
       }
-
-      // Mark reservation as released (stock has been deducted)
-      await prisma.stockReservation.update({
-        where: { id: reservation.id },
-        data: { released: true },
-      });
-    }
+    });
 
     return { success: true };
   } catch (error) {

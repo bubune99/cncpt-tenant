@@ -127,9 +127,9 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // Update user data
+    // Update user data (allow empty strings to clear fields)
     const userUpdateData: Record<string, string | null> = {};
-    if (body.name !== undefined) userUpdateData.name = body.name || null;
+    if (body.name !== undefined) userUpdateData.name = typeof body.name === 'string' ? body.name : null;
     if (body.phone !== undefined) userUpdateData.phone = body.phone || null;
 
     if (Object.keys(userUpdateData).length > 0) {
@@ -144,9 +144,9 @@ export async function PATCH(request: NextRequest) {
       const customerUpdateData: Record<string, unknown> = {};
 
       if (body.firstName !== undefined)
-        customerUpdateData.firstName = body.firstName || null;
+        customerUpdateData.firstName = typeof body.firstName === 'string' ? body.firstName : null;
       if (body.lastName !== undefined)
-        customerUpdateData.lastName = body.lastName || null;
+        customerUpdateData.lastName = typeof body.lastName === 'string' ? body.lastName : null;
       if (body.company !== undefined)
         customerUpdateData.company = body.company || null;
       if (body.taxId !== undefined)

@@ -362,6 +362,7 @@ interface SourceFile {
  */
 async function importMultipleFiles(files: SourceFile[]): Promise<ImportAnalysis & { fileResults: FileImportResult[] }> {
   const { importFromReactAST } = await import('./ast-parser')
+  const { preprocessForImport } = await import('./preprocess')
 
   const allBlocks: unknown[] = []
   const allErrors: string[] = []
@@ -369,7 +370,8 @@ async function importMultipleFiles(files: SourceFile[]): Promise<ImportAnalysis 
 
   for (const file of files) {
     try {
-      const { blocks, errors } = importFromReactAST(file.content)
+      const { code: preprocessed } = preprocessForImport(file.content)
+      const { blocks, errors } = importFromReactAST(preprocessed)
       const fileBlockCount = blocks.length
 
       if (fileBlockCount > 0) {
@@ -604,8 +606,10 @@ export interface ImportAnalysis {
  */
 export async function importAndAnalyzeCode(code: string): Promise<ImportAnalysis> {
   const { importFromReactAST } = await import('./ast-parser')
+  const { preprocessForImport } = await import('./preprocess')
 
-  const { blocks, errors } = importFromReactAST(code)
+  const { code: preprocessed } = preprocessForImport(code)
+  const { blocks, errors } = importFromReactAST(preprocessed)
 
   const repairItems: ImportRepairItem[] = []
   const customComponents = new Set<string>()

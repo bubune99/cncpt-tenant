@@ -13,11 +13,11 @@ const CRON_SECRET = process.env.CRON_SECRET
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify cron secret (for Vercel Cron or external cron services)
+    // Verify cron secret (fail closed — deny if not configured)
     const authHeader = request.headers.get('authorization')
     const cronSecret = authHeader?.replace('Bearer ', '')
 
-    if (CRON_SECRET && cronSecret !== CRON_SECRET) {
+    if (!CRON_SECRET || cronSecret !== CRON_SECRET) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
