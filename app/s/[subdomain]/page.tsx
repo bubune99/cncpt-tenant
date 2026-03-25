@@ -3,12 +3,30 @@ import { getTenantData } from "@/lib/tenant"
 import { StorefrontRouter } from "@/components/cms/storefront"
 import { prisma } from "@/lib/cms/db"
 import { PageWrapper, getPageLayoutSettings } from "@/components/cms/page-wrapper"
+import { BlockPageRenderer } from "@/components/cms/page-wrapper/block-page-renderer"
+import type { Block } from "@/lib/cms/block-editor/types"
+import {
+  registerCommerceFetchers,
+  registerDashboardFetchers,
+  resolveSmartBlockData,
+  serializeSmartBlockData,
+} from "@/lib/cms/block-editor/smart-blocks"
 
 /** Page content data shape */
 interface Data {
   content: Array<{ type: string; props: Record<string, unknown>; [key: string]: unknown }>;
   root?: { props?: Record<string, unknown> };
   zones?: Record<string, unknown[]>;
+}
+
+/** Parse block editor v2 content */
+function parseBlocks(content: unknown): Block[] {
+  if (!content || typeof content !== "object") return []
+  const doc = content as Record<string, unknown>
+  if (doc.version === "2.0" && Array.isArray(doc.blocks)) {
+    return doc.blocks as Block[]
+  }
+  return []
 }
 
 export const dynamic = "force-dynamic"
@@ -102,13 +120,18 @@ function validatePageContent(content: unknown): Data | null {
 }
 
 /**
- * Fetch home page (slug "/") for the tenant
+ * Fetch home page for the tenant.
+ * Checks multiple slug formats: "/", "home", "/home"
  */
 async function getHomePage(tenantId: number) {
   try {
     const page = await prisma.page.findFirst({
       where: {
-        slug: "/",
+        OR: [
+          { slug: "/" },
+          { slug: "home" },
+          { slug: "/home" },
+        ],
         status: "PUBLISHED",
         tenantId: tenantId,
       },
@@ -144,19 +167,28 @@ export default async function SubdomainPage({ params }: SubdomainPageProps) {
   const homePage = await getHomePage(tenantData.id)
 
   if (homePage && homePage.content) {
-    // Validate page content
-    const validatedContent = validatePageContent(homePage.content)
+    // Try block editor v2 format first
+    const blocks = parseBlocks(homePage.content)
 
-    if (validatedContent) {
-      // Page has content -- custom block editor rendering will be wired in
-      // Custom block editor rendering will be wired in separately
+    if (blocks.length > 0) {
+      registerCommerceFetchers()
+      registerDashboardFetchers()
+      const dataMap = await resolveSmartBlockData(blocks)
+      const smartBlockData = serializeSmartBlockData(dataMap)
+
       return (
         <PageWrapper pageSettings={getPageLayoutSettings(homePage)}>
-          <div className="container mx-auto px-4 py-12">
-            <p className="text-muted-foreground text-center">
-              Page content available. Editor rendering pending migration.
-            </p>
-          </div>
+          <BlockPageRenderer blocks={blocks} smartBlockData={smartBlockData} />
+        </PageWrapper>
+      )
+    }
+
+    // Fall back to legacy validation
+    const validatedContent = validatePageContent(homePage.content)
+    if (validatedContent) {
+      return (
+        <PageWrapper pageSettings={getPageLayoutSettings(homePage)}>
+          <BlockPageRenderer blocks={[]} smartBlockData={{}} />
         </PageWrapper>
       )
     }

@@ -126,6 +126,17 @@ const nextConfig = {
       },
     ];
   },
+
+  async redirects() {
+    return [
+      {
+        // /blog -> /posts (public blog listing lives at /posts)
+        source: "/blog",
+        destination: "/posts",
+        permanent: true,
+      },
+    ];
+  },
 }
 
 module.exports = nextConfig
