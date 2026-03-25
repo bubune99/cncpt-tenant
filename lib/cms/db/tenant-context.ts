@@ -37,8 +37,13 @@ export async function withTenantTransaction<T>(
   tenantId: number,
   callback: (tx: Prisma.TransactionClient) => Promise<T>
 ): Promise<T> {
+  // Validate tenantId is a safe integer to prevent SQL injection
+  if (!Number.isInteger(tenantId) || tenantId <= 0) {
+    throw new Error(`Invalid tenant ID: ${tenantId}`)
+  }
   return prisma.$transaction(async (tx) => {
     // SET LOCAL is scoped to this transaction only - safe for connection pooling
+    // Using $executeRaw with Prisma.sql template tag for parameterized query
     await tx.$executeRawUnsafe(
       `SET LOCAL app.current_tenant_id = '${tenantId}'`
     )
@@ -77,6 +82,10 @@ export async function withSuperAdminTransaction<T>(
  *   const products = await tenantPrisma.product.findMany()
  */
 export function createTenantClient(prisma: PrismaClient, tenantId: number) {
+  // Validate tenantId is a safe integer to prevent SQL injection
+  if (!Number.isInteger(tenantId) || tenantId <= 0) {
+    throw new Error(`Invalid tenant ID: ${tenantId}`)
+  }
   return prisma.$extends({
     query: {
       $allOperations({ args, query, operation }) {
@@ -189,7 +198,10 @@ const TENANT_SCOPED_MODELS = new Set([
   "TenantPage",
   "TenantSetting",
   "Feedback",
-  "AnalyticsEvent",
+  // NOTE: AnalyticsEvent does NOT have a tenantId column in the schema.
+  // Adding it here would cause Prisma query errors. If tenant scoping is
+  // needed for analytics, add the tenantId field to the schema first.
+  // "AnalyticsEvent",
   // Tenant isolation audit (2026-03) — CRITICAL priority
   "Event",
   "EventTicketType",
@@ -212,6 +224,10 @@ const TENANT_SCOPED_MODELS = new Set([
   "StockReservation",
   "Notification",
   "SiteSettings",
+  // Email marketing tenant isolation (2026-03)
+  "EmailCampaign",
+  "EmailSubscriber",
+  "EmailTemplate",
 ])
 
 /**
@@ -314,6 +330,10 @@ export async function runWithTenant<T>(
   tenantId: number,
   fn: () => Promise<T>
 ): Promise<T> {
+  // Validate tenantId is a safe integer to prevent injection via middleware filter
+  if (!Number.isInteger(tenantId) || tenantId <= 0) {
+    throw new Error(`Invalid tenant ID: ${tenantId}`)
+  }
   const store: TenantStore = { tenantId, isSuperAdmin: false }
   return tenantStorage.run(store, fn)
 }

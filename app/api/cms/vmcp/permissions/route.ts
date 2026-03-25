@@ -3,6 +3,8 @@
  *
  * Handles VMCP mode management (ask vs autonomous).
  * Note: Tool approval is handled natively by AI SDK v6's needsApproval.
+ *
+ * SECURITY: Requires authentication to prevent unauthorized mode changes.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -13,6 +15,7 @@ import {
   disableAutonomousMode,
   isAutonomousMode,
 } from '@/lib/cms/vmcp';
+import { stackServerApp } from '@/lib/cms/stack';
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +26,12 @@ export const dynamic = 'force-dynamic'
  */
 export async function GET() {
   try {
+    // Require authentication
+    const user = await stackServerApp.getUser();
+    if (!user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
     const settings = await getVmcpSettings();
     const autonomous = await isAutonomousMode();
 
@@ -50,6 +59,12 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   try {
+    // Require authentication
+    const user = await stackServerApp.getUser();
+    if (!user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { action, settings } = body;
 
