@@ -45,7 +45,7 @@ export default async function AdminLayout({
   const user = await stackServerApp.getUser();
 
   if (!user) {
-    redirect('/');
+    redirect('/handler/sign-in?after_auth_return_to=/admin');
   }
 
   // Super admins can access any subdomain
