@@ -92,6 +92,7 @@ export function SiteConfigForm({
             value={config.subdomain}
             onChange={(e) => handleSubdomainChange(e.target.value)}
             disabled={disabled}
+            data-tour-id="create-subdomain-form-name"
             className={errors.subdomain ? "border-destructive" : ""}
           />
           <span className="text-muted-foreground whitespace-nowrap">.{domain}</span>

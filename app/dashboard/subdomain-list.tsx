@@ -49,12 +49,12 @@ function SubdomainCard({ subdomain }: { subdomain: Subdomain }) {
   }
 
   return (
-    <Card data-help-key="dashboard.site.card">
+    <Card data-help-key="dashboard.site.card" data-tour-id="dashboard-subdomain-card">
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div>
-              <h3 className="font-semibold text-lg">
+              <h3 className="font-semibold text-lg" data-tour-id="dashboard-subdomain-title">
                 {subdomain.site_title || `${subdomain.subdomain}.${rootDomain}`}
               </h3>
               <p className="text-sm text-muted-foreground">
@@ -65,17 +65,17 @@ function SubdomainCard({ subdomain }: { subdomain: Subdomain }) {
           </div>
 
           <div className="flex items-center space-x-2">
-            <Badge variant="secondary" data-help-key="dashboard.site.status">Active</Badge>
+            <Badge variant="secondary" data-help-key="dashboard.site.status" data-tour-id="dashboard-subdomain-status">Active</Badge>
 
             <Button variant="outline" size="sm" asChild data-help-key="dashboard.site.visit">
-              <Link href={subdomainUrl} target="_blank">
+              <Link href={subdomainUrl} target="_blank" data-tour-id="dashboard-subdomain-visit-link">
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Visit Site
               </Link>
             </Button>
 
             <Button variant="default" size="sm" asChild data-help-key="dashboard.site.manage">
-              <Link href={adminUrl}>
+              <Link href={adminUrl} data-tour-id="dashboard-subdomain-manage-link">
                 <PenSquare className="h-4 w-4 mr-2" />
                 Manage Content
               </Link>
@@ -90,6 +90,7 @@ function SubdomainCard({ subdomain }: { subdomain: Subdomain }) {
                 disabled={isDeleting}
                 className="text-destructive hover:text-destructive bg-transparent"
                 data-help-key="dashboard.site.delete"
+                data-tour-id="dashboard-subdomain-delete-button"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 {isDeleting ? "Deleting..." : "Delete"}
