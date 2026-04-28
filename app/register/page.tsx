@@ -26,19 +26,19 @@ function ClientSideSignUp() {
 
 export default function RegisterPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-white p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-white p-4" data-tour-id="register-page">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900">Create Account</h1>
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900" data-tour-id="register-heading">Create Account</h1>
           <p className="mt-3 text-lg text-gray-600">Join us and create your own subdomain</p>
         </div>
 
-        <div className="mt-8 bg-white shadow-md rounded-lg p-6">
+        <div className="mt-8 bg-white shadow-md rounded-lg p-6" data-tour-id="register-stack-container">
           <ClientSideSignUp />
         </div>
 
         <div className="text-center">
-          <Link href="/" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">
+          <Link href="/" data-tour-id="register-home-link" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">
             ← Back to home
           </Link>
         </div>
