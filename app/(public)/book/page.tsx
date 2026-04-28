@@ -218,7 +218,7 @@ export default function BookingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
+    <div className="min-h-screen bg-gray-50 py-12 px-4" data-tour-id="book-page">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
@@ -231,7 +231,7 @@ export default function BookingPage() {
         </div>
 
         {/* Progress Steps */}
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center mb-8" data-tour-id="book-progress-steps">
           <div className="flex items-center space-x-4">
             {['service', 'datetime', 'details', 'confirm'].map((s, i) => (
               <div key={s} className="flex items-center">
@@ -263,13 +263,14 @@ export default function BookingPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           {/* Step 1: Service Selection */}
           {step === 'service' && (
-            <div>
+            <div data-tour-id="book-step-service">
               <h2 className="text-xl font-semibold mb-4">Select a Service</h2>
-              <div className="space-y-4">
+              <div className="space-y-4" data-tour-id="book-services-list">
                 {services.map((service) => (
                   <button
                     key={service.id}
                     onClick={() => handleServiceSelect(service)}
+                    data-tour-id="book-service-option"
                     className="w-full p-4 text-left border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
                   >
                     <div className="flex justify-between items-start">
@@ -294,7 +295,7 @@ export default function BookingPage() {
 
           {/* Step 2: Date & Time Selection */}
           {step === 'datetime' && (
-            <div>
+            <div data-tour-id="book-step-datetime">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold">Select Date & Time</h2>
                 <button
@@ -335,7 +336,7 @@ export default function BookingPage() {
 
           {/* Step 3: Details */}
           {step === 'details' && (
-            <div>
+            <div data-tour-id="book-step-details">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold">Your Details</h2>
                 <button
@@ -366,6 +367,7 @@ export default function BookingPage() {
                       value={formData.clientName}
                       onChange={handleFormChange}
                       required
+                      data-tour-id="book-form-name"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
@@ -379,6 +381,7 @@ export default function BookingPage() {
                       value={formData.clientEmail}
                       onChange={handleFormChange}
                       required
+                      data-tour-id="book-form-email"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
@@ -392,6 +395,7 @@ export default function BookingPage() {
                       name="clientPhone"
                       value={formData.clientPhone}
                       onChange={handleFormChange}
+                      data-tour-id="book-form-phone"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
@@ -459,6 +463,7 @@ export default function BookingPage() {
                     onChange={handleFormChange}
                     rows={4}
                     placeholder="What are you looking to build? Any specific features or requirements?"
+                    data-tour-id="book-form-message"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
@@ -480,6 +485,7 @@ export default function BookingPage() {
 
                 <button
                   type="submit"
+                  data-tour-id="book-form-continue"
                   className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
                 >
                   Continue
@@ -490,7 +496,7 @@ export default function BookingPage() {
 
           {/* Step 4: Confirmation */}
           {step === 'confirm' && (
-            <div>
+            <div data-tour-id="book-step-confirm">
               <h2 className="text-xl font-semibold mb-4">Confirm Your Booking</h2>
 
               <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-3">
@@ -528,6 +534,7 @@ export default function BookingPage() {
               <div className="flex gap-4">
                 <button
                   onClick={() => setStep('details')}
+                  data-tour-id="book-confirm-back"
                   className="flex-1 py-3 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
                 >
                   Back
@@ -535,6 +542,7 @@ export default function BookingPage() {
                 <button
                   onClick={handleBookingSubmit}
                   disabled={submitting}
+                  data-tour-id="book-form-submit"
                   className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
                 >
                   {submitting ? 'Booking...' : 'Confirm Booking'}
