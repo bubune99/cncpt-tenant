@@ -305,20 +305,20 @@ export default function CustomersPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6" data-help-key="admin.customers.page">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6" data-help-key="admin.customers.page" data-tour-id="customers-page">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 customers-header">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Customers</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold" data-tour-id="customers-heading">Customers</h1>
           <p className="text-muted-foreground mt-2">
             Manage all customers across the platform
           </p>
         </div>
         <div className="flex gap-2 customers-actions" data-help-key="admin.customers.actions">
-          <Button onClick={() => setIsCreateDialogOpen(true)} variant="default" data-help-key="admin.customers.create">
+          <Button onClick={() => setIsCreateDialogOpen(true)} variant="default" data-help-key="admin.customers.create" data-tour-id="customers-create-button">
             <User className="h-4 w-4 mr-2" />
             Create Customer
           </Button>
-          <Button onClick={exportCustomers} variant="outline" data-help-key="admin.customers.export">
+          <Button onClick={exportCustomers} variant="outline" data-help-key="admin.customers.export" data-tour-id="customers-export-button">
             <Download className="h-4 w-4 mr-2" />
             Export CSV
           </Button>
