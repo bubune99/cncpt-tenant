@@ -22,6 +22,20 @@ interface DashboardContentProps {
   selectedSubdomain: string | null
 }
 
+// Pick a display name with progressive fallbacks. Prevents the broken
+// "Welcome back," (trailing comma) UI when the Stack user has no displayName.
+function getDisplayName(user: any): string {
+  if (!user) return "there"
+  const name = user.displayName ?? user.name
+  if (typeof name === "string" && name.trim().length > 0) return name.trim()
+  const email = user.primaryEmail ?? user.email
+  if (typeof email === "string" && email.includes("@")) {
+    const local = email.split("@")[0]
+    if (local && local.length > 0) return local
+  }
+  return "there"
+}
+
 export function DashboardContent({
   user,
   subdomains,
@@ -37,7 +51,13 @@ export function DashboardContent({
           <div className="space-y-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-balance mb-2">Welcome back, {user.name}</h1>
+                {user ? (
+                  <h1 className="text-3xl font-bold text-balance mb-2">
+                    Welcome back, {getDisplayName(user)}
+                  </h1>
+                ) : (
+                  <div className="h-9 w-72 mb-2 rounded-md bg-muted animate-pulse" aria-hidden />
+                )}
                 <p className="text-muted-foreground">Manage your subdomains and create new ones</p>
               </div>
               {subdomains.length > 0 && (
