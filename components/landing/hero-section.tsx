@@ -31,11 +31,10 @@ export function HeroSection() {
         >
           <Link
             href="/register"
-            className="group relative px-8 py-4 text-base font-medium rounded-xl overflow-hidden"
+            className="group relative px-10 py-4 text-base font-semibold rounded-xl overflow-hidden text-white shadow-lg shadow-[#1e3a5f]/30 hover:shadow-xl hover:shadow-[#c2410c]/30 transition-shadow"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-[#1e3a5f] to-[#c2410c] transition-transform group-hover:scale-105" />
-            <div className="absolute inset-[1px] bg-background rounded-[10px] transition-opacity group-hover:opacity-0" />
-            <span className="relative bg-gradient-to-r from-[#1e3a5f] to-[#c2410c] dark:from-blue-400 dark:to-orange-400 bg-clip-text text-transparent group-hover:text-white transition-colors">
+            <span className="relative">
               Start free trial
             </span>
           </Link>
