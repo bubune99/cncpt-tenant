@@ -74,7 +74,33 @@ interface NavItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   helpKey?: string;
+  tourId?: string;
 }
+
+// Map nav item names to stable tour ids; matches nextjs-cms + dzidzor selectors
+const NAV_TOUR_ID_MAP: Record<string, string> = {
+  Dashboard: 'nav-admin-dashboard',
+  Analytics: 'nav-admin-analytics',
+  Products: 'nav-products',
+  Orders: 'nav-orders',
+  'Order Workflows': 'nav-order-workflows',
+  Shipping: 'nav-shipping',
+  Customers: 'nav-customers',
+  Pages: 'nav-pages',
+  Blog: 'nav-blog',
+  Forms: 'nav-forms',
+  Media: 'nav-media',
+  Marketplace: 'nav-marketplace',
+  'Email Marketing': 'nav-email-marketing',
+  Users: 'nav-users',
+  'Roles & Permissions': 'nav-roles',
+  Modules: 'nav-modules',
+  Settings: 'nav-settings',
+};
+
+const navNameToTourId = (name: string): string => {
+  return NAV_TOUR_ID_MAP[name] || `nav-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+};
 
 interface NavGroup {
   name: string;
@@ -95,9 +121,9 @@ function HeaderActions() {
   };
 
   return (
-    <div className="flex items-center gap-1 sm:gap-2 ml-2 sm:ml-4" data-help-key="admin.header.actions">
+    <div className="flex items-center gap-1 sm:gap-2 ml-2 sm:ml-4" data-help-key="admin.header.actions" data-tour-id="header-actions">
       {/* Theme Toggle */}
-      <div data-help-key="admin.header.theme">
+      <div data-help-key="admin.header.theme" data-tour-id="header-theme-toggle">
         <ModeToggle />
       </div>
 
@@ -106,6 +132,7 @@ function HeaderActions() {
         className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5 rounded-md hover:bg-accent transition-colors"
         title="Notifications (coming soon)"
         data-help-key="admin.header.notifications"
+        data-tour-id="header-notifications"
       >
         <Bell className="h-5 w-5 text-muted-foreground" />
       </button>
@@ -120,6 +147,7 @@ function HeaderActions() {
         title={help?.helpMode?.isActive ? 'Exit Help Mode (Ctrl+Q)' : 'Enter Help Mode (Ctrl+Q)'}
         onClick={handleHelpClick}
         data-help-key="admin.header.help"
+        data-tour-id="header-help-mode"
       >
         <HelpCircle className={`h-5 w-5 ${help?.helpMode?.isActive ? '' : 'text-muted-foreground'}`} />
       </button>
@@ -279,7 +307,7 @@ export function AdminShell({
         )}
 
         {/* Sidebar */}
-        <div className={`fixed inset-y-0 left-0 z-40 w-64 lg:w-56 bg-card border-r border-border transform transition-transform duration-200 ease-in-out ${
+        <div data-tour-id="admin-sidebar" className={`fixed inset-y-0 left-0 z-40 w-64 lg:w-56 bg-card border-r border-border transform transition-transform duration-200 ease-in-out ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0`}>
           <div className="flex flex-col h-full">
@@ -328,6 +356,7 @@ export function AdminShell({
                                 href={item.href}
                                 onClick={() => setIsSidebarOpen(false)}
                                 data-help-key={item.helpKey}
+                                data-tour-id={item.tourId || navNameToTourId(item.name)}
                                 className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors min-h-[44px] ${
                                   isActive
                                     ? 'bg-primary text-primary-foreground'
@@ -348,11 +377,12 @@ export function AdminShell({
           </nav>
 
             {/* Footer */}
-            <div className="p-4 border-t border-border" data-help-key="admin.sidebar.footer">
+            <div className="p-4 border-t border-border" data-help-key="admin.sidebar.footer" data-tour-id="header-user-menu">
               <Link
                 href={siteUrl}
                 onClick={() => setIsSidebarOpen(false)}
                 data-help-key="admin.sidebar.view-site"
+                data-tour-id="nav-view-site"
                 className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors mb-2 min-h-[44px]"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -363,6 +393,7 @@ export function AdminShell({
                   href="/pricing"
                   onClick={() => setIsSidebarOpen(false)}
                   data-help-key="admin.sidebar.start-trial"
+                  data-tour-id="nav-start-trial"
                   className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium bg-orange-500/10 text-orange-600 hover:bg-orange-500/20 transition-colors w-full min-h-[44px]"
                 >
                   <ArrowLeft className="h-4 w-4" />
@@ -372,6 +403,7 @@ export function AdminShell({
                 <button
                   onClick={() => { setIsSidebarOpen(false); signOut(); }}
                   data-help-key="admin.sidebar.sign-out"
+                  data-tour-id="header-sign-out"
                   className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors w-full min-h-[44px]"
                 >
                   <LogOut className="h-4 w-4" />
@@ -385,10 +417,10 @@ export function AdminShell({
       {/* Main content */}
       <div className="lg:pl-56">
         {/* Content Header */}
-        <header className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
+        <header data-tour-id="admin-header" className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
           <div className="flex items-center justify-between h-14 lg:h-16 pl-16 pr-3 sm:pr-4 lg:pl-6 lg:pr-8">
             {/* Search Bar */}
-            <div className="flex-1 max-w-xl" data-help-key="admin.header.search">
+            <div className="flex-1 max-w-xl" data-help-key="admin.header.search" data-tour-id="header-search">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -396,6 +428,7 @@ export function AdminShell({
                   placeholder="Search products, orders, customers..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  data-tour-id="header-search-input"
                   className="pl-10 w-full"
                 />
               </div>
