@@ -11,7 +11,7 @@ const stats = [
 
 export function StatsSection() {
   return (
-    <section className="py-24 px-6">
+    <section className="py-24 px-6" data-tour-id="home-stats">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-0 md:divide-x divide-border">
           {stats.map((stat) => (

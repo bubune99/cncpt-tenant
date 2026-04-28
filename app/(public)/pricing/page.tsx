@@ -11,6 +11,7 @@ import { useTheme } from "next-themes"
 const plans = [
   {
     name: "Starter",
+    slug: "starter",
     description: "Perfect for small sites and blogs",
     price: 25,
     yearlyPrice: 250,
@@ -30,6 +31,7 @@ const plans = [
   },
   {
     name: "Growth",
+    slug: "growth",
     description: "For growing sites and small teams",
     price: 49,
     yearlyPrice: 490,
@@ -49,6 +51,7 @@ const plans = [
   },
   {
     name: "Pro",
+    slug: "pro",
     description: "For professionals and agencies",
     price: 99,
     yearlyPrice: 990,
@@ -68,6 +71,7 @@ const plans = [
   },
   {
     name: "Business",
+    slug: "business",
     description: "For high-traffic sites and enterprises",
     price: 349,
     yearlyPrice: 3490,
@@ -149,9 +153,9 @@ export default function PricingPage() {
       </div>
 
       {/* Navigation */}
-      <header className="relative z-50 py-6 px-6">
+      <header className="relative z-50 py-6 px-6" data-tour-id="pricing-navbar">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center group">
+          <Link href="/" className="flex items-center group" data-tour-id="pricing-navbar-logo">
             {mounted && (
               <Image
                 src={resolvedTheme === "dark" ? "/CNCPT_Web_logo_white.png" : "/CNCPT_Web_logo_navy.png"}
@@ -168,10 +172,10 @@ export default function PricingPage() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
-            <Link href="/demo" className="text-sm text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-colors">Demo</Link>
-            <Link href="/book" className="text-sm text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-colors">Book Call</Link>
+            <Link href="/demo" data-tour-id="pricing-nav-demo" className="text-sm text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-colors">Demo</Link>
+            <Link href="/book" data-tour-id="pricing-nav-book" className="text-sm text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-colors">Book Call</Link>
             <ThemeToggle />
-            <Link href="/register" className="px-5 py-2.5 text-sm font-medium bg-blue-800 dark:bg-white text-white dark:text-gray-900 rounded-xl hover:bg-blue-700 dark:hover:bg-white/90 transition-colors">
+            <Link href="/register" data-tour-id="pricing-nav-register" className="px-5 py-2.5 text-sm font-medium bg-blue-800 dark:bg-white text-white dark:text-gray-900 rounded-xl hover:bg-blue-700 dark:hover:bg-white/90 transition-colors">
               Get Started
             </Link>
           </nav>
@@ -208,6 +212,7 @@ export default function PricingPage() {
           >
             <button
               onClick={() => setAnnual(false)}
+              data-tour-id="pricing-monthly-toggle"
               className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
                 !annual ? "bg-blue-800 dark:bg-white text-white dark:text-gray-900" : "text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white"
               }`}
@@ -216,6 +221,7 @@ export default function PricingPage() {
             </button>
             <button
               onClick={() => setAnnual(true)}
+              data-tour-id="pricing-annual-toggle"
               className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
                 annual ? "bg-blue-800 dark:bg-white text-white dark:text-gray-900" : "text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white"
               }`}
@@ -230,7 +236,7 @@ export default function PricingPage() {
       </section>
 
       {/* Pricing Cards */}
-      <section className="relative pb-24 px-6">
+      <section className="relative pb-24 px-6" data-tour-id="pricing-tiers">
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {plans.map((plan, i) => (
@@ -239,6 +245,7 @@ export default function PricingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 + i * 0.1 }}
+                data-tour-id={`pricing-tier-${plan.slug}`}
                 className={`relative rounded-2xl border p-6 ${
                   plan.popular
                     ? "border-orange-500/50 bg-orange-500/5"
@@ -272,6 +279,7 @@ export default function PricingPage() {
 
                 <Link
                   href={plan.href}
+                  data-tour-id={`pricing-tier-${plan.slug}-cta`}
                   className={`block w-full py-3 rounded-xl text-center text-sm font-medium transition-all mb-6 ${
                     plan.popular
                       ? "bg-gradient-to-r from-blue-800 to-orange-500 text-white hover:opacity-90"
@@ -304,7 +312,7 @@ export default function PricingPage() {
       </section>
 
       {/* Add-ons */}
-      <section className="relative py-20 px-6 border-t border-gray-200 dark:border-white/[0.06]">
+      <section className="relative py-20 px-6 border-t border-gray-200 dark:border-white/[0.06]" data-tour-id="pricing-addons">
         <div className="max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -336,7 +344,7 @@ export default function PricingPage() {
       </section>
 
       {/* AI Credit Packs */}
-      <section className="relative py-20 px-6 border-t border-gray-200 dark:border-white/[0.06]">
+      <section className="relative py-20 px-6 border-t border-gray-200 dark:border-white/[0.06]" data-tour-id="pricing-ai-packs">
         <div className="max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -380,7 +388,7 @@ export default function PricingPage() {
       </section>
 
       {/* FAQ */}
-      <section className="relative py-20 px-6 border-t border-gray-200 dark:border-white/[0.06]">
+      <section className="relative py-20 px-6 border-t border-gray-200 dark:border-white/[0.06]" data-tour-id="pricing-faq">
         <div className="max-w-3xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -403,6 +411,7 @@ export default function PricingPage() {
               >
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  data-tour-id={`pricing-faq-${i + 1}`}
                   className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
                 >
                   <span className="font-medium text-gray-900 dark:text-white">{faq.q}</span>
@@ -422,7 +431,7 @@ export default function PricingPage() {
       </section>
 
       {/* CTA */}
-      <section className="relative py-20 px-6">
+      <section className="relative py-20 px-6" data-tour-id="pricing-cta">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -440,12 +449,14 @@ export default function PricingPage() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
                   href="/register"
+                  data-tour-id="pricing-cta-trial"
                   className="px-8 py-4 bg-blue-800 dark:bg-white text-white dark:text-gray-900 rounded-xl font-medium hover:bg-blue-700 dark:hover:bg-white/90 transition-colors"
                 >
                   Start free trial
                 </Link>
                 <Link
                   href="/book"
+                  data-tour-id="pricing-cta-sales"
                   className="px-8 py-4 border border-gray-200 dark:border-white/[0.1] rounded-xl font-medium hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors text-gray-700 dark:text-white"
                 >
                   Talk to sales
@@ -457,7 +468,7 @@ export default function PricingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="relative py-12 px-6 border-t border-gray-200 dark:border-white/[0.06]">
+      <footer className="relative py-12 px-6 border-t border-gray-200 dark:border-white/[0.06]" data-tour-id="pricing-footer">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <Link href="/" className="flex items-center">
             {mounted && (
