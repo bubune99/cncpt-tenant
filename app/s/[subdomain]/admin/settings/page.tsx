@@ -325,14 +325,14 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl" data-help-key="admin.settings.page">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl" data-help-key="admin.settings.page" data-tour-id="settings-page">
       <div className="mb-8" data-help-key="admin.settings.header">
-        <h1 className="text-2xl sm:text-3xl font-bold">Settings</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold" data-tour-id="settings-heading">Settings</h1>
         <p className="text-muted-foreground">Manage your store settings and preferences</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-13 lg:w-[1450px]" data-help-key="admin.settings.tabs">
+        <TabsList className="grid w-full grid-cols-13 lg:w-[1450px]" data-help-key="admin.settings.tabs" data-tour-id="settings-tabs">
           <TabsTrigger value="features">
             <ToggleLeft className="mr-2 h-4 w-4" />
             Features
