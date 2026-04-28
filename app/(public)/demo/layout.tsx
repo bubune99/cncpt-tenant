@@ -1,18 +1,22 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Demo",
+  title: "Live Demo | CNCPT Web",
   description:
-    "Take a hands-on tour of CNCPT Web — explore the CMS, page builder, and admin tools without signing up.",
+    "Explore the CNCPT Web admin dashboard with sample data — no signup required. See subdomain management, analytics, and site tools in action.",
   alternates: {
     canonical: "https://cncptweb.com/demo",
   },
   openGraph: {
-    title: "Demo | CNCPT Web",
+    title: "Live Demo | CNCPT Web",
     description:
-      "Take a hands-on tour of CNCPT Web — explore the CMS, page builder, and admin tools without signing up.",
+      "Explore the CNCPT Web admin dashboard with sample data — no signup required.",
     url: "https://cncptweb.com/demo",
     type: "website",
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 }
 
