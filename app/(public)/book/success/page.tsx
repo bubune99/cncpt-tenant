@@ -9,7 +9,7 @@ function BookingSuccessContent() {
   const bookingId = searchParams.get('id')
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4" data-tour-id="book-success-page">
       <div className="max-w-md w-full text-center">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
           {/* Success Icon */}
@@ -65,12 +65,14 @@ function BookingSuccessContent() {
           <div className="space-y-3">
             <Link
               href="/"
+              data-tour-id="book-success-home-link"
               className="block w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
             >
               Return Home
             </Link>
             <Link
               href="/book"
+              data-tour-id="book-success-track-link"
               className="block w-full py-3 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
             >
               Book Another Appointment

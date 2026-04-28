@@ -29,7 +29,7 @@ const logos = [
 
 export function LogoMarquee() {
   return (
-    <section className="py-16 border-y border-border">
+    <section className="py-16 border-y border-border" data-tour-id="home-logos">
       <div className="max-w-7xl mx-auto px-6 mb-8">
         <p className="text-center text-sm text-muted-foreground">
           Built on the tools you already love

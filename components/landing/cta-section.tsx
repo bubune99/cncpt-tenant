@@ -3,7 +3,7 @@ import { ShineBorder } from "@/components/ui/shine-border"
 
 export function CTASection() {
   return (
-    <section className="py-32 px-6">
+    <section className="py-32 px-6" data-tour-id="home-cta">
       <div className="max-w-4xl mx-auto text-center">
         <ShineBorder
           borderRadius={24}
@@ -26,12 +26,14 @@ export function CTASection() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/register"
+              data-tour-id="home-cta-trial"
               className="px-8 py-4 text-base font-medium bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors"
             >
               Start free trial
             </Link>
             <Link
               href="/book"
+              data-tour-id="home-cta-book"
               className="px-8 py-4 text-base font-medium rounded-xl border border-border hover:border-border/80 bg-muted/50 hover:bg-muted transition-all text-foreground"
             >
               Book a demo

@@ -457,7 +457,7 @@ function CreateSubdomainContent() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" data-tour-id="create-subdomain-page">
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
@@ -465,6 +465,7 @@ function CreateSubdomainContent() {
             variant="ghost"
             size="sm"
             onClick={() => router.push("/dashboard")}
+            data-tour-id="create-subdomain-back-link"
             className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -501,7 +502,7 @@ function CreateSubdomainContent() {
         )}
 
         {/* Progress Steps */}
-        <div className="mb-8">
+        <div className="mb-8" data-tour-id="create-subdomain-progress">
           <div className="flex items-center justify-center gap-0">
             {STEPS.map((stepItem, index) => (
               <div key={stepItem.number} className="flex items-center">
@@ -532,7 +533,7 @@ function CreateSubdomainContent() {
         <div className="space-y-6">
           {/* Step 1: Choose Plan */}
           {step === 1 && (
-            <div className="space-y-6">
+            <div className="space-y-6" data-tour-id="create-subdomain-step-plan">
               {usage && (
                 <Card>
                   <CardHeader className="pb-2">
@@ -611,7 +612,7 @@ function CreateSubdomainContent() {
 
           {/* Step 2: Site Configuration */}
           {step === 2 && (
-            <div className="space-y-6">
+            <div className="space-y-6" data-tour-id="create-subdomain-step-config">
               <div className="text-center mb-6">
                 <h2 className="text-2xl font-bold mb-2">Configure Your Site</h2>
                 <p className="text-muted-foreground">
@@ -675,6 +676,7 @@ function CreateSubdomainContent() {
                     if (validateSiteConfig()) setStep(3)
                   }}
                   disabled={!canProceedToStep3()}
+                  data-tour-id="create-subdomain-form-continue"
                 >
                   Continue
                   <ArrowRight className="h-4 w-4 ml-2" />
@@ -685,7 +687,7 @@ function CreateSubdomainContent() {
 
           {/* Step 3: Business Insights */}
           {step === 3 && (
-            <div className="space-y-6">
+            <div className="space-y-6" data-tour-id="create-subdomain-step-insights">
               <div className="text-center mb-6">
                 <h2 className="text-2xl font-bold mb-2">About Your Project</h2>
                 <p className="text-muted-foreground">
@@ -724,7 +726,7 @@ function CreateSubdomainContent() {
 
           {/* Step 4: AI Credits Upsell */}
           {step === 4 && (
-            <div className="space-y-6">
+            <div className="space-y-6" data-tour-id="create-subdomain-step-credits">
               <CreditPacks
                 onboardingMode={true}
                 selectedPackId={selectedCreditPack?.id}
@@ -768,7 +770,7 @@ function CreateSubdomainContent() {
 
           {/* Step 5: Review & Create */}
           {step === 5 && (
-            <div className="space-y-6">
+            <div className="space-y-6" data-tour-id="create-subdomain-step-review">
               <div className="text-center mb-6">
                 <h2 className="text-2xl font-bold mb-2">Review Your Site</h2>
                 <p className="text-muted-foreground">
@@ -930,6 +932,7 @@ function CreateSubdomainContent() {
                     size="lg"
                     onClick={handleCreate}
                     disabled={creating}
+                    data-tour-id="create-subdomain-form-submit"
                     className="min-w-[200px]"
                   >
                     {creating ? (

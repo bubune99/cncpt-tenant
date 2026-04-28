@@ -9,8 +9,10 @@ export default async function LoginPage({
   const afterAuth = redirect || "/dashboard"
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <SignIn afterSignIn={afterAuth} afterSignUp={afterAuth} />
+    <div className="flex min-h-screen items-center justify-center bg-gray-50" data-tour-id="login-page">
+      <div data-tour-id="login-stack-container">
+        <SignIn afterSignIn={afterAuth} afterSignUp={afterAuth} />
+      </div>
     </div>
   )
 }

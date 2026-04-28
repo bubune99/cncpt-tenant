@@ -139,9 +139,9 @@ export function Credits() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-tour-id="ai-credits-page">
       <div>
-        <h1 className="text-2xl font-bold">AI Credits</h1>
+        <h1 className="text-2xl font-bold" data-tour-id="ai-credits-heading">AI Credits</h1>
         <p className="text-muted-foreground">
           Manage your AI credits for content generation, chat, and more
         </p>
@@ -161,7 +161,7 @@ export function Credits() {
       )}
 
       {/* Current Balance */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-tour-id="ai-credits-balance">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -233,7 +233,7 @@ export function Credits() {
       )}
 
       {/* Purchase Credits */}
-      <Card>
+      <Card data-tour-id="ai-credits-packs-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Zap className="h-5 w-5" />
@@ -244,10 +244,11 @@ export function Credits() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" data-tour-id="ai-credits-packs-list">
             {packs.map((pack) => (
               <div
                 key={pack.id}
+                data-tour-id={`ai-credits-pack-${pack.name}`}
                 className={`relative border rounded-lg p-4 transition-all hover:border-primary ${
                   pack.isPopular ? "border-primary bg-primary/5" : ""
                 }`}
@@ -290,6 +291,7 @@ export function Credits() {
                     variant={pack.isPopular ? "default" : "outline"}
                     onClick={() => handlePurchase(pack.id)}
                     disabled={purchasingPack === pack.id}
+                    data-tour-id="ai-credits-purchase-button"
                   >
                     {purchasingPack === pack.id ? (
                       <>
@@ -312,7 +314,7 @@ export function Credits() {
 
       {/* Recent Transactions */}
       {transactions.length > 0 && (
-        <Card>
+        <Card data-tour-id="ai-credits-history-table">
           <CardHeader>
             <CardTitle>Recent Activity</CardTitle>
           </CardHeader>

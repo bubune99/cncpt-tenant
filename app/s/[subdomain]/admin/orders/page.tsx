@@ -204,10 +204,10 @@ export default function OrdersPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8" data-tour-id="orders-page">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-8">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Orders</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" data-tour-id="orders-heading">Orders</h1>
           <p className="text-muted-foreground mt-2">
             Manage and track customer orders
           </p>
@@ -226,12 +226,12 @@ export default function OrdersPage() {
               </>
             )}
           </Button>
-          <Button variant="outline" data-help-key="admin.orders.export">
+          <Button variant="outline" data-help-key="admin.orders.export" data-tour-id="orders-export-button">
             <Download className="mr-2 h-4 w-4" />
             Export
           </Button>
           <Button asChild data-help-key="admin.orders.new">
-            <Link href={buildPath('/admin/orders/new')}>
+            <Link href={buildPath('/admin/orders/new')} data-tour-id="orders-create-button">
               <Plus className="mr-2 h-4 w-4" />
               New Order
             </Link>
@@ -240,8 +240,8 @@ export default function OrdersPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 mb-8" data-help-key="admin.orders.stats">
-        <Card>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 mb-8" data-help-key="admin.orders.stats" data-tour-id="orders-stats">
+        <Card data-tour-id="dashboard-stat-total-orders">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
@@ -250,7 +250,7 @@ export default function OrdersPage() {
             <div className="text-2xl font-bold">{stats.total}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card data-tour-id="dashboard-stat-pending-orders">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending</CardTitle>
             <Clock className="h-4 w-4 text-yellow-500" />
@@ -259,7 +259,7 @@ export default function OrdersPage() {
             <div className="text-2xl font-bold">{stats.pending}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card data-tour-id="dashboard-stat-processing-orders">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Processing</CardTitle>
             <Package className="h-4 w-4 text-blue-500" />
@@ -268,7 +268,7 @@ export default function OrdersPage() {
             <div className="text-2xl font-bold">{stats.processing}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card data-tour-id="dashboard-stat-shipped-orders">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Shipped</CardTitle>
             <Truck className="h-4 w-4 text-purple-500" />
@@ -277,7 +277,7 @@ export default function OrdersPage() {
             <div className="text-2xl font-bold">{stats.shipped}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card data-tour-id="dashboard-stat-revenue">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Revenue</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-500" />
@@ -304,13 +304,14 @@ export default function OrdersPage() {
       </Tabs>
 
       <div className="flex flex-col gap-4 md:flex-row md:items-center mb-6" data-help-key="admin.orders.filters">
-        <div className="relative flex-1" data-help-key="admin.orders.search">
+        <div className="relative flex-1" data-help-key="admin.orders.search" data-tour-id="orders-search">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search orders by number, customer..."
             className="pl-8"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            data-tour-id="orders-search-input"
           />
         </div>
         <div className="flex flex-wrap gap-2">

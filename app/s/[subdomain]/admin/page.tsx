@@ -128,10 +128,10 @@ export default function AdminDashboard() {
   const displayName = isDemo ? DEMO_USER.displayName : (user?.displayName || 'Admin');
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8" data-tour-id="admin-dashboard-page">
       {/* Demo Mode Banner */}
       {(isDemo || isDemoAccess) && (
-        <div className="mb-6 p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg flex items-center gap-3">
+        <div className="mb-6 p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg flex items-center gap-3" data-tour-id="admin-demo-banner">
           <Eye className="h-5 w-5 text-orange-500 flex-shrink-0" />
           <div>
             <p className="font-medium text-orange-700 dark:text-orange-400">Demo Mode</p>
@@ -143,7 +143,7 @@ export default function AdminDashboard() {
       )}
 
       <div className="mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold">Dashboard</h1>
+        <h1 className="text-xl sm:text-2xl font-bold" data-tour-id="admin-dashboard-heading">Dashboard</h1>
         <p className="text-sm text-muted-foreground">
           Welcome back, {displayName}
           {accessType && !isDemo && (
@@ -170,8 +170,8 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6" data-help-key="admin.dashboard.stats">
-        <Card data-help-key="admin.dashboard.stat.users">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6" data-help-key="admin.dashboard.stats" data-tour-id="admin-dashboard-stats">
+        <Card data-help-key="admin.dashboard.stat.users" data-tour-id="dashboard-stat-customers">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -181,7 +181,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card data-help-key="admin.dashboard.stat.products">
+        <Card data-help-key="admin.dashboard.stat.products" data-tour-id="dashboard-stat-products">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Products</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
@@ -191,7 +191,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card data-help-key="admin.dashboard.stat.orders">
+        <Card data-help-key="admin.dashboard.stat.orders" data-tour-id="dashboard-stat-orders">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Orders</CardTitle>
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
@@ -201,7 +201,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card data-help-key="admin.dashboard.stat.blog">
+        <Card data-help-key="admin.dashboard.stat.blog" data-tour-id="dashboard-stat-blog">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Blog Posts</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />

@@ -59,43 +59,43 @@ export function DashboardSidebar({
     {
       title: "Dashboard",
       items: [
-        { id: "overview", label: "Overview", icon: Globe, helpKey: "dashboard.sidebar.overview" },
-        { id: "analytics", label: "Analytics", icon: BarChart3, helpKey: "dashboard.sidebar.analytics" },
+        { id: "overview", label: "Overview", icon: Globe, helpKey: "dashboard.sidebar.overview", tourId: "nav-dashboard-overview" },
+        { id: "analytics", label: "Analytics", icon: BarChart3, helpKey: "dashboard.sidebar.analytics", tourId: "nav-dashboard-analytics" },
       ],
     },
     {
       title: "Site Management",
       items: [
-        { id: "visibility", label: "Site Visibility", icon: Eye, helpKey: "dashboard.sidebar.visibility" },
-        { id: "domains", label: "Custom Domains", icon: Link, helpKey: "dashboard.sidebar.domains" },
-        { id: "branding", label: "Branding", icon: Palette, helpKey: "dashboard.sidebar.branding" },
-        { id: "settings", label: "Site Settings", icon: Settings, helpKey: "dashboard.sidebar.settings" },
-        { id: "frontend", label: "Hosting", icon: Server, helpKey: "dashboard.sidebar.frontend" },
+        { id: "visibility", label: "Site Visibility", icon: Eye, helpKey: "dashboard.sidebar.visibility", tourId: "nav-site-visibility" },
+        { id: "domains", label: "Custom Domains", icon: Link, helpKey: "dashboard.sidebar.domains", tourId: "nav-custom-domains" },
+        { id: "branding", label: "Branding", icon: Palette, helpKey: "dashboard.sidebar.branding", tourId: "nav-branding" },
+        { id: "settings", label: "Site Settings", icon: Settings, helpKey: "dashboard.sidebar.settings", tourId: "nav-site-settings" },
+        { id: "frontend", label: "Hosting", icon: Server, helpKey: "dashboard.sidebar.frontend", tourId: "nav-hosting" },
       ],
     },
     {
       title: "Integrations",
       items: [
-        { id: "mcp", label: "MCP / AI Agents", icon: Bot, helpKey: "dashboard.sidebar.mcp" },
+        { id: "mcp", label: "MCP / AI Agents", icon: Bot, helpKey: "dashboard.sidebar.mcp", tourId: "nav-mcp-agents" },
       ],
     },
     {
       title: "Collaboration",
       items: [
-        { id: "teams", label: "Teams", icon: Building2, helpKey: "dashboard.sidebar.teams", isRoute: true, route: "/dashboard/teams" },
+        { id: "teams", label: "Teams", icon: Building2, helpKey: "dashboard.sidebar.teams", isRoute: true, route: "/dashboard/teams", tourId: "nav-teams" },
       ],
     },
     {
       title: "Support",
       items: [
-        { id: "support", label: "Support Tickets", icon: MessageSquare, helpKey: "dashboard.sidebar.support", isRoute: true, route: "/dashboard/support" },
+        { id: "support", label: "Support Tickets", icon: MessageSquare, helpKey: "dashboard.sidebar.support", isRoute: true, route: "/dashboard/support", tourId: "nav-support-tickets" },
       ],
     },
     {
       title: "Account",
       items: [
-        { id: "credits", label: "AI Credits", icon: Coins, helpKey: "dashboard.sidebar.credits" },
-        { id: "billing", label: "Billing", icon: CreditCard, helpKey: "dashboard.sidebar.billing" },
+        { id: "credits", label: "AI Credits", icon: Coins, helpKey: "dashboard.sidebar.credits", tourId: "nav-ai-credits" },
+        { id: "billing", label: "Billing", icon: CreditCard, helpKey: "dashboard.sidebar.billing", tourId: "nav-billing" },
       ],
     },
   ]
@@ -114,9 +114,9 @@ export function DashboardSidebar({
   }
 
   return (
-    <div className="w-64 bg-sidebar text-sidebar-foreground flex flex-col h-screen sticky top-0">
+    <div className="w-64 bg-sidebar text-sidebar-foreground flex flex-col h-screen sticky top-0" data-tour-id="dashboard-sidebar">
       {/* Subdomain Selector */}
-      <div className="p-4 border-b border-sidebar-border" data-help-key="dashboard.sidebar.sites">
+      <div className="p-4 border-b border-sidebar-border" data-help-key="dashboard.sidebar.sites" data-tour-id="dashboard-subdomain-selector">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="w-full justify-between mb-3 h-auto p-2 hover:bg-sidebar-accent">
@@ -159,13 +159,14 @@ export function DashboardSidebar({
             <div className="space-y-1">
               {section.items.map((item) => {
                 const Icon = item.icon
-                const itemWithRoute = item as typeof item & { isRoute?: boolean; route?: string }
+                const itemWithRoute = item as typeof item & { isRoute?: boolean; route?: string; tourId?: string }
                 return (
                   <Button
                     key={item.id}
                     variant="ghost"
                     onClick={() => handleSectionClick(item.id, itemWithRoute.route)}
                     data-help-key={item.helpKey}
+                    data-tour-id={itemWithRoute.tourId}
                     className={cn(
                       "w-full justify-start space-x-3 px-3 py-2 h-auto text-sm font-medium transition-colors",
                       activeSection === item.id
@@ -190,6 +191,7 @@ export function DashboardSidebar({
           size="sm"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           data-help-key="dashboard.header.theme"
+          data-tour-id="header-theme-toggle"
           className="w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent"
         >
           <Sun className="w-4 h-4 mr-2 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
@@ -205,6 +207,7 @@ export function DashboardSidebar({
           size="sm"
           onClick={toggleHelpMode}
           data-help-key="dashboard.header.help"
+          data-tour-id="header-help-mode"
           className={cn(
             "w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent",
             helpMode.isActive && "bg-accent text-accent-foreground hover:bg-accent/90"
@@ -217,7 +220,7 @@ export function DashboardSidebar({
       </div>
 
       {/* User Menu */}
-      <div className="p-4 border-t border-sidebar-border">
+      <div className="p-4 border-t border-sidebar-border" data-tour-id="header-user-menu">
         <div className="flex items-center space-x-3 mb-3" data-help-key="dashboard.header.user">
           <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
             <User className="w-4 h-4 text-muted-foreground" />
@@ -241,6 +244,7 @@ export function DashboardSidebar({
             variant="ghost"
             size="sm"
             type="submit"
+            data-tour-id="header-sign-out"
             className="w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent"
           >
             <LogOut className="w-4 h-4 mr-2" />

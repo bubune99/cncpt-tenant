@@ -5,8 +5,8 @@ import { AlertCircle, ArrowLeft, UserPlus, LogIn } from "lucide-react"
 
 export default function AuthErrorPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4" data-tour-id="auth-error-page">
+      <Card className="w-full max-w-md" data-tour-id="auth-error-card">
         <CardHeader className="text-center">
           <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
             <AlertCircle className="w-6 h-6 text-red-600" />
@@ -19,13 +19,13 @@ export default function AuthErrorPage() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-3">
             <Button asChild className="w-full">
-              <Link href="/login" className="flex items-center justify-center gap-2">
+              <Link href="/login" data-tour-id="auth-error-signin-link" className="flex items-center justify-center gap-2">
                 <LogIn className="w-4 h-4" />
                 Sign In
               </Link>
             </Button>
             <Button asChild variant="outline" className="w-full bg-transparent">
-              <Link href="/register" className="flex items-center justify-center gap-2">
+              <Link href="/register" data-tour-id="auth-error-signup-link" className="flex items-center justify-center gap-2">
                 <UserPlus className="w-4 h-4" />
                 Create Account
               </Link>
@@ -33,7 +33,7 @@ export default function AuthErrorPage() {
           </div>
           <div className="pt-4 border-t">
             <Button asChild variant="ghost" className="w-full">
-              <Link href="/" className="flex items-center justify-center gap-2">
+              <Link href="/" data-tour-id="auth-error-home-link" className="flex items-center justify-center gap-2">
                 <ArrowLeft className="w-4 h-4" />
                 Back to Home
               </Link>

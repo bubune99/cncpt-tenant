@@ -48,11 +48,11 @@ export function DashboardContent({
     switch (activeSection) {
       case "overview":
         return (
-          <div className="space-y-8">
+          <div className="space-y-8" data-tour-id="dashboard-overview">
             <div className="flex items-center justify-between">
               <div>
                 {user ? (
-                  <h1 className="text-3xl font-bold text-balance mb-2">
+                  <h1 className="text-3xl font-bold text-balance mb-2" data-tour-id="dashboard-welcome-heading">
                     Welcome back, {getDisplayName(user)}
                   </h1>
                 ) : (
@@ -65,6 +65,7 @@ export function DashboardContent({
                   onClick={() => router.push("/dashboard/create-subdomain")}
                   className="flex items-center gap-2"
                   data-help-key="dashboard.sites.create"
+                  data-tour-id="dashboard-create-subdomain-button"
                 >
                   <Plus className="h-4 w-4" />
                   Create New Subdomain
@@ -78,11 +79,11 @@ export function DashboardContent({
               />
             )}
             {subdomains.length > 0 ? (
-              <div data-help-key="dashboard.sites.list">
+              <div data-help-key="dashboard.sites.list" data-tour-id="dashboard-subdomains-list">
                 <SubdomainList subdomains={subdomains} />
               </div>
             ) : (
-              <div className="text-center py-12">
+              <div className="text-center py-12" data-tour-id="dashboard-empty-state">
                 <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                   <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -94,6 +95,7 @@ export function DashboardContent({
                   onClick={() => router.push("/dashboard/create-subdomain")}
                   className="flex items-center gap-2"
                   data-help-key="dashboard.sites.create"
+                  data-tour-id="dashboard-create-first-subdomain-button"
                 >
                   <Plus className="h-4 w-4" />
                   Create Your First Subdomain
