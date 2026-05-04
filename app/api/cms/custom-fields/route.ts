@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
 import type { CustomFieldType } from '@prisma/client'
-import { withTenant } from '@/lib/cms/api/tenant'
+import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
     try {
       const body: CreateCustomFieldBody = await request.json()
 

@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
 import { purchaseLabel, getShippingSettings } from '@/lib/cms/shippo'
 import type { LabelFormat } from '@/lib/cms/shippo/types'
-import { withTenant } from '@/lib/cms/api/tenant'
+import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,7 +21,7 @@ interface PurchaseLabelBody {
 }
 
 export async function POST(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
   try {
     const body: PurchaseLabelBody = await request.json()
     const settings = await getShippingSettings()

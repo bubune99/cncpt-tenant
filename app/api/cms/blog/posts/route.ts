@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { listPosts, createPost } from '@/lib/cms/blog'
-import { withTenant } from '@/lib/cms/api/tenant'
+import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  return withTenant(request, async (tenant) => {
+  return withTenantAuth(request, 'edit', async (tenant) => {
     try {
       const body = await request.json()
 

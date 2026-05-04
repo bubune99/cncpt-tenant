@@ -10,7 +10,7 @@ import { prisma } from '@/lib/cms/db'
 import { getShippingSettings, clearShippingSettingsCache } from '@/lib/cms/shippo'
 import { encrypt } from '@/lib/cms/encryption'
 import type { ShippingSettings } from '@/lib/cms/shippo/types'
-import { withTenant } from '@/lib/cms/api/tenant'
+import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -62,13 +62,13 @@ export async function GET(request: NextRequest) {
 
 // Support both POST and PUT for updating settings
 export async function POST(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
     return handleUpdate(request)
   })
 }
 
 export async function PUT(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
     return handleUpdate(request)
   })
 }

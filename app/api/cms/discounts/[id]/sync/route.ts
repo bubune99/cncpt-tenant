@@ -12,7 +12,7 @@ import {
   deleteStripeDiscount,
   toggleStripePromotionCode,
 } from '@/lib/cms/discounts';
-import { withTenant } from '@/lib/cms/api/tenant';
+import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -22,7 +22,7 @@ interface RouteParams {
 
 // POST - Sync discount to Stripe
 export async function POST(request: NextRequest, { params }: RouteParams) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
     try {
     const { id } = await params;
 
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
 // DELETE - Remove from Stripe
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
     try {
     const { id } = await params;
 
@@ -113,7 +113,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
 // PATCH - Toggle Stripe promotion code active status
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
     try {
     const { id } = await params;
     const body = await request.json();

@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
 import { unsubscribeById, addSubscriberTags, removeSubscriberTags } from '@/lib/cms/email/subscriptions'
-import { withTenant } from '@/lib/cms/api/tenant'
+import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -94,7 +94,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
   try {
     const { id } = await params
     const body = await request.json()
@@ -194,7 +194,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
   try {
     const { id } = await params
 

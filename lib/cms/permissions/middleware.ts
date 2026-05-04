@@ -12,6 +12,8 @@ import { stackServerApp } from '../stack'
 import { prisma, runWithTenant } from '../db'
 import { getUserPermissions, checkPermission, type UserWithPermissions } from './index'
 import { resolveCmsTenantContext } from '../tenant-context'
+import { canAccessSubdomain } from '@/lib/team-auth'
+import { isSuperAdmin as isPlatformSuperAdmin } from '@/lib/super-admin'
 
 export interface AuthContext {
   user: {
@@ -187,6 +189,26 @@ export function withPermission<T extends unknown[]>(
       const tenantContext = await resolveCmsTenantContext(request)
 
       if (tenantContext) {
+        // SECURITY: Verify the authenticated user has access to this tenant.
+        // Without this check, a user with admin permissions on tenant X could
+        // execute writes on tenant Y simply by hitting <Y>.cncptweb.com/api/...
+        // (User permissions in this codebase are NOT tenant-scoped — see
+        // getUserPermissions in lib/cms/permissions/index.ts.)
+        const platformSuperAdmin = await isPlatformSuperAdmin(authContext.user.stackAuthId)
+        if (!platformSuperAdmin) {
+          const access = await canAccessSubdomain(
+            authContext.user.stackAuthId,
+            tenantContext.subdomain,
+            'edit',
+          )
+          if (!access.hasAccess) {
+            return NextResponse.json(
+              { error: 'Forbidden: insufficient access to this site' },
+              { status: 403 },
+            )
+          }
+        }
+
         // Run handler within tenant scope - all Prisma queries auto-filtered
         return await runWithTenant(tenantContext.tenantId, () =>
           handler(request, authContext, ...args)
@@ -218,6 +240,21 @@ export function withAnyPermission<T extends unknown[]>(
 
       const tenantContext = await resolveCmsTenantContext(request)
       if (tenantContext) {
+        // SECURITY: see comment in withPermission. Verify tenant access.
+        const platformSuperAdmin = await isPlatformSuperAdmin(authContext.user.stackAuthId)
+        if (!platformSuperAdmin) {
+          const access = await canAccessSubdomain(
+            authContext.user.stackAuthId,
+            tenantContext.subdomain,
+            'edit',
+          )
+          if (!access.hasAccess) {
+            return NextResponse.json(
+              { error: 'Forbidden: insufficient access to this site' },
+              { status: 403 },
+            )
+          }
+        }
         return await runWithTenant(tenantContext.tenantId, () =>
           handler(request, authContext, ...args)
         )
@@ -246,6 +283,21 @@ export function withAuth<T extends unknown[]>(
 
       const tenantContext = await resolveCmsTenantContext(request)
       if (tenantContext) {
+        // SECURITY: see comment in withPermission. Verify tenant access.
+        const platformSuperAdmin = await isPlatformSuperAdmin(authContext.user.stackAuthId)
+        if (!platformSuperAdmin) {
+          const access = await canAccessSubdomain(
+            authContext.user.stackAuthId,
+            tenantContext.subdomain,
+            'edit',
+          )
+          if (!access.hasAccess) {
+            return NextResponse.json(
+              { error: 'Forbidden: insufficient access to this site' },
+              { status: 403 },
+            )
+          }
+        }
         return await runWithTenant(tenantContext.tenantId, () =>
           handler(request, authContext, ...args)
         )

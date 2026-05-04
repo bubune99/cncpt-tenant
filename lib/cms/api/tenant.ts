@@ -38,6 +38,9 @@ import {
   tenantRequiredResponse,
   type CmsTenantContext,
 } from '@/lib/cms/tenant-context'
+import { stackServerApp } from '@/lib/cms/stack'
+import { canAccessSubdomain } from '@/lib/team-auth'
+import { isSuperAdmin } from '@/lib/super-admin'
 
 export type { CmsTenantContext }
 export { tenantRequiredResponse }
@@ -118,4 +121,61 @@ export async function withTenant(
     return tenantRequiredResponse()
   }
   return runWithTenant(tenant.tenantId, () => handler(tenant))
+}
+
+/**
+ * Wrap an API route handler with:
+ * - Tenant context resolution (from x-subdomain header)
+ * - Authentication requirement (returns 401 if not signed in)
+ * - Tenant ownership/access check (returns 403 if user is not owner / team
+ *   member with sufficient access level / super admin)
+ *
+ * This is the recommended wrapper for any tenant-scoped admin/mutation route.
+ * It closes the cross-tenant data leak where any authenticated user could read
+ * or write to any tenant's data simply by hitting <victim>.cncptweb.com/api/...
+ *
+ * Usage:
+ * ```ts
+ * export const POST = (req: NextRequest) =>
+ *   withTenantAuth(req, 'edit', async (tenant, user) => {
+ *     // user has at least edit-level access to tenant.subdomain
+ *     const product = await prisma.product.create(...)
+ *     return NextResponse.json(product, { status: 201 })
+ *   })
+ * ```
+ */
+export async function withTenantAuth(
+  request: NextRequest,
+  requiredLevel: 'view' | 'edit' | 'admin',
+  handler: (
+    tenant: CmsTenantContext,
+    user: { id: string; email: string },
+  ) => Promise<NextResponse>,
+): Promise<NextResponse> {
+  const tenant = await getTenantContext(request)
+  if (!tenant) {
+    return tenantRequiredResponse()
+  }
+
+  const user = await stackServerApp.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Super admins bypass tenant ownership checks
+  const superAdmin = await isSuperAdmin(user.id)
+
+  if (!superAdmin) {
+    const access = await canAccessSubdomain(user.id, tenant.subdomain, requiredLevel)
+    if (!access.hasAccess) {
+      return NextResponse.json(
+        { error: 'Forbidden: insufficient access to this site' },
+        { status: 403 },
+      )
+    }
+  }
+
+  return runWithTenant(tenant.tenantId, () =>
+    handler(tenant, { id: user.id, email: user.primaryEmail || '' }),
+  )
 }

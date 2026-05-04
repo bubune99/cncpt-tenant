@@ -316,7 +316,7 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent>
             <Button asChild>
-              <a href="/handler/sign-in?after_auth_return_to=/settings">Sign In</a>
+              <a href="/handler/sign-in?after_auth_return_to=/admin/settings">Sign In</a>
             </Button>
           </CardContent>
         </Card>

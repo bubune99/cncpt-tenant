@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { listUnimportedStripeCoupons, importFromStripe } from '@/lib/cms/discounts';
-import { withTenant } from '@/lib/cms/api/tenant';
+import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
 // POST - Import a Stripe promotion code
 export async function POST(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
     try {
     const body = await request.json();
     const { promotionCodeId } = body;
