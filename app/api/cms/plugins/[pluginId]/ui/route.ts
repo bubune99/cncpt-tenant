@@ -14,8 +14,9 @@ interface RouteParams {
   params: Promise<{ pluginId: string }>;
 }
 
+// GET — admin-only (plugin UI config — admin tooling)
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
   try {
     const { pluginId } = await params;
     const { searchParams } = new URL(request.url);

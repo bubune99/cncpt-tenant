@@ -115,8 +115,10 @@ export async function POST(request: NextRequest) {
   })
 }
 
+// GET — admin-only (returns the rendered shipping label, ties to a shipment
+// — sensitive operational data)
 export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
   try {
     const { searchParams } = new URL(request.url)
     const shipmentId = searchParams.get('shipmentId')

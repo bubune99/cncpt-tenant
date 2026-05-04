@@ -13,8 +13,9 @@ interface RouteParams {
   params: Promise<{ id: string }>
 }
 
+// GET — admin-only (registration roster — exposes registrant PII)
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
     try {
       const { id } = await params
       const { searchParams } = new URL(request.url)

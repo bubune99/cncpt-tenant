@@ -10,24 +10,17 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getOrCreateSiteSettings, updateSiteSettings } from '@/lib/cms/site-settings';
-import { stackServerApp } from '@/lib/cms/stack';
 import { prisma } from '@/lib/cms/db';
-import { withTenant } from '@/lib/cms/api/tenant';
+import { withTenantAuth } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
 /**
- * GET - Fetch site settings (including subdomain-specific maintenance mode)
+ * GET - Fetch site settings (admin-only — exposes maintenance + analytics IDs)
  */
 export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
     try {
-      // Check authentication
-      const user = await stackServerApp.getUser();
-      if (!user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-
       const settings = await getOrCreateSiteSettings();
 
       // Get subdomain from query params to fetch maintenance mode
@@ -64,17 +57,11 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * PUT - Update site settings (including subdomain-specific maintenance mode)
+ * PUT - Update site settings (admin-only — high-impact site mutation)
  */
 export async function PUT(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async (_tenant, user) => {
     try {
-      // Check authentication
-      const user = await stackServerApp.getUser();
-      if (!user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-
       const body = await request.json();
 
       // Validate request body for SiteSettings fields

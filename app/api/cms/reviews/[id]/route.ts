@@ -24,9 +24,10 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-// GET - Get review details
+// GET - admin-only review detail (admin moderation page consumes this;
+// storefront uses /reviews/product/[productId] for public reviews)
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
     try {
     const { id } = await params;
 

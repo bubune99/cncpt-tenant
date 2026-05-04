@@ -17,9 +17,9 @@ import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
-// GET - List reviews (admin, tenant-scoped)
+// GET - List reviews (admin, tenant-scoped — exposes pending/spam reviews)
 export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
     try {
     const searchParams = request.nextUrl.searchParams;
 

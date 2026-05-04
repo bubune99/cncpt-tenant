@@ -8,21 +8,16 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { generateText } from 'ai';
-import { stackServerApp } from '@/lib/cms/stack';
 import { getAiSettings } from '@/lib/cms/settings';
 import { getLanguageModel } from '@/lib/cms/ai/providers';
-import { withTenant } from '@/lib/cms/api/tenant';
+import { withTenantAuth } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
+// POST — admin-only (consumes AI Gateway credits — billing-sensitive)
 export async function POST(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'admin', async () => {
     try {
-      const user = await stackServerApp.getUser();
-      if (!user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-
       const body = await request.json();
       const { model } = body;
 

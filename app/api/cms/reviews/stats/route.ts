@@ -10,9 +10,9 @@ import { withTenant } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
-// GET - Get dashboard stats
+// GET — admin-only review dashboard stats
 export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
     try {
       const stats = await getReviewDashboardStats();
 

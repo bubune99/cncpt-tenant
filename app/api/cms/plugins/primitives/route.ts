@@ -11,8 +11,9 @@ import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
+// GET — admin-only (plugin primitives library, admin tooling)
 export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
   try {
     // Ensure built-in primitives are loaded
     await loadBuiltInPrimitives();

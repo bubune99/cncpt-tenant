@@ -14,7 +14,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withTenant(request, async () => {
+  // GET — admin-only (campaign detail + content)
+  return withTenantAuth(request, 'view', async () => {
   try {
     const { id } = await params
 

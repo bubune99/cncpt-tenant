@@ -37,8 +37,9 @@ function generateSlug(name: string): string {
     .replace(/^_|_$/g, '')
 }
 
+// GET — admin-only (only consumed by admin VariantGridEditor)
 export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
     try {
       const { searchParams } = new URL(request.url)
       const enabled = searchParams.get('enabled')

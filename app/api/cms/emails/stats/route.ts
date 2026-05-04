@@ -10,8 +10,9 @@ import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
+// GET — admin-only (aggregate email stats — admin dashboard)
 export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
   try {
     // Get overall stats
     const [

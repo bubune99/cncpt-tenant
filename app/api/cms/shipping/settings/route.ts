@@ -37,8 +37,10 @@ const SHIPPING_SETTINGS_KEYS = [
   'shipping.requireSignature',
 ]
 
+// GET — admin-only (Shippo API key + webhook secret status — even though
+// values are masked, presence/absence leaks integration state)
 export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
   try {
     const settings = await getShippingSettings()
 

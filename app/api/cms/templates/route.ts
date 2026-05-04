@@ -22,8 +22,9 @@ export const dynamic = 'force-dynamic'
  * - id: Get specific template
  * - categories: Return list of categories (set to "true")
  */
+// GET — admin-only (page templates used in admin Pages editor)
 export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
   try {
     // Ensure templates are initialized
     ensureTemplatesInitialized();

@@ -16,8 +16,9 @@ interface RouteParams {
   params: Promise<{ id: string; submissionId: string }>
 }
 
+// GET — admin-only (single submission — exposes contact details/PII)
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
     try {
       const { id, submissionId } = await params
 

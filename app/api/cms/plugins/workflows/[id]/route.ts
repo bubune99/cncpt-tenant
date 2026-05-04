@@ -16,9 +16,9 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-// GET - Get single workflow
+// GET — admin-only (workflow definition + executions — admin automation)
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
   try {
     const { id } = await params;
 

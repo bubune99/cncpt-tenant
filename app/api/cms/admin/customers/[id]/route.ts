@@ -16,8 +16,9 @@ interface RouteParams {
   params: Promise<{ id: string }>
 }
 
+// GET — admin-only (customer detail w/ order history + PII)
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
   try {
     const { id } = await params
 

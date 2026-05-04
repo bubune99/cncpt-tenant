@@ -32,8 +32,9 @@ interface UpdateCustomFieldBody {
   enabled?: boolean
 }
 
+// GET — admin-only (consumed only by admin field editors)
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
     try {
       const { id } = await params
 

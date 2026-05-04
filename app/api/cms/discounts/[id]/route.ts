@@ -17,9 +17,10 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-// GET - Get discount details
+// GET - Get discount details (admin-only — exposes usage history,
+// per-customer email list, internal config)
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
     try {
       const { id } = await params;
 
