@@ -24,8 +24,10 @@ interface DashboardContentProps {
 
 // Pick a display name with progressive fallbacks. Prevents the broken
 // "Welcome back," (trailing comma) UI when the Stack user has no displayName.
-function getDisplayName(user: any): string {
-  if (!user) return "there"
+// Returns null when no usable name is available so the caller can suppress
+// the heading entirely instead of flashing "Welcome back, there".
+function getDisplayName(user: any): string | null {
+  if (!user) return null
   const name = user.displayName ?? user.name
   if (typeof name === "string" && name.trim().length > 0) return name.trim()
   const email = user.primaryEmail ?? user.email
@@ -33,7 +35,7 @@ function getDisplayName(user: any): string {
     const local = email.split("@")[0]
     if (local && local.length > 0) return local
   }
-  return "there"
+  return null
 }
 
 export function DashboardContent({
@@ -46,18 +48,24 @@ export function DashboardContent({
 
   const renderContent = () => {
     switch (activeSection) {
-      case "overview":
+      case "overview": {
+        // Reserve the heading line height so it can't shift the layout. Render
+        // the actual welcome text only once we have a usable display name —
+        // this avoids the transient "Welcome back, there" / skeleton-pulse
+        // flash the owner reported. The parent already gates rendering on a
+        // resolved user, so this is the rare race when displayName is still
+        // populating from the auth store.
+        const displayName = getDisplayName(user)
         return (
           <div className="space-y-8" data-tour-id="dashboard-overview">
             <div className="flex items-center justify-between">
               <div>
-                {user ? (
-                  <h1 className="text-3xl font-bold text-balance mb-2" data-tour-id="dashboard-welcome-heading">
-                    Welcome back, {getDisplayName(user)}
-                  </h1>
-                ) : (
-                  <div className="h-9 w-72 mb-2 rounded-md bg-muted animate-pulse" aria-hidden />
-                )}
+                <h1
+                  className="text-3xl font-bold text-balance mb-2 min-h-[2.25rem]"
+                  data-tour-id="dashboard-welcome-heading"
+                >
+                  {displayName ? <>Welcome back, {displayName}</> : null}
+                </h1>
                 <p className="text-muted-foreground">Manage your subdomains and create new ones</p>
               </div>
               {subdomains.length > 0 && (
@@ -104,6 +112,7 @@ export function DashboardContent({
             )}
           </div>
         )
+      }
       case "visibility":
         return <SiteVisibility selectedSubdomain={selectedSubdomain} />
       case "domains":
