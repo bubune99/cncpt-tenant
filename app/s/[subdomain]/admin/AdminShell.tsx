@@ -38,6 +38,7 @@ import {
   CalendarDays,
   Store,
   ToggleLeft,
+  ExternalLink,
 } from 'lucide-react';
 import { Input } from '@/components/cms/ui/input';
 import { TenantAdminLogo } from '@/components/cms/branding/TenantAdminLogo';
@@ -111,7 +112,7 @@ interface NavGroup {
 export type AdminShellConfig = CMSConfig;
 
 // Header actions component that can access help context
-function HeaderActions() {
+function HeaderActions({ siteUrl }: { siteUrl: string }) {
   const help = useHelpOptional();
 
   const handleHelpClick = () => {
@@ -122,6 +123,20 @@ function HeaderActions() {
 
   return (
     <div className="flex items-center gap-1 sm:gap-2 ml-2 sm:ml-4" data-help-key="admin.header.actions" data-tour-id="header-actions">
+      {/* Visit Site — opens the storefront for this tenant in a new tab */}
+      <a
+        href={siteUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1.5 min-h-[44px] px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        title="Visit Site (opens in new tab)"
+        data-help-key="admin.header.visit-site"
+        data-tour-id="header-visit-site"
+      >
+        <ExternalLink className="h-4 w-4" />
+        <span className="hidden sm:inline">Visit Site</span>
+      </a>
+
       {/* Theme Toggle */}
       <div data-help-key="admin.header.theme" data-tour-id="header-theme-toggle">
         <ModeToggle />
@@ -435,7 +450,7 @@ export function AdminShell({
             </div>
 
             {/* Header Actions */}
-            <HeaderActions />
+            <HeaderActions siteUrl={siteUrl} />
           </div>
         </header>
 
