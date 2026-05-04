@@ -8,7 +8,6 @@ import { DashboardContent } from "./dashboard-content"
 import { useUser } from "@stackframe/stack"
 import { HelpProvider } from "@/components/help-system"
 import { DashboardChat } from "@/components/dashboard-chat"
-import { FeedbackWidget } from "@/components/feedback"
 
 export const dynamic = "force-dynamic"
 
@@ -179,7 +178,6 @@ export default function DashboardPage() {
           selectedSubdomain={selectedSubdomain}
         />
         <DashboardChat />
-        <FeedbackWidget position="bottom-right" />
       </div>
     </HelpProvider>
   )
