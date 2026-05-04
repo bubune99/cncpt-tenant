@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { sql } from "@/lib/neon"
 import { stackServerApp } from "@/stack"
-import { logPlatformActivity } from "@/lib/super-admin"
+import { isSuperAdmin, logPlatformActivity } from "@/lib/super-admin"
 
 export const dynamic = "force-dynamic"
 
@@ -27,18 +27,18 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get("offset") || "0", 10)
     const isAdmin = searchParams.get("admin") === "true"
 
-    // Check if user is a super admin for admin view
-    let isSuperAdmin = false
+    // Check if user is a super admin for admin view. Source of truth is
+    // the `super_admins` table (via lib/super-admin.ts). The legacy
+    // `users.is_super_admin` column was never deployed — see commit
+    // history of scripts/add-auth-sync-columns.sql.
+    let isAdminUser = false
     if (isAdmin) {
-      const adminCheck = await sql`
-        SELECT is_super_admin FROM users WHERE id = ${user.id}
-      `
-      isSuperAdmin = adminCheck[0]?.is_super_admin === true
+      isAdminUser = await isSuperAdmin(user.id)
     }
 
     // Build query based on role
     let tickets
-    if (isSuperAdmin) {
+    if (isAdminUser) {
       // Admin sees all tickets
       if (status && status !== "all") {
         tickets = await sql`
@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get stats
-    const statsQuery = isSuperAdmin
+    const statsQuery = isAdminUser
       ? await sql`
           SELECT
             COUNT(*) FILTER (WHERE status = 'open') as open_count,
@@ -269,11 +269,9 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Ticket ID is required" }, { status: 400 })
     }
 
-    // Check access - user can update their own tickets, admins can update any
-    const adminCheck = await sql`
-      SELECT is_super_admin FROM users WHERE id = ${user.id}
-    `
-    const isSuperAdmin = adminCheck[0]?.is_super_admin === true
+    // Check access - user can update their own tickets, admins can update any.
+    // Source of truth: super_admins table (via lib/super-admin.ts).
+    const isAdminUser = await isSuperAdmin(user.id)
 
     const ticketCheck = await sql`
       SELECT user_id FROM support_tickets WHERE id = ${ticketId}
@@ -283,7 +281,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 })
     }
 
-    if (!isSuperAdmin && ticketCheck[0].user_id !== user.id) {
+    if (!isAdminUser && ticketCheck[0].user_id !== user.id) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 })
     }
 
