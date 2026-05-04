@@ -1,4 +1,5 @@
 "use client"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -26,6 +27,7 @@ import {
   Moon,
   Sun,
   MessageSquare,
+  MessageSquarePlus,
   Coins,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -33,6 +35,7 @@ import { useRouter } from "next/navigation"
 import { logoutAction } from "@/app/auth-actions"
 import { useHelp } from "@/components/help-system"
 import { useTheme } from "next-themes"
+import { FeedbackDialog } from "@/components/feedback"
 
 interface DashboardSidebarProps {
   user: any
@@ -54,6 +57,7 @@ export function DashboardSidebar({
   const router = useRouter()
   const { helpMode, toggleHelpMode } = useHelp()
   const { setTheme, theme } = useTheme()
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
 
   const menuSections = [
     {
@@ -89,6 +93,7 @@ export function DashboardSidebar({
       title: "Support",
       items: [
         { id: "support", label: "Support Tickets", icon: MessageSquare, helpKey: "dashboard.sidebar.support", isRoute: true, route: "/dashboard/support", tourId: "nav-support-tickets" },
+        { id: "feedback", label: "Send Feedback", icon: MessageSquarePlus, helpKey: "dashboard.sidebar.feedback", isAction: true, action: "open-feedback", tourId: "nav-send-feedback" },
       ],
     },
     {
@@ -100,8 +105,12 @@ export function DashboardSidebar({
     },
   ]
 
-  const handleSectionClick = (sectionId: string, route?: string) => {
+  const handleSectionClick = (sectionId: string, route?: string, action?: string) => {
     console.log("[v0] Sidebar button clicked:", sectionId)
+    if (action === "open-feedback") {
+      setFeedbackOpen(true)
+      return
+    }
     if (route) {
       router.push(route)
     } else {
@@ -159,12 +168,12 @@ export function DashboardSidebar({
             <div className="space-y-1">
               {section.items.map((item) => {
                 const Icon = item.icon
-                const itemWithRoute = item as typeof item & { isRoute?: boolean; route?: string; tourId?: string }
+                const itemWithRoute = item as typeof item & { isRoute?: boolean; route?: string; tourId?: string; isAction?: boolean; action?: string }
                 return (
                   <Button
                     key={item.id}
                     variant="ghost"
-                    onClick={() => handleSectionClick(item.id, itemWithRoute.route)}
+                    onClick={() => handleSectionClick(item.id, itemWithRoute.route, itemWithRoute.action)}
                     data-help-key={item.helpKey}
                     data-tour-id={itemWithRoute.tourId}
                     className={cn(
@@ -252,6 +261,8 @@ export function DashboardSidebar({
           </Button>
         </form>
       </div>
+
+      <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
     </div>
   )
 }
