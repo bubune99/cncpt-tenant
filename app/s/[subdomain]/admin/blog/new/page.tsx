@@ -201,7 +201,7 @@ export default function NewBlogPostPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/blog">
+            <Link href="/admin/blog">
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
@@ -443,7 +443,7 @@ export default function NewBlogPostPage() {
               ) : (
                 <p className="text-sm text-muted-foreground">
                   No categories yet.{" "}
-                  <Link href="/blog/categories" className="text-primary">
+                  <Link href="/admin/blog/categories" className="text-primary">
                     Create one
                   </Link>
                 </p>
@@ -477,7 +477,7 @@ export default function NewBlogPostPage() {
               ) : (
                 <p className="text-sm text-muted-foreground">
                   No tags yet.{" "}
-                  <Link href="/blog/tags" className="text-primary">
+                  <Link href="/admin/blog/tags" className="text-primary">
                     Create one
                   </Link>
                 </p>

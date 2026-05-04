@@ -161,7 +161,7 @@ export default function PluginsPage() {
             Refresh
           </button>
           <Link
-            href="/plugins/new"
+            href="/admin/plugins/new"
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
@@ -312,7 +312,7 @@ export default function PluginsPage() {
                     <Power className="w-4 h-4" />
                   </button>
                   <Link
-                    href={`/plugins/${plugin.id}`}
+                    href={`/admin/plugins/${plugin.id}`}
                     className="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200"
                   >
                     <Settings className="w-4 h-4" />
@@ -326,7 +326,7 @@ export default function PluginsPage() {
                     </button>
                   )}
                   <Link
-                    href={`/plugins/${plugin.id}`}
+                    href={`/admin/plugins/${plugin.id}`}
                     className="p-2 text-gray-400 hover:text-gray-600"
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -392,7 +392,7 @@ export default function PluginsPage() {
                     <Power className="w-4 h-4" />
                   </button>
                   <Link
-                    href={`/plugins/primitives/${prim.id}`}
+                    href={`/admin/plugins/primitives/${prim.id}`}
                     className="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200"
                   >
                     <Code2 className="w-4 h-4" />
@@ -404,7 +404,7 @@ export default function PluginsPage() {
 
           <div className="mt-6 text-center">
             <Link
-              href="/plugins/primitives/new"
+              href="/admin/plugins/primitives/new"
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               <Plus className="w-4 h-4" />
@@ -422,7 +422,7 @@ export default function PluginsPage() {
             Compose primitives into automated workflows using a visual drag-and-drop builder.
           </p>
           <Link
-            href="/plugins/workflows/new"
+            href="/admin/plugins/workflows/new"
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             <Plus className="w-4 h-4" />

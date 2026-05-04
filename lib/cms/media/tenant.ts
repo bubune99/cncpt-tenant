@@ -15,6 +15,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { sql } from '@/lib/neon'
+import { canAccessSubdomain } from '@/lib/team-auth'
+import { isSuperAdmin } from '@/lib/super-admin'
 
 // Cache tenant ID lookups for 60 seconds to avoid repeated DB hits
 const tenantIdCache = new Map<string, { id: number; timestamp: number }>()
@@ -67,20 +69,29 @@ export async function getTenantIdBySubdomain(subdomain: string): Promise<number 
 }
 
 /**
- * Validate that a user owns or has access to a subdomain.
+ * Validate that a user owns, has team access to, or is a platform super admin
+ * for a subdomain.
+ *
+ * Previously this only matched `subdomains.user_id = userId` (owner-only),
+ * which silently locked out:
+ *   - Team members with edit/admin access to a tenant
+ *   - Platform super admins (who have a global bypass everywhere else)
+ *
+ * Now uses the canonical `canAccessSubdomain` + `isSuperAdmin` helpers so the
+ * media routes match the rest of the per-tenant admin (withTenantAuth, etc.).
+ *
+ * `level` defaults to `'edit'` because all current callers are write paths
+ * (upload, presign, complete). Read paths can pass `'view'`.
  */
 export async function validateTenantOwnership(
   userId: string,
-  subdomain: string
+  subdomain: string,
+  level: 'view' | 'edit' | 'admin' = 'edit'
 ): Promise<boolean> {
-  const sanitized = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '')
   try {
-    const result = await sql`
-      SELECT id FROM subdomains
-      WHERE subdomain = ${sanitized} AND user_id = ${userId}
-      LIMIT 1
-    `
-    return result.length > 0
+    if (await isSuperAdmin(userId)) return true
+    const access = await canAccessSubdomain(userId, subdomain, level)
+    return access.hasAccess
   } catch (error) {
     console.error('Tenant ownership validation error:', error)
     return false

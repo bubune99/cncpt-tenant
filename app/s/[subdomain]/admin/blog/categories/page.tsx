@@ -199,7 +199,7 @@ export default function BlogCategoriesPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-8">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/blog">
+            <Link href="/admin/blog">
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
