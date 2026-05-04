@@ -223,7 +223,7 @@ export default function NewWorkflowPage() {
       <div className="h-14 border-b border-gray-200 bg-white flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-4">
           <Link
-            href="/plugins"
+            href="/admin/plugins"
             className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
           >
             <ArrowLeft className="h-4 w-4" />

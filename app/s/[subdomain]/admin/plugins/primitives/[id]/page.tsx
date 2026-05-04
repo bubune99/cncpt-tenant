@@ -155,7 +155,7 @@ export default function PrimitiveEditorPage() {
       <div className="bg-white border-b px-6 py-4 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-4">
           <Link
-            href="/plugins"
+            href="/admin/plugins"
             className="p-2 rounded-lg hover:bg-gray-100"
           >
             <ArrowLeft className="w-5 h-5" />
