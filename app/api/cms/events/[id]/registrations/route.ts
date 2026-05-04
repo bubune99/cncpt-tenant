@@ -7,14 +7,15 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { listRegistrations, createRegistration, getEvent } from '@/lib/cms/events'
-import { withTenant } from '@/lib/cms/api/tenant'
+import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant'
 
 interface RouteParams {
   params: Promise<{ id: string }>
 }
 
+// GET — admin-only (registration roster — exposes registrant PII)
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
     try {
       const { id } = await params
       const { searchParams } = new URL(request.url)
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
     try {
       const { id } = await params
       const body = await request.json()

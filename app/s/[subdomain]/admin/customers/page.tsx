@@ -113,15 +113,13 @@ export default function CustomersPage() {
     fetchAllBusinessOwners();
   }, [businessOwnerFilter, statusFilter, accessLevelFilter]);
   
-  // Fetch all business owners for the create customer dialog
+  // Fetch all business owners for the create customer dialog.
+  // Endpoint requires super admin auth — non-admins simply get an empty list
+  // and the picker is hidden by the dialog, which is fine because tenant admins
+  // can only create customers for their own tenant (server enforces this).
   const fetchAllBusinessOwners = async () => {
     try {
-      const response = await fetch('/api/cms/admin/business-owners/v2', {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': 'temp-dev-key'
-        }
-      });
+      const response = await fetch('/api/cms/admin/business-owners/v2');
       if (response.ok) {
         const data = await response.json();
         setBusinessOwners(data.businessOwners.map((owner: any) => ({

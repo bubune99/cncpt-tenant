@@ -18,22 +18,60 @@ export type { Permission, BuiltInRoleName } from './constants'
 export type * from './types'
 
 /**
- * Get a user's complete permission set (roles + overrides)
+ * Get a user's complete permission set (roles + overrides) — optionally
+ * scoped to a specific tenant.
+ *
+ * When `tenantId` is provided:
+ *   - Only role assignments and permission overrides where
+ *     `tenantId === <provided>` OR `tenantId === null` (global) are returned.
+ *   - This is the correct mode for HTTP request handlers — every API route
+ *     that resolves a tenant context (via x-subdomain or AsyncLocalStorage)
+ *     should pass the current tenant.
+ *   - Only roles scoped to the same tenant (or global) contribute permissions,
+ *     preventing cross-tenant role escalation where Tenant X's "admin" role
+ *     would otherwise grant access to Tenant Y's data.
+ *
+ * When `tenantId` is undefined:
+ *   - Returns all role assignments and overrides regardless of tenant.
+ *   - This mode is for CLI tools and platform/super-admin views that need the
+ *     full picture of a user across tenants. Do NOT use this in a tenant-
+ *     scoped HTTP handler — it leaks cross-tenant permissions.
+ *
+ * If a caller in a request handler doesn't have a tenantId on hand, prefer
+ * `getCurrentTenant()` from `@/lib/cms/db` (AsyncLocalStorage helper) over
+ * passing `undefined`.
  */
-export async function getUserPermissions(userId: string): Promise<UserWithPermissions | null> {
+export async function getUserPermissions(
+  userId: string,
+  tenantId?: number | null,
+): Promise<UserWithPermissions | null> {
+  // Build the tenant filter for roleAssignments + permissions.
+  //   - tenantId provided  → match assignments for THIS tenant + global (null)
+  //   - tenantId undefined → no filter (CLI / platform admin view)
+  const tenantFilter =
+    tenantId !== undefined
+      ? { OR: [{ tenantId: tenantId }, { tenantId: null }] }
+      : undefined
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: {
       roleAssignments: {
+        where: tenantFilter,
         include: {
           role: true,
         },
       },
       permissions: {
         where: {
-          OR: [
-            { expiresAt: null },
-            { expiresAt: { gt: new Date() } },
+          AND: [
+            {
+              OR: [
+                { expiresAt: null },
+                { expiresAt: { gt: new Date() } },
+              ],
+            },
+            ...(tenantFilter ? [tenantFilter] : []),
           ],
         },
       },
@@ -132,13 +170,17 @@ function permissionMatches(userPermission: string, requiredPermission: string): 
 }
 
 /**
- * Check if user has a specific permission
+ * Check if user has a specific permission.
+ *
+ * Pass `tenantId` for tenant-scoped checks (recommended in request handlers).
+ * Omit for platform-level / CLI checks. See getUserPermissions() for details.
  */
 export async function hasPermission(
   userId: string,
-  permission: string
+  permission: string,
+  tenantId?: number | null,
 ): Promise<PermissionCheckResult> {
-  const userPerms = await getUserPermissions(userId)
+  const userPerms = await getUserPermissions(userId, tenantId)
 
   if (!userPerms) {
     return { allowed: false, reason: 'User not found' }
@@ -234,9 +276,10 @@ export function checkPermission(
  */
 export async function hasAllPermissions(
   userId: string,
-  permissions: string[]
+  permissions: string[],
+  tenantId?: number | null,
 ): Promise<boolean> {
-  const userPerms = await getUserPermissions(userId)
+  const userPerms = await getUserPermissions(userId, tenantId)
   if (!userPerms) return false
 
   return permissions.every((p) => checkPermission(userPerms, p).allowed)
@@ -248,16 +291,26 @@ export async function hasAllPermissions(
  */
 export async function hasAnyPermission(
   userId: string,
-  permissions: string[]
+  permissions: string[],
+  tenantId?: number | null,
 ): Promise<boolean> {
-  const userPerms = await getUserPermissions(userId)
+  const userPerms = await getUserPermissions(userId, tenantId)
   if (!userPerms) return false
 
   return permissions.some((p) => checkPermission(userPerms, p).allowed)
 }
 
 /**
- * Check if user is a super admin
+ * Check if user is a CMS super admin (i.e. has the wildcard "*" permission
+ * via a role or override). This is the *legacy CMS* notion of super admin
+ * — it is distinct from the platform-level super admin tracked in the
+ * `super_admins` table (see `lib/super-admin.ts → isSuperAdmin`).
+ *
+ * Both are valid bypass paths for tenant ownership checks; prefer the
+ * platform helper for ownership/cross-tenant decisions.
+ *
+ * No `tenantId` argument: super-admin check inspects ALL of a user's
+ * assignments to detect the wildcard regardless of tenant scope.
  */
 export async function isSuperAdmin(userId: string): Promise<boolean> {
   const userPerms = await getUserPermissions(userId)

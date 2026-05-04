@@ -38,6 +38,14 @@ import {
   tenantRequiredResponse,
   type CmsTenantContext,
 } from '@/lib/cms/tenant-context'
+import { stackServerApp } from '@/lib/cms/stack'
+import { canAccessSubdomain } from '@/lib/team-auth'
+import { isSuperAdmin } from '@/lib/super-admin'
+import {
+  rateLimitCheck,
+  getClientIp,
+  type RateLimitConfig,
+} from '@/lib/cms/rate-limit'
 
 export type { CmsTenantContext }
 export { tenantRequiredResponse }
@@ -118,4 +126,144 @@ export async function withTenant(
     return tenantRequiredResponse()
   }
   return runWithTenant(tenant.tenantId, () => handler(tenant))
+}
+
+// ---------------------------------------------------------------------------
+// Default per-IP / per-IP+user rate limits applied to every withTenantAuth
+// route. Tunable via the options arg; pass `{ rateLimit: false }` to opt out
+// (e.g. long-poll / SSE / streaming endpoints) or `{ rateLimit: <config> }`
+// for a custom config (e.g. burst-friendly admin export jobs).
+//
+// NOTE on storage: these limits ride on the existing Upstash Redis-backed
+// limiter (`lib/cms/rate-limit`). It works across serverless instances and
+// survives deploys. If the Upstash env vars are missing the limiter calls
+// will throw — callers can either set `KV_REST_API_URL`/`KV_REST_API_TOKEN`
+// or pass `{ rateLimit: false }` until the credentials are wired up.
+// ---------------------------------------------------------------------------
+
+/** Default rate-limit presets, by required access level. */
+const DEFAULT_AUTH_RATE_LIMITS: Record<
+  'view' | 'edit' | 'admin',
+  RateLimitConfig
+> = {
+  view: { maxRequests: 60, windowMs: 60_000 },
+  edit: { maxRequests: 30, windowMs: 60_000 },
+  admin: { maxRequests: 30, windowMs: 60_000 },
+}
+
+export interface WithTenantAuthOptions {
+  /**
+   * Per-IP rate-limit config. Pass `false` to disable. Pass a RateLimitConfig
+   * to override the default for the level (e.g. tighter / looser bucket).
+   * Default: see DEFAULT_AUTH_RATE_LIMITS — view=60/min, edit=30/min,
+   * admin=30/min. Admin/edit also keys on the authenticated user id, not
+   * just IP, to defeat shared-NAT bypass.
+   */
+  rateLimit?: false | RateLimitConfig
+}
+
+/**
+ * Wrap an API route handler with:
+ * - Tenant context resolution (from x-subdomain header)
+ * - Default per-IP (and per-user for edit/admin) rate limit (429 on exceed)
+ * - Authentication requirement (returns 401 if not signed in)
+ * - Tenant ownership/access check (returns 403 if user is not owner / team
+ *   member with sufficient access level / super admin)
+ *
+ * This is the recommended wrapper for any tenant-scoped admin/mutation route.
+ * It closes the cross-tenant data leak where any authenticated user could read
+ * or write to any tenant's data simply by hitting <victim>.cncptweb.com/api/...
+ *
+ * Usage:
+ * ```ts
+ * export const POST = (req: NextRequest) =>
+ *   withTenantAuth(req, 'edit', async (tenant, user) => {
+ *     // user has at least edit-level access to tenant.subdomain
+ *     const product = await prisma.product.create(...)
+ *     return NextResponse.json(product, { status: 201 })
+ *   })
+ *
+ * // Disable default rate limit (e.g. for SSE / streaming endpoints):
+ * export const POST = (req: NextRequest) =>
+ *   withTenantAuth(req, 'edit', async (tenant, user) => { ... }, { rateLimit: false })
+ * ```
+ */
+export async function withTenantAuth(
+  request: NextRequest,
+  requiredLevel: 'view' | 'edit' | 'admin',
+  handler: (
+    tenant: CmsTenantContext,
+    user: { id: string; email: string },
+  ) => Promise<NextResponse>,
+  options: WithTenantAuthOptions = {},
+): Promise<NextResponse> {
+  const tenant = await getTenantContext(request)
+  if (!tenant) {
+    return tenantRequiredResponse()
+  }
+
+  // Pre-auth IP rate limit. Doing this before user lookup means an
+  // unauthenticated attacker can't DOS the user-lookup path either.
+  if (options.rateLimit !== false) {
+    const config: RateLimitConfig = options.rateLimit ?? {
+      ...DEFAULT_AUTH_RATE_LIMITS[requiredLevel],
+      // Per-route default: include the route path + tenant subdomain in
+      // the key prefix so noisy /api/cms/orders traffic doesn't drain the
+      // /api/cms/products budget for the same caller.
+      keyPrefix: `tenant-auth:${tenant.subdomain}:${new URL(request.url).pathname}:${requiredLevel}`,
+    }
+    try {
+      const limited = await rateLimitCheck(request, config)
+      if (limited) return limited
+    } catch (err) {
+      // If the rate-limit backend is unreachable (Redis down, env missing)
+      // we fail open — security-critical access checks still run below.
+      // This is intentional: we'd rather degrade rate-limiting than 500
+      // every request and break the platform.
+      console.warn('[withTenantAuth] rate-limit backend unavailable:', err)
+    }
+  }
+
+  const user = await stackServerApp.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Stronger second-tier limit for edit/admin: include the user id in the
+  // key so a single attacker behind a CGNAT / corporate proxy can't pool
+  // their attempts under one IP. View-level reads keep the IP-only key
+  // since the cost of a read is much lower.
+  if (
+    options.rateLimit !== false &&
+    (requiredLevel === 'edit' || requiredLevel === 'admin')
+  ) {
+    try {
+      const ip = getClientIp(request)
+      const userKeyConfig: RateLimitConfig = {
+        ...DEFAULT_AUTH_RATE_LIMITS[requiredLevel],
+        keyPrefix: `tenant-auth:${tenant.subdomain}:${new URL(request.url).pathname}:${requiredLevel}:user:${user.id}:ip:${ip}`,
+      }
+      const limited = await rateLimitCheck(request, userKeyConfig)
+      if (limited) return limited
+    } catch (err) {
+      console.warn('[withTenantAuth] per-user rate-limit backend unavailable:', err)
+    }
+  }
+
+  // Super admins bypass tenant ownership checks
+  const superAdmin = await isSuperAdmin(user.id)
+
+  if (!superAdmin) {
+    const access = await canAccessSubdomain(user.id, tenant.subdomain, requiredLevel)
+    if (!access.hasAccess) {
+      return NextResponse.json(
+        { error: 'Forbidden: insufficient access to this site' },
+        { status: 403 },
+      )
+    }
+  }
+
+  return runWithTenant(tenant.tenantId, () =>
+    handler(tenant, { id: user.id, email: user.primaryEmail || '' }),
+  )
 }

@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { sql } from "@/lib/neon"
 import { stackServerApp } from "@/stack"
-import { logPlatformActivity } from "@/lib/super-admin"
+import { isSuperAdmin, logPlatformActivity } from "@/lib/super-admin"
 
 export const dynamic = "force-dynamic"
 
@@ -26,11 +26,8 @@ export async function GET(
 
     const { ticketId } = await params
 
-    // Check access
-    const adminCheck = await sql`
-      SELECT is_super_admin FROM users WHERE id = ${user.id}
-    `
-    const isSuperAdmin = adminCheck[0]?.is_super_admin === true
+    // Check access. Source of truth: super_admins table (via lib/super-admin.ts).
+    const isAdminUser = await isSuperAdmin(user.id)
 
     const ticketCheck = await sql`
       SELECT user_id, title, status, priority, category, created_at
@@ -44,7 +41,7 @@ export async function GET(
 
     const ticket = ticketCheck[0]
 
-    if (!isSuperAdmin && ticket.user_id !== user.id) {
+    if (!isAdminUser && ticket.user_id !== user.id) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 })
     }
 
@@ -120,11 +117,9 @@ export async function POST(
       return NextResponse.json({ error: "Message content is required" }, { status: 400 })
     }
 
-    // Check access and determine sender type
-    const adminCheck = await sql`
-      SELECT is_super_admin FROM users WHERE id = ${user.id}
-    `
-    const isSuperAdmin = adminCheck[0]?.is_super_admin === true
+    // Check access and determine sender type.
+    // Source of truth: super_admins table (via lib/super-admin.ts).
+    const isAdminUser = await isSuperAdmin(user.id)
 
     const ticketCheck = await sql`
       SELECT user_id, status FROM support_tickets WHERE id = ${ticketId}
@@ -137,7 +132,7 @@ export async function POST(
     const ticket = ticketCheck[0]
     const isOwner = ticket.user_id === user.id
 
-    if (!isSuperAdmin && !isOwner) {
+    if (!isAdminUser && !isOwner) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 })
     }
 

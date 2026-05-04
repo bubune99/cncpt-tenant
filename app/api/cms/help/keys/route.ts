@@ -16,7 +16,7 @@ import {
   getHelpKeysSummary,
 } from '@/components/cms/help-system/help-key-registry'
 import { defaultHelpContent } from '@/components/cms/help-system/default-content'
-import { withTenant } from '@/lib/cms/api/tenant'
+import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,8 +28,9 @@ export const dynamic = 'force-dynamic'
  * - withContent: Include content status (has default, has custom)
  * - missingOnly: Only return keys without custom content
  */
+// GET — admin-only (admin help-system key registry)
 export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
   try {
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
@@ -132,7 +133,7 @@ export async function GET(request: NextRequest) {
  * This allows the system to track keys found at runtime.
  */
 export async function POST(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
   try {
     const body = await request.json()
     const { key, category, location, description } = body

@@ -9,7 +9,7 @@ import {
   TemplateCategory,
 } from "@/lib/cms/templates";
 import { getTemplateRegistry } from "@/lib/cms/templates/registry";
-import { withTenant } from '@/lib/cms/api/tenant';
+import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -22,8 +22,9 @@ export const dynamic = 'force-dynamic'
  * - id: Get specific template
  * - categories: Return list of categories (set to "true")
  */
+// GET — admin-only (page templates used in admin Pages editor)
 export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
   try {
     // Ensure templates are initialized
     ensureTemplatesInitialized();
@@ -95,7 +96,7 @@ export async function GET(request: NextRequest) {
  * - category: Optional category
  */
 export async function POST(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
   try {
     // Ensure templates are initialized
     ensureTemplatesInitialized();

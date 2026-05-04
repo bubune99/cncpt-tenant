@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { getV0ImportAgent } from "@/lib/cms/v0-agent";
 import { prisma } from "@/lib/cms/db";
-import { withTenant } from '@/lib/cms/api/tenant';
+import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -21,7 +21,7 @@ export const dynamic = 'force-dynamic'
  * - slug: Page slug (required if createPage is true)
  */
 export async function POST(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
   try {
     const body = await request.json();
     const { url, code, name, description, category, createPage, slug } = body;

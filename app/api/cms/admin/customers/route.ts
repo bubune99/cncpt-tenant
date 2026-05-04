@@ -170,25 +170,59 @@ export const POST = withPermission(
         )
       }
 
-      if (!body.businessOwnerId) {
-        return NextResponse.json(
-          { error: 'Business owner is required' },
-          { status: 400 }
-        )
-      }
+      // SECURITY: Derive tenantId from x-subdomain header (set by middleware
+      // from the verified hostname), not from client-supplied businessOwnerId.
+      // Otherwise a tenant admin could create customers in someone else's tenant
+      // by passing a different businessOwnerId in the request body.
+      // Super admins are an exception: they may create customers in any tenant
+      // via the body (they explicitly target a businessOwnerId from the picker).
+      const subdomain = request.headers.get('x-subdomain')
+      let tenantId: number
 
-      const tenantId = parseInt(body.businessOwnerId)
-
-      // Verify the tenant exists
-      const tenant = await prisma.subdomain.findUnique({
-        where: { id: tenantId },
-      })
-
-      if (!tenant) {
-        return NextResponse.json(
-          { error: 'Business owner not found' },
-          { status: 404 }
-        )
+      if (subdomain) {
+        const tenant = await prisma.subdomain.findUnique({
+          where: { subdomain },
+          select: { id: true },
+        })
+        if (!tenant) {
+          return NextResponse.json(
+            { error: 'Tenant not found for subdomain' },
+            { status: 404 }
+          )
+        }
+        tenantId = tenant.id
+      } else {
+        // No subdomain context — only super admins can specify a target tenant
+        const stackUser = await stackServerApp.getUser()
+        if (!stackUser || !(await isSuperAdmin(stackUser.id))) {
+          return NextResponse.json(
+            { error: 'Tenant context required. Provide x-subdomain header.' },
+            { status: 400 }
+          )
+        }
+        if (!body.businessOwnerId) {
+          return NextResponse.json(
+            { error: 'Business owner is required' },
+            { status: 400 }
+          )
+        }
+        const parsed = parseInt(body.businessOwnerId)
+        if (!Number.isInteger(parsed) || parsed <= 0) {
+          return NextResponse.json(
+            { error: 'Invalid business owner id' },
+            { status: 400 }
+          )
+        }
+        const tenant = await prisma.subdomain.findUnique({
+          where: { id: parsed },
+        })
+        if (!tenant) {
+          return NextResponse.json(
+            { error: 'Business owner not found' },
+            { status: 404 }
+          )
+        }
+        tenantId = parsed
       }
 
       // Check for duplicate email within this tenant

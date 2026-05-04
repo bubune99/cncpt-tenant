@@ -2,14 +2,12 @@
  * Dashboard Configuration API
  *
  * Admin API for managing customer dashboard configuration.
- * GET - Retrieve current configuration
- * PUT - Update configuration
+ * GET  - Retrieve current configuration
+ * PUT  - Update configuration
  * POST - Apply a preset
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { stackServerApp } from '@/lib/cms/stack';
-import { prisma } from '@/lib/cms/db';
 import {
   getDashboardConfig,
   saveDashboardConfig,
@@ -17,37 +15,20 @@ import {
   getAvailablePresets,
   type DashboardPreset,
 } from '@/lib/cms/dashboard';
-import { withTenant } from '@/lib/cms/api/tenant';
+import { withTenantAuth } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
-// Check if user is admin
-async function isAdmin(): Promise<boolean> {
-  try {
-    const stackUser = await stackServerApp.getUser();
-    if (!stackUser) return false;
-
-    const user = await prisma.user.findUnique({
-      where: { stackAuthId: stackUser.id },
-      select: { role: true },
-    });
-
-    return user?.role === 'ADMIN';
-  } catch {
-    return false;
-  }
-}
-
 /**
- * GET - Retrieve dashboard configuration
+ * GET - Retrieve dashboard configuration (admin-only)
+ *
+ * Tenant ownership/access is enforced by withTenantAuth — this replaces
+ * the previous global users.role='ADMIN' check, which was both
+ * cross-tenant and a non-canonical role source.
  */
 export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
     try {
-      if (!(await isAdmin())) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-
       const config = await getDashboardConfig();
       const presets = getAvailablePresets();
 
@@ -66,15 +47,11 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * PUT - Update dashboard configuration
+ * PUT - Update dashboard configuration (admin-only)
  */
 export async function PUT(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
     try {
-      if (!(await isAdmin())) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-
       const body = await request.json();
       const config = await saveDashboardConfig(body);
 
@@ -90,15 +67,11 @@ export async function PUT(request: NextRequest) {
 }
 
 /**
- * POST - Apply a preset
+ * POST - Apply a preset (admin-only)
  */
 export async function POST(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
     try {
-      if (!(await isAdmin())) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-
       const { preset } = await request.json();
 
       if (!preset) {

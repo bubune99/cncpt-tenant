@@ -9,9 +9,11 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { stackServerApp } from '../stack'
-import { prisma, runWithTenant } from '../db'
+import { prisma, runWithTenant, getCurrentTenant } from '../db'
 import { getUserPermissions, checkPermission, type UserWithPermissions } from './index'
 import { resolveCmsTenantContext } from '../tenant-context'
+import { canAccessSubdomain } from '@/lib/team-auth'
+import { isSuperAdmin as isPlatformSuperAdmin } from '@/lib/super-admin'
 
 export interface AuthContext {
   user: {
@@ -24,7 +26,11 @@ export interface AuthContext {
 }
 
 /**
- * Get current authenticated user with permissions
+ * Get current authenticated user with permissions.
+ *
+ * If called inside a tenant-scoped context (i.e. wrapped in `runWithTenant`),
+ * permissions are filtered to that tenant + global. If no tenant context is
+ * set (platform/CLI), returns the user's full cross-tenant permission set.
  */
 export async function getAuthContext(): Promise<AuthContext | null> {
   try {
@@ -38,8 +44,15 @@ export async function getAuthContext(): Promise<AuthContext | null> {
 
     if (!user) return null
 
-    // Get user permissions
-    const permissions = await getUserPermissions(user.id)
+    // Get user permissions, scoped to the current tenant if one is set in
+    // AsyncLocalStorage. `getCurrentTenant()` returns null when there's no
+    // tenant context, in which case getUserPermissions returns the global
+    // set (platform-admin / CLI behavior).
+    const currentTenant = getCurrentTenant()
+    const permissions = await getUserPermissions(
+      user.id,
+      currentTenant === null ? undefined : currentTenant,
+    )
     if (!permissions) return null
 
     return {
@@ -181,19 +194,50 @@ export function withPermission<T extends unknown[]>(
 ) {
   return async (request: NextRequest, ...args: T): Promise<NextResponse> => {
     try {
-      const authContext = await requirePermission(permission)
-
-      // Resolve tenant context from x-subdomain header
+      // Resolve tenant FIRST so getAuthContext picks up the right scope.
       const tenantContext = await resolveCmsTenantContext(request)
 
       if (tenantContext) {
-        // Run handler within tenant scope - all Prisma queries auto-filtered
-        return await runWithTenant(tenantContext.tenantId, () =>
-          handler(request, authContext, ...args)
-        )
+        // Run the entire pipeline inside tenant scope so getAuthContext()
+        // (called by requirePermission) sees the current tenantId via
+        // AsyncLocalStorage and getUserPermissions filters role assignments
+        // and overrides to that tenant + global.
+        return await runWithTenant(tenantContext.tenantId, async () => {
+          const authContext = await requirePermission(permission)
+
+          // Belt-and-suspenders tenant ownership check.
+          //
+          // Even though getUserPermissions is now tenant-scoped (see
+          // lib/cms/permissions/index.ts), we keep an explicit
+          // canAccessSubdomain() check here for two reasons:
+          //   1. It enforces ownership/team-membership semantics that are
+          //      orthogonal to the RBAC permission set (e.g. owner role,
+          //      collaborator-with-edit-level).
+          //   2. It defends against future code paths that might inadvertently
+          //      grant tenant-X users a permission scoped to tenant-Y.
+          // This duplication is deliberate. Do not remove without auditing
+          // canAccessSubdomain coverage end-to-end first.
+          const platformSuperAdmin = await isPlatformSuperAdmin(authContext.user.stackAuthId)
+          if (!platformSuperAdmin) {
+            const access = await canAccessSubdomain(
+              authContext.user.stackAuthId,
+              tenantContext.subdomain,
+              'edit',
+            )
+            if (!access.hasAccess) {
+              return NextResponse.json(
+                { error: 'Forbidden: insufficient access to this site' },
+                { status: 403 },
+              )
+            }
+          }
+
+          return handler(request, authContext, ...args)
+        })
       }
 
       // No tenant context (platform-level operation) - run without scoping
+      const authContext = await requirePermission(permission)
       return await handler(request, authContext, ...args)
     } catch (error) {
       return handleAuthError(error)
@@ -214,15 +258,33 @@ export function withAnyPermission<T extends unknown[]>(
 ) {
   return async (request: NextRequest, ...args: T): Promise<NextResponse> => {
     try {
-      const authContext = await requireAnyPermission(permissions)
-
       const tenantContext = await resolveCmsTenantContext(request)
+
       if (tenantContext) {
-        return await runWithTenant(tenantContext.tenantId, () =>
-          handler(request, authContext, ...args)
-        )
+        return await runWithTenant(tenantContext.tenantId, async () => {
+          const authContext = await requireAnyPermission(permissions)
+
+          // Belt-and-suspenders tenant ownership check — see withPermission()
+          // for why this duplicates the now-scoped getUserPermissions check.
+          const platformSuperAdmin = await isPlatformSuperAdmin(authContext.user.stackAuthId)
+          if (!platformSuperAdmin) {
+            const access = await canAccessSubdomain(
+              authContext.user.stackAuthId,
+              tenantContext.subdomain,
+              'edit',
+            )
+            if (!access.hasAccess) {
+              return NextResponse.json(
+                { error: 'Forbidden: insufficient access to this site' },
+                { status: 403 },
+              )
+            }
+          }
+          return handler(request, authContext, ...args)
+        })
       }
 
+      const authContext = await requireAnyPermission(permissions)
       return await handler(request, authContext, ...args)
     } catch (error) {
       return handleAuthError(error)
@@ -242,15 +304,33 @@ export function withAuth<T extends unknown[]>(
 ) {
   return async (request: NextRequest, ...args: T): Promise<NextResponse> => {
     try {
-      const authContext = await requireAuth()
-
       const tenantContext = await resolveCmsTenantContext(request)
+
       if (tenantContext) {
-        return await runWithTenant(tenantContext.tenantId, () =>
-          handler(request, authContext, ...args)
-        )
+        return await runWithTenant(tenantContext.tenantId, async () => {
+          const authContext = await requireAuth()
+
+          // Belt-and-suspenders tenant ownership check — see withPermission()
+          // for why this duplicates the now-scoped getUserPermissions check.
+          const platformSuperAdmin = await isPlatformSuperAdmin(authContext.user.stackAuthId)
+          if (!platformSuperAdmin) {
+            const access = await canAccessSubdomain(
+              authContext.user.stackAuthId,
+              tenantContext.subdomain,
+              'edit',
+            )
+            if (!access.hasAccess) {
+              return NextResponse.json(
+                { error: 'Forbidden: insufficient access to this site' },
+                { status: 403 },
+              )
+            }
+          }
+          return handler(request, authContext, ...args)
+        })
       }
 
+      const authContext = await requireAuth()
       return await handler(request, authContext, ...args)
     } catch (error) {
       return handleAuthError(error)

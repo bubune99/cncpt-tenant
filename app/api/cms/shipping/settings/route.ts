@@ -10,7 +10,7 @@ import { prisma } from '@/lib/cms/db'
 import { getShippingSettings, clearShippingSettingsCache } from '@/lib/cms/shippo'
 import { encrypt } from '@/lib/cms/encryption'
 import type { ShippingSettings } from '@/lib/cms/shippo/types'
-import { withTenant } from '@/lib/cms/api/tenant'
+import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,8 +37,10 @@ const SHIPPING_SETTINGS_KEYS = [
   'shipping.requireSignature',
 ]
 
+// GET — admin-only (Shippo API key + webhook secret status — even though
+// values are masked, presence/absence leaks integration state)
 export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
   try {
     const settings = await getShippingSettings()
 
@@ -62,13 +64,13 @@ export async function GET(request: NextRequest) {
 
 // Support both POST and PUT for updating settings
 export async function POST(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
     return handleUpdate(request)
   })
 }
 
 export async function PUT(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
     return handleUpdate(request)
   })
 }

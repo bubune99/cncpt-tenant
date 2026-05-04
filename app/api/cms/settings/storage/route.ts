@@ -7,14 +7,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { stackServerApp } from '@/lib/cms/stack'
 import {
   getStorageSettings,
   updateSettings,
   clearSettingsCache,
 } from '@/lib/cms/settings'
 import { invalidateStorageClient, testStorageConnection } from '@/lib/cms/r2'
-import { withTenant } from '@/lib/cms/api/tenant'
+import { withTenantAuth } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,14 +22,10 @@ export const dynamic = 'force-dynamic'
  *
  * Returns current storage settings with secrets partially masked.
  */
+// GET — admin-only (storage provider config + masked secrets)
 export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'admin', async () => {
     try {
-      const user = await stackServerApp.getUser()
-      if (!user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-      }
-
       const settings = await getStorageSettings()
 
       // Mask sensitive values -- show last 4 chars for identification
@@ -59,14 +54,10 @@ export async function GET(request: NextRequest) {
  * Update storage settings. Secrets are encrypted before storage.
  * Masked values ('********' or '****XXXX') are skipped to preserve existing secrets.
  */
+// PUT — admin-only (sets storage provider + secrets — high-value mutation)
 export async function PUT(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'admin', async () => {
     try {
-      const user = await stackServerApp.getUser()
-      if (!user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-      }
-
       const body = await request.json()
 
       // Validate provider
@@ -135,14 +126,11 @@ export async function PUT(request: NextRequest) {
  * Actions:
  * - { action: "test" } -- Test the storage connection using current settings
  */
+// POST — admin-only (tests S3/R2/local credentials — leaks config presence
+// and could be abused to probe network reachability)
 export async function POST(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'admin', async () => {
     try {
-      const user = await stackServerApp.getUser()
-      if (!user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-      }
-
       const body = await request.json()
 
       if (body.action === 'test') {
