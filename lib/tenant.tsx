@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/cms/db"
 import { notFound } from "next/navigation"
+import { cache } from "react"
 
 export interface TenantData {
   id: number
@@ -52,31 +53,35 @@ export interface TenantPage {
   updated_at: Date
 }
 
-// Get tenant data by subdomain using Prisma
-export async function getTenantData(subdomain: string): Promise<TenantData | null> {
-  const result = await prisma.subdomain.findUnique({
-    where: { subdomain },
-    select: {
-      id: true,
-      subdomain: true,
-      userId: true,
-      createdAt: true,
-      maintenanceMode: true,
-      maintenanceMsg: true,
-    },
-  })
+// Get tenant data by subdomain using Prisma.
+// Wrapped in React `cache()` so layouts and pages that all need this within
+// a single request only pay one Prisma round-trip instead of three.
+export const getTenantData = cache(
+  async (subdomain: string): Promise<TenantData | null> => {
+    const result = await prisma.subdomain.findUnique({
+      where: { subdomain },
+      select: {
+        id: true,
+        subdomain: true,
+        userId: true,
+        createdAt: true,
+        maintenanceMode: true,
+        maintenanceMsg: true,
+      },
+    })
 
-  if (!result) return null
+    if (!result) return null
 
-  return {
-    id: result.id,
-    subdomain: result.subdomain,
-    userId: result.userId,
-    createdAt: result.createdAt,
-    maintenanceMode: result.maintenanceMode,
-    maintenanceMsg: result.maintenanceMsg,
+    return {
+      id: result.id,
+      subdomain: result.subdomain,
+      userId: result.userId,
+      createdAt: result.createdAt,
+      maintenanceMode: result.maintenanceMode,
+      maintenanceMsg: result.maintenanceMsg,
+    }
   }
-}
+)
 
 // Get tenant settings using Prisma
 export async function getTenantSettings(tenantId: number): Promise<TenantSettings | null> {

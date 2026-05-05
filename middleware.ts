@@ -246,12 +246,19 @@ export const config = {
     /*
      * Match all paths except for:
      * 1. /_next (Next.js internals)
-     * 2. root files inside /public EXCEPT favicon.ico, manifest.json, icon
-     *    (those need rewriting for per-tenant branding on subdomains)
+     * 2. Static assets in /public with image/font/style extensions —
+     *    these never need subdomain rewriting and skipping middleware
+     *    saves an Edge invocation per asset request.
      *
-     * Note: API routes ARE matched so we can inject x-subdomain header
-     * for tenant-scoped API operations.
+     * KEEP matched (not in the negative lookahead):
+     * - /favicon.ico, /manifest.json, /icon — rewritten per-tenant
+     * - /api/* — needs x-subdomain header injection
+     * - All HTML routes — need subdomain rewriting
+     *
+     * Note: the previous matcher was "/((?!_next).*)" which also ran the
+     * middleware for /logo.png, /og-image.jpg, /robots.txt, etc. These are
+     * served from /public and don't need any rewriting.
      */
-    "/((?!_next).*)",
+    "/((?!_next/|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|avif|woff|woff2|ttf|eot|otf|css|js|map|txt|xml)$).*)",
   ],
 }
