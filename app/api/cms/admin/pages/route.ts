@@ -12,6 +12,7 @@ import {
   type AuthContext,
 } from '@/lib/cms/permissions/middleware'
 import { PERMISSIONS, logAuditEvent } from '@/lib/cms/permissions'
+import { isReservedSystemSlug } from '@/lib/cms/system-pages'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,7 +27,14 @@ export const GET = withPermission(
       const limit = parseInt(searchParams.get('limit') || '50')
       const offset = parseInt(searchParams.get('offset') || '0')
 
-      const where: Record<string, unknown> = {}
+      const where: Record<string, unknown> = {
+        // Exclude system pages — they're managed separately via
+        // /api/cms/admin/system-pages and rendered in their own admin
+        // section. Mixing them into the regular pages list would surface
+        // reserved `__system/*` slugs and confuse the delete/duplicate
+        // affordances.
+        systemKey: null,
+      }
 
       if (search) {
         where.OR = [
@@ -131,6 +139,19 @@ export const POST = withPermission(
       let slug = body.slug.trim()
       if (!slug.startsWith('/')) {
         slug = '/' + slug
+      }
+
+      // Reject reserved system slugs (`__system/*`). User-created pages
+      // must never collide with the customisable-system-pages namespace —
+      // those rows are managed exclusively via /api/cms/admin/system-pages.
+      if (isReservedSystemSlug(slug)) {
+        return NextResponse.json(
+          {
+            error:
+              'Slugs starting with "__system/" are reserved for built-in system pages. Please choose a different slug.',
+          },
+          { status: 400 }
+        )
       }
 
       // Check for duplicate slug within this tenant

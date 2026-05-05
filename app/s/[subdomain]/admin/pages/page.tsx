@@ -59,6 +59,7 @@ import {
   Layout,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { SystemPagesSection } from './_components/system-pages-section';
 
 interface Page {
   id: string;
@@ -218,6 +219,9 @@ export default function PagesPage() {
           </Button>
         </div>
       </div>
+
+      {/* System Pages Section — per-tenant customisation of 404 / 500 / etc. */}
+      <SystemPagesSection onChange={fetchPages} />
 
       {/* Site Layout Section */}
       <Card className="mb-8 border-primary/20 bg-gradient-to-r from-primary/5 to-transparent" data-help-key="admin.pages.layout">
