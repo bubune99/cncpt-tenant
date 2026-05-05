@@ -7,6 +7,7 @@
 
 import { getTenantData } from '@/lib/tenant';
 import { cookies } from 'next/headers';
+import { cache } from 'react';
 
 export interface TenantContext {
   id: number;
@@ -17,23 +18,29 @@ export interface TenantContext {
 }
 
 /**
- * Get full tenant context including maintenance mode status
+ * Get full tenant context including maintenance mode status.
+ *
+ * Wrapped in React `cache()` so the storefront layout, page handler, and
+ * generateMetadata all share a single Prisma round-trip per request.
+ * `getTenantData` itself is also memoized — this is a cheap projection.
  */
-export async function getTenantContext(subdomain: string): Promise<TenantContext | null> {
-  const tenantData = await getTenantData(subdomain);
+export const getTenantContext = cache(
+  async (subdomain: string): Promise<TenantContext | null> => {
+    const tenantData = await getTenantData(subdomain);
 
-  if (!tenantData) {
-    return null;
+    if (!tenantData) {
+      return null;
+    }
+
+    return {
+      id: tenantData.id,
+      subdomain: tenantData.subdomain,
+      userId: tenantData.userId ?? null,
+      maintenanceMode: tenantData.maintenanceMode ?? false,
+      maintenanceMessage: tenantData.maintenanceMsg ?? null,
+    };
   }
-
-  return {
-    id: tenantData.id,
-    subdomain: tenantData.subdomain,
-    userId: tenantData.userId ?? null,
-    maintenanceMode: tenantData.maintenanceMode ?? false,
-    maintenanceMessage: tenantData.maintenanceMsg ?? null,
-  };
-}
+);
 
 /**
  * Check if the current user can bypass maintenance mode

@@ -14,7 +14,16 @@ export default async function StorefrontLayout({
   params: Promise<{ subdomain: string }>;
 }) {
   const { subdomain } = await params;
-  const tenantContext = await getTenantContext(subdomain);
+
+  // Run independent fetches in parallel. `getTenantContext` and
+  // `getTenantBranding` don't depend on each other; the previous sequential
+  // pattern paid two network round-trips when one would do. Both are wrapped
+  // in React `cache()` so any other layouts/pages in the same request reuse
+  // these results.
+  const [tenantContext, branding] = await Promise.all([
+    getTenantContext(subdomain),
+    getTenantBranding(subdomain),
+  ]);
 
   // Check maintenance mode for public storefront
   if (tenantContext && await shouldShowMaintenance(tenantContext)) {
@@ -27,9 +36,6 @@ export default async function StorefrontLayout({
       />
     );
   }
-
-  // Load tenant branding (server-side, no client fetch needed)
-  const branding = await getTenantBranding(subdomain);
 
   const renderLogo = (size: 'sm' | 'md') => {
     const dimensions = size === 'sm' ? { w: 24, h: 24 } : { w: 32, h: 32 };
