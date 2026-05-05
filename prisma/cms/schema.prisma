@@ -1233,6 +1233,11 @@ model Page {
   showAnnouncement   Boolean @default(true)
   customAnnouncement Json? // Custom announcement (null = use global)
 
+  // System page marker — when non-null, this row is a tenant override for a
+  // built-in system page (404, 500, maintenance, coming-soon). At most one
+  // row per tenant per systemKey. NULL for normal user-authored pages.
+  systemKey SystemPageKey? @map("system_key")
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   publishedAt DateTime?
@@ -1245,9 +1250,11 @@ model Page {
   bundles       PageBundle[] // Bundles that created this page
 
   @@unique([tenantId, slug]) // Unique slugs per tenant
+  @@unique([tenantId, systemKey]) // At most one of each system page per tenant
   @@index([tenantId])
   @@index([slug])
   @@index([status])
+  @@index([systemKey])
   @@map("pages")
 }
 
@@ -1261,6 +1268,16 @@ enum PageStatus {
   DRAFT
   PUBLISHED
   ARCHIVED
+}
+
+/// Reserved keys for built-in system pages (404, 500, maintenance, coming
+/// soon). When a Page row has a non-null systemKey it overrides the platform
+/// default for that key on the owning tenant.
+enum SystemPageKey {
+  NOT_FOUND
+  SERVER_ERROR
+  MAINTENANCE
+  COMING_SOON
 }
 
 // =============================================================================

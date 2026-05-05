@@ -13,6 +13,7 @@ import {
   type AuthContext,
 } from '@/lib/cms/permissions/middleware'
 import { PERMISSIONS, logAuditEvent } from '@/lib/cms/permissions'
+import { isReservedSystemSlug } from '@/lib/cms/system-pages'
 
 export const dynamic = 'force-dynamic'
 
@@ -79,6 +80,7 @@ export const GET = withPermission(
         customFooter: page.customFooter,
         showAnnouncement: page.showAnnouncement,
         customAnnouncement: page.customAnnouncement,
+        systemKey: page.systemKey,
         sourceDeps: (page as Record<string, unknown>).sourceDeps || null,
         createdAt: page.createdAt,
         updatedAt: page.updatedAt,
@@ -139,24 +141,53 @@ export const PUT = withPermission(
           slug = '/' + slug
         }
 
-        // Check for duplicate slug (excluding current page, scoped to tenant)
-        if (slug !== page.slug) {
-          const currentTenantId = getCurrentTenant()
-          const existing = await prisma.page.findFirst({
-            where: {
-              slug,
-              id: { not: id },
-              tenantId: currentTenantId ?? undefined,
-            },
-          })
-          if (existing) {
+        // System pages own their slug. The reserved `__system/*` slug is
+        // structural — changing it would orphan the storefront/admin
+        // wiring. Silently keep the existing slug rather than 400ing so
+        // the editor's "save settings" UX still works.
+        if (page.systemKey) {
+          // Skip slug update entirely; keep canonical slug.
+        } else {
+          // Reject attempts to retroactively claim a system slug.
+          if (isReservedSystemSlug(slug)) {
             return NextResponse.json(
-              { error: 'A page with this slug already exists' },
-              { status: 409 }
+              {
+                error:
+                  'Slugs starting with "__system/" are reserved for built-in system pages.',
+              },
+              { status: 400 }
             )
           }
+
+          // Check for duplicate slug (excluding current page, scoped to tenant)
+          if (slug !== page.slug) {
+            const currentTenantId = getCurrentTenant()
+            const existing = await prisma.page.findFirst({
+              where: {
+                slug,
+                id: { not: id },
+                tenantId: currentTenantId ?? undefined,
+              },
+            })
+            if (existing) {
+              return NextResponse.json(
+                { error: 'A page with this slug already exists' },
+                { status: 409 }
+              )
+            }
+          }
+          updateData.slug = slug
         }
-        updateData.slug = slug
+      }
+
+      // systemKey is set only by /api/cms/admin/system-pages/[key]. Ignore
+      // any attempt to change it through the regular PUT endpoint to keep
+      // the system-pages namespace tamper-resistant.
+      if (body.systemKey !== undefined && body.systemKey !== page.systemKey) {
+        return NextResponse.json(
+          { error: 'systemKey cannot be modified via the pages endpoint.' },
+          { status: 400 }
+        )
       }
 
       // Handle status
@@ -308,6 +339,7 @@ export const PUT = withPermission(
         customFooter: updatedPage.customFooter,
         showAnnouncement: updatedPage.showAnnouncement,
         customAnnouncement: updatedPage.customAnnouncement,
+        systemKey: updatedPage.systemKey,
         sourceDeps: (updatedPage as Record<string, unknown>).sourceDeps || null,
         createdAt: updatedPage.createdAt,
         updatedAt: updatedPage.updatedAt,
@@ -345,6 +377,20 @@ export const DELETE = withPermission(
         return NextResponse.json(
           { error: 'Page not found' },
           { status: 404 }
+        )
+      }
+
+      // System pages cannot be deleted through the regular pages endpoint.
+      // To return a system page to its platform default, use
+      // DELETE /api/cms/admin/system-pages/[key] which performs the same
+      // delete with the right audit trail and idempotent semantics.
+      if (page.systemKey) {
+        return NextResponse.json(
+          {
+            error:
+              'System pages cannot be deleted directly. Use the "Reset to default" action on the System Pages section.',
+          },
+          { status: 400 }
         )
       }
 
