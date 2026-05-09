@@ -88,9 +88,14 @@ async function main() {
         await handleTiers(action, rest)
         break
       }
+      case 'domains': {
+        const { handleDomains } = await import('@/lib/cli/domains')
+        await handleDomains(action, rest)
+        break
+      }
       default:
         error(`Unknown domain: ${domain}`)
-        console.log(`\n  Available: ${c.bold}users${c.reset}, ${c.bold}subdomains${c.reset}, ${c.bold}teams${c.reset}, ${c.bold}permissions${c.reset}, ${c.bold}super-admin${c.reset}, ${c.bold}tiers${c.reset}`)
+        console.log(`\n  Available: ${c.bold}users${c.reset}, ${c.bold}subdomains${c.reset}, ${c.bold}domains${c.reset}, ${c.bold}teams${c.reset}, ${c.bold}permissions${c.reset}, ${c.bold}super-admin${c.reset}, ${c.bold}tiers${c.reset}`)
         console.log(`  Run ${c.dim}pnpm tenant help${c.reset} for full reference\n`)
     }
   } catch (err: any) {

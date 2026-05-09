@@ -89,6 +89,18 @@ const DOMAINS: Record<string, { desc: string; commands: string[] }> = {
       'assign <team-slug> <tier-name>               Assign tier to team',
     ],
   },
+  domains: {
+    desc: 'Custom domain management — attach, verify, route via Edge Config',
+    commands: [
+      'list <subdomain> [--no-vercel]               List domains for a tenant',
+      'add <subdomain> <domain> [--project <id>]    Attach a custom domain',
+      'verify <subdomain> <domain>                  Re-check DNS + sync Edge Config',
+      'primary <subdomain> <domain>                 Mark as primary domain',
+      'remove <subdomain> <domain> [--yes]          Detach + clean up',
+      'status <subdomain>                           Per-domain status detail',
+      'dns-records <subdomain> <domain>             Print A/CNAME records to set',
+    ],
+  },
 }
 
 export function showHelp(domain?: string) {
