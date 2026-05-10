@@ -9,6 +9,8 @@ export interface ModuleNavItemData {
   icon: string;
   badgeKey?: string;
   helpKey?: string;
+  /** Honest labeling for routes that exist but aren't fully implemented yet. */
+  status?: 'ready' | 'soon';
 }
 
 /** Serializable nav group from module system */
