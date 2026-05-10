@@ -41,6 +41,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { Input } from '@/components/cms/ui/input';
+import { Badge } from '@/components/cms/ui/badge';
 import { TenantAdminLogo } from '@/components/cms/branding/TenantAdminLogo';
 
 // Icon name -> Lucide component map for module-driven nav
@@ -70,12 +71,20 @@ const ICON_MAP: Record<string, any> = {
   HelpCircle,
 };
 
+/**
+ * Honest labels for nav items whose route exists but isn't fully implemented
+ * yet. 'soon' renders a subtle "Soon" badge next to the label without
+ * disabling the link — the page still loads, just with a placeholder.
+ */
+type NavItemStatus = 'ready' | 'soon';
+
 interface NavItem {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   helpKey?: string;
   tourId?: string;
+  status?: NavItemStatus;
 }
 
 // Map nav item names to stable tour ids; matches nextjs-cms + dzidzor selectors
@@ -217,6 +226,7 @@ export function AdminShell({
           href: item.href,
           icon: ICON_MAP[item.icon] || Layers,
           helpKey: item.helpKey,
+          status: item.status,
         })),
       }))
     : [
@@ -379,7 +389,15 @@ export function AdminShell({
                                 }`}
                               >
                                 <Icon className="h-4 w-4" />
-                                {item.name}
+                                <span className="flex-1">{item.name}</span>
+                                {item.status === 'soon' ? (
+                                  <Badge
+                                    variant="secondary"
+                                    className="ml-auto h-5 px-1.5 text-[10px] leading-none font-medium uppercase tracking-wide"
+                                  >
+                                    Soon
+                                  </Badge>
+                                ) : null}
                               </Link>
                             </li>
                         );
