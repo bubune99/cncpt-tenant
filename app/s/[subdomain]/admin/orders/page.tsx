@@ -153,7 +153,7 @@ interface LedgerProps {
 }
 
 function OrdersLedger({ orders, selectedIds, onSelectAll, onSelectOne, activeTab, onTabChange }: LedgerProps) {
-  const tabs: readonly [string, string, number][] = [
+  const tabs: readonly (readonly [string, string, number])[] = [
     ['all',        'All',       orders.length],
     ['pending',    'New',       orders.filter(o => o.status === 'pending').length],
     ['processing', 'Packed',    orders.filter(o => o.status === 'processing').length],

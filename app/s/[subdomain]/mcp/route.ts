@@ -1635,7 +1635,7 @@ const handler = createMcpHandler(
               variants: {
                 select: {
                   id: true,
-                  title: true,
+                  sku: true,
                   customFieldValues: {
                     include: { customField: true }
                   }
@@ -2002,7 +2002,7 @@ const handler = createMcpHandler(
             where: {
               tenantId,
               ...(unreadOnly ? { read: false } : {}),
-              ...(type ? { type: type as Parameters<typeof prisma.notification.findMany>[0]["where"] extends undefined ? never : NonNullable<Parameters<typeof prisma.notification.findMany>[0]["where"]>["type"] } : {})
+              ...(type ? { type: type as NonNullable<NonNullable<Parameters<typeof prisma.notification.findMany>[0]>["where"]>["type"] } : {})
             },
             take: l,
             skip: o,
@@ -2125,7 +2125,7 @@ const handler = createMcpHandler(
           const tenantId = getMcpTenantId()
 
           const setting = await prisma.tenantSetting.findUnique({
-            where: { subdomainId: tenantId ?? 0 },
+            where: { tenantId: tenantId ?? 0 },
             select: { brandPreset: true, density: true }
           })
 
@@ -2152,7 +2152,7 @@ const handler = createMcpHandler(
           if (!preset && !density) return mcpError("Provide at least one of: preset, density")
 
           const setting = await prisma.tenantSetting.update({
-            where: { subdomainId: tenantId ?? 0 },
+            where: { tenantId: tenantId ?? 0 },
             data: {
               ...(preset ? { brandPreset: preset } : {}),
               ...(density ? { density } : {})
@@ -2183,8 +2183,8 @@ const handler = createMcpHandler(
 
           const pages = await prisma.page.findMany({
             where: { tenantId, ...(includeUnpublished ? {} : { status: "PUBLISHED" }) },
-            select: { id: true, title: true, slug: true, status: true, parentId: true, position: true },
-            orderBy: { position: "asc" }
+            select: { id: true, title: true, slug: true, status: true, parentId: true },
+            orderBy: { title: "asc" }
           })
 
           // Build tree

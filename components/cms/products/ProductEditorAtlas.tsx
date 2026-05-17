@@ -26,6 +26,7 @@ import { CustomFieldsBuilder } from "./CustomFieldsBuilder";
 import { BundleComposer } from "./BundleComposer";
 import { DigitalEditor } from "./DigitalEditor";
 import { PricingStack } from "./PricingStack";
+import type { CreateTierPayload, CreateSchedulePayload } from "./PricingStack";
 
 import type {
   AtlasProduct,
@@ -219,21 +220,8 @@ interface SaleScheduleApiRow {
   readonly enabled: boolean;
 }
 
-/** Payload for POST /api/cms/products/[id]/pricing-tiers */
-interface CreateTierPayload {
-  readonly label: string;
-  readonly minQty: number;
-  readonly maxQty?: number;
-  readonly price: number;
-  readonly type: "QTY" | "MEMBER";
-}
-
-/** Payload for POST /api/cms/products/[id]/sale-schedules */
-interface CreateSchedulePayload {
-  readonly salePrice: number;
-  readonly startsAt: string;
-  readonly endsAt: string;
-}
+// CreateTierPayload / CreateSchedulePayload are imported from ./PricingStack
+// as the single source of truth (the props that consume them live there).
 
 // ── Main Props ─────────────────────────────────────────────────────────────────
 
@@ -340,13 +328,13 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
         // Map variants
         const variants: AtlasVariant[] = (data.variants ?? []).map(
           (v: Record<string, unknown>) => ({
-            id: v.id,
-            sku: v.sku ?? null,
-            price: v.price ?? 0,
-            costPrice: v.costPrice ?? null,
-            stock: v.stock ?? 0,
-            enabled: v.enabled ?? true,
-            weight: v.weight ?? null,
+            id: String(v.id ?? ""),
+            sku: v.sku != null ? String(v.sku) : null,
+            price: Number(v.price ?? 0),
+            costPrice: v.costPrice != null ? Number(v.costPrice) : null,
+            stock: Number(v.stock ?? 0),
+            enabled: (v.enabled ?? true) !== false,
+            weight: v.weight != null ? Number(v.weight) : null,
             optionValues: Object.fromEntries(
               ((v.optionValues as Array<Record<string, unknown>>) ?? []).map(
                 (ov: Record<string, unknown>) => {
@@ -610,9 +598,7 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
   // ── Pricing tier CRUD ─────────────────────────────────────────────────────────
 
   const handleCreateTier = React.useCallback(async (payload: CreateTierPayload) => {
-    const body: CreateTierPayload = payload.maxQty != null
-      ? payload
-      : { label: payload.label, minQty: payload.minQty, price: payload.price, type: payload.type };
+    const body: CreateTierPayload = { ...payload, maxQty: payload.maxQty ?? null };
 
     const res = await fetch(`/api/cms/products/${productId}/pricing-tiers`, {
       method: "POST",

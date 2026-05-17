@@ -144,7 +144,7 @@ export function TypeMorph({
             <div className="desc">{t.desc}</div>
             <div className="tabs-mini">
               {t.tabs.map((tab) => {
-                const isNew = t.newTabs.includes(tab);
+                const isNew = (t.newTabs as readonly string[]).includes(tab);
                 return (
                   <span key={tab} className={isNew ? "new" : ""}>
                     {isNew ? "+ " : "· "}{tab}

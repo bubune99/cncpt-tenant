@@ -20,7 +20,7 @@ interface BasePriceEntry {
   readonly cost: number;  // cents
 }
 
-interface CreateTierPayload {
+export interface CreateTierPayload {
   readonly label: string;
   readonly minQty: number;
   readonly maxQty: number | null;
@@ -28,7 +28,7 @@ interface CreateTierPayload {
   readonly type: "QTY" | "MEMBER";
 }
 
-interface CreateSchedulePayload {
+export interface CreateSchedulePayload {
   readonly salePrice: number; // cents
   readonly startsAt: string; // ISO
   readonly endsAt: string;   // ISO

@@ -105,7 +105,7 @@ export default function TipTapEditor({
       CharacterCount.configure({
         limit: wordLimit ? wordLimit * 6 : undefined,
       }),
-    ] as Parameters<typeof useEditor>[0]['extensions'],
+    ] as NonNullable<Parameters<typeof useEditor>[0]>['extensions'],
     content,
     editable,
     autofocus: autofocus ? 'end' : false,
