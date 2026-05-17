@@ -153,7 +153,6 @@
     "@types/adm-zip": "^0.5.7",
     "@types/bcryptjs": "^2.4.6",
     "@types/diff-match-patch": "^1.0.36",
-    "@types/dompurify": "^3.2.0",
     "@types/node": "^22",
     "@types/nodemailer": "^7.0.4",
     "@types/papaparse": "^5.5.2",
