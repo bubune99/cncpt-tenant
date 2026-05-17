@@ -114,7 +114,7 @@ interface SavedRow {
 const SAVED: readonly SavedRow[] = [
   { pinned: true,  name: 'Storefront overview',          sub: '/analytics · default · auto-refresh',          audience: 'TEAM',       audienceStyle: 'solid-ink', updated: '2m ago',   widgetCount: 9  },
   { pinned: true,  name: 'Marigold jacket · live',       sub: '/analytics/product/jkt-mq · in-season',        audience: 'PERSONAL',   audienceStyle: 'out',       updated: '14m',      widgetCount: 12 },
-  { pinned: false, name: 'Marketing · spring '25',       sub: 'scheduled report · weekly to founders@',       audience: 'SHARED · 3', audienceStyle: 'out',       updated: 'yesterday', widgetCount: 8  },
+  { pinned: false, name: "Marketing · spring '25",       sub: 'scheduled report · weekly to founders@',       audience: 'SHARED · 3', audienceStyle: 'out',       updated: 'yesterday', widgetCount: 8  },
   { pinned: false, name: 'Inventory health · weekly',    sub: 'snapshot · last week\'s totals',                audience: 'TEAM',       audienceStyle: 'solid-ink', updated: '3d',       widgetCount: 11 },
   { pinned: false, name: 'Journal · article performance',sub: 'unread time, scroll-depth, share rate',        audience: 'PERSONAL',   audienceStyle: 'out',       updated: '2 weeks',  widgetCount: 6  },
   { pinned: false, name: 'Holiday box · post-mortem',    sub: 'archived · Q4 2024',                           audience: 'ARCHIVED',   audienceStyle: 'out-soft',  updated: 'Jan',      widgetCount: 14, archived: true },
