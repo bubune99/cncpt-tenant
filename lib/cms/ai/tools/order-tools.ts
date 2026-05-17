@@ -319,4 +319,61 @@ export const cancelOrder = tool({
   },
 });
 
-export const orderTools = { updateOrderStatus, fulfillOrder, refundOrder, cancelOrder };
+// Atlas redesign G09 — move order to workflow stage
+export const moveOrderToStage = tool({
+  description: 'Move an order to a specific workflow stage by stageId. Creates an OrderProgress record.',
+  inputSchema: z.object({
+    orderId: z.string().describe('Order ID'),
+    stageId: z.string().describe('Target workflow stage ID'),
+    reason: z.string().optional().describe('Reason for stage move'),
+    notes: z.string().optional().describe('Additional notes'),
+  }),
+  execute: async ({ orderId, stageId, reason, notes }) => {
+    try {
+      const prisma = await getDb();
+
+      const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        select: { id: true, orderNumber: true, currentStageId: true, workflowId: true },
+      });
+      if (!order) return { success: false, error: 'Order not found' };
+
+      // Validate stage belongs to order's workflow if workflow is set
+      if (order.workflowId) {
+        const stage = await prisma.orderWorkflowStage.findFirst({
+          where: { id: stageId, workflowId: order.workflowId },
+          select: { id: true, displayName: true },
+        });
+        if (!stage) return { success: false, error: 'Stage not found in this order\'s workflow' };
+      }
+
+      const [, updatedOrder] = await withTimeout(
+        prisma.$transaction([
+          prisma.orderProgress.create({
+            data: { orderId, stageId, updatedById: 'agent', ...(notes ? { notes } : {}) },
+          }),
+          prisma.order.update({
+            where: { id: orderId },
+            data: { currentStageId: stageId },
+            select: { id: true, orderNumber: true, currentStageId: true, currentStage: true },
+          }),
+        ]),
+        5000,
+        'Move order to stage timed out'
+      );
+
+      return {
+        success: true,
+        order: updatedOrder,
+        previousStageId: order.currentStageId,
+        reason,
+        message: `Order ${order.orderNumber} moved to stage ${stageId}`,
+      };
+    } catch (error) {
+      console.error('[OrderTools] moveOrderToStage error:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to move order to stage' };
+    }
+  },
+});
+
+export const orderTools = { updateOrderStatus, fulfillOrder, refundOrder, cancelOrder, moveOrderToStage };

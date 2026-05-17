@@ -378,8 +378,76 @@ export {
   getEntityDetails,
   searchEntities,
   getEntityStats,
+  updateCustomerLifecycle,
+  addCustomerNote,
   entityTools,
 } from './entity-tools';
+
+// Atlas redesign — new tool groups
+export {
+  getOrderFulfillment,
+  toggleFulfillmentStep,
+  addFulfillmentStep,
+  fulfillmentTools,
+} from './fulfillment-tools';
+
+export {
+  listAnalyticsDashboards,
+  getAnalyticsDashboard,
+  createAnalyticsDashboard,
+  createAnalyticsWidget,
+  runAnalyticsQuery,
+  analyticsTools,
+} from './analytics-tools';
+
+export {
+  getJournalSeries,
+  addPostToSeries,
+  schedulePostChannel,
+  addRelatedPost,
+  listJournalContributors,
+  setPostContributors,
+  journalTools,
+} from './journal-tools';
+
+export {
+  getProductPricing,
+  createPricingTier,
+  updatePricingTier,
+  createSaleSchedule,
+  pricingTools,
+} from './pricing-tools';
+
+export {
+  listCustomFields,
+  getProductCustomFields,
+  setVariantFieldValue,
+  attachCustomFieldToProduct,
+  customFieldTools,
+} from './custom-field-tools';
+
+export {
+  listDigitalAssets,
+  getDigitalAsset,
+  listLicenseKeys,
+  revokeLicenseKey,
+  getLicenseKeyStats,
+  digitalAssetTools,
+} from './digital-asset-tools';
+
+export {
+  listNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  notificationTools,
+} from './notification-tools'
+
+export {
+  getAccountSummary,
+  getCustomerLoyalty,
+  addLoyaltyActivity,
+  loyaltyTools,
+} from './loyalty-tools';
 
 /**
  * Task Completion Tool (Termination Pattern)

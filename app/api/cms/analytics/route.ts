@@ -7,12 +7,13 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getAnalyticsSummary, trackServerEvent } from '@/lib/cms/analytics'
+import { prisma } from '@/lib/cms/db'
 import { withTenant } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenant(request, async (tenant) => {
   try {
     const { searchParams } = new URL(request.url)
     const range = searchParams.get('range') || '7d'
@@ -41,16 +42,37 @@ export async function GET(request: NextRequest) {
         startDate.setDate(startDate.getDate() - 7)
     }
 
-    const summary = await getAnalyticsSummary(startDate, endDate)
+    const [summary, rawOrders] = await Promise.all([
+      getAnalyticsSummary(startDate, endDate),
+      // Atlas redesign: real time-series for chart widgets
+      prisma.order.findMany({
+        where: {
+          tenantId: tenant.tenantId,
+          createdAt: { gte: startDate, lte: endDate },
+        },
+        select: { total: true, createdAt: true },
+        orderBy: { createdAt: 'asc' },
+      }),
+    ])
+
+    // Group orders into daily buckets
+    const byDay: Record<string, { date: string; revenue: number; orders: number }> = {}
+    for (const o of rawOrders) {
+      const day = o.createdAt.toISOString().split('T')[0]
+      if (!byDay[day]) byDay[day] = { date: day, revenue: 0, orders: 0 }
+      byDay[day].revenue += o.total
+      byDay[day].orders += 1
+    }
+    const timeSeries = Object.values(byDay)
 
     return NextResponse.json({
       range,
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       ...summary,
+      timeSeries, // Atlas redesign addition — { date, revenue, orders }[]
     })
-  } catch (error) {
-    console.error('Get analytics error:', error)
+  } catch (error: unknown) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to get analytics' },
       { status: 500 }
