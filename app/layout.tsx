@@ -1,6 +1,8 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter, Spectral, Geist, Geist_Mono } from "next/font/google"
+import { Inter, Spectral } from "next/font/google"
+import { GeistSans } from "geist/font/sans"
+import { GeistMono } from "geist/font/mono"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { StackProvider, StackTheme } from "@stackframe/stack"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -21,19 +23,9 @@ const spectral = Spectral({
   display: "swap",
 })
 
-const geist = Geist({
-  variable: "--font-geist",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-})
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-})
+// Geist + Geist Mono are shipped self-hosted by the official `geist` package
+// (not present in next/font/google for Next 14.2.x). They expose fixed CSS
+// variables: GeistSans -> --font-geist-sans, GeistMono -> --font-geist-mono.
 
 export const metadata: Metadata = {
   title: {
@@ -82,7 +74,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${spectral.variable} ${geist.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.variable} ${spectral.variable} ${GeistSans.variable} ${GeistMono.variable} antialiased`}
       >
         <ThemeProvider
           attribute="class"

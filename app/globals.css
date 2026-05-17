@@ -195,7 +195,7 @@
   --wl-warning: #b58730;
   --wl-error: #b53d2f;
   --wl-font-display: var(--font-display), "Spectral", Georgia, serif;
-  --wl-font-body: var(--font-geist), "Geist", -apple-system, sans-serif;
+  --wl-font-body: var(--font-geist-sans), "Geist", -apple-system, sans-serif;
   --wl-font-mono: var(--font-geist-mono), "Geist Mono", monospace;
   /* Density (regular) */
   --wl-pad: 16px;
