@@ -1,6 +1,25 @@
-'use client'
+"use client"
 
-import { useState, useEffect } from 'react'
+/**
+ * Super-admin Bookings page — restyled with cncpt-admin Hybrid design.
+ * Data wiring preserved from original: fetches /api/bookings, PATCH status.
+ */
+
+import { useState, useEffect } from "react"
+import {
+  Calendar,
+  List,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  ChevronRight,
+  X,
+  Loader2,
+} from "lucide-react"
+import "@/app/admin/cncpt-admin.css"
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Booking {
   id: string
@@ -16,435 +35,564 @@ interface Booking {
   projectDescription: string | null
   budgetRange: string | null
   adminNotes: string | null
-  service?: {
-    name: string
-  }
+  service?: { name: string }
   createdAt: string
 }
 
-type ViewMode = 'list' | 'calendar'
-type StatusFilter = 'all' | 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no_show'
+type ViewMode = "list" | "calendar"
+type StatusFilter =
+  | "all"
+  | "scheduled"
+  | "confirmed"
+  | "completed"
+  | "cancelled"
+  | "no_show"
 
-const STATUS_COLORS: Record<string, string> = {
-  scheduled: 'bg-blue-100 text-blue-800',
-  confirmed: 'bg-green-100 text-green-800',
-  completed: 'bg-gray-100 text-gray-800',
-  cancelled: 'bg-red-100 text-red-800',
-  no_show: 'bg-yellow-100 text-yellow-800',
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function statusPillClass(status: string): string {
+  const map: Record<string, string> = {
+    scheduled: "ca-pill--blue",
+    confirmed: "ca-pill--green",
+    completed: "ca-pill--slate",
+    cancelled: "ca-pill--rose",
+    no_show: "ca-pill--amber",
+  }
+  return map[status] ?? ""
 }
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  })
+}
+
+function formatTime(dateStr: string): string {
+  return new Date(dateStr).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  })
+}
+
+function formatDateTime(dateStr: string): string {
+  return new Date(dateStr).toLocaleString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  })
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function SuperAdminBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<ViewMode>('list')
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [viewMode, setViewMode] = useState<ViewMode>("list")
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [notesValue, setNotesValue] = useState("")
 
   useEffect(() => {
     loadBookings()
-  }, [statusFilter])
+  }, [statusFilter]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function loadBookings() {
+  async function loadBookings(): Promise<void> {
+    setLoading(true)
     try {
-      const url = statusFilter === 'all'
-        ? '/api/bookings'
-        : `/api/bookings?status=${statusFilter}`
+      const url =
+        statusFilter === "all"
+          ? "/api/bookings"
+          : `/api/bookings?status=${statusFilter}`
       const res = await fetch(url)
-      const data = await res.json()
-      setBookings(data.bookings || [])
-    } catch (error) {
-      console.error('Failed to load bookings:', error)
+      const data = (await res.json()) as { bookings?: Booking[] }
+      setBookings(data.bookings ?? [])
+    } catch {
+      // Silent fail — empty state handles this gracefully in UI
     } finally {
       setLoading(false)
     }
   }
 
-  async function updateStatus(bookingId: string, status: string) {
+  async function updateStatus(bookingId: string, status: string): Promise<void> {
     try {
       const res = await fetch(`/api/bookings/${bookingId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       })
-
       if (res.ok) {
-        loadBookings()
+        await loadBookings()
         if (selectedBooking?.id === bookingId) {
-          const data = await res.json()
-          setSelectedBooking(data.booking)
+          const data = (await res.json()) as { booking?: Booking }
+          if (data.booking) setSelectedBooking(data.booking)
         }
       }
-    } catch (error) {
-      console.error('Failed to update status:', error)
+    } catch {
+      // No-op — user can retry
     }
   }
 
-  async function updateNotes(bookingId: string, adminNotes: string) {
+  async function saveNotes(bookingId: string, adminNotes: string): Promise<void> {
     try {
       await fetch(`/api/bookings/${bookingId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ adminNotes }),
       })
-    } catch (error) {
-      console.error('Failed to update notes:', error)
+    } catch {
+      // No-op
     }
-  }
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-    })
-  }
-
-  const formatTime = (dateStr: string) => {
-    const date = new Date(dateStr)
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    })
-  }
-
-  const formatDateTime = (dateStr: string) => {
-    const date = new Date(dateStr)
-    return date.toLocaleString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    })
   }
 
   const upcomingBookings = bookings.filter(
-    (b) => new Date(b.scheduledAt) > new Date() && ['scheduled', 'confirmed'].includes(b.status)
+    (b) =>
+      new Date(b.scheduledAt) > new Date() &&
+      ["scheduled", "confirmed"].includes(b.status)
   )
 
   const todayBookings = bookings.filter((b) => {
     const bookingDate = new Date(b.scheduledAt).toDateString()
     const today = new Date().toDateString()
-    return bookingDate === today && ['scheduled', 'confirmed'].includes(b.status)
+    return (
+      bookingDate === today && ["scheduled", "confirmed"].includes(b.status)
+    )
   })
+
+  const openBooking = (b: Booking): void => {
+    setSelectedBooking(b)
+    setNotesValue(b.adminNotes ?? "")
+    setShowModal(true)
+  }
+
+  const STATUS_FILTERS: StatusFilter[] = [
+    "all",
+    "scheduled",
+    "confirmed",
+    "completed",
+    "cancelled",
+    "no_show",
+  ]
+
+  const filterLabel = (s: StatusFilter): string =>
+    s === "all"
+      ? "All"
+      : s === "no_show"
+      ? "No Show"
+      : s.charAt(0).toUpperCase() + s.slice(1)
 
   if (loading) {
     return (
-      <div className="p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
-        </div>
+      <div
+        className="cncpt-admin"
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Loader2
+          size={28}
+          style={{ animation: "spin 1s linear infinite", color: "var(--ca-text-soft)" }}
+        />
       </div>
     )
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="cncpt-admin" style={{ minHeight: "100vh", padding: 24 }}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="ca-page-h" style={{ marginBottom: 20 }}>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
-          <p className="text-gray-600 mt-1">
+          <h1>Bookings</h1>
+          <div className="sub">
             {upcomingBookings.length} upcoming · {todayBookings.length} today
-          </p>
+          </div>
         </div>
-        <div className="flex items-center gap-4">
-          {/* View Toggle */}
-          <div className="flex rounded-lg border border-gray-300 overflow-hidden">
-            <button
-              onClick={() => setViewMode('list')}
-              className={`px-4 py-2 text-sm font-medium ${
-                viewMode === 'list'
-                  ? 'bg-gray-100 text-gray-900'
-                  : 'bg-white text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              List
-            </button>
-            <button
-              onClick={() => setViewMode('calendar')}
-              className={`px-4 py-2 text-sm font-medium ${
-                viewMode === 'calendar'
-                  ? 'bg-gray-100 text-gray-900'
-                  : 'bg-white text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              Calendar
-            </button>
+        <div className="ca-row" style={{ gap: 6 }}>
+          {/* View mode toggle */}
+          <div
+            className="ca-row"
+            style={{
+              background: "var(--ca-bg)",
+              border: "1px solid var(--ca-border)",
+              borderRadius: 7,
+              padding: 2,
+              gap: 2,
+            }}
+          >
+            {(["list", "calendar"] as ViewMode[]).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                className="ca-btn ca-btn--xs"
+                style={{
+                  borderRadius: 5,
+                  background: viewMode === mode ? "#fff" : "transparent",
+                  boxShadow: viewMode === mode ? "var(--ca-shadow-sm)" : "none",
+                  color:
+                    viewMode === mode ? "var(--ca-text)" : "var(--ca-text-soft)",
+                  border: "none",
+                }}
+                onClick={() => setViewMode(mode)}
+              >
+                {mode === "list" ? (
+                  <List size={12} aria-hidden />
+                ) : (
+                  <Calendar size={12} aria-hidden />
+                )}
+                {mode.charAt(0).toUpperCase() + mode.slice(1)}
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <p className="text-sm text-gray-600">Today</p>
-          <p className="text-2xl font-bold text-gray-900">{todayBookings.length}</p>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <p className="text-sm text-gray-600">Upcoming</p>
-          <p className="text-2xl font-bold text-gray-900">{upcomingBookings.length}</p>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <p className="text-sm text-gray-600">Completed</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {bookings.filter((b) => b.status === 'completed').length}
-          </p>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <p className="text-sm text-gray-600">Cancelled</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {bookings.filter((b) => b.status === 'cancelled').length}
-          </p>
-        </div>
+      {/* KPI strip */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gap: 12,
+          marginBottom: 16,
+        }}
+      >
+        {[
+          { label: "Today", value: todayBookings.length, Icon: Clock },
+          { label: "Upcoming", value: upcomingBookings.length, Icon: Calendar },
+          {
+            label: "Completed",
+            value: bookings.filter((b) => b.status === "completed").length,
+            Icon: CheckCircle2,
+          },
+          {
+            label: "Cancelled",
+            value: bookings.filter((b) => b.status === "cancelled").length,
+            Icon: XCircle,
+          },
+        ].map(({ label, value, Icon }) => (
+          <div className="ca-stat" key={label}>
+            <div className="ca-stat__label">
+              <Icon size={12} aria-hidden />
+              {label}
+            </div>
+            <div className="ca-stat__value">{value}</div>
+          </div>
+        ))}
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-2 mb-4">
-        {(['all', 'scheduled', 'confirmed', 'completed', 'cancelled', 'no_show'] as StatusFilter[]).map(
-          (status) => (
-            <button
-              key={status}
-              onClick={() => setStatusFilter(status)}
-              className={`px-3 py-1.5 text-sm rounded-lg ${
-                statusFilter === status
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {status === 'all' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
-            </button>
-          )
-        )}
+      {/* Status filters */}
+      <div className="ca-filter-bar" style={{ marginBottom: 12 }}>
+        {STATUS_FILTERS.map((s) => (
+          <button
+            key={s}
+            type="button"
+            className={`ca-filter-chip${statusFilter === s ? " is-on" : ""}`}
+            onClick={() => setStatusFilter(s)}
+          >
+            {filterLabel(s)}
+          </button>
+        ))}
       </div>
 
-      {/* Bookings List */}
-      {viewMode === 'list' && (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      {/* List view */}
+      {viewMode === "list" && (
+        <div className="ca-card" style={{ overflow: "hidden" }}>
           {bookings.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">No bookings found</div>
+            <div className="ca-empty">
+              <div className="ca-empty__glyph">
+                <Calendar size={28} aria-hidden />
+              </div>
+              <h3 className="ca-empty__h">No bookings found</h3>
+              <p className="ca-empty__p">
+                No bookings match the current filter. Try changing the status
+                filter above.
+              </p>
+            </div>
           ) : (
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Client</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Service</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Date & Time</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Status</th>
-                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {bookings.map((booking) => (
-                  <tr key={booking.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      <div>
-                        <p className="font-medium text-gray-900">{booking.clientName}</p>
-                        <p className="text-sm text-gray-500">{booking.clientEmail}</p>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="text-gray-900">{booking.service?.name || 'Consultation'}</p>
-                      <p className="text-sm text-gray-500">{booking.durationMinutes} min</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="text-gray-900">{formatDate(booking.scheduledAt)}</p>
-                      <p className="text-sm text-gray-500">{formatTime(booking.scheduledAt)}</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                          STATUS_COLORS[booking.status] || 'bg-gray-100 text-gray-800'
-                        }`}
-                      >
-                        {booking.status.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => {
-                          setSelectedBooking(booking)
-                          setShowModal(true)
-                        }}
-                        className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                      >
-                        View
-                      </button>
-                    </td>
+            <div style={{ overflowX: "auto" }}>
+              <table className="ca-table">
+                <thead>
+                  <tr>
+                    <th>Client</th>
+                    <th>Service</th>
+                    <th>Date &amp; Time</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                    <th style={{ width: 60 }}></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {bookings.map((b) => (
+                    <tr key={b.id}>
+                      <td>
+                        <div className="ca-col" style={{ gap: 1 }}>
+                          <strong style={{ fontSize: 12.5 }}>{b.clientName}</strong>
+                          <span className="ca-muted" style={{ fontSize: 11 }}>
+                            {b.clientEmail}
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <span>{b.service?.name ?? "Consultation"}</span>
+                      </td>
+                      <td>
+                        <div className="ca-col" style={{ gap: 1 }}>
+                          <span style={{ fontWeight: 500 }}>
+                            {formatDate(b.scheduledAt)}
+                          </span>
+                          <span className="ca-muted" style={{ fontSize: 11 }}>
+                            {formatTime(b.scheduledAt)}
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="ca-muted">{b.durationMinutes} min</span>
+                      </td>
+                      <td>
+                        <span className={`ca-pill ${statusPillClass(b.status)}`}>
+                          {b.status.replace("_", " ")}
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="ca-btn ca-btn--ghost ca-btn--xs"
+                          onClick={() => openBooking(b)}
+                        >
+                          View <ChevronRight size={11} aria-hidden />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}
 
-      {/* Calendar View */}
-      {viewMode === 'calendar' && (
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <p className="text-gray-500 text-center py-8">
-            Calendar view coming soon. Use list view for now.
-          </p>
+      {/* Calendar view placeholder */}
+      {viewMode === "calendar" && (
+        <div className="ca-card">
+          <div className="ca-empty">
+            <div className="ca-empty__glyph">
+              <Calendar size={28} aria-hidden />
+            </div>
+            <h3 className="ca-empty__h">Calendar view coming soon</h3>
+            <p className="ca-empty__p">Use list view to manage bookings for now.</p>
+            <button
+              type="button"
+              className="ca-btn ca-btn--secondary"
+              onClick={() => setViewMode("list")}
+            >
+              <List size={13} aria-hidden /> Switch to list
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Booking Detail Modal */}
+      {/* Booking detail modal */}
       {showModal && selectedBooking && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">Booking Details</h2>
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+        <div className="ca-modal-wrap">
+          <div className="ca-modal ca-modal--wide">
+            <div className="ca-modal__head">
+              <div className="ca-modal__icon ca-modal__icon--info">
+                <Calendar size={18} aria-hidden />
               </div>
-            </div>
-
-            <div className="p-6 space-y-6">
-              {/* Status Badge */}
-              <div className="flex items-center justify-between">
-                <span
-                  className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${
-                    STATUS_COLORS[selectedBooking.status] || 'bg-gray-100 text-gray-800'
-                  }`}
-                >
-                  {selectedBooking.status.replace('_', ' ')}
-                </span>
-                <p className="text-sm text-gray-500">
+              <div className="ca-col" style={{ flex: 1, gap: 2 }}>
+                <h3 className="ca-modal__title">Booking Details</h3>
+                <p className="ca-modal__sub">
                   Booked {new Date(selectedBooking.createdAt).toLocaleDateString()}
                 </p>
               </div>
+              <button
+                type="button"
+                className="ca-iconbtn ca-iconbtn--ghost"
+                onClick={() => setShowModal(false)}
+              >
+                <X size={14} aria-hidden />
+              </button>
+            </div>
 
-              {/* Appointment Details */}
-              <div className="bg-blue-50 rounded-lg p-4">
-                <h3 className="font-medium text-blue-900 mb-2">Appointment</h3>
-                <p className="text-blue-800">{formatDateTime(selectedBooking.scheduledAt)}</p>
-                <p className="text-sm text-blue-700 mt-1">
-                  {selectedBooking.service?.name || 'Consultation'} · {selectedBooking.durationMinutes} minutes
-                </p>
+            <div className="ca-modal__body" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {/* Status */}
+              <div className="ca-row ca-between">
+                <span className={`ca-pill ${statusPillClass(selectedBooking.status)}`}>
+                  {selectedBooking.status.replace("_", " ")}
+                </span>
+                <span className="ca-muted" style={{ fontSize: 11.5 }}>
+                  Booked {new Date(selectedBooking.createdAt).toLocaleDateString()}
+                </span>
               </div>
 
-              {/* Client Info */}
+              {/* Appointment */}
+              <div
+                style={{
+                  background: "var(--ca-primary-50)",
+                  borderRadius: 8,
+                  padding: "12px 14px",
+                  border: "1px solid #bfdbfe",
+                }}
+              >
+                <div style={{ fontWeight: 600, color: "#1e3a8a", marginBottom: 4 }}>
+                  Appointment
+                </div>
+                <div style={{ fontSize: 13.5, color: "#1e3a8a" }}>
+                  {formatDateTime(selectedBooking.scheduledAt)}
+                </div>
+                <div className="ca-muted" style={{ fontSize: 12, marginTop: 4 }}>
+                  {selectedBooking.service?.name ?? "Consultation"} ·{" "}
+                  {selectedBooking.durationMinutes} minutes
+                </div>
+              </div>
+
+              {/* Client info */}
               <div>
-                <h3 className="font-medium text-gray-900 mb-2">Client Information</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500">Name</p>
-                    <p className="font-medium">{selectedBooking.clientName}</p>
+                <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>
+                  Client Information
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "8px 16px",
+                    fontSize: 12.5,
+                  }}
+                >
+                  <div className="ca-col" style={{ gap: 2 }}>
+                    <span className="ca-muted">Name</span>
+                    <strong>{selectedBooking.clientName}</strong>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Email</p>
+                  <div className="ca-col" style={{ gap: 2 }}>
+                    <span className="ca-muted">Email</span>
                     <a
                       href={`mailto:${selectedBooking.clientEmail}`}
-                      className="font-medium text-blue-600 hover:text-blue-700"
+                      style={{ color: "var(--ca-primary)", fontWeight: 500 }}
                     >
                       {selectedBooking.clientEmail}
                     </a>
                   </div>
                   {selectedBooking.clientPhone && (
-                    <div>
-                      <p className="text-sm text-gray-500">Phone</p>
+                    <div className="ca-col" style={{ gap: 2 }}>
+                      <span className="ca-muted">Phone</span>
                       <a
                         href={`tel:${selectedBooking.clientPhone}`}
-                        className="font-medium text-blue-600 hover:text-blue-700"
+                        style={{ color: "var(--ca-primary)", fontWeight: 500 }}
                       >
                         {selectedBooking.clientPhone}
                       </a>
                     </div>
                   )}
                   {selectedBooking.companyName && (
-                    <div>
-                      <p className="text-sm text-gray-500">Company</p>
-                      <p className="font-medium">{selectedBooking.companyName}</p>
+                    <div className="ca-col" style={{ gap: 2 }}>
+                      <span className="ca-muted">Company</span>
+                      <strong>{selectedBooking.companyName}</strong>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Project Details */}
-              {(selectedBooking.projectType || selectedBooking.projectDescription || selectedBooking.budgetRange) && (
+              {/* Project details */}
+              {(selectedBooking.projectType ||
+                selectedBooking.projectDescription ||
+                selectedBooking.budgetRange) && (
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-2">Project Details</h3>
-                  <div className="space-y-2">
+                  <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>
+                    Project Details
+                  </div>
+                  <div className="ca-col" style={{ gap: 6, fontSize: 12.5 }}>
                     {selectedBooking.projectType && (
-                      <div>
-                        <p className="text-sm text-gray-500">Type</p>
-                        <p>{selectedBooking.projectType}</p>
+                      <div className="ca-col" style={{ gap: 2 }}>
+                        <span className="ca-muted">Type</span>
+                        <span>{selectedBooking.projectType}</span>
                       </div>
                     )}
                     {selectedBooking.budgetRange && (
-                      <div>
-                        <p className="text-sm text-gray-500">Budget</p>
-                        <p>{selectedBooking.budgetRange}</p>
+                      <div className="ca-col" style={{ gap: 2 }}>
+                        <span className="ca-muted">Budget</span>
+                        <span>{selectedBooking.budgetRange}</span>
                       </div>
                     )}
                     {selectedBooking.projectDescription && (
-                      <div>
-                        <p className="text-sm text-gray-500">Description</p>
-                        <p className="whitespace-pre-wrap">{selectedBooking.projectDescription}</p>
+                      <div className="ca-col" style={{ gap: 2 }}>
+                        <span className="ca-muted">Description</span>
+                        <span style={{ whiteSpace: "pre-wrap" }}>
+                          {selectedBooking.projectDescription}
+                        </span>
                       </div>
                     )}
                   </div>
                 </div>
               )}
 
-              {/* Admin Notes */}
+              {/* Admin notes */}
               <div>
-                <h3 className="font-medium text-gray-900 mb-2">Admin Notes</h3>
+                <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>
+                  Admin Notes
+                </div>
                 <textarea
-                  defaultValue={selectedBooking.adminNotes || ''}
-                  onBlur={(e) => updateNotes(selectedBooking.id, e.target.value)}
+                  className="ca-textarea"
+                  value={notesValue}
+                  onChange={(e) => setNotesValue(e.target.value)}
+                  onBlur={() => saveNotes(selectedBooking.id, notesValue)}
                   rows={3}
-                  placeholder="Add notes about this booking..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Add notes about this booking…"
                 />
               </div>
+            </div>
 
-              {/* Actions */}
-              <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-200">
-                {selectedBooking.status === 'scheduled' && (
+            <div className="ca-modal__foot" style={{ justifyContent: "flex-start" }}>
+              {selectedBooking.status === "scheduled" && (
+                <button
+                  type="button"
+                  className="ca-btn ca-btn--primary ca-btn--sm"
+                  onClick={() => updateStatus(selectedBooking.id, "confirmed")}
+                >
+                  <CheckCircle2 size={13} aria-hidden /> Confirm
+                </button>
+              )}
+              {["scheduled", "confirmed"].includes(selectedBooking.status) && (
+                <>
                   <button
-                    onClick={() => updateStatus(selectedBooking.id, 'confirmed')}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700"
+                    type="button"
+                    className="ca-btn ca-btn--secondary ca-btn--sm"
+                    onClick={() => updateStatus(selectedBooking.id, "completed")}
                   >
-                    Confirm
+                    Mark Completed
                   </button>
-                )}
-                {['scheduled', 'confirmed'].includes(selectedBooking.status) && (
-                  <>
-                    <button
-                      onClick={() => updateStatus(selectedBooking.id, 'completed')}
-                      className="px-4 py-2 bg-gray-600 text-white rounded-lg text-sm font-medium hover:bg-gray-700"
-                    >
-                      Mark Completed
-                    </button>
-                    <button
-                      onClick={() => updateStatus(selectedBooking.id, 'no_show')}
-                      className="px-4 py-2 bg-yellow-600 text-white rounded-lg text-sm font-medium hover:bg-yellow-700"
-                    >
-                      No Show
-                    </button>
-                    <button
-                      onClick={() => updateStatus(selectedBooking.id, 'cancelled')}
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700"
-                    >
-                      Cancel
-                    </button>
-                  </>
-                )}
-              </div>
+                  <button
+                    type="button"
+                    className="ca-btn ca-btn--secondary ca-btn--sm"
+                    onClick={() => updateStatus(selectedBooking.id, "no_show")}
+                  >
+                    No Show
+                  </button>
+                  <button
+                    type="button"
+                    className="ca-btn ca-btn--danger ca-btn--sm"
+                    onClick={() => updateStatus(selectedBooking.id, "cancelled")}
+                  >
+                    <XCircle size={13} aria-hidden /> Cancel
+                  </button>
+                </>
+              )}
+              <div style={{ flex: 1 }} />
+              <button
+                type="button"
+                className="ca-btn ca-btn--ghost ca-btn--sm"
+                onClick={() => setShowModal(false)}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
