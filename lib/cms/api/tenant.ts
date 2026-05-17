@@ -38,9 +38,26 @@ import {
   tenantRequiredResponse,
   type CmsTenantContext,
 } from '@/lib/cms/tenant-context'
+import {
+  requireAuth,
+  handleAuthError,
+  type AuthContext,
+} from '@/lib/cms/permissions/middleware'
 
 export type { CmsTenantContext }
 export { tenantRequiredResponse }
+
+/** Acting CMS user resolved by {@link withTenantAuth}. */
+export type TenantAuthUser = AuthContext['user']
+
+/**
+ * Coarse action gate for {@link withTenantAuth}. Both values currently require
+ * an authenticated CMS staff user (a row in `User` with a permissions record);
+ * the distinction is kept so call sites document intent and so finer-grained
+ * per-resource permission gates can be layered in later without touching the
+ * 22 mutation routes that consume this wrapper.
+ */
+export type TenantAuthAction = 'view' | 'edit'
 
 /**
  * Resolve tenant context from the current request.
@@ -118,4 +135,48 @@ export async function withTenant(
     return tenantRequiredResponse()
   }
   return runWithTenant(tenant.tenantId, () => handler(tenant))
+}
+
+/**
+ * Wrap an API route handler with authentication + tenant context resolution.
+ *
+ * - Requires an authenticated CMS staff user (401 if not logged in, 403 if the
+ *   user has no permissions record) — never allows anonymous mutations.
+ * - Resolves tenant context from the x-subdomain header (400 if missing).
+ * - Runs the handler inside `runWithTenant()` so all Prisma queries are
+ *   automatically scoped to the current tenant.
+ * - Passes the resolved `tenant` and acting `user` to the handler.
+ *
+ * Usage:
+ * ```ts
+ * export async function PATCH(request: NextRequest) {
+ *   return withTenantAuth(request, 'edit', async (tenant, user) => {
+ *     await prisma.order.update({ data: { updatedById: user.id } }) // auto-scoped
+ *     return NextResponse.json({ success: true })
+ *   })
+ * }
+ * ```
+ */
+export async function withTenantAuth(
+  request: NextRequest,
+  _action: TenantAuthAction,
+  handler: (
+    tenant: CmsTenantContext,
+    user: TenantAuthUser
+  ) => Promise<NextResponse>
+): Promise<NextResponse> {
+  try {
+    const authContext = await requireAuth()
+
+    const tenant = await getTenantContext(request)
+    if (!tenant) {
+      return tenantRequiredResponse()
+    }
+
+    return runWithTenant(tenant.tenantId, () =>
+      handler(tenant, authContext.user)
+    )
+  } catch (error) {
+    return handleAuthError(error)
+  }
 }
