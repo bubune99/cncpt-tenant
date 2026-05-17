@@ -4,32 +4,49 @@
  * Uses --wl-* tokens exclusively.
  */
 
-type LifecycleStage = 'new' | 'repeat' | 'regular' | 'loyal' | 'vip';
+/** API enum values from /api/cms/account/summary → lifecycleStage */
+export type LifecycleStage = 'NEW' | 'RETURNING' | 'LOYAL' | 'VIP' | 'LAPSED' | 'CHURNED';
+
+/** Internal display stage — maps API enum to ribbon position */
+type DisplayStage = 'new' | 'returning' | 'loyal' | 'vip' | 'lapsed';
+
 type StepState = 'done' | 'now' | 'future';
 
 interface LifecycleStep {
-  readonly key: LifecycleStage;
+  readonly key: DisplayStage;
   readonly label: string;
   readonly sub: string;
   readonly state: StepState;
 }
 
-interface LifecycleRibbonProps {
+export interface LifecycleRibbonProps {
   readonly current?: LifecycleStage;
   readonly memberSince?: string;
 }
 
-function getSteps(current: LifecycleStage): readonly LifecycleStep[] {
-  const ORDER: readonly LifecycleStage[] = ['new', 'repeat', 'regular', 'loyal', 'vip'];
-  const currentIdx = ORDER.indexOf(current);
+/** Map API enum → display stage order position */
+const STAGE_TO_DISPLAY: Record<LifecycleStage, DisplayStage> = {
+  NEW:       'new',
+  RETURNING: 'returning',
+  LOYAL:     'loyal',
+  VIP:       'vip',
+  LAPSED:    'lapsed',
+  CHURNED:   'lapsed', // treat churned same as lapsed for display
+};
 
-  const META: Record<LifecycleStage, string> = {
-    new:     'since joining',
-    repeat:  'after 3 orders',
-    regular: 'after 6 orders',
-    loyal:   'you are here',
-    vip:     '3 orders away',
-  };
+const ORDER: readonly DisplayStage[] = ['new', 'returning', 'loyal', 'vip', 'lapsed'];
+
+const META: Record<DisplayStage, string> = {
+  new:       'since joining',
+  returning: 'after 3 orders',
+  loyal:     'you are here',
+  vip:       'top customer',
+  lapsed:    'we miss you',
+};
+
+function getSteps(current: LifecycleStage): readonly LifecycleStep[] {
+  const displayStage = STAGE_TO_DISPLAY[current];
+  const currentIdx = ORDER.indexOf(displayStage);
 
   return ORDER.map((key, idx) => {
     let state: StepState;
@@ -37,11 +54,16 @@ function getSteps(current: LifecycleStage): readonly LifecycleStep[] {
     else if (idx === currentIdx) state = 'now';
     else state = 'future';
 
-    return { key, label: key.charAt(0).toUpperCase() + key.slice(1), sub: META[key], state };
+    return {
+      key,
+      label: key.charAt(0).toUpperCase() + key.slice(1),
+      sub: META[key],
+      state,
+    };
   });
 }
 
-export function LifecycleRibbon({ current = 'loyal', memberSince }: LifecycleRibbonProps) {
+export function LifecycleRibbon({ current = 'LOYAL', memberSince }: LifecycleRibbonProps) {
   const steps = getSteps(current);
 
   return (

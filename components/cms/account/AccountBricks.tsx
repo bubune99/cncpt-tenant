@@ -12,21 +12,29 @@ interface Brick {
   readonly up?: boolean;
 }
 
-interface AccountBricksProps {
-  readonly storeCredit?: string;
+export interface AccountBricksProps {
+  /** Store credit in cents (integer). Pass 0 as default. */
+  readonly storeCredit?: number;
   readonly loyaltyPts?: number;
   readonly activeSubs?: number;
   readonly openOrders?: number;
 }
 
+function formatCents(cents: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(cents / 100);
+}
+
 export function AccountBricks({
-  storeCredit = '$0.00',
+  storeCredit = 0,
   loyaltyPts = 0,
   activeSubs = 0,
   openOrders = 0,
 }: AccountBricksProps) {
   const bricks: readonly Brick[] = [
-    { label: 'store credit', value: storeCredit, delta: 'from returns', accent: true },
+    { label: 'store credit', value: formatCents(storeCredit), delta: 'from returns', accent: true },
     { label: 'loyalty pts',  value: String(loyaltyPts), delta: 'points balance' },
     { label: 'active subs',  value: String(activeSubs), delta: 'subscriptions' },
     { label: 'open orders',  value: String(openOrders), delta: openOrders > 0 ? 'in transit' : 'all delivered', up: openOrders > 0 },

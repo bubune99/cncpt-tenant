@@ -7,11 +7,53 @@
  */
 
 import Link from 'next/link';
-import { LifecycleRibbon } from '@/components/cms/account/LifecycleRibbon';
+import useSWR from 'swr';
+import { LifecycleRibbon, type LifecycleStage } from '@/components/cms/account/LifecycleRibbon';
 import { AccountBricks } from '@/components/cms/account/AccountBricks';
 import { OwnerGreeting } from '@/components/cms/account/OwnerGreeting';
 import { OrderStatusPill } from '@/components/cms/account/OrderStatusPill';
 import { useCustomerOrders } from '@/components/cms/account-dashboard/hooks';
+
+// ---------- Types -------------------------------------------------------
+
+interface AccountSummaryData {
+  readonly storeCredit: number;
+  readonly loyaltyPoints: number;
+  readonly activeSubs: number;
+  readonly openOrders: number;
+  readonly lifecycleStage: LifecycleStage;
+}
+
+interface AccountSummaryResponse {
+  readonly success: boolean;
+  readonly data: AccountSummaryData;
+}
+
+// ---------- Fetcher -----------------------------------------------------
+
+const fetcher = async (url: string): Promise<AccountSummaryResponse> => {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch: ${res.status}`);
+  }
+  return res.json() as Promise<AccountSummaryResponse>;
+};
+
+// ---------- Hook --------------------------------------------------------
+
+function useAccountSummary() {
+  const { data, error, isLoading } = useSWR<AccountSummaryResponse>(
+    '/api/cms/account/summary',
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 30_000 }
+  );
+
+  return {
+    summary: data?.data ?? null,
+    isLoading,
+    isError: !!error,
+  };
+}
 
 function formatCurrency(cents: number): string {
   return new Intl.NumberFormat('en-US', {
@@ -30,6 +72,7 @@ function formatDate(dateString: string): string {
 
 export default function AccountHomePage() {
   const { orders, isLoading } = useCustomerOrders({ limit: 3 });
+  const { summary, isLoading: summaryLoading, isError: summaryError } = useAccountSummary();
 
   return (
     <div>
@@ -156,15 +199,69 @@ export default function AccountHomePage() {
                 Your journey
               </span>
             </div>
-            <LifecycleRibbon current="loyal" memberSince="Mar 2024" />
+            {summaryLoading ? (
+              <div
+                style={{
+                  height: 60,
+                  display: 'flex',
+                  alignItems: 'center',
+                  color: 'var(--wl-text-faint)',
+                  fontFamily: 'var(--wl-font-mono)',
+                  fontSize: 11,
+                  letterSpacing: '.06em',
+                }}
+              >
+                Loading…
+              </div>
+            ) : summaryError || !summary ? (
+              <div
+                style={{
+                  height: 60,
+                  display: 'flex',
+                  alignItems: 'center',
+                  color: 'var(--wl-text-soft)',
+                  fontFamily: 'var(--wl-font-display)',
+                  fontStyle: 'italic',
+                  fontSize: 13,
+                }}
+              >
+                Could not load account status.
+              </div>
+            ) : (
+              <LifecycleRibbon current={summary.lifecycleStage} />
+            )}
           </div>
 
-          <AccountBricks
-            storeCredit="$0.00"
-            loyaltyPts={0}
-            activeSubs={0}
-            openOrders={0}
-          />
+          {summaryLoading ? (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: 10,
+              }}
+            >
+              {[0, 1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  style={{
+                    background: 'var(--wl-surface)',
+                    border: '1px solid var(--wl-rule)',
+                    borderRadius: 'var(--wl-radius)',
+                    padding: '14px 16px',
+                    height: 72,
+                    opacity: 0.5,
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
+            <AccountBricks
+              storeCredit={summary?.storeCredit ?? 0}
+              loyaltyPts={summary?.loyaltyPoints ?? 0}
+              activeSubs={summary?.activeSubs ?? 0}
+              openOrders={summary?.openOrders ?? 0}
+            />
+          )}
         </div>
 
         {/* Right: greeting */}

@@ -4,44 +4,128 @@
  * Atlas Customer Loyalty & Store Credit (D7)
  * Tier badge, points balance, progress bar, rewards grid, activity log.
  * Uses --wl-* tokens exclusively.
+ * Wired to /api/cms/account/loyalty.
  */
 
 import Link from 'next/link';
+import useSWR from 'swr';
 
-const TIERS = [
-  { key: 'bronze',   label: 'Bronze',   pts: 0,    color: '#cd7f32' },
-  { key: 'silver',   label: 'Silver',   pts: 500,  color: '#aaaaaa' },
-  { key: 'gold',     label: 'Gold',     pts: 1200, color: '#c9a84c' },
-  { key: 'platinum', label: 'Platinum', pts: 3000, color: '#b0c4de' },
-] as const;
+// ---------- API Types ---------------------------------------------------
 
-type TierKey = typeof TIERS[number]['key'];
+interface LoyaltyReward {
+  readonly id: string;
+  readonly label: string;
+  readonly pts: number;
+  readonly category: string;
+}
 
-const CURRENT_TIER: TierKey = 'silver';
-const CURRENT_PTS = 820;
-const NEXT_TIER_PTS = 1200;
+interface LoyaltyActivity {
+  readonly id: string;
+  readonly type: string;
+  readonly points: number;
+  readonly description: string;
+  readonly referenceId: string | null;
+  readonly createdAt: string;
+}
 
-const REWARDS = [
-  { id: 'r1', label: '$5 off your next order',       pts: 200, category: 'Discount' },
-  { id: 'r2', label: 'Free shipping (one order)',     pts: 150, category: 'Shipping' },
-  { id: 'r3', label: '15% off seasonal collection',  pts: 350, category: 'Discount' },
-  { id: 'r4', label: 'Early access — new arrivals',  pts: 500, category: 'Access'   },
-  { id: 'r5', label: 'Personalised gift wrap',        pts: 80,  category: 'Gift'     },
-  { id: 'r6', label: '$25 store credit',              pts: 600, category: 'Credit'   },
-] as const;
+interface LoyaltyData {
+  readonly tier: string;
+  readonly points: number;
+  readonly nextTierPts: number | null;
+  readonly rewards: readonly LoyaltyReward[];
+  readonly activityLog: readonly LoyaltyActivity[];
+}
 
-const ACTIVITY = [
-  { date: '12 May', desc: 'Purchase #1042',      delta: '+120 pts' },
-  { date: '08 May', desc: 'Referral bonus',      delta: '+200 pts' },
-  { date: '02 May', desc: 'Purchase #1037',      delta: '+55 pts'  },
-  { date: '28 Apr', desc: 'Reward redeemed',     delta: '−150 pts' },
-  { date: '20 Apr', desc: 'Purchase #1031',      delta: '+88 pts'  },
-  { date: '14 Apr', desc: 'Birthday bonus',      delta: '+50 pts'  },
-] as const;
+interface LoyaltyResponse {
+  readonly success: boolean;
+  readonly data: LoyaltyData;
+}
+
+// ---------- Tier colour map --------------------------------------------
+
+const TIER_COLORS: Record<string, string> = {
+  Bronze:   '#cd7f32',
+  Silver:   '#aaaaaa',
+  Gold:     '#c9a84c',
+  Platinum: '#b0c4de',
+};
+
+const TIER_ORDER = ['Bronze', 'Silver', 'Gold', 'Platinum'] as const;
+type KnownTier = typeof TIER_ORDER[number];
+
+function isKnownTier(t: string): t is KnownTier {
+  return (TIER_ORDER as readonly string[]).includes(t);
+}
+
+function tierColor(tier: string): string {
+  return TIER_COLORS[tier] ?? 'var(--wl-accent)';
+}
+
+// ---------- Fetcher -----------------------------------------------------
+
+const fetcher = async (url: string): Promise<LoyaltyResponse> => {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch: ${res.status}`);
+  }
+  return res.json() as Promise<LoyaltyResponse>;
+};
+
+// ---------- Hook --------------------------------------------------------
+
+function useLoyalty() {
+  const { data, error, isLoading } = useSWR<LoyaltyResponse>(
+    '/api/cms/account/loyalty',
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 30_000 }
+  );
+
+  return {
+    loyalty: data?.data ?? null,
+    isLoading,
+    isError: !!error,
+  };
+}
+
+// ---------- Helpers -----------------------------------------------------
+
+function formatActivityDate(isoString: string): string {
+  return new Date(isoString).toLocaleDateString('en-US', {
+    day: 'numeric',
+    month: 'short',
+  });
+}
+
+function activityDelta(activity: LoyaltyActivity): string {
+  const sign = activity.points >= 0 ? '+' : '';
+  return `${sign}${activity.points} pts`;
+}
+
+// ---------- Component ---------------------------------------------------
 
 export default function LoyaltyPage() {
-  const pct = Math.min(100, Math.round(((CURRENT_PTS - 500) / (NEXT_TIER_PTS - 500)) * 100));
-  const currentTierObj = TIERS.find((t) => t.key === CURRENT_TIER)!;
+  const { loyalty, isLoading, isError } = useLoyalty();
+
+  const tier = loyalty?.tier ?? 'Bronze';
+  const points = loyalty?.points ?? 0;
+  const nextTierPts = loyalty?.nextTierPts ?? null;
+  const rewards = loyalty?.rewards ?? [];
+  const activityLog = loyalty?.activityLog ?? [];
+
+  const currentColor = tierColor(tier);
+
+  /** Progress percentage within current tier band */
+  const tierIdx = isKnownTier(tier) ? TIER_ORDER.indexOf(tier) : 0;
+  const prevTierMin = tierIdx > 0 ? ([0, 500, 1500, 5000] as const)[tierIdx] : 0;
+  const nextTierMax = nextTierPts !== null ? points + nextTierPts : null;
+  const pct =
+    nextTierMax !== null
+      ? Math.min(100, Math.round(((points - prevTierMin) / (nextTierMax - prevTierMin)) * 100))
+      : 100;
+
+  const nextTierLabel = isKnownTier(tier) && tierIdx < TIER_ORDER.length - 1
+    ? TIER_ORDER[tierIdx + 1]
+    : null;
 
   return (
     <div>
@@ -91,247 +175,463 @@ export default function LoyaltyPage() {
         </div>
       </div>
 
-      {/* Tier hero + progress */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: 14,
-          marginTop: 20,
-          marginBottom: 20,
-        }}
-      >
-        {/* Tier badge */}
+      {/* Loading state */}
+      {isLoading && (
         <div
           style={{
-            background: 'var(--wl-surface)',
-            border: '1px solid var(--wl-rule)',
-            borderRadius: 'var(--wl-radius)',
-            padding: '22px 24px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 18,
+            padding: '48px 0',
+            textAlign: 'center',
+            color: 'var(--wl-text-faint)',
+            fontFamily: 'var(--wl-font-mono)',
+            fontSize: 11,
+            letterSpacing: '.06em',
           }}
         >
-          <div
-            style={{
-              width: 60,
-              height: 60,
-              borderRadius: '50%',
-              background: `radial-gradient(circle at 35% 35%, ${currentTierObj.color}, color-mix(in srgb, ${currentTierObj.color} 60%, black))`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              boxShadow: `0 0 0 4px color-mix(in srgb, ${currentTierObj.color} 20%, transparent)`,
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="white" opacity={0.9}>
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-            </svg>
-          </div>
-          <div>
-            <div style={{ fontFamily: 'var(--wl-font-mono)', fontSize: 9.5, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--wl-text-faint)', marginBottom: 4 }}>
-              Current tier
-            </div>
-            <div style={{ fontFamily: 'var(--wl-font-display)', fontSize: 26, fontWeight: 500, letterSpacing: '-0.01em' }}>
-              {currentTierObj.label}
-            </div>
-            <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-              {TIERS.map((t) => (
-                <div
-                  key={t.key}
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    background: TIERS.indexOf(t) <= TIERS.findIndex((x) => x.key === CURRENT_TIER) ? t.color : 'var(--wl-rule)',
-                  }}
-                />
-              ))}
-            </div>
-          </div>
+          Loading loyalty data…
         </div>
+      )}
 
-        {/* Points balance + progress */}
+      {/* Error state */}
+      {!isLoading && isError && (
         <div
           style={{
-            background: 'var(--wl-surface)',
-            border: '1px solid var(--wl-rule)',
-            borderRadius: 'var(--wl-radius)',
-            padding: '22px 24px',
+            padding: '48px 0',
+            textAlign: 'center',
+            color: 'var(--wl-text-soft)',
+            fontFamily: 'var(--wl-font-display)',
+            fontStyle: 'italic',
+            fontSize: 14,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 6 }}>
-            <div>
-              <div style={{ fontFamily: 'var(--wl-font-mono)', fontSize: 9.5, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--wl-text-faint)', marginBottom: 4 }}>
-                Points balance
-              </div>
-              <div style={{ fontFamily: 'var(--wl-font-display)', fontSize: 32, fontWeight: 500 }}>
-                {CURRENT_PTS.toLocaleString()}
-                <span style={{ fontFamily: 'var(--wl-font-mono)', fontSize: 12, color: 'var(--wl-text-faint)', marginLeft: 6 }}>pts</span>
-              </div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontFamily: 'var(--wl-font-mono)', fontSize: 9.5, color: 'var(--wl-text-faint)', letterSpacing: '.06em' }}>
-                NEXT: GOLD
-              </div>
-              <div style={{ fontFamily: 'var(--wl-font-mono)', fontSize: 11, color: 'var(--wl-accent)', marginTop: 2 }}>
-                {NEXT_TIER_PTS - CURRENT_PTS} pts away
-              </div>
-            </div>
-          </div>
-          {/* Progress bar */}
+          Could not load loyalty data. Please try again later.
+        </div>
+      )}
+
+      {/* Main content */}
+      {!isLoading && !isError && loyalty !== null && (
+        <>
+          {/* Tier hero + progress */}
           <div
             style={{
-              height: 6,
-              borderRadius: 999,
-              background: 'var(--wl-surface-2)',
-              overflow: 'hidden',
-              marginTop: 12,
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: 14,
+              marginTop: 20,
+              marginBottom: 20,
             }}
           >
+            {/* Tier badge */}
             <div
               style={{
-                height: '100%',
-                width: `${pct}%`,
-                background: 'var(--wl-accent)',
-                borderRadius: 999,
-                transition: 'width .4s ease',
+                background: 'var(--wl-surface)',
+                border: '1px solid var(--wl-rule)',
+                borderRadius: 'var(--wl-radius)',
+                padding: '22px 24px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 18,
               }}
-            />
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-            <span style={{ fontFamily: 'var(--wl-font-mono)', fontSize: 9.5, color: 'var(--wl-text-faint)' }}>Silver (500)</span>
-            <span style={{ fontFamily: 'var(--wl-font-mono)', fontSize: 9.5, color: 'var(--wl-text-faint)' }}>Gold ({NEXT_TIER_PTS})</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Rewards grid */}
-      <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontFamily: 'var(--wl-font-display)', fontWeight: 500, fontSize: 18, margin: '0 0 12px 0' }}>
-          Redeem rewards
-        </h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-          {REWARDS.map((r) => {
-            const canRedeem = CURRENT_PTS >= r.pts;
-            return (
+            >
               <div
-                key={r.id}
                 style={{
-                  background: 'var(--wl-surface)',
-                  border: '1px solid var(--wl-rule)',
-                  borderRadius: 'var(--wl-radius)',
-                  padding: 'var(--wl-card-pad)',
-                  opacity: canRedeem ? 1 : 0.55,
+                  width: 60,
+                  height: 60,
+                  borderRadius: '50%',
+                  background: `radial-gradient(circle at 35% 35%, ${currentColor}, color-mix(in srgb, ${currentColor} 60%, black))`,
                   display: 'flex',
-                  flexDirection: 'column',
-                  gap: 8,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  boxShadow: `0 0 0 4px color-mix(in srgb, ${currentColor} 20%, transparent)`,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="white" opacity={0.9}>
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+              </div>
+              <div>
+                <div
+                  style={{
+                    fontFamily: 'var(--wl-font-mono)',
+                    fontSize: 9.5,
+                    letterSpacing: '.12em',
+                    textTransform: 'uppercase',
+                    color: 'var(--wl-text-faint)',
+                    marginBottom: 4,
+                  }}
+                >
+                  Current tier
+                </div>
+                <div
+                  style={{
+                    fontFamily: 'var(--wl-font-display)',
+                    fontSize: 26,
+                    fontWeight: 500,
+                    letterSpacing: '-0.01em',
+                  }}
+                >
+                  {tier}
+                </div>
+                {/* Tier dot indicators */}
+                <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                  {TIER_ORDER.map((t, idx) => (
+                    <div
+                      key={t}
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        background: idx <= tierIdx ? tierColor(t) : 'var(--wl-rule)',
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Points balance + progress */}
+            <div
+              style={{
+                background: 'var(--wl-surface)',
+                border: '1px solid var(--wl-rule)',
+                borderRadius: 'var(--wl-radius)',
+                padding: '22px 24px',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  justifyContent: 'space-between',
+                  marginBottom: 6,
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      fontFamily: 'var(--wl-font-mono)',
+                      fontSize: 9.5,
+                      letterSpacing: '.12em',
+                      textTransform: 'uppercase',
+                      color: 'var(--wl-text-faint)',
+                      marginBottom: 4,
+                    }}
+                  >
+                    Points balance
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: 'var(--wl-font-display)',
+                      fontSize: 32,
+                      fontWeight: 500,
+                    }}
+                  >
+                    {points.toLocaleString()}
+                    <span
+                      style={{
+                        fontFamily: 'var(--wl-font-mono)',
+                        fontSize: 12,
+                        color: 'var(--wl-text-faint)',
+                        marginLeft: 6,
+                      }}
+                    >
+                      pts
+                    </span>
+                  </div>
+                </div>
+                {nextTierLabel !== null && nextTierPts !== null && (
+                  <div style={{ textAlign: 'right' }}>
+                    <div
+                      style={{
+                        fontFamily: 'var(--wl-font-mono)',
+                        fontSize: 9.5,
+                        color: 'var(--wl-text-faint)',
+                        letterSpacing: '.06em',
+                      }}
+                    >
+                      NEXT: {nextTierLabel.toUpperCase()}
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: 'var(--wl-font-mono)',
+                        fontSize: 11,
+                        color: 'var(--wl-accent)',
+                        marginTop: 2,
+                      }}
+                    >
+                      {nextTierPts} pts away
+                    </div>
+                  </div>
+                )}
+                {(nextTierLabel === null || nextTierPts === null) && (
+                  <div style={{ textAlign: 'right' }}>
+                    <div
+                      style={{
+                        fontFamily: 'var(--wl-font-mono)',
+                        fontSize: 9.5,
+                        color: 'var(--wl-accent)',
+                        letterSpacing: '.06em',
+                      }}
+                    >
+                      MAX TIER
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Progress bar */}
+              <div
+                style={{
+                  height: 6,
+                  borderRadius: 999,
+                  background: 'var(--wl-surface-2)',
+                  overflow: 'hidden',
+                  marginTop: 12,
+                }}
+              >
+                <div
+                  style={{
+                    height: '100%',
+                    width: `${pct}%`,
+                    background: 'var(--wl-accent)',
+                    borderRadius: 999,
+                    transition: 'width .4s ease',
+                  }}
+                />
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  marginTop: 6,
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'var(--wl-font-mono)',
+                    fontSize: 9.5,
+                    color: 'var(--wl-text-faint)',
+                  }}
+                >
+                  {tier} ({prevTierMin})
+                </span>
+                {nextTierLabel !== null && nextTierMax !== null && (
                   <span
                     style={{
                       fontFamily: 'var(--wl-font-mono)',
                       fontSize: 9.5,
-                      letterSpacing: '.08em',
-                      textTransform: 'uppercase',
                       color: 'var(--wl-text-faint)',
                     }}
                   >
-                    {r.category}
+                    {nextTierLabel} ({nextTierMax})
                   </span>
-                  <span
-                    style={{
-                      fontFamily: 'var(--wl-font-mono)',
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: 'var(--wl-accent)',
-                    }}
-                  >
-                    {r.pts} pts
-                  </span>
-                </div>
-                <div style={{ fontFamily: 'var(--wl-font-display)', fontSize: 14, lineHeight: 1.3 }}>
-                  {r.label}
-                </div>
-                <button
-                  disabled={!canRedeem}
-                  style={{
-                    marginTop: 'auto',
-                    fontFamily: 'var(--wl-font-body)',
-                    fontSize: 11,
-                    padding: '5px 10px',
-                    background: canRedeem ? 'var(--wl-accent)' : 'transparent',
-                    color: canRedeem ? 'var(--wl-accent-fg)' : 'var(--wl-text-faint)',
-                    border: canRedeem ? '1px solid var(--wl-accent)' : '1px solid var(--wl-rule)',
-                    borderRadius: 'var(--wl-radius-sm)',
-                    cursor: canRedeem ? 'pointer' : 'default',
-                  }}
-                >
-                  {canRedeem ? 'Redeem' : `Need ${r.pts - CURRENT_PTS} more`}
-                </button>
+                )}
               </div>
-            );
-          })}
-        </div>
-      </div>
+            </div>
+          </div>
 
-      {/* Activity log */}
-      <div>
-        <h2 style={{ fontFamily: 'var(--wl-font-display)', fontWeight: 500, fontSize: 18, margin: '0 0 12px 0' }}>
-          Points activity
-        </h2>
-        <div
-          style={{
-            background: 'var(--wl-surface)',
-            border: '1px solid var(--wl-rule)',
-            borderRadius: 'var(--wl-radius)',
-            overflow: 'hidden',
-          }}
-        >
-          {ACTIVITY.map((a, i) => {
-            const isPos = a.delta.startsWith('+');
-            return (
+          {/* Rewards grid */}
+          <div style={{ marginBottom: 24 }}>
+            <h2
+              style={{
+                fontFamily: 'var(--wl-font-display)',
+                fontWeight: 500,
+                fontSize: 18,
+                margin: '0 0 12px 0',
+              }}
+            >
+              Redeem rewards
+            </h2>
+            {rewards.length === 0 ? (
               <div
-                key={i}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '12px 16px',
-                  borderBottom: i < ACTIVITY.length - 1 ? '1px solid var(--wl-rule-soft)' : 'none',
+                  background: 'var(--wl-surface)',
+                  border: '1px solid var(--wl-rule)',
+                  borderRadius: 'var(--wl-radius)',
+                  padding: '24px 20px',
+                  fontFamily: 'var(--wl-font-display)',
+                  fontStyle: 'italic',
+                  fontSize: 14,
+                  color: 'var(--wl-text-soft)',
                 }}
               >
+                No rewards available yet — check back soon.
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+                {rewards.map((r) => {
+                  const canRedeem = points >= r.pts;
+                  return (
+                    <div
+                      key={r.id}
+                      style={{
+                        background: 'var(--wl-surface)',
+                        border: '1px solid var(--wl-rule)',
+                        borderRadius: 'var(--wl-radius)',
+                        padding: 'var(--wl-card-pad)',
+                        opacity: canRedeem ? 1 : 0.55,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 8,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'baseline',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontFamily: 'var(--wl-font-mono)',
+                            fontSize: 9.5,
+                            letterSpacing: '.08em',
+                            textTransform: 'uppercase',
+                            color: 'var(--wl-text-faint)',
+                          }}
+                        >
+                          {r.category}
+                        </span>
+                        <span
+                          style={{
+                            fontFamily: 'var(--wl-font-mono)',
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: 'var(--wl-accent)',
+                          }}
+                        >
+                          {r.pts} pts
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: 'var(--wl-font-display)',
+                          fontSize: 14,
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        {r.label}
+                      </div>
+                      <button
+                        disabled={!canRedeem}
+                        style={{
+                          marginTop: 'auto',
+                          fontFamily: 'var(--wl-font-body)',
+                          fontSize: 11,
+                          padding: '5px 10px',
+                          background: canRedeem ? 'var(--wl-accent)' : 'transparent',
+                          color: canRedeem ? 'var(--wl-accent-fg)' : 'var(--wl-text-faint)',
+                          border: canRedeem ? '1px solid var(--wl-accent)' : '1px solid var(--wl-rule)',
+                          borderRadius: 'var(--wl-radius-sm)',
+                          cursor: canRedeem ? 'pointer' : 'default',
+                        }}
+                      >
+                        {canRedeem ? 'Redeem' : `Need ${r.pts - points} more`}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Activity log */}
+          <div>
+            <h2
+              style={{
+                fontFamily: 'var(--wl-font-display)',
+                fontWeight: 500,
+                fontSize: 18,
+                margin: '0 0 12px 0',
+              }}
+            >
+              Points activity
+            </h2>
+            <div
+              style={{
+                background: 'var(--wl-surface)',
+                border: '1px solid var(--wl-rule)',
+                borderRadius: 'var(--wl-radius)',
+                overflow: 'hidden',
+              }}
+            >
+              {activityLog.length === 0 ? (
                 <div
                   style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    background: isPos ? 'var(--wl-success)' : 'var(--wl-text-faint)',
-                    marginRight: 12,
-                    flexShrink: 0,
-                  }}
-                />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: 'var(--wl-font-display)', fontSize: 13 }}>{a.desc}</div>
-                  <div style={{ fontFamily: 'var(--wl-font-display)', fontStyle: 'italic', fontSize: 11, color: 'var(--wl-text-faint)', marginTop: 1 }}>{a.date}</div>
-                </div>
-                <div
-                  style={{
-                    fontFamily: 'var(--wl-font-mono)',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: isPos ? 'var(--wl-success)' : 'var(--wl-text-soft)',
+                    padding: '24px 16px',
+                    fontFamily: 'var(--wl-font-display)',
+                    fontStyle: 'italic',
+                    fontSize: 14,
+                    color: 'var(--wl-text-soft)',
                   }}
                 >
-                  {a.delta}
+                  No points activity yet.
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+              ) : (
+                activityLog.map((a, i) => {
+                  const delta = activityDelta(a);
+                  const isPos = a.points >= 0;
+                  return (
+                    <div
+                      key={a.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '12px 16px',
+                        borderBottom:
+                          i < activityLog.length - 1 ? '1px solid var(--wl-rule-soft)' : 'none',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          background: isPos ? 'var(--wl-success)' : 'var(--wl-text-faint)',
+                          marginRight: 12,
+                          flexShrink: 0,
+                        }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div
+                          style={{
+                            fontFamily: 'var(--wl-font-display)',
+                            fontSize: 13,
+                          }}
+                        >
+                          {a.description}
+                        </div>
+                        <div
+                          style={{
+                            fontFamily: 'var(--wl-font-display)',
+                            fontStyle: 'italic',
+                            fontSize: 11,
+                            color: 'var(--wl-text-faint)',
+                            marginTop: 1,
+                          }}
+                        >
+                          {formatActivityDate(a.createdAt)}
+                        </div>
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: 'var(--wl-font-mono)',
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: isPos ? 'var(--wl-success)' : 'var(--wl-text-soft)',
+                        }}
+                      >
+                        {delta}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
