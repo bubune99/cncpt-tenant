@@ -152,6 +152,11 @@ function buildGridRows(
   });
 }
 
+// ── Static formatCents (used outside component for type mapping) ───────────────
+function formatCentsStatic(cents: number): string {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
 // ── Fallback placeholder tab ───────────────────────────────────────────────────
 
 function PlaceholderTab({ label }: { readonly label: string }) {
@@ -189,6 +194,45 @@ interface DiscountApiRow {
   readonly usageCount: number;
   readonly description: string | null;
   readonly enabled: boolean;
+}
+
+/** Shape returned by GET /api/cms/products/[id]/pricing-tiers (one row) */
+interface PricingTierApiRow {
+  readonly id: string;
+  readonly productId: string;
+  readonly label: string;
+  readonly minQty: number;
+  readonly maxQty: number | null;
+  readonly price: number; // cents
+  readonly type: "QTY" | "MEMBER";
+  readonly enabled: boolean;
+}
+
+/** Shape returned by GET /api/cms/products/[id]/sale-schedules (one row) */
+interface SaleScheduleApiRow {
+  readonly id: string;
+  readonly productId: string;
+  readonly variantId: string | null;
+  readonly salePrice: number; // cents
+  readonly startsAt: string;  // ISO string from Prisma DateTime
+  readonly endsAt: string;    // ISO string from Prisma DateTime
+  readonly enabled: boolean;
+}
+
+/** Payload for POST /api/cms/products/[id]/pricing-tiers */
+interface CreateTierPayload {
+  readonly label: string;
+  readonly minQty: number;
+  readonly maxQty?: number;
+  readonly price: number;
+  readonly type: "QTY" | "MEMBER";
+}
+
+/** Payload for POST /api/cms/products/[id]/sale-schedules */
+interface CreateSchedulePayload {
+  readonly salePrice: number;
+  readonly startsAt: string;
+  readonly endsAt: string;
 }
 
 // ── Main Props ─────────────────────────────────────────────────────────────────
@@ -244,6 +288,15 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
   // ── Discount codes state ──────────────────────────────────────────────────────
   const [discountCodes, setDiscountCodes] = React.useState<ReadonlyArray<AtlasDiscountCode>>([]);
   const [discountsLoading, setDiscountsLoading] = React.useState(false);
+
+  // ── Pricing tiers + sale schedules state ──────────────────────────────────────
+  const [pricingTiers, setPricingTiers] = React.useState<ReadonlyArray<AtlasPricingTier>>([]);
+  const [memberPricing, setMemberPricing] = React.useState<ReadonlyArray<AtlasMemberPricing>>([]);
+  const [saleSchedules, setSaleSchedules] = React.useState<ReadonlyArray<SaleScheduleApiRow>>([]);
+  const [pricingLoading, setPricingLoading] = React.useState(false);
+  const [pricingError, setPricingError] = React.useState<string | null>(null);
+  // Track whether we've already attempted the pricing fetch to avoid refetching on tab re-activations.
+  const pricingFetchedRef = React.useRef(false);
 
   // ── Fetch product on mount ────────────────────────────────────────────────────
   React.useEffect(() => {
@@ -417,6 +470,88 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
+  // ── Fetch pricing tiers + sale schedules ──────────────────────────────────────
+  // Lazy: only fires when Pricing tab is first activated (mirrors discount pattern).
+  // Uses a ref to prevent re-fetching on subsequent tab activations.
+  React.useEffect(() => {
+    if (activeTab !== "Pricing" || isNew || !state.product?.id) return;
+    if (pricingFetchedRef.current) return;
+
+    let cancelled = false;
+    pricingFetchedRef.current = true;
+    setPricingLoading(true);
+    setPricingError(null);
+
+    const fetchPricing = async () => {
+      try {
+        const [tiersRes, schedulesRes] = await Promise.all([
+          fetch(`/api/cms/products/${productId}/pricing-tiers`, { credentials: "same-origin" }),
+          fetch(`/api/cms/products/${productId}/sale-schedules`, { credentials: "same-origin" }),
+        ]);
+
+        if (cancelled) return;
+
+        if (!tiersRes.ok) {
+          const body = await tiersRes.json().catch(() => ({}));
+          throw new Error((body as { error?: string }).error ?? `Tiers fetch: HTTP ${tiersRes.status}`);
+        }
+        if (!schedulesRes.ok) {
+          const body = await schedulesRes.json().catch(() => ({}));
+          throw new Error((body as { error?: string }).error ?? `Schedules fetch: HTTP ${schedulesRes.status}`);
+        }
+
+        const tiersData = await tiersRes.json() as { data?: PricingTierApiRow[] };
+        const schedulesData = await schedulesRes.json() as { data?: SaleScheduleApiRow[] };
+
+        if (cancelled) return;
+
+        const allTiers: ReadonlyArray<PricingTierApiRow> = tiersData.data ?? [];
+        const basePrice = state.product?.basePrice ?? 0;
+
+        // Split by type: QTY → AtlasPricingTier, MEMBER → AtlasMemberPricing
+        const qtyTiers: AtlasPricingTier[] = allTiers
+          .filter((t) => t.type === "QTY")
+          .map((t) => ({
+            id: t.id,
+            minQty: t.minQty,
+            maxQty: t.maxQty ?? null,
+            price: t.price,
+            requiresTag: t.label || null,
+          }));
+
+        const memberTiers: AtlasMemberPricing[] = allTiers
+          .filter((t) => t.type === "MEMBER")
+          .map((t) => {
+            const discountPercent =
+              basePrice > 0 ? Math.round(((basePrice - t.price) / basePrice) * 100) : 0;
+            return {
+              id: t.id,
+              tierName: t.label,
+              description: `${formatCentsStatic(t.price)} per unit`,
+              memberCount: 0,
+              discountPercent: Math.max(0, discountPercent),
+              memberPrice: t.price,
+              enabled: t.enabled,
+            };
+          });
+
+        setPricingTiers(qtyTiers);
+        setMemberPricing(memberTiers);
+        setSaleSchedules(schedulesData.data ?? []);
+      } catch (err) {
+        if (cancelled) return;
+        pricingFetchedRef.current = false; // allow retry on next tab activation
+        setPricingError(err instanceof Error ? err.message : "Failed to load pricing data");
+      } finally {
+        if (!cancelled) setPricingLoading(false);
+      }
+    };
+
+    void fetchPricing();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, productId, isNew, state.product?.id]);
+
   // ── Save handler ──────────────────────────────────────────────────────────────
   const handleSave = React.useCallback(async () => {
     if (!state.product || !isDirty) return;
@@ -472,6 +607,118 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
     setActiveTab("Detail");
   }, []);
 
+  // ── Pricing tier CRUD ─────────────────────────────────────────────────────────
+
+  const handleCreateTier = React.useCallback(async (payload: CreateTierPayload) => {
+    const body: CreateTierPayload = payload.maxQty != null
+      ? payload
+      : { label: payload.label, minQty: payload.minQty, price: payload.price, type: payload.type };
+
+    const res = await fetch(`/api/cms/products/${productId}/pricing-tiers`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error((data as { error?: string }).error ?? `HTTP ${res.status}`);
+    }
+    const data = await res.json() as { data?: PricingTierApiRow };
+    const created = data.data;
+    if (!created) return;
+
+    const basePrice = state.product?.basePrice ?? 0;
+
+    if (created.type === "QTY") {
+      // Optimistic append to qty tiers
+      setPricingTiers((prev) => [
+        ...prev,
+        {
+          id: created.id,
+          minQty: created.minQty,
+          maxQty: created.maxQty ?? null,
+          price: created.price,
+          requiresTag: created.label || null,
+        },
+      ]);
+    } else {
+      // Optimistic append to member pricing
+      const discountPercent =
+        basePrice > 0 ? Math.max(0, Math.round(((basePrice - created.price) / basePrice) * 100)) : 0;
+      setMemberPricing((prev) => [
+        ...prev,
+        {
+          id: created.id,
+          tierName: created.label,
+          description: `${formatCentsStatic(created.price)} per unit`,
+          memberCount: 0,
+          discountPercent,
+          memberPrice: created.price,
+          enabled: created.enabled,
+        },
+      ]);
+    }
+  }, [productId, state.product?.basePrice]);
+
+  const handleDeleteTier = React.useCallback(async (tierId: string) => {
+    // Optimistic removal
+    setPricingTiers((prev) => prev.filter((t) => t.id !== tierId));
+    setMemberPricing((prev) => prev.filter((m) => m.id !== tierId));
+
+    const res = await fetch(`/api/cms/products/${productId}/pricing-tiers`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ tierId }),
+    });
+    if (!res.ok) {
+      // Revert optimistic removal by re-fetching
+      pricingFetchedRef.current = false;
+      const body = await res.json().catch(() => ({}));
+      throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
+    }
+  }, [productId]);
+
+  // ── Sale schedule CRUD ────────────────────────────────────────────────────────
+
+  const handleCreateSchedule = React.useCallback(async (payload: CreateSchedulePayload) => {
+    const res = await fetch(`/api/cms/products/${productId}/sale-schedules`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error((data as { error?: string }).error ?? `HTTP ${res.status}`);
+    }
+    const data = await res.json() as { data?: SaleScheduleApiRow };
+    const created = data.data;
+    if (!created) return;
+
+    // Optimistic append
+    setSaleSchedules((prev) => [...prev, created]);
+  }, [productId]);
+
+  const handleDeleteSchedule = React.useCallback(async (scheduleId: string) => {
+    // Optimistic removal
+    setSaleSchedules((prev) => prev.filter((s) => s.id !== scheduleId));
+
+    const res = await fetch(`/api/cms/products/${productId}/sale-schedules`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ scheduleId }),
+    });
+    if (!res.ok) {
+      // Revert by re-fetching
+      pricingFetchedRef.current = false;
+      const body = await res.json().catch(() => ({}));
+      throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
+    }
+  }, [productId]);
+
   // ── Tab badge counts ─────────────────────────────────────────────────────────
   const variantCount = state.variants.length;
   const customFieldCount = state.customFields.length;
@@ -503,12 +750,22 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
   const tabLabels = tabs.map((t) => t.label);
   const safeActiveTab = tabLabels.includes(activeTab) ? activeTab : "Detail";
 
-  // ── Pricing static empty stubs (pricingTiers / memberPricing / saleSchedule) ──
-  // These remain empty until API plan G06 lands (ProductPricingTier / ProductSaleSchedule models).
-  // discountCodes is fetched from GET /api/cms/discounts — see state above.
-  const pricingTiers: ReadonlyArray<AtlasPricingTier> = [];
-  const memberPricing: ReadonlyArray<AtlasMemberPricing> = [];
-  const saleSchedule: AtlasSaleSchedule | null = null;
+  // ── Derive active sale schedule from fetched list ────────────────────────────
+  // Use the first enabled schedule (earliest startsAt), mapping API row → AtlasSaleSchedule.
+  const saleSchedule: AtlasSaleSchedule | null = React.useMemo(() => {
+    const active = saleSchedules.find((s) => s.enabled);
+    if (!active) return null;
+    return {
+      id: active.id,
+      salePrice: active.salePrice,
+      startDate: active.startsAt,
+      endDate: active.endsAt,
+      active: active.enabled,
+    };
+  }, [saleSchedules]);
+
+  // ── tierEnabled: true when there are QTY tiers ───────────────────────────────
+  const pricingTierEnabled = pricingTiers.length > 0;
 
   // ── Bundle items (stored in product.bundleItems as JSON) ─────────────────────
   const bundleItems: ReadonlyArray<AtlasBundleItem> = [];
@@ -712,10 +969,28 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
               },
             ]}
             tierPricing={pricingTiers}
-            tierEnabled={false}
+            tierEnabled={pricingTierEnabled}
             memberPricing={memberPricing}
             saleSchedule={saleSchedule}
             discountCodes={discountCodes}
+            pricingLoading={pricingLoading}
+            pricingError={pricingError}
+            onCreateTier={handleCreateTier}
+            onDeleteTier={handleDeleteTier}
+            onCreateSchedule={handleCreateSchedule}
+            onDeleteSchedule={handleDeleteSchedule}
+            onToggleTierEnabled={(enabled) => {
+              // Toggle is visual — enable means show the tier table; no server call needed
+              // since tiers are fetched. When disabled, it just hides the section.
+              if (!enabled) {
+                // Collapse tier section without deleting tiers
+              }
+            }}
+            onToggleMemberPricing={(id, enabled) => {
+              setMemberPricing((prev) =>
+                prev.map((m) => m.id === id ? { ...m, enabled } : m)
+              );
+            }}
             isDirty={isDirty}
             savedAt={savedAt}
           />

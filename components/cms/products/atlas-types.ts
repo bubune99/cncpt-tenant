@@ -207,6 +207,8 @@ export interface AtlasMemberPricing {
   readonly description: string;
   readonly memberCount: number;
   readonly discountPercent: number;
+  /** Raw member price in cents (from ProductPricingTier.price). Used when discountPercent is 0. */
+  readonly memberPrice?: number;
   readonly enabled: boolean;
 }
 
