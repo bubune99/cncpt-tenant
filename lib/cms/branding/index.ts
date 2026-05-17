@@ -18,7 +18,11 @@ import {
   sanitizeImageUrl,
 } from './sanitize'
 import type { TenantBranding } from './types'
-import { DEFAULT_TENANT_BRANDING } from './types'
+import {
+  DEFAULT_TENANT_BRANDING,
+  toBrandPreset,
+  toBrandDensity,
+} from './types'
 
 // In-memory cache: subdomain -> { branding, timestamp }
 const brandingCache = new Map<string, { data: TenantBranding; ts: number }>()
@@ -63,6 +67,8 @@ export async function getTenantBranding(subdomain: string): Promise<TenantBrandi
     metaDescription: s.metaDescription || s.siteDescription || '',
     hidePoweredBy: s.hidePoweredBy ?? false,
     customCss: sanitizeCustomCss(s.customCss),
+    brandPreset: toBrandPreset((s as { brandPreset?: unknown }).brandPreset),
+    density: toBrandDensity((s as { density?: unknown }).density),
   }
 
   // Update cache
@@ -143,6 +149,12 @@ export async function updateTenantBranding(
   }
   if (updates.customCss !== undefined) {
     data.customCss = sanitizeCustomCss(updates.customCss)
+  }
+  if (updates.brandPreset !== undefined) {
+    data.brandPreset = toBrandPreset(updates.brandPreset)
+  }
+  if (updates.density !== undefined) {
+    data.density = toBrandDensity(updates.density)
   }
 
   await prisma.tenantSetting.upsert({

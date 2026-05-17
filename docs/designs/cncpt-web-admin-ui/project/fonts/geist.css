@@ -1,0 +1,12 @@
+/* Geist — loaded from Google Fonts.
+ *
+ * The CNCPT Designer codebase loads Geist via `next/font/google`, which
+ * embeds the variable .woff2 files locally and self-hosts them. We mirror
+ * that here with a Google Fonts import so HTML artifacts can pull the same
+ * family without a build step. If you'd like the .woff2 on disk, drop
+ * them into this folder and replace the @import with @font-face rules.
+ *
+ * Substitution notice: this is the real font the team uses, not a fallback.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=swap');

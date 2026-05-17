@@ -4215,6 +4215,10 @@ model TenantSetting {
   metaDescription   String? @map("meta_description") @db.Text
   hidePoweredBy     Boolean @default(false) @map("hide_powered_by")
 
+  // Atlas design system — user-selectable preset + density
+  brandPreset       String  @default("marigold") @map("brand_preset") @db.VarChar(20)
+  density           String  @default("regular") @map("density") @db.VarChar(20)
+
   // Relations
   tenant Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 

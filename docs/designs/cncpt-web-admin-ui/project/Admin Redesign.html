@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>CNCPT Admin — Re-envisioned</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<link rel="stylesheet" href="tokens.css" />
+<link rel="stylesheet" href="admin-styles.css" />
+
+<style>
+  html, body { margin: 0; height: 100%; background: #f1f3f6; }
+  body { font-family: var(--font-sans); }
+  /* Direction note — shown above each direction row */
+  .dir-note {
+    font-family: var(--font-sans);
+    font-size: 13px; line-height: 1.5;
+    color: #475569;
+    max-width: 720px;
+    padding: 4px 0 0;
+  }
+  .dir-note h4 {
+    margin: 0 0 4px;
+    font-size: 13px; font-weight: 600; letter-spacing: 0.04em;
+    text-transform: uppercase; color: #0f172a;
+  }
+  .dir-note p { margin: 0; }
+  .dir-note .tag-line { color: #94a3b8; font-size: 11.5px; margin-top: 4px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; }
+
+  /* Cover artboard styling */
+  .cover {
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
+    border-radius: 12px;
+    padding: 40px 44px;
+    display: flex; flex-direction: column;
+    font-family: var(--font-sans);
+    overflow: hidden;
+  }
+  .cover h1 { margin: 0; font-size: 42px; font-weight: 700; letter-spacing: -0.025em; color: #0f172a; line-height: 1.05; }
+  .cover .lead { font-size: 16px; color: #64748b; max-width: 540px; margin-top: 14px; line-height: 1.55; }
+  .cover .badge-row { display: flex; gap: 8px; margin-top: 20px; }
+  .cover .badge {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+    padding: 4px 9px; border-radius: 9999px;
+    background: #eff6ff; color: #1d4ed8;
+  }
+  .cover .dir-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+    margin-top: auto;
+  }
+  .cover .dir-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 16px;
+  }
+  .cover .dir-card h3 { margin: 0 0 4px; font-size: 14px; font-weight: 600; color: #0f172a; }
+  .cover .dir-card p  { margin: 0; font-size: 12px; color: #64748b; line-height: 1.5; }
+  .cover .dir-card .label {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    color: #1d4ed8; margin-bottom: 8px;
+  }
+  .cover .dir-card.is-wild .label { color: #c026d3; }
+  .cover .dir-card.is-wild { background: linear-gradient(135deg, #fff 0%, #fdf4ff 100%); border-color: #f0abfc; }
+</style>
+</head>
+<body>
+
+<!-- Lucide icons CDN -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- Design canvas + content modules -->
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="mock-data.jsx"></script>
+<script type="text/babel" src="direction-hybrid.jsx"></script>
+<script type="text/babel" src="direction-a.jsx"></script>
+<script type="text/babel" src="direction-b.jsx"></script>
+<script type="text/babel" src="direction-c.jsx"></script>
+
+<div id="root"></div>
+
+<script type="text/babel">
+const { useEffect, useRef } = React;
+
+// Force Lucide to render icons after each React commit
+function LucideRefresher() {
+  useEffect(() => {
+    if (window.lucide && window.lucide.createIcons) {
+      window.lucide.createIcons();
+    }
+  });
+  return null;
+}
+
+// Wrap each screen so it auto-renders icons + sits inside a relative wrapper
+function Screen({ children }) {
+  useEffect(() => {
+    if (window.lucide && window.lucide.createIcons) {
+      window.lucide.createIcons();
+    }
+  });
+  return (
+    <div style={{ width: "100%", height: "100%", position: "relative", display: "flex", overflow: "hidden" }}>
+      {children}
+    </div>
+  );
+}
+
+function Cover() {
+  return (
+    <div className="cover">
+      <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#94a3b8" }}>
+        CNCPT Admin · Wireframe exploration
+      </span>
+      <h1 style={{ marginTop: 14 }}>Re-envisioning the admin dashboard</h1>
+      <p className="lead">
+        Based on your feedback, the <strong style={{ color: "#0f172a" }}>Hybrid</strong> direction is the recommended path — it pulls
+        the Refined Classic chrome, the Inbox sidebar, a persistent scrollable Activity rail, dense user rows with a
+        spacious filter bar, and a feedback section with both Inbox and Triage Board views. The three original
+        explorations are kept below for reference.
+      </p>
+      <div className="badge-row">
+        <span className="badge">Mid-fi</span>
+        <span className="badge">Sidebar layout</span>
+        <span className="badge">Super + tenant roles</span>
+        <span className="badge">Heavy feedback</span>
+      </div>
+
+      <div className="dir-grid">
+        <div className="dir-card">
+          <div className="label">Direction A</div>
+          <h3>Refined Classic</h3>
+          <p>The familiar sidebar+content, cleaned up. Grouped nav, attention queue on home, profile with permission tabs,
+            classic table with sticky bulk-action bar. Lowest learning curve.</p>
+        </div>
+        <div className="dir-card">
+          <div className="label">Direction B</div>
+          <h3>Inbox Workspace</h3>
+          <p>Linear-style. Home is an inbox of admin tasks; user detail is list+detail+activity rail; bulk action is a
+            right-pane composer; feedback is a triage kanban. Dense and keyboard-first.</p>
+        </div>
+        <div className="dir-card is-wild">
+          <div className="label">Direction C · Wild card</div>
+          <h3>Cockpit</h3>
+          <p>Dark, live mission control with an AI co-pilot strip, drag-drop permission buckets, cohort-builder bulk
+            actions with impact preview, and clustered feedback by topic.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  // Auto-render Lucide whenever a screen mounts
+  useEffect(() => {
+    if (window.lucide && window.lucide.createIcons) {
+      window.lucide.createIcons();
+      // Re-run after a beat in case any artboard mounts late
+      const id = setTimeout(() => window.lucide.createIcons(), 200);
+      return () => clearTimeout(id);
+    }
+  }, []);
+
+  const sections = [
+    {
+      id: "intro",
+      title: "Overview",
+      artboards: [
+        { id: "cover", label: "Three directions, four screens each", width: 1280, height: 760, content: <Cover /> },
+      ],
+    },
+    {
+      id: "dirH",
+      title: "★ Hybrid (recommended) · Classic chrome + Inbox sidebar + global Activity rail",
+      artboards: [
+        { id: "h1", label: "Home — Overview", width: 1600, height: 960, content: <Screen><DirH_Home /></Screen> },
+        { id: "h2", label: "Users — compact rows + spacious filters + bulk bar", width: 1600, height: 960, content: <Screen><DirH_Users /></Screen> },
+        { id: "h3", label: "User detail — Permissions tab", width: 1600, height: 960, content: <Screen><DirH_UserDetail /></Screen> },
+        { id: "h4a", label: "Feedback — Inbox view", width: 1600, height: 960, content: <Screen><DirH_Feedback /></Screen> },
+        { id: "h4b", label: "Feedback — Triage Board view", width: 1600, height: 960, content: <Screen><DirH_FeedbackBoard /></Screen> },
+      ],
+    },
+    {
+      id: "dirA",
+      title: "Direction A · Refined Classic (original)",
+      artboards: [
+        { id: "a1", label: "Home — Platform overview", width: 1440, height: 900, content: <Screen><DirA_Home /></Screen> },
+        { id: "a2", label: "User detail — Permissions tab", width: 1440, height: 900, content: <Screen><DirA_UserDetail /></Screen> },
+        { id: "a3", label: "Bulk action — selection bar", width: 1440, height: 900, content: <Screen><DirA_Bulk /></Screen> },
+        { id: "a4", label: "Feedback — list + detail", width: 1440, height: 900, content: <Screen><DirA_Feedback /></Screen> },
+      ],
+    },
+    {
+      id: "dirB",
+      title: "Direction B · Inbox Workspace (original)",
+      artboards: [
+        { id: "b1", label: "Home — Admin inbox", width: 1440, height: 900, content: <Screen><DirB_Home /></Screen> },
+        { id: "b2", label: "User detail — list + detail + activity", width: 1440, height: 900, content: <Screen><DirB_UserDetail /></Screen> },
+        { id: "b3", label: "Bulk action — composer pane", width: 1440, height: 900, content: <Screen><DirB_Bulk /></Screen> },
+        { id: "b4", label: "Feedback — triage kanban", width: 1440, height: 900, content: <Screen><DirB_Feedback /></Screen> },
+      ],
+    },
+    {
+      id: "dirC",
+      title: "Direction C · Cockpit (original wild card)",
+      artboards: [
+        { id: "c1", label: "Home — Mission control", width: 1440, height: 940, content: <Screen><DirC_Home /></Screen> },
+        { id: "c2", label: "User detail — drag-drop permissions", width: 1440, height: 940, content: <Screen><DirC_UserDetail /></Screen> },
+        { id: "c3", label: "Bulk — cohort builder + impact preview", width: 1440, height: 940, content: <Screen><DirC_Bulk /></Screen> },
+        { id: "c4", label: "Feedback — clusters + mass action", width: 1440, height: 940, content: <Screen><DirC_Feedback /></Screen> },
+      ],
+    },
+  ];
+
+  return (
+    <DesignCanvas title="CNCPT Admin · 3 directions × 4 screens" initialZoom={0.6}>
+      {sections.map((s) => (
+        <DCSection key={s.id} id={s.id} title={s.title}>
+          {s.artboards.map((a) => (
+            <DCArtboard key={a.id} id={a.id} label={a.label} width={a.width} height={a.height}>
+              {a.content}
+            </DCArtboard>
+          ))}
+        </DCSection>
+      ))}
+    </DesignCanvas>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
+
+</body>
+</html>
