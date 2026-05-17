@@ -180,6 +180,17 @@ interface EditorLoadState {
   readonly digitalAsset: AtlasDigitalAsset | null;
 }
 
+/** Shape returned by GET /api/cms/discounts for each discount code */
+interface DiscountApiRow {
+  readonly id: string;
+  readonly code: string;
+  readonly type: string;
+  readonly value: number;
+  readonly usageCount: number;
+  readonly description: string | null;
+  readonly enabled: boolean;
+}
+
 // ── Main Props ─────────────────────────────────────────────────────────────────
 
 export interface ProductEditorAtlasProps {
@@ -229,6 +240,10 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
   const [savedAt, setSavedAt] = React.useState<string>("");
   const [viewMode, setViewMode] = React.useState<VariantsViewMode>("list");
   // filters live inside SpreadsheetGrid — no top-level state needed
+
+  // ── Discount codes state ──────────────────────────────────────────────────────
+  const [discountCodes, setDiscountCodes] = React.useState<ReadonlyArray<AtlasDiscountCode>>([]);
+  const [discountsLoading, setDiscountsLoading] = React.useState(false);
 
   // ── Fetch product on mount ────────────────────────────────────────────────────
   React.useEffect(() => {
@@ -359,6 +374,49 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId, isNew, state.product?.id]);
 
+  // ── Fetch discount codes from /api/cms/discounts ─────────────────────────────
+  // Only fetch when the Pricing tab is active (lazy — avoid unnecessary requests).
+  // pricingTiers, memberPricing, saleSchedule remain empty until API plan G06 ships.
+  React.useEffect(() => {
+    if (activeTab !== "Pricing" || discountsLoading || discountCodes.length > 0) return;
+
+    let cancelled = false;
+    setDiscountsLoading(true);
+
+    const fetchDiscounts = async () => {
+      try {
+        const res = await fetch("/api/cms/discounts?limit=50&status=active", {
+          credentials: "same-origin",
+        });
+        if (!res.ok) return;
+        const data = await res.json() as { discounts?: DiscountApiRow[] };
+        if (cancelled) return;
+
+        const mapped: ReadonlyArray<AtlasDiscountCode> = (data.discounts ?? []).map(
+          (d): AtlasDiscountCode => ({
+            id: d.id,
+            code: d.code,
+            type: d.type,
+            value: d.value,
+            usageCount: d.usageCount,
+            description: d.description,
+            // schema has no stackable field — default false
+            stackable: false,
+          })
+        );
+        setDiscountCodes(mapped);
+      } catch {
+        // non-critical — discount section will show empty state
+      } finally {
+        if (!cancelled) setDiscountsLoading(false);
+      }
+    };
+
+    void fetchDiscounts();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
   // ── Save handler ──────────────────────────────────────────────────────────────
   const handleSave = React.useCallback(async () => {
     if (!state.product || !isDirty) return;
@@ -445,10 +503,11 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
   const tabLabels = tabs.map((t) => t.label);
   const safeActiveTab = tabLabels.includes(activeTab) ? activeTab : "Detail";
 
-  // ── Pricing mock data (read from product or use defaults) ─────────────────────
+  // ── Pricing static empty stubs (pricingTiers / memberPricing / saleSchedule) ──
+  // These remain empty until API plan G06 lands (ProductPricingTier / ProductSaleSchedule models).
+  // discountCodes is fetched from GET /api/cms/discounts — see state above.
   const pricingTiers: ReadonlyArray<AtlasPricingTier> = [];
   const memberPricing: ReadonlyArray<AtlasMemberPricing> = [];
-  const discountCodes: ReadonlyArray<AtlasDiscountCode> = [];
   const saleSchedule: AtlasSaleSchedule | null = null;
 
   // ── Bundle items (stored in product.bundleItems as JSON) ─────────────────────

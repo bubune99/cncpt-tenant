@@ -11,6 +11,8 @@
  * Grid is CSS-based (grid-template-columns: repeat(12, 1fr), grid-auto-rows: 84px).
  *
  * Props are immutable; updates are emitted via onLayoutChange.
+ * All chart data is received as props from the parent analytics page
+ * (fetched from /api/cms/analytics). No DEMO_DATA fallbacks.
  */
 
 import React, { useState, useRef, useCallback } from 'react';
@@ -25,6 +27,14 @@ import {
   addWidgetToLayout,
   ATLAS_WIDGET_REGISTRY,
 } from '@/lib/cms/dashboard/atlas-widgets';
+import type {
+  TimeSeriesPoint,
+  ChannelDataPoint,
+  TopProductRow,
+  FunnelStep,
+  ActivityItem,
+  AlertItem,
+} from './widgets';
 import {
   KpiWidget,
   RevenueWidget,
@@ -36,7 +46,6 @@ import {
   HeatmapWidget,
   OrdersBarWidget,
 } from './widgets';
-import { DEMO_DATA } from '@/lib/cms/analytics/demo-data';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -47,40 +56,74 @@ function hCls(h: number): string {
   return `at-h-${Math.min(h, 5)}`;
 }
 
+// ─── Analytics data bag passed into the grid ──────────────────────────────────
+
+export interface AnalyticsData {
+  readonly timeSeries: readonly TimeSeriesPoint[] | null;
+  readonly channels: readonly ChannelDataPoint[] | null;
+  readonly topProducts: readonly TopProductRow[] | null;
+  readonly funnel: readonly FunnelStep[] | null;
+  readonly activity: readonly ActivityItem[] | null;
+  readonly alerts: readonly AlertItem[] | null;
+  /** Derived: revenue scalar for KPI (sum of timeSeries revenue) */
+  readonly totalRevenue: number | null;
+}
+
 // ─── Widget content router ────────────────────────────────────────────────────
 
-function WidgetContent({ kind }: { kind: AtlasWidgetKind }) {
+function WidgetContent({ kind, data }: { kind: AtlasWidgetKind; data: AnalyticsData }) {
+  // Derive KPI sparkline from timeSeries
+  const sparkData: readonly number[] | null = data.timeSeries
+    ? data.timeSeries.map((p) => p.revenue)
+    : null;
+
+  const totalRevenue = data.totalRevenue;
+  const revenueDisplay = totalRevenue !== null
+    ? `$${(totalRevenue / 100).toLocaleString()}`
+    : '—';
+
   switch (kind) {
     case 'KPI':
       return (
         <KpiWidget
           title="Revenue · 30d"
-          value="$28,940"
-          delta="24.0%"
-          sparkData={DEMO_DATA.revenue30}
+          value={revenueDisplay}
+          delta="—"
+          sparkData={sparkData}
           sparkColor="var(--at-accent)"
-          ctx="$0.96k/d"
+          ctx={totalRevenue !== null && data.timeSeries && data.timeSeries.length > 0
+            ? `$${((totalRevenue / 100) / data.timeSeries.length).toFixed(0)}/d`
+            : undefined}
         />
       );
     case 'LINE':
     case 'AREA':
-      return <RevenueWidget />;
+      return <RevenueWidget timeSeries={data.timeSeries} />;
     case 'BAR':
-      return <OrdersBarWidget />;
+      return <OrdersBarWidget timeSeries={data.timeSeries} />;
     case 'DONUT':
-      return <ChannelsWidget />;
+      return <ChannelsWidget channels={data.channels} />;
     case 'TABLE':
-      return <TopProductsWidget />;
+      return <TopProductsWidget topProducts={data.topProducts} />;
     case 'FUNNEL':
-      return <FunnelWidget />;
+      return <FunnelWidget funnel={data.funnel} />;
     case 'FEED':
-      return <AlertsWidget />;
+      return <AlertsWidget alerts={data.alerts} />;
     case 'HEAT':
       return <HeatmapWidget />;
     case 'MAP':
-      return <ActivityWidget />;
+      return <ActivityWidget activity={data.activity} />;
     default:
-      return <div style={{ padding: 8, color: 'var(--at-ink-soft)', fontFamily: 'var(--font-geist-mono, monospace)', fontSize: 11 }}>Widget</div>;
+      return (
+        <div style={{
+          padding: 8,
+          color: 'var(--at-ink-soft)',
+          fontFamily: 'var(--font-geist-mono, monospace)',
+          fontSize: 11,
+        }}>
+          Widget
+        </div>
+      );
   }
 }
 
@@ -92,6 +135,7 @@ export interface WidgetGridProps {
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   onLayoutChange: (layout: AtlasDashboardLayout) => void;
+  analyticsData: AnalyticsData;
 }
 
 interface DragState {
@@ -102,7 +146,14 @@ interface DragState {
 
 // ─── WidgetGrid ───────────────────────────────────────────────────────────────
 
-export function WidgetGrid({ layout, editing, selectedId, onSelect, onLayoutChange }: WidgetGridProps) {
+export function WidgetGrid({
+  layout,
+  editing,
+  selectedId,
+  onSelect,
+  onLayoutChange,
+  analyticsData,
+}: WidgetGridProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState<DragState | null>(null);
 
@@ -211,7 +262,7 @@ export function WidgetGrid({ layout, editing, selectedId, onSelect, onLayoutChan
               </span>
             )}
 
-            <WidgetContent kind={widget.kind} />
+            <WidgetContent kind={widget.kind} data={analyticsData} />
 
             {editing && isSelected && (
               <>
