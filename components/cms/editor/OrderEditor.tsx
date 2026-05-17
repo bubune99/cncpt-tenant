@@ -479,6 +479,9 @@ export function OrderEditor({
   const allDone = doneCount === totalCount;
 
   const handleStepToggle = useCallback((itemId: string, stepId: string) => {
+    // Capture pre-toggle snapshot for revert on failure
+    const snapshot = order;
+
     // Optimistic update
     setOrder((prev) => ({
       ...prev,
@@ -497,9 +500,14 @@ export function OrderEditor({
     }));
 
     startTransition(async () => {
-      await onStepToggle(itemId, stepId);
+      try {
+        await onStepToggle(itemId, stepId);
+      } catch {
+        // Revert to pre-toggle snapshot on failure
+        setOrder(snapshot);
+      }
     });
-  }, [onStepToggle]);
+  }, [onStepToggle, order]);
 
   const handleAddNote = () => {
     if (!newNote.trim() || !onNoteAdd) return;
