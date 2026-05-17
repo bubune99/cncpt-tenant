@@ -1,33 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+/**
+ * Admin pages list — Atlas editorial style
+ * Faithful port of atlas-v2-pages.jsx Pages() / PagesTable() / PagesMap()
+ *
+ * Preserves all existing data wiring:
+ *  - fetch /api/cms/admin/pages with searchTerm
+ *  - handleDelete via /api/cms/admin/pages/[id] DELETE
+ *  - handleDuplicate via /api/cms/admin/pages POST
+ *  - AlertDialog delete confirmation (shadcn)
+ *  - SystemPagesSection component
+ *  - useCMSConfig buildPath
+ */
+
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/cms/ui/button';
 import { useCMSConfig } from '@/contexts/CMSConfigContext';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/cms/ui/card';
-import { Badge } from '@/components/cms/ui/badge';
-import { Input } from '@/components/cms/ui/input';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/cms/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/cms/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,101 +26,309 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/cms/ui/alert-dialog';
-import {
-  Plus,
-  Search,
-  MoreVertical,
-  Eye,
-  Pencil,
-  Trash2,
-  Copy,
-  ExternalLink,
-  FileText,
-  Home,
-  Layers,
-  Globe,
-  Loader2,
-  RefreshCw,
-  PanelTop,
-  PanelBottom,
-  Bell,
-  Layout,
-} from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { SystemPagesSection } from './_components/system-pages-section';
+
+// ─────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────
 
 interface Page {
-  id: string;
-  title: string;
-  slug: string;
-  status: 'published' | 'draft' | 'archived';
-  hasContent: boolean;
-  parentId: string | null;
-  parent: { id: string; title: string; slug: string } | null;
-  childCount: number;
-  updatedAt: string;
-  createdAt: string;
+  readonly id: string;
+  readonly title: string;
+  readonly slug: string;
+  readonly status: 'published' | 'draft' | 'archived';
+  readonly hasContent: boolean;
+  readonly parentId: string | null;
+  readonly parent: { readonly id: string; readonly title: string; readonly slug: string } | null;
+  readonly childCount: number;
+  readonly updatedAt: string;
+  readonly createdAt: string;
 }
+
+type ViewMode = 'table' | 'map';
+type TabFilter = 'all' | 'published' | 'drafts' | 'archived';
+
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+
+function statusPillClass(status: Page['status']): string {
+  switch (status) {
+    case 'published': return 'pill-solid-ink';
+    case 'draft':     return 'pill-out-accent';
+    case 'archived':  return 'pill-out';
+  }
+}
+
+function statusLabel(status: Page['status']): string {
+  return status.toUpperCase();
+}
+
+function formatEdited(dateString: string): string {
+  const d = new Date(dateString);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// ─────────────────────────────────────────────
+// Sub-components
+// ─────────────────────────────────────────────
+
+interface PagesTableProps {
+  readonly pages: readonly Page[];
+  readonly buildPath: (path: string) => string;
+  readonly onDuplicate: (page: Page) => void;
+  readonly onDeleteRequest: (page: Page) => void;
+}
+
+function PagesTable({ pages, buildPath, onDuplicate, onDeleteRequest }: PagesTableProps) {
+  return (
+    <>
+      <table className="tbl" style={{ marginTop: 0 }}>
+        <thead>
+          <tr>
+            <th className="check"><input type="checkbox" aria-label="Select all" /></th>
+            <th>Title</th>
+            <th>Slug</th>
+            <th style={{ width: 80 }}>Type</th>
+            <th className="sort" style={{ width: 80 }}>Edited</th>
+            <th style={{ width: 100 }}>Status</th>
+            <th style={{ width: 120 }}>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {pages.map((p) => (
+            <tr key={p.id}>
+              <td className="check"><input type="checkbox" aria-label={`Select ${p.title}`} /></td>
+              <td className="name">
+                <Link href={buildPath(`/admin/pages/${p.id}`)} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  {p.title}
+                </Link>
+              </td>
+              <td>
+                <span className="mono" style={{ fontSize: 12, color: 'var(--ink-soft)' }}>{p.slug}</span>
+              </td>
+              <td>
+                <span className="fig" style={{ fontSize: 12 }}>
+                  {p.parentId ? 'Page' : p.slug === '/' ? 'Landing' : 'Page'}
+                </span>
+              </td>
+              <td><span className="meta">{formatEdited(p.updatedAt)}</span></td>
+              <td><span className={`pill ${statusPillClass(p.status)}`}>{statusLabel(p.status)}</span></td>
+              <td>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <Link href={buildPath(`/admin/pages/${p.id}`)} className="btn" style={{ fontSize: 10, padding: '2px 8px' }}>
+                    Edit
+                  </Link>
+                  <button
+                    className="btn"
+                    style={{ fontSize: 10, padding: '2px 8px' }}
+                    onClick={() => onDuplicate(p)}
+                    type="button"
+                  >
+                    Dup
+                  </button>
+                  <button
+                    className="btn"
+                    style={{ fontSize: 10, padding: '2px 8px', color: 'var(--accent)' }}
+                    onClick={() => onDeleteRequest(p)}
+                    type="button"
+                  >
+                    Del
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {/* Action bar */}
+      <div className="action-bar">
+        <span className="selct">Pages</span>
+        <span><span className="kbd">↑↓</span>move</span>
+        <span><span className="kbd">E</span>edit</span>
+        <span><span className="kbd">D</span>duplicate</span>
+        <span><span className="kbd">X</span>archive</span>
+        <span><span className="kbd">P</span>preview</span>
+      </div>
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────
+
+interface PageMapGroup {
+  readonly ch: string;
+  readonly title: string;
+  readonly pages: readonly Page[];
+}
+
+function buildMapGroups(pages: readonly Page[]): readonly PageMapGroup[] {
+  // Group: parent pages form chapter headers, children fall under them
+  const roots = pages.filter(p => !p.parentId);
+  const children = pages.filter(p => p.parentId);
+
+  // Simple grouping: each root page is a chapter with its children
+  if (roots.length === 0) {
+    return [{ ch: 'I', title: 'All Pages', pages }];
+  }
+
+  const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
+  return roots.map((root, idx) => {
+    const rootChildren = children.filter(c => c.parentId === root.id);
+    return {
+      ch: romanNumerals[idx] ?? String(idx + 1),
+      title: root.title,
+      pages: [root, ...rootChildren],
+    };
+  });
+}
+
+interface PagesMapProps {
+  readonly pages: readonly Page[];
+  readonly buildPath: (path: string) => string;
+}
+
+function PagesMap({ pages, buildPath }: PagesMapProps) {
+  const groups = buildMapGroups(pages);
+
+  return (
+    <>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 36, rowGap: 0 }}>
+        {groups.map((c) => (
+          <div key={c.ch} style={{ marginBottom: 18 }}>
+            {/* Chapter header */}
+            <div style={{
+              display: 'flex', alignItems: 'baseline', gap: 10,
+              paddingBottom: 6, borderBottom: '1px solid var(--ink)',
+            }}>
+              <span className="display accent" style={{ fontSize: 28, lineHeight: 1 }}>{c.ch}</span>
+              <span className="display" style={{ fontSize: 22, lineHeight: 1 }}>{c.title}</span>
+              <span className="fig" style={{ fontSize: 13 }}>· {c.pages.length} pages</span>
+            </div>
+
+            {/* Page rows */}
+            {c.pages.map((p, idx) => {
+              const isChild = idx > 0; // first is root, rest are children
+              return (
+                <div
+                  key={p.id}
+                  style={{
+                    display: 'grid', gridTemplateColumns: '1fr 88px',
+                    alignItems: 'baseline', gap: 8,
+                    padding: '8px 0', borderBottom: '1px solid var(--rule-soft)',
+                  }}
+                >
+                  <div style={{ minWidth: 0, display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                    {isChild && (
+                      <span style={{
+                        color: 'var(--ink-faint)',
+                        fontFamily: 'var(--font-geist-mono), monospace',
+                        fontSize: 12,
+                      }}>
+                        └─
+                      </span>
+                    )}
+                    <span style={{ marginLeft: isChild ? 2 : 0 }}>
+                      <Link
+                        href={buildPath(`/admin/pages/${p.id}`)}
+                        style={{
+                          textDecoration: 'none', color: 'inherit',
+                          fontSize: 14, fontWeight: isChild ? 400 : 500,
+                        }}
+                      >
+                        {p.title}
+                      </Link>
+                      {' '}
+                      <span className="mono" style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{p.slug}</span>
+                    </span>
+                    <span className="meta" style={{ marginLeft: 'auto', whiteSpace: 'nowrap', paddingLeft: 8 }}>
+                      {formatEdited(p.updatedAt)}
+                    </span>
+                  </div>
+                  <div style={{ justifySelf: 'end' }}>
+                    <span className={`pill ${statusPillClass(p.status)}`}>{statusLabel(p.status)}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+
+      {/* Action bar */}
+      <div className="action-bar">
+        <span className="selct">Map</span>
+        <span><span className="kbd">↑↓</span>move</span>
+        <span><span className="kbd">Enter</span>open</span>
+        <span><span className="kbd">N</span>new child</span>
+        <span><span className="kbd">G</span>regroup</span>
+      </div>
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Main page component
+// ─────────────────────────────────────────────
 
 export default function PagesPage() {
   const { buildPath } = useCMSConfig();
+
   const [pages, setPages] = useState<Page[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [view, setView] = useState<ViewMode>('table');
+  const [activeTab, setActiveTab] = useState<TabFilter>('all');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pageToDelete, setPageToDelete] = useState<Page | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const fetchPages = async () => {
+  // ── Data fetching ──
+
+  const fetchPages = useCallback(async () => {
     setIsLoading(true);
     try {
       const params = new URLSearchParams();
       if (searchTerm) params.set('search', searchTerm);
-
-      const response = await fetch(`/api/cms/admin/pages?${params.toString()}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch pages');
-      }
-      const data = await response.json();
-      setPages(data.pages || []);
-    } catch (error) {
-      console.error('Error fetching pages:', error);
+      const res = await fetch(`/api/cms/admin/pages?${params.toString()}`);
+      if (!res.ok) throw new Error('Failed to fetch pages');
+      const data = await res.json() as { pages?: Page[] };
+      setPages(data.pages ?? []);
+    } catch {
       toast.error('Failed to load pages');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchPages();
-  }, []);
-
-  // Debounced search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchPages();
-    }, 300);
-    return () => clearTimeout(timer);
   }, [searchTerm]);
+
+  useEffect(() => {
+    void fetchPages();
+  }, [fetchPages]);
+
+  // Debounced search re-fetch
+  useEffect(() => {
+    const timer = setTimeout(() => void fetchPages(), 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm, fetchPages]);
+
+  // ── Actions ──
 
   const handleDelete = async () => {
     if (!pageToDelete) return;
-
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/cms/admin/pages/${pageToDelete.id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to delete page');
+      const res = await fetch(`/api/cms/admin/pages/${pageToDelete.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json() as { error?: string };
+        throw new Error(data.error ?? 'Failed to delete page');
       }
-
       toast.success('Page deleted successfully');
-      fetchPages();
-    } catch (error) {
-      console.error('Error deleting page:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to delete page');
+      void fetchPages();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete page');
     } finally {
       setIsDeleting(false);
       setDeleteDialogOpen(false);
@@ -142,362 +338,166 @@ export default function PagesPage() {
 
   const handleDuplicate = async (page: Page) => {
     try {
-      const response = await fetch(`/api/cms/admin/pages`, {
+      const res = await fetch('/api/cms/admin/pages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: `${page.title} (Copy)`,
-          slug: `${page.slug}-copy`,
-          status: 'draft',
-        }),
+        body: JSON.stringify({ title: `${page.title} (Copy)`, slug: `${page.slug}-copy`, status: 'draft' }),
+      });
+      if (!res.ok) {
+        const data = await res.json() as { error?: string };
+        throw new Error(data.error ?? 'Failed to duplicate page');
+      }
+      toast.success('Page duplicated successfully');
+      void fetchPages();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to duplicate page');
+    }
+  };
+
+  const handleDeleteRequest = (page: Page) => {
+    setPageToDelete(page);
+    setDeleteDialogOpen(true);
+  };
+
+  // ── Derived counts ──
+
+  const counts = {
+    all:       pages.length,
+    published: pages.filter(p => p.status === 'published').length,
+    drafts:    pages.filter(p => p.status === 'draft').length,
+    archived:  pages.filter(p => p.status === 'archived').length,
+  };
+
+  const filteredPages = activeTab === 'all'
+    ? pages
+    : pages.filter(p => {
+        if (activeTab === 'published') return p.status === 'published';
+        if (activeTab === 'drafts')    return p.status === 'draft';
+        if (activeTab === 'archived')  return p.status === 'archived';
+        return true;
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to duplicate page');
-      }
+  // ── Tab items ──
 
-      toast.success('Page duplicated successfully');
-      fetchPages();
-    } catch (error) {
-      console.error('Error duplicating page:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to duplicate page');
-    }
-  };
-
-  const getStatusBadge = (status: Page['status']) => {
-    switch (status) {
-      case 'published':
-        return <Badge className="bg-green-500">Published</Badge>;
-      case 'draft':
-        return <Badge variant="secondary">Draft</Badge>;
-      case 'archived':
-        return <Badge variant="outline">Archived</Badge>;
-    }
-  };
-
-  const getPageIcon = (slug: string) => {
-    if (slug === '/') return <Home className="h-4 w-4 text-muted-foreground" />;
-    return <FileText className="h-4 w-4 text-muted-foreground" />;
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
-
-  const stats = {
-    total: pages.length,
-    published: pages.filter((p) => p.status === 'published').length,
-    draft: pages.filter((p) => p.status === 'draft').length,
-    withContent: pages.filter((p) => p.hasContent).length,
-  };
+  const tabItems: readonly [TabFilter, string, number][] = [
+    ['all',       'All',      counts.all],
+    ['published', 'Published',counts.published],
+    ['drafts',    'Drafts',   counts.drafts],
+    ['archived',  'Archived', counts.archived],
+  ];
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8" data-help-key="admin.pages.page">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-8">
+    <div data-tour-id="pages-page">
+
+      {/* Main head */}
+      <div className="main-head" data-tour-id="pages-heading">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Pages</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage your website pages and content
+          <div className="eyebrow">Pages</div>
+          <h1>The <span className="display-i accent">pages.</span></h1>
+          <div className="sub">
+            {isLoading
+              ? 'Loading pages…'
+              : `${counts.all} pages · ${counts.published} published · ${counts.drafts} draft${counts.drafts !== 1 ? 's' : ''} in flight`}
+          </div>
+        </div>
+        <div className="actions">
+          {/* View toggle */}
+          <span className="mono fig" style={{ fontSize: 11 }}>view:</span>
+          <button
+            className={'btn' + (view === 'table' ? ' btn-solid' : '')}
+            style={{ padding: '5px 10px', fontSize: 11 }}
+            onClick={() => setView('table')}
+            type="button"
+          >
+            Table
+          </button>
+          <button
+            className={'btn' + (view === 'map' ? ' btn-solid' : '')}
+            style={{ padding: '5px 10px', fontSize: 11 }}
+            onClick={() => setView('map')}
+            type="button"
+          >
+            Map
+          </button>
+
+          {/* Search input */}
+          <div style={{ position: 'relative' }}>
+            <input
+              type="search"
+              placeholder="Search…"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              style={{
+                height: 28, paddingLeft: 8, paddingRight: 8, fontSize: 12,
+                border: '1px solid var(--ink)', background: 'var(--paper)',
+                color: 'var(--ink)', fontFamily: 'inherit', outline: 'none',
+              }}
+              aria-label="Search pages"
+            />
+          </div>
+
+          <Link href={buildPath('/admin/pages/new')} className="btn btn-solid" data-tour-id="pages-create-button">
+            <span className="kbd">N</span>+ New page
+          </Link>
+        </div>
+      </div>
+
+      {/* System pages section — preserved from original */}
+      <div style={{ marginBottom: 16 }}>
+        <SystemPagesSection onChange={() => void fetchPages()} />
+      </div>
+
+      {/* Tabs — only shown in table view */}
+      {view === 'table' && (
+        <div className="tabs-row" style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--ink)', marginBottom: 0 }}>
+          {tabItems.map(([key, label, count]) => (
+            <button
+              key={key}
+              type="button"
+              className={activeTab === key ? 'tab on' : 'tab'}
+              onClick={() => setActiveTab(key)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px 14px 6px 0', fontSize: 12 }}
+            >
+              {label} <span className="ct">{count}</span>
+            </button>
+          ))}
+          <span style={{ marginLeft: 'auto', color: 'var(--ink-soft)', fontSize: 11, display: 'flex', alignItems: 'center', paddingBottom: 6 }}>
+            sort: edited ↓
+          </span>
+        </div>
+      )}
+
+      {/* Content */}
+      {isLoading ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 0', gap: 8 }}>
+          <Loader2 className="h-5 w-5 animate-spin" style={{ color: 'var(--ink-soft)' }} />
+          <span className="eyebrow">Loading…</span>
+        </div>
+      ) : filteredPages.length === 0 ? (
+        <div style={{ padding: '48px 0', textAlign: 'center' }}>
+          <div className="eyebrow" style={{ marginBottom: 8 }}>No pages</div>
+          <p className="fig" style={{ fontSize: 13, marginBottom: 16 }}>
+            {searchTerm ? `No pages match "${searchTerm}"` : 'Get started by creating your first page.'}
           </p>
+          <Link href={buildPath('/admin/pages/new')} className="btn btn-solid">
+            <span className="kbd">N</span>+ New page
+          </Link>
         </div>
-        <div className="flex gap-2" data-help-key="admin.pages.actions">
-          <Button variant="outline" onClick={fetchPages} disabled={isLoading} data-help-key="admin.pages.refresh">
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-          <Button asChild data-help-key="admin.pages.new">
-            <Link href={buildPath('/admin/pages/new')}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Page
-            </Link>
-          </Button>
-        </div>
-      </div>
+      ) : view === 'table' ? (
+        <PagesTable
+          pages={filteredPages}
+          buildPath={buildPath}
+          onDuplicate={handleDuplicate}
+          onDeleteRequest={handleDeleteRequest}
+        />
+      ) : (
+        <PagesMap
+          pages={filteredPages}
+          buildPath={buildPath}
+        />
+      )}
 
-      {/* Site Layout Section */}
-      <Card className="mb-8 border-primary/20 bg-gradient-to-r from-primary/5 to-transparent" data-help-key="admin.pages.layout">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Layout className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <CardTitle>Site Layout</CardTitle>
-                <CardDescription>
-                  Configure your global Header, Footer, and Announcement Bar
-                </CardDescription>
-              </div>
-            </div>
-            <Button asChild>
-              <Link href={buildPath('/admin/pages/layout')}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit Layout
-              </Link>
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 md:grid-cols-3">
-            <Link
-              href={buildPath('/admin/pages/layout/header')}
-              className="flex items-center gap-3 p-3 rounded-lg border hover:border-primary/50 hover:bg-accent transition-colors"
-            >
-              <PanelTop className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <div className="font-medium">Header</div>
-                <div className="text-xs text-muted-foreground">Navigation & branding</div>
-              </div>
-            </Link>
-            <Link
-              href={buildPath('/admin/pages/layout/footer')}
-              className="flex items-center gap-3 p-3 rounded-lg border hover:border-primary/50 hover:bg-accent transition-colors"
-            >
-              <PanelBottom className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <div className="font-medium">Footer</div>
-                <div className="text-xs text-muted-foreground">Links & social media</div>
-              </div>
-            </Link>
-            <Link
-              href={buildPath('/admin/pages/layout/announcement')}
-              className="flex items-center gap-3 p-3 rounded-lg border hover:border-primary/50 hover:bg-accent transition-colors"
-            >
-              <Bell className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <div className="font-medium">Announcement Bar</div>
-                <div className="text-xs text-muted-foreground">Promotions & alerts</div>
-              </div>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4 mb-8" data-help-key="admin.pages.stats">
-        <Card data-help-key="admin.pages.stat.total">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Pages</CardTitle>
-            <Layers className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Published</CardTitle>
-            <Globe className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.published}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Drafts</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.draft}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">With Content</CardTitle>
-            <Layers className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.withContent}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Search and Filters */}
-      <div className="flex items-center gap-4 mb-6" data-help-key="admin.pages.filters">
-        <div className="relative flex-1 max-w-sm" data-help-key="admin.pages.search">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search pages..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-      </div>
-
-      {/* Pages Table */}
-      <Card data-help-key="admin.pages.table">
-        <CardHeader>
-          <CardTitle>All Pages</CardTitle>
-          <CardDescription>
-            A list of all pages on your website. Click to edit or manage.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : pages.length === 0 ? (
-            <div className="text-center py-8">
-              <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No pages yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Get started by creating your first page.
-              </p>
-              <Button asChild>
-                <Link href={buildPath('/admin/pages/new')}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Page
-                </Link>
-              </Button>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Page</TableHead>
-                  <TableHead>URL</TableHead>
-                  <TableHead>Content</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Last Updated</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pages.map((page) => (
-                  <TableRow key={page.id}>
-                    <TableCell>
-                      <Link
-                        href={buildPath(`/admin/pages/${page.id}`)}
-                        className="flex items-center gap-3 hover:text-primary transition-colors"
-                      >
-                        {getPageIcon(page.slug)}
-                        <span className="font-medium">{page.title}</span>
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      <code className="text-sm bg-muted px-2 py-1 rounded">
-                        {page.slug}
-                      </code>
-                    </TableCell>
-                    <TableCell>
-                      {page.hasContent ? (
-                        <Badge variant="outline" className="text-green-600">Has Content</Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-muted-foreground">Empty</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(page.status)}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatDate(page.updatedAt)}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link href={page.slug === '/' ? '/' : page.slug} target="_blank">
-                              <Eye className="mr-2 h-4 w-4" />
-                              Preview
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href={buildPath(`/admin/pages/${page.id}`)}>
-                              <Pencil className="mr-2 h-4 w-4" />
-                              Edit Settings
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href={buildPath(`/admin/pages/${page.id}/editor`)}>
-                              <Layers className="mr-2 h-4 w-4" />
-                              Visual Editor
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDuplicate(page)}>
-                            <Copy className="mr-2 h-4 w-4" />
-                            Duplicate
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href={page.slug === '/' ? '/' : page.slug} target="_blank">
-                              <ExternalLink className="mr-2 h-4 w-4" />
-                              View Live
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => {
-                              setPageToDelete(page);
-                              setDeleteDialogOpen(true);
-                            }}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Page Templates Info */}
-      <Card className="mt-8">
-        <CardHeader>
-          <CardTitle>Getting Started</CardTitle>
-          <CardDescription>
-            Create your first page using the visual editor
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="border rounded-lg p-4">
-              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mb-3">
-                <Plus className="h-5 w-5 text-blue-600" />
-              </div>
-              <h3 className="font-semibold">1. Create a Page</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Click &quot;New Page&quot; to create a page with title and URL
-              </p>
-            </div>
-            <div className="border rounded-lg p-4">
-              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center mb-3">
-                <Layers className="h-5 w-5 text-green-600" />
-              </div>
-              <h3 className="font-semibold">2. Design Your Page</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Use the visual editor to add components and design your page
-              </p>
-            </div>
-            <div className="border rounded-lg p-4">
-              <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center mb-3">
-                <Globe className="h-5 w-5 text-purple-600" />
-              </div>
-              <h3 className="font-semibold">3. Publish</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Set status to &quot;Published&quot; to make it live at /your-slug
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Delete Confirmation Dialog */}
+      {/* Delete confirmation dialog — shadcn preserved */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -509,14 +509,14 @@ export default function PagesPage() {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
+              onClick={() => void handleDelete()}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
+                  Deleting…
                 </>
               ) : (
                 'Delete'

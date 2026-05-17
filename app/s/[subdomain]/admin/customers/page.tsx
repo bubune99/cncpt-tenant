@@ -1,14 +1,21 @@
 'use client';
 
+/**
+ * Admin customers list — Atlas editorial style
+ * Faithful port of atlas-v2-pages.jsx Customers()
+ *
+ * Preserves all existing data wiring:
+ *  - fetch /api/cms/admin/customers with filters
+ *  - fetch /api/cms/admin/customers/stats
+ *  - fetch /api/cms/admin/customers/export
+ *  - POST /api/cms/admin/customers (create customer dialog)
+ *  - fetch /api/cms/admin/business-owners/v2
+ *  - useWizard tour integration
+ */
+
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useWizard } from '@/contexts/WizardContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/cms/ui/card';
-import { Button } from '@/components/cms/ui/button';
-import { Input } from '@/components/cms/ui/input';
-import { Badge } from '@/components/cms/ui/badge';
-import { Label } from '@/components/cms/ui/label';
-import { Checkbox } from '@/components/cms/ui/checkbox';
-import { toast as sonnerToast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -17,64 +24,115 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/cms/ui/dialog';
-import { 
-  Search, 
-  Filter,
-  Download,
-  MoreVertical,
-  User,
-  Activity,
-  Database,
-  Building2,
-  Mail,
-  AlertCircle,
-  CheckCircle,
-  XCircle
-} from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/cms/ui/dropdown-menu';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/cms/ui/select';
-import Link from 'next/link';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+
+// ─────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────
 
 interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  businessOwner: {
-    id: string;
-    businessName: string;
+  readonly id: string;
+  readonly name: string;
+  readonly email: string;
+  readonly businessOwner: {
+    readonly id: string;
+    readonly businessName: string;
   };
-  stackAuthUserId?: string;
-  accessLevel: string;
-  storageUsed: number;
-  storageLimit: number;
-  designCount: number;
-  lastActivityAt: string | null;
-  isActive: boolean;
-  createdAt: string;
+  readonly stackAuthUserId?: string;
+  readonly accessLevel: string;
+  readonly storageUsed: number;
+  readonly storageLimit: number;
+  readonly designCount: number;
+  readonly lastActivityAt: string | null;
+  readonly isActive: boolean;
+  readonly createdAt: string;
 }
 
 interface CustomerStats {
-  totalCustomers: number;
-  activeToday: number;
-  newThisMonth: number;
-  totalStorageUsed: number;
-  averageStoragePerCustomer: number;
+  readonly totalCustomers: number;
+  readonly activeToday: number;
+  readonly newThisMonth: number;
+  readonly totalStorageUsed: number;
+  readonly averageStoragePerCustomer: number;
 }
+
+interface BusinessOwner {
+  readonly id: string;
+  readonly name: string;
+}
+
+type TabFilter = 'all' | 'active' | 'inactive' | 'new';
+
+interface CreateFormData {
+  email: string;
+  name: string;
+  businessOwnerId: string;
+  accessLevel: string;
+  storageLimit: number | undefined;
+  sendInvitation: boolean;
+}
+
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+
+function initials(name: string): string {
+  return name
+    .split(' ')
+    .map(w => w[0] ?? '')
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+}
+
+/** Deterministic colour from string — cycles through atlas-friendly palette */
+const AVATAR_PALETTE = [
+  '#e7a23b', '#3a4a8b', '#c8443a', '#4f5e3a',
+  '#88857a', '#8b2c1f', '#1a1410', '#3a6b8b',
+] as const;
+
+function avatarColor(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash * 31 + str.charCodeAt(i)) | 0;
+  }
+  return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length] ?? '#88857a';
+}
+
+function tierPill(accessLevel: string): { label: string; cls: string } {
+  switch (accessLevel.toLowerCase()) {
+    case 'premium':  return { label: 'VIP',   cls: 'pill-solid-gold' };
+    case 'standard': return { label: 'REG',   cls: 'pill-out' };
+    case 'basic':    return { label: 'NEW',   cls: 'pill-out' };
+    default:         return { label: accessLevel.toUpperCase().slice(0, 6), cls: 'pill-out' };
+  }
+}
+
+function formatLastSeen(ts: string | null): string {
+  if (!ts) return 'never';
+  const diff = Date.now() - new Date(ts).getTime();
+  const minutes = Math.floor(diff / 60_000);
+  if (minutes < 60)  return `${minutes}m ago`;
+  const hours = Math.floor(diff / 3_600_000);
+  if (hours < 24)    return `${hours}h ago`;
+  const days = Math.floor(diff / 86_400_000);
+  if (days === 1)    return 'yesterday';
+  if (days < 7)      return `${days}d ago`;
+  return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function formatSince(dateString: string): string {
+  return new Date(dateString).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+}
+
+// ─────────────────────────────────────────────
+// Component
+// ─────────────────────────────────────────────
 
 export default function CustomersPage() {
   const { startTour, isTourCompleted } = useWizard();
+
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [stats, setStats] = useState<CustomerStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -82,55 +140,46 @@ export default function CustomersPage() {
   const [businessOwnerFilter, setBusinessOwnerFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [accessLevelFilter, setAccessLevelFilter] = useState('all');
-  const [businessOwners, setBusinessOwners] = useState<Array<{id: string, name: string}>>([]);
-  
-  // Customer creation dialog state
+  const [businessOwners, setBusinessOwners] = useState<BusinessOwner[]>([]);
+  const [activeTab, setActiveTab] = useState<TabFilter>('all');
+
+  // Create customer dialog state
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [createFormData, setCreateFormData] = useState({
+  const [createFormData, setCreateFormData] = useState<CreateFormData>({
     email: '',
     name: '',
     businessOwnerId: '',
     accessLevel: 'standard',
-    storageLimit: undefined as number | undefined,
-    sendInvitation: false
+    storageLimit: undefined,
+    sendInvitation: false,
   });
 
-  // Initialize tour when page loads
+  // ── Tour ──
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!isTourCompleted('customers')) {
-        startTour('customers');
-      }
+      if (!isTourCompleted('customers')) startTour('customers');
     }, 1000);
-    
     return () => clearTimeout(timer);
   }, [startTour, isTourCompleted]);
 
+  // ── Data fetching ──
   useEffect(() => {
-    fetchCustomers();
-    fetchStats();
-    fetchAllBusinessOwners();
+    void fetchCustomers();
+    void fetchStats();
+    void fetchAllBusinessOwners();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [businessOwnerFilter, statusFilter, accessLevelFilter]);
-  
-  // Fetch all business owners for the create customer dialog
+
   const fetchAllBusinessOwners = async () => {
     try {
-      const response = await fetch('/api/cms/admin/business-owners/v2', {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': 'temp-dev-key'
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setBusinessOwners(data.businessOwners.map((owner: any) => ({
-          id: owner.id,
-          name: owner.businessName
-        })));
+      const res = await fetch('/api/cms/admin/business-owners/v2');
+      if (res.ok) {
+        const data = await res.json() as { businessOwners: Array<{ id: string; businessName: string }> };
+        setBusinessOwners(data.businessOwners.map(o => ({ id: o.id, name: o.businessName })));
       }
-    } catch (error) {
-      console.error('Failed to fetch business owners:', error);
+    } catch {
+      // non-admin — empty list is fine
     }
   };
 
@@ -140,100 +189,46 @@ export default function CustomersPage() {
       if (businessOwnerFilter !== 'all') params.append('businessOwnerId', businessOwnerFilter);
       if (statusFilter !== 'all') params.append('status', statusFilter);
       if (accessLevelFilter !== 'all') params.append('accessLevel', accessLevelFilter);
-
-      const response = await fetch(`/api/cms/admin/customers?${params}`);
-      if (response.ok) {
-        const data = await response.json();
+      const res = await fetch(`/api/cms/admin/customers?${params.toString()}`);
+      if (res.ok) {
+        const data = await res.json() as { customers: Customer[] };
         setCustomers(data.customers);
-        
-        // Extract unique business owners for filter if not already fetched
         if (businessOwners.length === 0) {
-          const ownerStrings = data.customers.map((c: Customer) => 
-            JSON.stringify({ id: c.businessOwner.id, name: c.businessOwner.businessName })
-          );
-          const uniqueOwnerStrings = Array.from(new Set(ownerStrings));
-          const uniqueOwners = uniqueOwnerStrings.map((str) => JSON.parse(str as string));
-          setBusinessOwners(uniqueOwners);
+          const seen = new Set<string>();
+          const unique: BusinessOwner[] = [];
+          for (const c of data.customers) {
+            if (!seen.has(c.businessOwner.id)) {
+              seen.add(c.businessOwner.id);
+              unique.push({ id: c.businessOwner.id, name: c.businessOwner.businessName });
+            }
+          }
+          setBusinessOwners(unique);
         }
       }
-    } catch (error) {
-      console.error('Failed to fetch customers:', error);
+    } catch {
+      // silence
     } finally {
       setLoading(false);
-    }
-  };
-  
-  // Handle customer creation
-  const handleCreateCustomer = async () => {
-    try {
-      setIsCreating(true);
-      
-      // Validate form
-      if (!createFormData.email) {
-        sonnerToast.error("Email is required");
-        return;
-      }
-      
-      if (!createFormData.businessOwnerId) {
-        sonnerToast.error("Business owner is required");
-        return;
-      }
-      
-      const response = await fetch('/api/cms/admin/customers', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(createFormData)
-      });
-      
-      const data = await response.json();
-      
-      if (response.ok && data.success) {
-        sonnerToast.success(`Customer ${createFormData.name || createFormData.email} created successfully`);
-        
-        // Reset form and close dialog
-        setCreateFormData({
-          email: '',
-          name: '',
-          businessOwnerId: '',
-          accessLevel: 'standard',
-          storageLimit: undefined,
-          sendInvitation: false
-        });
-        setIsCreateDialogOpen(false);
-        
-        // Refresh customer list
-        fetchCustomers();
-        fetchStats();
-      } else {
-        sonnerToast.error(data.error || "Failed to create customer");
-      }
-    } catch (error) {
-      console.error('Error creating customer:', error);
-      sonnerToast.error("An unexpected error occurred");
-    } finally {
-      setIsCreating(false);
     }
   };
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/cms/admin/customers/stats');
-      if (response.ok) {
-        const data = await response.json();
+      const res = await fetch('/api/cms/admin/customers/stats');
+      if (res.ok) {
+        const data = await res.json() as CustomerStats;
         setStats(data);
       }
-    } catch (error) {
-      console.error('Failed to fetch customer stats:', error);
+    } catch {
+      // silence
     }
   };
 
   const exportCustomers = async () => {
     try {
-      const response = await fetch('/api/cms/admin/customers/export');
-      if (response.ok) {
-        const blob = await response.blob();
+      const res = await fetch('/api/cms/admin/customers/export');
+      if (res.ok) {
+        const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -241,438 +236,341 @@ export default function CustomersPage() {
         a.click();
         window.URL.revokeObjectURL(url);
       }
-    } catch (error) {
-      console.error('Failed to export customers:', error);
+    } catch {
+      toast.error('Failed to export customers');
     }
   };
 
-  const formatBytes = (bytes: number) => {
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    if (bytes === 0) return '0 Bytes';
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
-  };
+  const handleCreateCustomer = async () => {
+    if (!createFormData.email) { toast.error('Email is required'); return; }
+    if (!createFormData.businessOwnerId) { toast.error('Business owner is required'); return; }
 
-  const getStorageUsageColor = (used: number, limit: number) => {
-    const percentage = (used / limit) * 100;
-    if (percentage >= 90) return 'text-red-600';
-    if (percentage >= 70) return 'text-yellow-600';
-    return 'text-green-600';
-  };
-
-  const getAccessLevelBadge = (level: string) => {
-    switch (level) {
-      case 'premium':
-        return <Badge className="bg-purple-600">Premium</Badge>;
-      case 'custom':
-        return <Badge variant="secondary">Custom</Badge>;
-      default:
-        return <Badge variant="outline">Standard</Badge>;
+    setIsCreating(true);
+    try {
+      const res = await fetch('/api/cms/admin/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(createFormData),
+      });
+      const data = await res.json() as { success?: boolean; error?: string };
+      if (res.ok && data.success) {
+        toast.success(`Customer ${createFormData.name || createFormData.email} created successfully`);
+        setCreateFormData({ email: '', name: '', businessOwnerId: '', accessLevel: 'standard', storageLimit: undefined, sendInvitation: false });
+        setIsCreateDialogOpen(false);
+        void fetchCustomers();
+        void fetchStats();
+      } else {
+        toast.error(data.error ?? 'Failed to create customer');
+      }
+    } catch {
+      toast.error('An unexpected error occurred');
+    } finally {
+      setIsCreating(false);
     }
   };
 
-  const getActivityStatus = (lastActivity: string | null) => {
-    if (!lastActivity) return { icon: XCircle, text: 'Never', color: 'text-gray-500' };
-    
-    const lastActivityDate = new Date(lastActivity);
-    const now = new Date();
-    const hoursDiff = (now.getTime() - lastActivityDate.getTime()) / (1000 * 60 * 60);
-    
-    if (hoursDiff < 24) {
-      return { icon: CheckCircle, text: 'Active today', color: 'text-green-600' };
-    } else if (hoursDiff < 168) { // 7 days
-      return { icon: Activity, text: `${Math.floor(hoursDiff / 24)}d ago`, color: 'text-blue-600' };
-    } else {
-      return { icon: AlertCircle, text: `${Math.floor(hoursDiff / 168)}w ago`, color: 'text-yellow-600' };
-    }
-  };
+  // ── Derived ──
 
-  const filteredCustomers = customers.filter(customer => {
-    const matchesSearch = 
-      customer.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.businessOwner.businessName.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    return matchesSearch;
+  const filtered = customers.filter(c => {
+    const matchTab =
+      activeTab === 'all'      ? true :
+      activeTab === 'active'   ? c.isActive :
+      activeTab === 'inactive' ? !c.isActive :
+      activeTab === 'new'      ? (Date.now() - new Date(c.createdAt).getTime()) < 7 * 86_400_000 :
+      true;
+
+    const matchSearch = !searchTerm ||
+      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.email.toLowerCase().includes(searchTerm.toLowerCase());
+
+    return matchTab && matchSearch;
   });
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  const tabCounts = {
+    all:      customers.length,
+    active:   customers.filter(c => c.isActive).length,
+    inactive: customers.filter(c => !c.isActive).length,
+    new:      customers.filter(c => (Date.now() - new Date(c.createdAt).getTime()) < 7 * 86_400_000).length,
+  };
+
+  const tabItems: readonly [TabFilter, string, number][] = [
+    ['all',      'All',      tabCounts.all],
+    ['active',   'Active',   tabCounts.active],
+    ['inactive', 'Inactive', tabCounts.inactive],
+    ['new',      'New 7d',   tabCounts.new],
+  ];
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6" data-help-key="admin.customers.page">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 customers-header">
+    <div data-tour-id="customers-page">
+
+      {/* Main head */}
+      <div className="main-head" data-tour-id="customers-heading">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Customers</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage all customers across the platform
-          </p>
+          <div className="eyebrow">People</div>
+          <h1>The <span className="display-i accent">roster.</span></h1>
+          <div className="sub">
+            {loading
+              ? 'Loading…'
+              : `${stats?.totalCustomers ?? customers.length} on the books · ${stats?.activeToday ?? 0} active today · ${stats?.newThisMonth ?? 0} new this month`}
+          </div>
         </div>
-        <div className="flex gap-2 customers-actions" data-help-key="admin.customers.actions">
-          <Button onClick={() => setIsCreateDialogOpen(true)} variant="default" data-help-key="admin.customers.create">
-            <User className="h-4 w-4 mr-2" />
-            Create Customer
-          </Button>
-          <Button onClick={exportCustomers} variant="outline" data-help-key="admin.customers.export">
-            <Download className="h-4 w-4 mr-2" />
-            Export CSV
-          </Button>
+        <div className="actions">
+          <div style={{ position: 'relative' }}>
+            <input
+              type="search"
+              placeholder="Search…"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              style={{
+                height: 28, paddingLeft: 8, paddingRight: 8, fontSize: 12,
+                border: '1px solid var(--ink)', background: 'var(--paper)',
+                color: 'var(--ink)', fontFamily: 'inherit', outline: 'none',
+              }}
+              aria-label="Search customers"
+            />
+          </div>
+          <button className="btn" onClick={() => void exportCustomers()} type="button">
+            <span className="kbd">E</span>Export
+          </button>
+          <button
+            className="btn btn-solid"
+            onClick={() => setIsCreateDialogOpen(true)}
+            type="button"
+            data-tour-id="customers-create-button"
+          >
+            <span className="kbd">S</span>+ Customer
+          </button>
         </div>
       </div>
-      
-      {/* Create Customer Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Create New Customer</DialogTitle>
-            <DialogDescription>
-              Create a new customer and assign them to a business owner
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="customer@example.com"
-                className="col-span-3"
-                value={createFormData.email}
-                onChange={(e) => setCreateFormData({...createFormData, email: e.target.value})}
-                required
-              />
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name
-              </Label>
-              <Input
-                id="name"
-                placeholder="John Doe"
-                className="col-span-3"
-                value={createFormData.name}
-                onChange={(e) => setCreateFormData({...createFormData, name: e.target.value})}
-              />
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="businessOwner" className="text-right">
-                Business
-              </Label>
-              <Select 
-                value={createFormData.businessOwnerId} 
-                onValueChange={(value) => setCreateFormData({...createFormData, businessOwnerId: value})}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select a business owner" />
-                </SelectTrigger>
-                <SelectContent>
-                  {businessOwners.map((owner) => (
-                    <SelectItem key={owner.id} value={owner.id}>
-                      {owner.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="accessLevel" className="text-right">
-                Access Level
-              </Label>
-              <Select 
-                value={createFormData.accessLevel} 
-                onValueChange={(value) => setCreateFormData({...createFormData, accessLevel: value})}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select access level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="standard">Standard</SelectItem>
-                  <SelectItem value="premium">Premium</SelectItem>
-                  <SelectItem value="custom">Custom</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="storageLimit" className="text-right">
-                Storage Limit (MB)
-              </Label>
-              <Input
-                id="storageLimit"
-                type="number"
-                placeholder="Leave empty for default"
-                className="col-span-3"
-                value={createFormData.storageLimit !== undefined ? String(createFormData.storageLimit / (1024 * 1024)) : ''}
-                onChange={(e) => {
-                  const value = e.target.value ? Number(e.target.value) * 1024 * 1024 : undefined;
-                  setCreateFormData({...createFormData, storageLimit: value});
-                }}
-              />
-              <div className="col-span-3 col-start-2 text-xs text-muted-foreground">
-                Leave empty to use default for selected access level
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <div className="col-span-3 col-start-2 flex items-center space-x-2">
-                <Checkbox 
-                  id="sendInvitation" 
-                  checked={createFormData.sendInvitation}
-                  onCheckedChange={(checked) => 
-                    setCreateFormData({...createFormData, sendInvitation: checked === true})
-                  }
-                />
-                <Label htmlFor="sendInvitation">Send welcome email to customer</Label>
-              </div>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateCustomer} disabled={isCreating}>
-              {isCreating ? 'Creating...' : 'Create Customer'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
-      {/* Stats Cards */}
-      {stats && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 customers-stats" data-help-key="admin.customers.stats">
-          <Card data-help-key="admin.customers.stat.total">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
-              <User className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalCustomers}</div>
-              <p className="text-xs text-muted-foreground">
-                Across all business owners
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card data-help-key="admin.customers.stat.active">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Today</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.activeToday}</div>
-              <p className="text-xs text-muted-foreground">
-                {((stats.activeToday / stats.totalCustomers) * 100).toFixed(1)}% of total
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card data-help-key="admin.customers.stat.new">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">New This Month</CardTitle>
-              <User className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.newThisMonth}</div>
-              <p className="text-xs text-muted-foreground">
-                Customer growth
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card data-help-key="admin.customers.stat.storage">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avg Storage</CardTitle>
-              <Database className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatBytes(stats.averageStoragePerCustomer)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Per customer
-              </p>
-            </CardContent>
-          </Card>
+      {/* Filter row — business owner + access level */}
+      {(businessOwners.length > 0 || accessLevelFilter !== 'all') && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+          {businessOwners.length > 1 && (
+            <select
+              value={businessOwnerFilter}
+              onChange={e => setBusinessOwnerFilter(e.target.value)}
+              style={{ fontSize: 11, padding: '3px 8px', border: '1px solid var(--rule)', background: 'var(--paper)', color: 'var(--ink)', fontFamily: 'inherit' }}
+              aria-label="Filter by business owner"
+            >
+              <option value="all">All owners</option>
+              {businessOwners.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+            </select>
+          )}
+          <select
+            value={accessLevelFilter}
+            onChange={e => setAccessLevelFilter(e.target.value)}
+            style={{ fontSize: 11, padding: '3px 8px', border: '1px solid var(--rule)', background: 'var(--paper)', color: 'var(--ink)', fontFamily: 'inherit' }}
+            aria-label="Filter by access level"
+          >
+            <option value="all">All levels</option>
+            <option value="premium">Premium</option>
+            <option value="standard">Standard</option>
+            <option value="basic">Basic</option>
+          </select>
         </div>
       )}
 
-      {/* Filters */}
-      <Card data-help-key="admin.customers.filters">
-        <CardContent className="p-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center customers-filters">
-            <div className="relative flex-1" data-help-key="admin.customers.search">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name, email, or business..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            
-            <div className="flex gap-2">
-              <Select value={businessOwnerFilter} onValueChange={setBusinessOwnerFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <Building2 className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Business Owner" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Businesses</SelectItem>
-                  {businessOwners.map(owner => (
-                    <SelectItem key={owner.id} value={owner.id}>
-                      {owner.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--ink)', marginBottom: 0 }}>
+        {tabItems.map(([key, label, count]) => (
+          <button
+            key={key}
+            type="button"
+            className={activeTab === key ? 'tab on' : 'tab'}
+            onClick={() => setActiveTab(key)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px 14px 6px 0', fontSize: 12 }}
+          >
+            {label} <span className="ct">{count}</span>
+          </button>
+        ))}
+        <span style={{ marginLeft: 'auto', color: 'var(--ink-soft)', fontSize: 11, display: 'flex', alignItems: 'center', paddingBottom: 6 }}>
+          sort: LTV ↓
+        </span>
+      </div>
 
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={accessLevelFilter} onValueChange={setAccessLevelFilter}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Access Level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="standard">Standard</SelectItem>
-                  <SelectItem value="premium">Premium</SelectItem>
-                  <SelectItem value="custom">Custom</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Customer List */}
-      <Card data-help-key="admin.customers.list">
-        <CardHeader>
-          <CardTitle>All Customers</CardTitle>
-          <CardDescription>
-            {filteredCustomers.length} customer{filteredCustomers.length !== 1 ? 's' : ''}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4 customers-list" data-help-key="admin.customers.table">
-            {filteredCustomers.map((customer) => {
-              const activityStatus = getActivityStatus(customer.lastActivityAt);
-              const ActivityIcon = activityStatus.icon;
-              
+      {/* Table */}
+      {loading ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 0', gap: 8 }}>
+          <Loader2 className="h-5 w-5 animate-spin" style={{ color: 'var(--ink-soft)' }} />
+          <span className="eyebrow">Loading…</span>
+        </div>
+      ) : (
+        <table className="tbl" style={{ marginTop: 0 }}>
+          <thead>
+            <tr>
+              <th className="check"><input type="checkbox" aria-label="Select all" /></th>
+              <th style={{ width: 30 }}></th>
+              <th>Customer</th>
+              <th style={{ width: 160 }}>Tenant</th>
+              <th className="num sort" style={{ width: 70 }}>Designs</th>
+              <th style={{ width: 100 }}>Last seen</th>
+              <th style={{ width: 90 }}>Since</th>
+              <th style={{ width: 80 }}>Tier</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map(c => {
+              const { label: tierLabel, cls: tierCls } = tierPill(c.accessLevel);
+              const color = avatarColor(c.id);
+              const init = initials(c.name || c.email);
               return (
-                <div key={customer.id} className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold">
-                              {customer.name || customer.email}
-                            </h3>
-                            <Badge variant={customer.isActive ? "default" : "secondary"}>
-                              {customer.isActive ? 'Active' : 'Inactive'}
-                            </Badge>
-                            {getAccessLevelBadge(customer.accessLevel)}
-                          </div>
-                          <p className="text-sm text-muted-foreground">{customer.email}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-6 mt-3 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Building2 className="h-4 w-4" />
-                          {customer.businessOwner.businessName}
-                        </div>
-                        <div className={`flex items-center gap-1 ${activityStatus.color}`}>
-                          <ActivityIcon className="h-4 w-4" />
-                          {activityStatus.text}
-                        </div>
-                        <div className={`flex items-center gap-1 ${getStorageUsageColor(customer.storageUsed, customer.storageLimit)}`}>
-                          <Database className="h-4 w-4" />
-                          {formatBytes(customer.storageUsed)} / {formatBytes(customer.storageLimit)}
-                        </div>
-                        <div>
-                          {customer.designCount} designs
-                        </div>
-                      </div>
-                    </div>
-
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                          <Link href={`/admin/customers/${customer.id}`}>
-                            <User className="h-4 w-4 mr-2" />
-                            View Details
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Mail className="h-4 w-4 mr-2" />
-                          Send Email
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                          <Database className="h-4 w-4 mr-2" />
-                          Adjust Storage
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
-                          {customer.isActive ? 'Deactivate' : 'Activate'} Account
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
+                <tr key={c.id}>
+                  <td className="check"><input type="checkbox" aria-label={`Select ${c.name || c.email}`} /></td>
+                  <td>
+                    <span style={{
+                      display: 'inline-flex', width: 28, height: 28,
+                      background: color, color: 'var(--paper)',
+                      alignItems: 'center', justifyContent: 'center',
+                      fontFamily: 'var(--font-display), Spectral, serif',
+                      fontSize: 12, fontWeight: 500,
+                      borderRadius: '50%', border: '1px solid var(--ink)',
+                      flexShrink: 0,
+                    }}>
+                      {init}
+                    </span>
+                  </td>
+                  <td>
+                    <Link
+                      href={`/admin/customers/${c.id}`}
+                      style={{ textDecoration: 'none', color: 'inherit' }}
+                    >
+                      <div className="name">{c.name || '—'}</div>
+                      <div className="mono" style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{c.email}</div>
+                    </Link>
+                  </td>
+                  <td>
+                    <span className="fig" style={{ fontSize: 12 }}>
+                      {c.businessOwner.businessName}
+                    </span>
+                  </td>
+                  <td className="num">{c.designCount}</td>
+                  <td><span className="meta">{formatLastSeen(c.lastActivityAt)}</span></td>
+                  <td><span className="meta">{formatSince(c.createdAt)}</span></td>
+                  <td>
+                    <span className={`pill ${tierCls}`}>{tierLabel}</span>
+                  </td>
+                </tr>
               );
             })}
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={8} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--ink-soft)', fontSize: 13 }}>
+                  {searchTerm ? `No customers match "${searchTerm}"` : 'No customers found'}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      )}
 
-            {filteredCustomers.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                No customers found
+      {/* Action bar */}
+      <div className="action-bar">
+        <span className="selct">Customers</span>
+        <span><span className="kbd">↑↓</span>move</span>
+        <span><span className="kbd">Enter</span>open</span>
+        <span><span className="kbd">M</span>message</span>
+        <span><span className="kbd">T</span>tag</span>
+        <span><span className="kbd">E</span>export</span>
+      </div>
+
+      {/* Create customer dialog — shadcn preserved */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>New Customer</DialogTitle>
+            <DialogDescription>
+              Create a customer account. An invitation email can be sent automatically.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div>
+              <label htmlFor="customer-email" style={{ fontSize: 12, fontWeight: 500, display: 'block', marginBottom: 4 }}>
+                Email *
+              </label>
+              <input
+                id="customer-email"
+                type="email"
+                value={createFormData.email}
+                onChange={e => setCreateFormData(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="customer@example.com"
+                style={{ width: '100%', padding: '6px 8px', fontSize: 13, border: '1px solid var(--rule)', background: 'var(--paper)', color: 'var(--ink)', fontFamily: 'inherit' }}
+              />
+            </div>
+            <div>
+              <label htmlFor="customer-name" style={{ fontSize: 12, fontWeight: 500, display: 'block', marginBottom: 4 }}>
+                Name
+              </label>
+              <input
+                id="customer-name"
+                type="text"
+                value={createFormData.name}
+                onChange={e => setCreateFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Full name"
+                style={{ width: '100%', padding: '6px 8px', fontSize: 13, border: '1px solid var(--rule)', background: 'var(--paper)', color: 'var(--ink)', fontFamily: 'inherit' }}
+              />
+            </div>
+            {businessOwners.length > 0 && (
+              <div>
+                <label htmlFor="customer-owner" style={{ fontSize: 12, fontWeight: 500, display: 'block', marginBottom: 4 }}>
+                  Business Owner *
+                </label>
+                <select
+                  id="customer-owner"
+                  value={createFormData.businessOwnerId}
+                  onChange={e => setCreateFormData(prev => ({ ...prev, businessOwnerId: e.target.value }))}
+                  style={{ width: '100%', padding: '6px 8px', fontSize: 13, border: '1px solid var(--rule)', background: 'var(--paper)', color: 'var(--ink)', fontFamily: 'inherit' }}
+                >
+                  <option value="">Select owner…</option>
+                  {businessOwners.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                </select>
               </div>
             )}
+            <div>
+              <label htmlFor="customer-level" style={{ fontSize: 12, fontWeight: 500, display: 'block', marginBottom: 4 }}>
+                Access Level
+              </label>
+              <select
+                id="customer-level"
+                value={createFormData.accessLevel}
+                onChange={e => setCreateFormData(prev => ({ ...prev, accessLevel: e.target.value }))}
+                style={{ width: '100%', padding: '6px 8px', fontSize: 13, border: '1px solid var(--rule)', background: 'var(--paper)', color: 'var(--ink)', fontFamily: 'inherit' }}
+              >
+                <option value="standard">Standard</option>
+                <option value="premium">Premium</option>
+                <option value="basic">Basic</option>
+              </select>
+            </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={createFormData.sendInvitation}
+                onChange={e => setCreateFormData(prev => ({ ...prev, sendInvitation: e.target.checked }))}
+              />
+              Send invitation email
+            </label>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Help Button */}
-      <div className="fixed bottom-6 right-6">
-        <Button 
-          onClick={() => startTour('customers')} 
-          variant="outline" 
-          size="sm" 
-          className="rounded-full h-12 w-12 flex items-center justify-center shadow-md hover:shadow-lg transition-shadow"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-help-circle">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-            <path d="M12 17h.01"/>
-          </svg>
-        </Button>
-      </div>
+          <DialogFooter>
+            <button className="btn" onClick={() => setIsCreateDialogOpen(false)} type="button">
+              Cancel
+            </button>
+            <button
+              className="btn btn-solid"
+              onClick={() => void handleCreateCustomer()}
+              disabled={isCreating}
+              type="button"
+            >
+              {isCreating ? (
+                <><Loader2 className="h-4 w-4 animate-spin" style={{ marginRight: 6 }} />Creating…</>
+              ) : (
+                'Create Customer'
+              )}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
