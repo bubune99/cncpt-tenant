@@ -15,12 +15,13 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useParams } from 'next/navigation';
+import useSWR from 'swr';
 import { useAuth } from '@/hooks/use-auth';
 import { WizardProvider } from '@/contexts/WizardContext';
 import { CMSConfigProvider, type CMSConfig, type ModuleNavGroupData } from '@/contexts/CMSConfigContext';
 import { HelpProvider } from '@/components/cms/help-system';
 import { AdminChat } from '@/components/cms/admin-chat';
-import { NotifDrawerAdmin, ADMIN_NOTIFS } from '@/components/cms/admin/NotifDrawerAdmin';
+import { NotifDrawerAdmin } from '@/components/cms/admin/NotifDrawerAdmin';
 
 // ─────────────────────────────────────────────
 // Types
@@ -61,6 +62,23 @@ const EXTRA_NAV_ITEMS: ReadonlyArray<{ key: string; href: string }> = [
   { key: 'modules',  href: '/admin/modules' },
   { key: 'shipping', href: '/admin/shipping' },
 ] as const;
+
+// ─────────────────────────────────────────────
+// SWR fetcher
+// ─────────────────────────────────────────────
+
+const UNREAD_URL = '/api/cms/notifications/unread-counts';
+
+interface UnreadCountsResponse {
+  readonly counts: Readonly<Record<string, number>>;
+  readonly total: number;
+}
+
+async function unreadFetcher(url: string): Promise<UnreadCountsResponse> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json() as Promise<UnreadCountsResponse>;
+}
 
 // ─────────────────────────────────────────────
 // Helpers
@@ -110,6 +128,13 @@ export function AdminShell({
     hiddenItems = [],
   } = config;
 
+  // Real unread count from API — refreshes every 60 s while shell is mounted
+  const { data: unreadData } = useSWR<UnreadCountsResponse>(
+    (user != null || isDemo) ? UNREAD_URL : null,
+    unreadFetcher,
+    { refreshInterval: 60000 }
+  );
+
   const normalizePath = (p: string | null): string => {
     if (!p) return '';
     if (basePath && p.startsWith(basePath)) return p.slice(basePath.length) || '/';
@@ -118,7 +143,7 @@ export function AdminShell({
 
   const normalizedPath = normalizePath(pathname);
   const activeSection  = sectionFromPath(normalizedPath);
-  const unreadCount    = ADMIN_NOTIFS.filter(n => n.state === 'unread').length;
+  const unreadCount    = unreadData?.total ?? 0;
 
   // Build display user
   const displayUser = isDemo && !user

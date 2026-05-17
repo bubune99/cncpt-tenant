@@ -4,35 +4,99 @@
  * Atlas Customer Inbox
  * Notification messages from the store. Tabs: All / Unread / Orders / Stock.
  * Uses --wl-* tokens exclusively.
+ *
+ * Data: real-time from GET /api/cms/notifications
+ * Mark-read: PATCH /api/cms/notifications/[id] (on row click)
+ * Mark-all-read: POST /api/cms/notifications/mark-all-read
  */
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Link from 'next/link';
+import useSWR, { mutate as globalMutate } from 'swr';
 
 type InboxTab = 'all' | 'unread' | 'orders' | 'stock';
-type MsgType = 'order' | 'stock' | 'promo' | 'system';
+type MsgKind = 'order' | 'stock' | 'promo' | 'system';
+
+// ─────────────────────────────────────────────
+// API types
+// ─────────────────────────────────────────────
+
+interface ApiNotification {
+  readonly id: string;
+  readonly type: string;
+  readonly title: string;
+  readonly message: string;
+  readonly link: string | null;
+  readonly entityType: string | null;
+  readonly read: boolean;
+  readonly createdAt: string;
+}
+
+interface NotificationsResponse {
+  readonly items: readonly ApiNotification[];
+  readonly unreadCount: number;
+  readonly total: number;
+}
+
+// ─────────────────────────────────────────────
+// Display type (what the list renders)
+// ─────────────────────────────────────────────
 
 interface InboxMessage {
   readonly id: string;
-  readonly type: MsgType;
+  readonly kind: MsgKind;
   readonly title: string;
   readonly body: string;
   readonly date: string;
   readonly read: boolean;
 }
 
-const MESSAGES: ReadonlyArray<InboxMessage> = [
-  { id: 'm1', type: 'order',  title: 'Order #1042 shipped',           body: 'Your Heritage hoodie is on its way · Est. Tue 20 May',    date: '12 May', read: false },
-  { id: 'm2', type: 'stock',  title: 'Seasonal tote is back in stock', body: 'Grab it before it sells out again.',                     date: '11 May', read: false },
-  { id: 'm3', type: 'promo',  title: 'Members-only sale — 20% off',   body: 'Starts tonight at midnight. Use code ATLAS20.',           date: '10 May', read: true  },
-  { id: 'm4', type: 'order',  title: 'Order #1038 delivered',          body: 'Your Field journal arrived. Leave a review?',            date: '06 May', read: true  },
-  { id: 'm5', type: 'system', title: 'Email updated',                  body: 'Your account email was changed successfully.',           date: '04 May', read: true  },
-  { id: 'm6', type: 'stock',  title: 'Linen apron now available',      body: 'The Natural linen apron you saved is back.',             date: '01 May', read: true  },
-  { id: 'm7', type: 'order',  title: 'Return RET-0041 completed',      body: 'Store credit of $64 has been applied to your account.',  date: '12 Apr', read: true  },
-] as const;
+// ─────────────────────────────────────────────
+// SWR
+// ─────────────────────────────────────────────
 
-function typeIcon(type: MsgType) {
-  switch (type) {
+const NOTIFS_URL = '/api/cms/notifications?limit=100';
+const UNREAD_URL = '/api/cms/notifications/unread-counts';
+
+async function fetcher<T>(url: string): Promise<T> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json() as Promise<T>;
+}
+
+// ─────────────────────────────────────────────
+// Mapping helpers
+// ─────────────────────────────────────────────
+
+function deriveKind(type: string): MsgKind {
+  if (type.startsWith('ORDER') || type.startsWith('SUBSCRIPTION')) return 'order';
+  if (type === 'BACK_IN_STOCK' || type === 'PRICE_DROP' || type === 'WISHLIST_SALE') return 'stock';
+  if (type === 'PAYMENT_RECEIVED' || type === 'PAYMENT_FAILED') return 'promo';
+  return 'system';
+}
+
+function formatDate(isoString: string): string {
+  const d = new Date(isoString);
+  return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+}
+
+function mapApiToMessage(n: ApiNotification, localRead: boolean): InboxMessage {
+  return {
+    id: n.id,
+    kind: deriveKind(n.type),
+    title: n.title,
+    body: n.message,
+    date: formatDate(n.createdAt),
+    read: localRead || n.read,
+  };
+}
+
+// ─────────────────────────────────────────────
+// Display helpers
+// ─────────────────────────────────────────────
+
+function typeIcon(kind: MsgKind): string {
+  switch (kind) {
     case 'order':  return '📦';
     case 'stock':  return '🔔';
     case 'promo':  return '🏷';
@@ -40,8 +104,8 @@ function typeIcon(type: MsgType) {
   }
 }
 
-function typeDot(type: MsgType): string {
-  switch (type) {
+function typeDot(kind: MsgKind): string {
+  switch (kind) {
     case 'order':  return 'var(--wl-accent)';
     case 'stock':  return 'var(--wl-success)';
     case 'promo':  return 'var(--wl-warning)';
@@ -49,22 +113,54 @@ function typeDot(type: MsgType): string {
   }
 }
 
+// ─────────────────────────────────────────────
+// Page component
+// ─────────────────────────────────────────────
+
 export default function InboxPage() {
   const [tab, setTab] = useState<InboxTab>('all');
-  const [readSet, setReadSet] = useState<ReadonlySet<string>>(
-    new Set(MESSAGES.filter((m) => m.read).map((m) => m.id))
+  const [localReadIds, setLocalReadIds] = useState<ReadonlySet<string>>(new Set());
+
+  const { data, error, isLoading, mutate } =
+    useSWR<NotificationsResponse>(NOTIFS_URL, fetcher, {
+      refreshInterval: 60000,
+      revalidateOnFocus: true,
+    });
+
+  const messages: readonly InboxMessage[] = (data?.items ?? []).map((n) =>
+    mapApiToMessage(n, localReadIds.has(n.id))
   );
 
-  const markRead = (id: string) => setReadSet((prev) => new Set([...prev, id]));
+  const unreadCount = messages.filter((m) => !m.read).length;
 
-  const filtered = MESSAGES.filter((m) => {
-    if (tab === 'unread') return !readSet.has(m.id);
-    if (tab === 'orders') return m.type === 'order';
-    if (tab === 'stock')  return m.type === 'stock';
+  const filtered = messages.filter((m) => {
+    if (tab === 'unread') return !m.read;
+    if (tab === 'orders') return m.kind === 'order';
+    if (tab === 'stock')  return m.kind === 'stock';
     return true;
   });
 
-  const unreadCount = MESSAGES.filter((m) => !readSet.has(m.id)).length;
+  const handleMarkRead = useCallback(async (id: string) => {
+    setLocalReadIds(prev => new Set([...prev, id]));
+    try {
+      await fetch(`/api/cms/notifications/${id}`, { method: 'PATCH' });
+      await mutate();
+      await globalMutate(UNREAD_URL);
+    } catch {
+      setLocalReadIds(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  }, [mutate]);
+
+  const tabDefs: ReadonlyArray<[InboxTab, string, number]> = [
+    ['all',    'All',    messages.length],
+    ['unread', 'Unread', unreadCount],
+    ['orders', 'Orders', messages.filter((m) => m.kind === 'order').length],
+    ['stock',  'Stock',  messages.filter((m) => m.kind === 'stock').length],
+  ];
 
   return (
     <div>
@@ -105,20 +201,13 @@ export default function InboxPage() {
             marginTop: 4,
           }}
         >
-          {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
+          {isLoading ? 'Loading…' : unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
         </div>
       </div>
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 8, marginTop: 16, marginBottom: 14 }}>
-        {(
-          [
-            ['all',    'All',    MESSAGES.length],
-            ['unread', 'Unread', unreadCount],
-            ['orders', 'Orders', MESSAGES.filter((m) => m.type === 'order').length],
-            ['stock',  'Stock',  MESSAGES.filter((m) => m.type === 'stock').length],
-          ] as [InboxTab, string, number][]
-        ).map(([key, label, count]) => {
+        {tabDefs.map(([key, label, count]) => {
           const active = tab === key;
           return (
             <button
@@ -167,17 +256,43 @@ export default function InboxPage() {
           overflow: 'hidden',
         }}
       >
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          /* Loading skeleton */
+          [0, 1, 2, 3].map(i => (
+            <div
+              key={i}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 14,
+                padding: '14px 18px',
+                borderBottom: '1px solid var(--wl-rule-soft)',
+                opacity: 0.45,
+              }}
+            >
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--wl-surface-2)', flexShrink: 0, marginTop: 6 }} />
+              <div style={{ fontSize: 18, flexShrink: 0 }}>·</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ width: '55%', height: 13, background: 'var(--wl-surface-2)', borderRadius: 3, marginBottom: 6 }} />
+                <div style={{ width: '80%', height: 11, background: 'var(--wl-surface-2)', borderRadius: 3 }} />
+              </div>
+            </div>
+          ))
+        ) : error ? (
+          <div style={{ padding: '48px', textAlign: 'center', fontFamily: 'var(--wl-font-display)', fontStyle: 'italic', color: 'var(--wl-text-soft)' }}>
+            Could not load messages. Please try refreshing.
+          </div>
+        ) : filtered.length === 0 ? (
           <div style={{ padding: '48px', textAlign: 'center', fontFamily: 'var(--wl-font-display)', fontStyle: 'italic', color: 'var(--wl-text-soft)' }}>
             No messages here.
           </div>
         ) : (
           filtered.map((msg, i) => {
-            const isUnread = !readSet.has(msg.id);
+            const isUnread = !msg.read;
             return (
               <div
                 key={msg.id}
-                onClick={() => markRead(msg.id)}
+                onClick={() => { if (isUnread) void handleMarkRead(msg.id); }}
                 style={{
                   display: 'flex',
                   alignItems: 'flex-start',
@@ -185,7 +300,7 @@ export default function InboxPage() {
                   padding: '14px 18px',
                   borderBottom: i < filtered.length - 1 ? '1px solid var(--wl-rule-soft)' : 'none',
                   background: isUnread ? 'color-mix(in srgb, var(--wl-accent) 5%, var(--wl-surface))' : 'transparent',
-                  cursor: 'pointer',
+                  cursor: isUnread ? 'pointer' : 'default',
                 }}
               >
                 {/* Unread dot */}
@@ -194,13 +309,13 @@ export default function InboxPage() {
                     width: 8,
                     height: 8,
                     borderRadius: '50%',
-                    background: isUnread ? typeDot(msg.type) : 'transparent',
+                    background: isUnread ? typeDot(msg.kind) : 'transparent',
                     flexShrink: 0,
                     marginTop: 6,
                   }}
                 />
                 <div style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>
-                  {typeIcon(msg.type)}
+                  {typeIcon(msg.kind)}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, justifyContent: 'space-between' }}>
