@@ -65,6 +65,8 @@ export type AuditAction =
   | 'page.create'
   | 'page.update'
   | 'page.delete'
+  | 'system-page.create'
+  | 'system-page.reset'
   | 'route.create'
   | 'route.update'
   | 'route.delete'
