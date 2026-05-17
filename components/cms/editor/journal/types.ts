@@ -5,6 +5,82 @@ export type JournalTab = 'write' | 'blocks' | 'structure' | 'distribute';
 export type PostStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' | 'SCHEDULED';
 export type PostVisibility = 'PUBLIC' | 'PRIVATE' | 'PASSWORD_PROTECTED' | 'MEMBERS_ONLY';
 
+// ── API enums (mirror Prisma enums) ──────────────────────────────────────────
+
+export type ApiDistributionChannel =
+  | 'WEB'
+  | 'NEWSLETTER'
+  | 'RSS'
+  | 'TWITTER_X'
+  | 'MASTODON'
+  | 'INSTAGRAM';
+
+export type ApiChannelPublishStatus = 'DRAFT' | 'SCHEDULED' | 'PUBLISHED' | 'FAILED';
+
+// ── API response shapes (from A9 route files) ────────────────────────────────
+
+/** Shape returned by GET /api/cms/blog/posts/[id]/channels items */
+export interface ApiPostChannel {
+  readonly id: string;
+  readonly postId: string;
+  readonly channel: ApiDistributionChannel;
+  readonly enabled: boolean;
+  readonly copy: string | null;
+  readonly scheduledAt: string | null;
+  readonly publishedAt: string | null;
+  readonly status: ApiChannelPublishStatus;
+}
+
+/** Shape returned by GET /api/cms/blog/series items (includes _count.posts) */
+export interface ApiSeries {
+  readonly id: string;
+  readonly title: string;
+  readonly slug: string;
+  readonly description: string | null;
+  readonly postCount: number;
+  readonly position: number;
+}
+
+/** Shape returned by GET /api/cms/blog/posts/[id]/series items */
+export interface ApiPostSeries {
+  readonly postId: string;
+  readonly seriesId: string;
+  readonly position: number;
+  readonly series: {
+    readonly id: string;
+    readonly title: string;
+    readonly slug: string;
+    readonly postCount: number;
+  };
+}
+
+/** Shape returned by GET /api/cms/blog/posts/[id]/contributors items */
+export interface ApiContributor {
+  readonly postId: string;
+  readonly userId: string;
+  readonly role: string;
+  readonly position: number;
+  readonly user: {
+    readonly id: string;
+    readonly name: string | null;
+    readonly email: string;
+    readonly avatar: string | null;
+  };
+}
+
+/** Shape returned by GET /api/cms/blog/posts/[id]/related items */
+export interface ApiRelatedPost {
+  readonly postId: string;
+  readonly relatedPostId: string;
+  readonly position: number;
+  readonly relatedPost: {
+    readonly id: string;
+    readonly title: string;
+    readonly slug: string;
+    readonly status: PostStatus;
+  };
+}
+
 export type BlockKind =
   | 'P'
   | 'H2'

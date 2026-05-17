@@ -12,6 +12,7 @@ import type {
   JournalPostData,
   PostStatus,
   PostVisibility,
+  ApiSeries,
 } from './types';
 
 function computeReadTime(wordCount: number): number {
@@ -53,6 +54,27 @@ export function JournalEditor({
   const [metaTitle, setMetaTitle]       = useState(initialData.metaTitle ?? '');
   const [metaDescription, setMetaDescription] = useState(initialData.metaDescription ?? '');
   const [lastSaved, setLastSaved]       = useState<string | undefined>(undefined);
+
+  // Series list — fetched once for StructureTab picker
+  const [allSeries, setAllSeries]       = useState<ReadonlyArray<ApiSeries>>([]);
+
+  useEffect(() => {
+    const abort = new AbortController();
+    fetch('/api/cms/blog/series', { signal: abort.signal })
+      .then(r => r.ok ? r.json() : null)
+      .then((d: unknown) => {
+        if (
+          d !== null &&
+          typeof d === 'object' &&
+          'data' in d &&
+          Array.isArray((d as { data: unknown }).data)
+        ) {
+          setAllSeries((d as { data: ReadonlyArray<ApiSeries> }).data);
+        }
+      })
+      .catch(() => { /* network error — leave empty */ });
+    return () => abort.abort();
+  }, []);
 
   // Auto-generate slug on new posts when title changes
   useEffect(() => {
@@ -166,6 +188,8 @@ export function JournalEditor({
 
       {activeTab === 'structure' && (
         <StructureTab
+          postId={postId}
+          allSeries={allSeries}
           categories={categories}
           selectedCategoryIds={categoryIds}
           onToggleCategory={toggleCategory}
@@ -183,9 +207,9 @@ export function JournalEditor({
 
       {activeTab === 'distribute' && (
         <DistributeTab
+          postId={postId}
           postTitle={title}
           postSlug={slug}
-          channels={[]}
           onPublishAll={handlePublish}
         />
       )}
