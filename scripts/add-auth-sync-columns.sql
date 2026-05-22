@@ -66,13 +66,11 @@ BEGIN
   END IF;
 END $$;
 
--- Add is_super_admin column (if not already present)
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'is_super_admin') THEN
-    ALTER TABLE users ADD COLUMN is_super_admin BOOLEAN DEFAULT false;
-  END IF;
-END $$;
+-- NOTE: a previous version of this file added a `users.is_super_admin`
+-- BOOLEAN column. That column was never deployed and is no longer used —
+-- the canonical source of super-admin status is the `super_admins` table
+-- (see lib/super-admin.ts → isSuperAdmin / requireSuperAdmin) and the
+-- SUPER_ADMIN_EMAILS env var. Do not re-add the column.
 
 -- Make password_hash nullable (Stack Auth users won't have local passwords)
 ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;

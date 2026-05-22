@@ -41,11 +41,39 @@ export interface SubdomainAuthConfigPublic {
 // DATABASE QUERIES (React cached for deduplication)
 // =============================================================================
 
+// Lambda-instance-scoped guard. The `subdomain_auth_config` table is optional
+// (per-tenant Stack Auth is opt-in). If the table doesn't exist on this DB,
+// every storefront request would otherwise pay ~250-300ms throwing a Postgres
+// `relation does not exist` error before resolving to null. Once we observe
+// the missing-table error, mark the table absent for the lifetime of this
+// Lambda instance and short-circuit subsequent calls.
+//
+// Postgres SQLSTATE 42P01 = undefined_table.
+const globalForAuthConfig = globalThis as unknown as {
+  __subdomainAuthConfigTableMissing?: boolean
+}
+
+function isUndefinedTableError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false
+  const e = error as { code?: string; message?: string }
+  if (e.code === "42P01") return true
+  if (typeof e.message === "string" && /relation .* does not exist/i.test(e.message)) {
+    return true
+  }
+  return false
+}
+
 /**
  * Get full auth config for a subdomain (server-only, includes secret key)
  */
 export const getSubdomainAuthConfig = cache(
   async (subdomain: string): Promise<SubdomainAuthConfig | null> => {
+    // Fast path: if we've already observed that the table doesn't exist
+    // on this DB, skip the network round-trip entirely. The table is
+    // optional and absence is the most common production state.
+    if (globalForAuthConfig.__subdomainAuthConfigTableMissing) {
+      return null
+    }
     try {
       const result = await sql`
         SELECT * FROM subdomain_auth_config WHERE subdomain = ${subdomain}
@@ -71,6 +99,15 @@ export const getSubdomainAuthConfig = cache(
         updated_at: new Date(row.updated_at as string),
       }
     } catch (error) {
+      if (isUndefinedTableError(error)) {
+        // Set the lambda-scoped flag so subsequent requests skip the query.
+        globalForAuthConfig.__subdomainAuthConfigTableMissing = true
+        // Log once per Lambda instance instead of every request.
+        console.warn(
+          "[subdomain-auth] subdomain_auth_config table not found — disabling per-tenant Stack Auth lookups for this Lambda instance. Apply prisma/migrations/00_subdomain_auth_config.sql to enable."
+        )
+        return null
+      }
       console.error("[subdomain-auth] Error fetching auth config:", error)
       return null
     }

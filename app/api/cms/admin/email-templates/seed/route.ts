@@ -2,56 +2,46 @@
  * Email Templates Seed API
  *
  * POST /api/admin/email-templates/seed - Seed default email templates
+ * GET  /api/admin/email-templates/seed - Check if seeding is needed
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { stackServerApp } from '@/lib/cms/stack';
 import { seedEmailTemplates, needsSeeding } from '@/lib/cms/email/templates/seed';
-import { withTenant } from '@/lib/cms/api/tenant';
+import { withTenantAuth } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
+// POST — admin-only (one-time-style seed; replaces auth-only check that
+// would let any signed-in user seed any tenant's templates)
 export async function POST(request: NextRequest) {
-  return withTenant(request, async () => {
-  try {
-    // Verify admin access
-    const user = await stackServerApp.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  return withTenantAuth(request, 'edit', async () => {
+    try {
+      // Check for overwrite flag
+      const body = await request.json().catch(() => ({}));
+      const overwrite = body.overwrite === true;
+
+      // Seed templates
+      const result = await seedEmailTemplates(overwrite);
+
+      return NextResponse.json({
+        success: true,
+        ...result,
+        message: `Created ${result.created} templates, skipped ${result.skipped}`,
+      });
+    } catch (error) {
+      console.error('Error seeding email templates:', error);
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Failed to seed templates' },
+        { status: 500 }
+      );
     }
-
-    // Check for overwrite flag
-    const body = await request.json().catch(() => ({}));
-    const overwrite = body.overwrite === true;
-
-    // Seed templates
-    const result = await seedEmailTemplates(overwrite);
-
-    return NextResponse.json({
-      success: true,
-      ...result,
-      message: `Created ${result.created} templates, skipped ${result.skipped}`,
-    });
-  } catch (error) {
-    console.error('Error seeding email templates:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to seed templates' },
-      { status: 500 }
-    );
-  }
   })
 }
 
+// GET — admin-only (status check)
 export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
     try {
-      // Verify admin access
-      const user = await stackServerApp.getUser();
-      if (!user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-
-      // Check if seeding is needed
       const needs = await needsSeeding();
 
       return NextResponse.json({

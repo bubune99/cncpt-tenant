@@ -11,6 +11,7 @@
  */
 
 import { prisma } from '../db'
+import { cache } from 'react'
 import { generateThemeCss } from '../theme/color-utils'
 import {
   sanitizeHexColor,
@@ -24,16 +25,13 @@ import {
   toBrandDensity,
 } from './types'
 
-// In-memory cache: subdomain -> { branding, timestamp }
+// Cross-request in-memory cache (lambda-instance scope): subdomain -> { branding, timestamp }
+// Combined with React `cache()` below for per-request dedup.
 const brandingCache = new Map<string, { data: TenantBranding; ts: number }>()
 const CACHE_TTL = 60_000 // 1 minute
 
-/**
- * Get branding for a specific tenant by subdomain.
- * Returns DEFAULT_TENANT_BRANDING values for any field not set by the tenant.
- */
-export async function getTenantBranding(subdomain: string): Promise<TenantBranding> {
-  // Check cache
+async function getTenantBrandingUncached(subdomain: string): Promise<TenantBranding> {
+  // Check cross-request cache first (warm Lambda fast path)
   const cached = brandingCache.get(subdomain)
   if (cached && Date.now() - cached.ts < CACHE_TTL) {
     return cached.data
@@ -45,7 +43,9 @@ export async function getTenantBranding(subdomain: string): Promise<TenantBrandi
   })
 
   if (!tenant || !tenant.tenantSettings) {
-    return { ...DEFAULT_TENANT_BRANDING, siteName: subdomain }
+    const fallback = { ...DEFAULT_TENANT_BRANDING, siteName: subdomain }
+    brandingCache.set(subdomain, { data: fallback, ts: Date.now() })
+    return fallback
   }
 
   const s = tenant.tenantSettings
@@ -76,6 +76,16 @@ export async function getTenantBranding(subdomain: string): Promise<TenantBrandi
 
   return branding
 }
+
+/**
+ * Get branding for a specific tenant by subdomain.
+ * Returns DEFAULT_TENANT_BRANDING values for any field not set by the tenant.
+ *
+ * Wrapped in React `cache()` so multiple layouts/metadata generators in the
+ * same request only pay one DB round-trip. Combined with the
+ * cross-request `brandingCache` for warm-Lambda fast paths.
+ */
+export const getTenantBranding = cache(getTenantBrandingUncached)
 
 /**
  * Get branding by tenant ID (for API routes that already have the ID).

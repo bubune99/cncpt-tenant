@@ -18,6 +18,8 @@ yarn-error.log*
 
 # env files
 .env*
+# but DO commit the example template (no secrets, just placeholders)
+!.env.example
 
 # vercel
 .vercel

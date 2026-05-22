@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
-import { withTenant } from '@/lib/cms/api/tenant'
+import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,8 +15,9 @@ interface RouteParams {
   params: Promise<{ id: string }>
 }
 
+// GET — admin-only (form submissions — exposes contact details/PII)
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
     try {
       const { id } = await params
       const { searchParams } = new URL(request.url)
@@ -80,7 +81,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
     try {
       const { id } = await params
       const body = await request.json()

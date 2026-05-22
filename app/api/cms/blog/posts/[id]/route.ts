@@ -8,7 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getPost, updatePost, deletePost } from '@/lib/cms/blog'
-import { withTenant } from '@/lib/cms/api/tenant'
+import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
-  return withTenant(request, async (tenant) => {
+  return withTenantAuth(request, 'edit', async (tenant) => {
     try {
       const { id } = await params
       const body = await request.json()
@@ -68,7 +68,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  return withTenant(request, async (tenant) => {
+  return withTenantAuth(request, 'edit', async (tenant) => {
     try {
       const { id } = await params
 

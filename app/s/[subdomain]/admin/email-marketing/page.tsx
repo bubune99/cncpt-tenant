@@ -252,10 +252,10 @@ export default function EmailMarketingPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8" data-help-key="admin.email-marketing.page">
+    <div className="p-4 sm:p-6 lg:p-8" data-help-key="admin.email-marketing.page" data-tour-id="email-marketing-page">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-8" data-help-key="admin.email-marketing.header">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Email Marketing</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" data-tour-id="email-marketing-heading">Email Marketing</h1>
           <p className="text-muted-foreground mt-2">
             Create and manage email campaigns with visual editor
           </p>

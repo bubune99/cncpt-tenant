@@ -65,16 +65,18 @@ export default async function SubdomainLayout({
   params: Promise<{ subdomain: string }>
 }) {
   const { subdomain } = await params
-  const authConfig = await getSubdomainAuthConfigPublic(subdomain)
 
-  // Load branding for theme CSS injection
-  let themeCss = ''
-  try {
-    const branding = await getTenantBranding(subdomain)
-    themeCss = generateTenantThemeCss(branding)
-  } catch {
-    // Silently skip theme injection if branding fails
-  }
+  // Run auth-config and branding lookups in parallel — they are independent.
+  // After the missing-table fast path is tripped, `getSubdomainAuthConfigPublic`
+  // resolves synchronously to null and adds zero latency.
+  const [authConfig, brandingResult] = await Promise.all([
+    getSubdomainAuthConfigPublic(subdomain),
+    getTenantBranding(subdomain).catch(() => null),
+  ])
+
+  // Branding may legitimately be null if the DB is unreachable; in that case
+  // we silently skip the theme injection.
+  const themeCss = brandingResult ? generateTenantThemeCss(brandingResult) : ''
 
   // Resolve the tenant's Atlas brand preset + density (default: marigold/regular).
   // `display: contents` so the wrapper provides the brand CSS variables to the

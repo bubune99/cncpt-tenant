@@ -11,7 +11,7 @@ import {
   syncCustomerToStripe,
   getCustomerSyncStatus,
 } from '@/lib/cms/stripe/customer-sync'
-import { withTenant } from '@/lib/cms/api/tenant'
+import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,7 +20,7 @@ interface RouteParams {
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
   try {
     const { id } = await params
     const body = await request.json().catch(() => ({}))

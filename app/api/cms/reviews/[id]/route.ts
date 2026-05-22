@@ -16,7 +16,7 @@ import {
   flagReview,
 } from '@/lib/cms/reviews';
 import type { ReviewStatus } from '@prisma/client';
-import { withTenant } from '@/lib/cms/api/tenant';
+import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
@@ -24,9 +24,10 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-// GET - Get review details
+// GET - admin-only review detail (admin moderation page consumes this;
+// storefront uses /reviews/product/[productId] for public reviews)
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
     try {
     const { id } = await params;
 
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 // PATCH - Update review (moderation)
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
     try {
     const { id } = await params;
     const body = await request.json();
@@ -124,7 +125,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
 // DELETE - Delete review
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
     try {
     const { id } = await params;
 

@@ -367,7 +367,7 @@ export function ProductEditor({ mode, productId }: ProductEditorProps) {
               Preview
             </Button>
           )}
-          <Button onClick={handleSave} disabled={saving}>
+          <Button onClick={handleSave} disabled={saving} data-tour-id="product-form-save">
             {saving ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -553,6 +553,7 @@ export function ProductEditor({ mode, productId }: ProductEditorProps) {
                           value={product.title}
                           onChange={(e) => updateField('title', e.target.value)}
                           placeholder="Enter product name"
+                          data-tour-id="product-form-title"
                         />
                       </div>
                       <div>
@@ -561,6 +562,7 @@ export function ProductEditor({ mode, productId }: ProductEditorProps) {
                           value={product.slug}
                           onChange={(e) => updateField('slug', e.target.value)}
                           placeholder={product.title ? generateSlug(product.title) : 'auto-generated-from-title'}
+                          data-tour-id="product-form-slug"
                         />
                         <p className="text-xs text-muted-foreground mt-1">
                           Leave blank to auto-generate from title
@@ -572,6 +574,7 @@ export function ProductEditor({ mode, productId }: ProductEditorProps) {
                           value={product.sku || ''}
                           onChange={(e) => updateField('sku', e.target.value)}
                           placeholder="Product SKU"
+                          data-tour-id="product-form-sku"
                         />
                       </div>
                       <div>

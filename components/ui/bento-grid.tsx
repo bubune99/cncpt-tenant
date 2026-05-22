@@ -31,6 +31,8 @@ const BentoCard = ({
   description,
   href,
   cta,
+  tourId,
+  ctaTourId,
 }: {
   name: string;
   className: string;
@@ -39,9 +41,12 @@ const BentoCard = ({
   description: string;
   href: string;
   cta: string;
+  tourId?: string;
+  ctaTourId?: string;
 }) => (
   <div
     key={name}
+    data-tour-id={tourId}
     className={cn(
       "group relative col-span-3 flex flex-col justify-between overflow-hidden rounded-xl",
       // light styles
@@ -66,7 +71,7 @@ const BentoCard = ({
       )}
     >
       <Button variant="ghost" asChild size="sm" className="pointer-events-auto">
-        <a href={href}>
+        <a href={href} data-tour-id={ctaTourId}>
           {cta}
           <ArrowRight className="ml-2 h-4 w-4" />
         </a>

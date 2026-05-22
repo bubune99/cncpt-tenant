@@ -171,10 +171,10 @@ export default function BlogPostsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8" data-help-key="admin.blog.page">
+    <div className="p-4 sm:p-6 lg:p-8" data-help-key="admin.blog.page" data-tour-id="blog-page">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-8">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Blog Posts</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" data-tour-id="blog-heading">Blog Posts</h1>
           <p className="text-muted-foreground mt-2">
             Create and manage your blog content
           </p>
@@ -195,7 +195,7 @@ export default function BlogPostsPage() {
             Refresh
           </Button>
           <Button asChild data-help-key="admin.blog.new">
-            <Link href={buildPath('/admin/blog/new')}>
+            <Link href={buildPath('/admin/blog/new')} data-tour-id="blog-create-button">
               <Plus className="mr-2 h-4 w-4" />
               New Post
             </Link>

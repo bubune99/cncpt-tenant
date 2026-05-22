@@ -8,18 +8,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { stackServerApp } from "@/stack"
 import { sql } from "@/lib/neon"
 import { grantCredits } from "@/lib/user-overrides"
+import { isSuperAdmin } from "@/lib/super-admin"
 
-// Super admin check
-async function isSuperAdmin(userId: string): Promise<boolean> {
-  try {
-    const rows = await sql`
-      SELECT is_super_admin FROM users WHERE id = ${userId}
-    `
-    return rows.length > 0 && rows[0].is_super_admin === true
-  } catch {
-    return false
-  }
-}
+// NOTE: Local isSuperAdmin previously queried `users.is_super_admin`, a column
+// that does not exist in the schema. That made this entire route always return
+// 403/Forbidden for every user, including the actual super admin. We now use
+// the canonical isSuperAdmin from @/lib/super-admin which checks the
+// super_admins table + SUPER_ADMIN_EMAILS env var.
 
 export async function GET(req: NextRequest) {
   try {

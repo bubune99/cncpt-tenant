@@ -8,20 +8,15 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { stackServerApp } from '@/lib/cms/stack';
 import { getAiSettings, updateSettings } from '@/lib/cms/settings';
-import { withTenant } from '@/lib/cms/api/tenant';
+import { withTenantAuth } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
+// GET — admin-only (tenant AI gateway config)
 export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'admin', async () => {
     try {
-      const user = await stackServerApp.getUser();
-      if (!user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-
       const settings = await getAiSettings();
 
       return NextResponse.json({ settings });
@@ -35,14 +30,10 @@ export async function GET(request: NextRequest) {
   })
 }
 
+// PUT — admin-only (modifies tenant AI gateway config — billing impact)
 export async function PUT(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'admin', async () => {
     try {
-      const user = await stackServerApp.getUser();
-      if (!user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-
       const body = await request.json();
       const { enabled, enabledModels, maxTokens, temperature } = body;
 

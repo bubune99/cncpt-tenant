@@ -1,12 +1,34 @@
 /**
  * Dashboard AI Tools - Domain Management
  *
- * Tools for listing, checking, and troubleshooting custom domains.
+ * Read tools (listDomains, getDomainStatus, troubleshootDomain, getDnsInstructions)
+ * + write tools (addCustomDomain, verifyDomain, setPrimaryDomain, removeCustomDomain).
+ *
+ * Every tool first verifies that the userId owns the target subdomain by
+ * checking the `subdomains.user_id` column before doing any work — this is
+ * the same authorization model the dashboard server actions use, just
+ * pushed down so the AI can call core directly.
  */
 
 import { tool } from "ai"
 import { z } from "zod"
 import { sql } from "@/lib/neon"
+import {
+  addCustomDomain as coreAddDomain,
+  removeCustomDomain as coreRemoveDomain,
+  verifyDomain as coreVerifyDomain,
+  setPrimaryDomain as coreSetPrimary,
+} from "@/lib/cms/domains/core"
+
+async function userOwnsSubdomain(
+  userId: string,
+  subdomain: string,
+): Promise<boolean> {
+  const rows = await sql`
+    SELECT 1 FROM subdomains WHERE subdomain = ${subdomain} AND user_id = ${userId}
+  `
+  return rows.length > 0
+}
 
 // Helper function to generate DNS records
 function getDnsRecordsForDomain(domain: string, subdomain: string) {
@@ -425,10 +447,159 @@ export function createDomainTools(userId: string) {
     },
   })
 
+  /**
+   * Attach a new custom domain to a subdomain. Owner-only.
+   *
+   * After this returns, the user still has to set DNS records (returned in
+   * the response) and then call verifyDomain to push the mapping into Edge
+   * Config so the middleware can route hits.
+   */
+  const addCustomDomain = tool({
+    description:
+      "Attach a custom domain (e.g. mybrand.com) to one of the user's subdomains. " +
+      "Returns DNS records the user needs to set at their registrar. The domain " +
+      "is in 'pending' status until verifyDomain is called after DNS propagates.",
+    inputSchema: z.object({
+      subdomain: z.string().describe("The user's subdomain (e.g. 'acme-store')"),
+      domain: z.string().describe("Custom domain to attach (e.g. 'mybrand.com')"),
+    }),
+    execute: async ({ subdomain, domain }: { subdomain: string; domain: string }) => {
+      if (!userId) return { error: "User not authenticated" }
+      const owns = await userOwnsSubdomain(userId, subdomain)
+      if (!owns) return { error: "Subdomain not found or you don't have access" }
+
+      const result = await coreAddDomain(subdomain, domain)
+      if (!result.success) return { error: result.error }
+
+      return {
+        success: true,
+        domain: result.data,
+        dnsRecords: getDnsRecordsForDomain(domain, subdomain),
+        nextSteps: [
+          "Add the DNS records above at your domain registrar (GoDaddy, Namecheap, etc.)",
+          "Wait for DNS to propagate — usually 5–60 minutes, occasionally up to 48 hours",
+          "Use the verifyDomain tool to confirm and activate routing once DNS is live",
+        ],
+      }
+    },
+  })
+
+  /**
+   * Trigger verification: re-check DNS, update DB status, push to Edge Config
+   * if Vercel says verified+ssl-ready. Idempotent — safe to call repeatedly.
+   */
+  const verifyDomain = tool({
+    description:
+      "Re-check DNS configuration for a custom domain and, if verified, push " +
+      "the hostname → tenant mapping into Edge Config so the middleware can " +
+      "route requests for that domain to this tenant. Use after the user has " +
+      "set DNS records at their registrar.",
+    inputSchema: z.object({
+      subdomain: z.string().describe("The user's subdomain"),
+      domain: z.string().describe("The custom domain to verify"),
+    }),
+    execute: async ({ subdomain, domain }: { subdomain: string; domain: string }) => {
+      if (!userId) return { error: "User not authenticated" }
+      const owns = await userOwnsSubdomain(userId, subdomain)
+      if (!owns) return { error: "Subdomain not found or you don't have access" }
+
+      const result = await coreVerifyDomain(subdomain, domain)
+      if (!result.success) return { error: result.error }
+
+      return {
+        success: true,
+        verified: result.data.verified,
+        sslReady: result.data.status.sslReady,
+        misconfigured: !!result.data.status.misconfigured,
+        message: result.data.verified
+          ? `${domain} is verified and now routes to ${subdomain}.`
+          : result.data.status.misconfigured
+            ? "DNS is misconfigured — check the records at your registrar."
+            : "DNS may still be propagating. Try verifying again in a few minutes.",
+      }
+    },
+  })
+
+  /**
+   * Mark a domain as the primary for its subdomain. Cosmetic — affects which
+   * domain is preferred for canonical URLs / share links / SEO. Doesn't
+   * affect routing.
+   */
+  const setPrimaryDomain = tool({
+    description:
+      "Mark a verified custom domain as the primary domain for the subdomain. " +
+      "Used for canonical URLs / SEO / share links. Doesn't affect routing — all " +
+      "verified domains continue to route to the tenant.",
+    inputSchema: z.object({
+      subdomain: z.string().describe("The user's subdomain"),
+      domain: z.string().describe("The domain to mark as primary"),
+    }),
+    execute: async ({ subdomain, domain }: { subdomain: string; domain: string }) => {
+      if (!userId) return { error: "User not authenticated" }
+      const owns = await userOwnsSubdomain(userId, subdomain)
+      if (!owns) return { error: "Subdomain not found or you don't have access" }
+
+      const result = await coreSetPrimary(subdomain, domain)
+      if (!result.success) return { error: result.error }
+      return { success: true, message: `${domain} is now the primary domain for ${subdomain}.` }
+    },
+  })
+
+  /**
+   * Detach a custom domain — removes from Vercel project, Edge Config, and DB.
+   * Destructive. The AI should ALWAYS confirm with the user before calling.
+   */
+  const removeCustomDomain = tool({
+    description:
+      "DESTRUCTIVE: Detach a custom domain from a subdomain — removes it from " +
+      "Vercel, the Edge Config routing table, and the database. Visitors hitting " +
+      "the domain will start failing immediately. ALWAYS confirm with the user " +
+      "before calling. The 'confirmed' parameter must be true to proceed.",
+    inputSchema: z.object({
+      subdomain: z.string().describe("The user's subdomain"),
+      domain: z.string().describe("The custom domain to detach"),
+      confirmed: z
+        .boolean()
+        .describe(
+          "Must be true. Set only AFTER the user has explicitly confirmed they want to remove the domain.",
+        ),
+    }),
+    execute: async ({
+      subdomain,
+      domain,
+      confirmed,
+    }: {
+      subdomain: string
+      domain: string
+      confirmed: boolean
+    }) => {
+      if (!userId) return { error: "User not authenticated" }
+      if (!confirmed) {
+        return {
+          error:
+            "Removal not confirmed. Ask the user to confirm explicitly, then re-call with confirmed=true.",
+        }
+      }
+      const owns = await userOwnsSubdomain(userId, subdomain)
+      if (!owns) return { error: "Subdomain not found or you don't have access" }
+
+      const result = await coreRemoveDomain(subdomain, domain)
+      if (!result.success) return { error: result.error }
+      return {
+        success: true,
+        message: `${domain} has been detached from ${subdomain}. Visitors hitting that domain will now see a routing error until DNS records are updated.`,
+      }
+    },
+  })
+
   return {
     listDomains,
     getDomainStatus,
     troubleshootDomain,
     getDnsInstructions,
+    addCustomDomain,
+    verifyDomain,
+    setPrimaryDomain,
+    removeCustomDomain,
   }
 }

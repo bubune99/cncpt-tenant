@@ -135,10 +135,10 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8" data-tour-id="products-page">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-8">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Products</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" data-tour-id="products-heading">Products</h1>
           <p className="text-muted-foreground mt-2">
             Manage your product catalog and inventory
           </p>
@@ -158,7 +158,7 @@ export default function ProductsPage() {
             )}
           </Button>
           <Button asChild data-help-key="admin.products.add">
-            <Link href={buildPath('/admin/products/new')}>
+            <Link href={buildPath('/admin/products/new')} data-tour-id="products-create-button">
               <Plus className="mr-2 h-4 w-4" />
               Add Product
             </Link>
@@ -180,13 +180,14 @@ export default function ProductsPage() {
       </Tabs>
 
       <div className="flex flex-col gap-4 md:flex-row md:items-center mb-6" data-help-key="admin.products.filters">
-        <div className="relative flex-1" data-help-key="admin.products.search">
+        <div className="relative flex-1" data-help-key="admin.products.search" data-tour-id="products-search">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search products..."
             className="pl-8"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            data-tour-id="products-search-input"
           />
         </div>
         <div className="flex flex-wrap gap-2">
@@ -222,7 +223,7 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <Card data-help-key="admin.products.table">
+      <Card data-help-key="admin.products.table" data-tour-id="products-table">
         <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader>

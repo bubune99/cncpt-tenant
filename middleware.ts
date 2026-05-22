@@ -1,17 +1,37 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { get } from "@vercel/edge-config"
 
 // Define rootDomain inline for Edge runtime compatibility
 const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "localhost:3000"
 
 /**
- * Look up which tenant a custom domain belongs to
- * Currently disabled - requires Edge Config to be set up
- * TODO: Enable when Edge Config is configured
+ * Look up which tenant a custom domain belongs to.
+ *
+ * Reads from Vercel Edge Config (P99 < 15ms). The custom-domain → subdomain
+ * mapping is written by `verifyDomainDns` in `app/domain-actions.ts` once the
+ * domain is verified. Keys are formatted as `domain:{hostname}` and values
+ * are the tenant subdomain string.
+ *
+ * Returns null when the EDGE_CONFIG env var is missing (fail open so apex /
+ * subdomain routing still works during initial setup) or when the hostname
+ * has no mapping yet.
  */
-async function lookupCustomDomain(_hostname: string): Promise<string | null> {
-  // Custom domain lookup is disabled until Edge Config is set up
-  // This prevents middleware crashes on Vercel
-  return null
+async function lookupCustomDomain(hostname: string): Promise<string | null> {
+  if (!process.env.EDGE_CONFIG) return null
+  try {
+    const normalized = hostname.toLowerCase().replace(/\.$/, "")
+    const tenant = await get<string>(`domain:${normalized}`)
+    if (tenant) return tenant
+    if (normalized.startsWith("www.")) {
+      const apex = normalized.replace(/^www\./, "")
+      const tenantApex = await get<string>(`domain:${apex}`)
+      if (tenantApex) return tenantApex
+    }
+    return null
+  } catch (error) {
+    console.error("[middleware] Edge Config lookup failed:", error)
+    return null
+  }
 }
 
 function extractSubdomain(request: NextRequest): string | null {
@@ -226,12 +246,19 @@ export const config = {
     /*
      * Match all paths except for:
      * 1. /_next (Next.js internals)
-     * 2. root files inside /public EXCEPT favicon.ico, manifest.json, icon
-     *    (those need rewriting for per-tenant branding on subdomains)
+     * 2. Static assets in /public with image/font/style extensions —
+     *    these never need subdomain rewriting and skipping middleware
+     *    saves an Edge invocation per asset request.
      *
-     * Note: API routes ARE matched so we can inject x-subdomain header
-     * for tenant-scoped API operations.
+     * KEEP matched (not in the negative lookahead):
+     * - /favicon.ico, /manifest.json, /icon — rewritten per-tenant
+     * - /api/* — needs x-subdomain header injection
+     * - All HTML routes — need subdomain rewriting
+     *
+     * Note: the previous matcher was "/((?!_next).*)" which also ran the
+     * middleware for /logo.png, /og-image.jpg, /robots.txt, etc. These are
+     * served from /public and don't need any rewriting.
      */
-    "/((?!_next).*)",
+    "/((?!_next/|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|avif|woff|woff2|ttf|eot|otf|css|js|map|txt|xml)$).*)",
   ],
 }

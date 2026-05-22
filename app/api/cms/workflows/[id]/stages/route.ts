@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { withTenant } from '@/lib/cms/api/tenant'
+import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant'
 import {
   addStage,
   updateStage,
@@ -22,7 +22,7 @@ interface RouteParams {
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
   try {
     const { id: workflowId } = await params
     const body = await request.json()
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 }
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
   try {
     const { id: workflowId } = await params
     const body = await request.json()
@@ -102,7 +102,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
   try {
     const { searchParams } = new URL(request.url)
     const stageId = searchParams.get('stageId')

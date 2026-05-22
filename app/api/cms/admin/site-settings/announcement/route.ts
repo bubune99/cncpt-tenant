@@ -10,23 +10,16 @@ import {
   getOrCreateSiteSettings,
   updateAnnouncementBarConfig,
 } from '@/lib/cms/site-settings';
-import { stackServerApp } from '@/lib/cms/stack';
-import { withTenant } from '@/lib/cms/api/tenant';
+import { withTenantAuth } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 
 /**
- * GET - Fetch announcement bar configuration
+ * GET - Fetch announcement bar configuration (admin-only — admin tooling)
  */
 export async function GET(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'view', async () => {
     try {
-      // Check authentication
-      const user = await stackServerApp.getUser();
-      if (!user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-
       const settings = await getOrCreateSiteSettings();
       return NextResponse.json({
         announcementBar: settings.announcementBar,
@@ -43,17 +36,11 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * PUT - Update announcement bar configuration
+ * PUT - Update announcement bar configuration (admin-only — site-wide setting)
  */
 export async function PUT(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenantAuth(request, 'edit', async () => {
     try {
-      // Check authentication
-      const user = await stackServerApp.getUser();
-      if (!user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-
       const body = await request.json();
 
       // Validate

@@ -66,9 +66,9 @@ export function Billing({ stripeCustomerPortalUrl }: BillingProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-tour-id="billing-page">
       <div>
-        <h1 className="text-2xl font-bold">Billing & Subscription</h1>
+        <h1 className="text-2xl font-bold" data-tour-id="billing-heading">Billing & Subscription</h1>
         <p className="text-muted-foreground">View your plan and manage your subscription</p>
       </div>
 
@@ -80,7 +80,7 @@ export function Billing({ stripeCustomerPortalUrl }: BillingProps) {
       </Alert>
 
       {/* Current Plan */}
-      <Card data-help-key="dashboard.billing.plan">
+      <Card data-help-key="dashboard.billing.plan" data-tour-id="billing-plan-card">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Your Plan</span>
@@ -97,7 +97,7 @@ export function Billing({ stripeCustomerPortalUrl }: BillingProps) {
                 {currentPlan.price === 0 ? "Free forever" : `$${currentPlan.price}/${currentPlan.billing}`}
               </p>
             </div>
-            <Button onClick={handleManageSubscription} className="gap-2" data-help-key="dashboard.billing.manage">
+            <Button onClick={handleManageSubscription} className="gap-2" data-help-key="dashboard.billing.manage" data-tour-id="billing-manage-subscription">
               Manage Subscription
               <ExternalLink className="w-4 h-4" />
             </Button>
@@ -109,7 +109,7 @@ export function Billing({ stripeCustomerPortalUrl }: BillingProps) {
       </Card>
 
       {/* Usage Overview */}
-      <Card data-help-key="dashboard.billing.usage">
+      <Card data-help-key="dashboard.billing.usage" data-tour-id="billing-usage-card">
         <CardHeader>
           <CardTitle>Usage</CardTitle>
           <CardDescription>Current usage for your plan</CardDescription>
@@ -139,7 +139,7 @@ export function Billing({ stripeCustomerPortalUrl }: BillingProps) {
       </Card>
 
       {/* Available Plans */}
-      <Card data-help-key="dashboard.billing.plans">
+      <Card data-help-key="dashboard.billing.plans" data-tour-id="billing-plans-card">
         <CardHeader>
           <CardTitle>Available Plans</CardTitle>
           <CardDescription>Compare plans and features</CardDescription>
@@ -149,6 +149,7 @@ export function Billing({ stripeCustomerPortalUrl }: BillingProps) {
             {plans.map((plan) => (
               <div
                 key={plan.name}
+                data-tour-id={`billing-plan-${plan.name.toLowerCase()}`}
                 className={`relative border rounded-lg p-4 ${
                   plan.current
                     ? "border-primary bg-primary/5"
@@ -185,7 +186,7 @@ export function Billing({ stripeCustomerPortalUrl }: BillingProps) {
             ))}
           </div>
           <div className="mt-6 text-center">
-            <Button onClick={handleManageSubscription} variant="outline" className="gap-2">
+            <Button onClick={handleManageSubscription} variant="outline" className="gap-2" data-tour-id="billing-upgrade-button">
               Upgrade or Change Plan
               <ExternalLink className="w-4 h-4" />
             </Button>
