@@ -1,0 +1,400 @@
+/* Tenant Admin — additions on top of admin-styles.css
+   Reuses the dirH chrome from the super-admin canvas, plus a few tenant-only bits:
+   - Tenant brand mark (blue->cyan, not blue->orange)
+   - Right-side AI helper dock (different vibe to the super-admin Activity rail)
+   - Modal overlay
+*/
+
+@import url("./admin-styles.css");
+
+/* Tenant brand mark — use the designer blue->cyan instead of super-admin blue->orange */
+.tnt .dirH__brand-mark {
+  background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+}
+
+/* Tenant sidebar — keep dirH structure but use a slightly cooler tint on actives */
+.tnt .dirH__nav-item.is-active { background: #eff6ff; color: #1d4ed8; }
+
+/* "Subdomain selector" chip at top of sidebar — replaces role-switch */
+.tnt__site-switch {
+  margin: 8px 10px 6px;
+  display: flex; align-items: center; gap: 8px;
+  background: var(--br-surface); border: 1px solid var(--br-border);
+  border-radius: 7px; padding: 6px 8px;
+  cursor: pointer;
+}
+.tnt__site-mark {
+  width: 22px; height: 22px; border-radius: 5px;
+  background: #fff; border: 1px solid var(--br-border);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: var(--br-primary);
+  flex-shrink: 0;
+}
+.tnt__site-name { font-size: 12.5px; font-weight: 600; line-height: 1.2; }
+.tnt__site-host { font-size: 10.5px; color: var(--br-text-secondary); font-family: var(--font-mono); line-height: 1.2; }
+
+/* AI helper dock — bottom-right floating panel that's the "AI chat" pattern
+   from the user brief. Shown across DNS / Branding / Permissions / etc. */
+.tnt__ai-dock {
+  position: absolute; right: 16px; bottom: 16px;
+  width: 320px; max-height: 360px;
+  background: #fff; border: 1px solid var(--br-border);
+  border-radius: 12px; box-shadow: var(--shadow-lg);
+  display: flex; flex-direction: column;
+  overflow: hidden; z-index: 5;
+}
+.tnt__ai-dock--collapsed { width: 200px; max-height: 44px; }
+.tnt__ai-dock-head {
+  padding: 9px 12px; border-bottom: 1px solid var(--br-border);
+  display: flex; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, rgba(59,130,246,0.06), rgba(6,182,212,0.06));
+}
+.tnt__ai-dock-mark {
+  width: 22px; height: 22px; border-radius: 6px;
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  color: #fff; display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.tnt__ai-dock-mark [data-lucide] { width: 13px; height: 13px; }
+.tnt__ai-dock-title { font-size: 12px; font-weight: 600; }
+.tnt__ai-dock-body {
+  padding: 10px 12px; overflow: auto; display: flex; flex-direction: column; gap: 9px;
+  font-size: 12px; flex: 1;
+}
+.tnt__ai-msg {
+  display: flex; gap: 7px; align-items: flex-start;
+}
+.tnt__ai-msg-icon {
+  width: 18px; height: 18px; border-radius: 5px;
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  color: #fff; display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.tnt__ai-msg-icon [data-lucide] { width: 10px; height: 10px; }
+.tnt__ai-msg-text {
+  background: var(--br-surface); border: 1px solid var(--br-border);
+  border-radius: 8px; padding: 7px 9px; font-size: 11.5px; line-height: 1.45;
+  color: var(--br-text);
+}
+.tnt__ai-msg-text strong { font-weight: 600; }
+.tnt__ai-msg-text .mono { font-family: var(--font-mono); font-size: 11px; background: #fff; padding: 1px 5px; border-radius: 3px; border: 1px solid var(--br-border); }
+.tnt__ai-msg--me { justify-content: flex-end; }
+.tnt__ai-msg--me .tnt__ai-msg-text { background: #eff6ff; border-color: #bfdbfe; color: #1e3a8a; }
+.tnt__ai-msg--me .tnt__ai-msg-icon { display: none; }
+.tnt__ai-suggest-row {
+  display: flex; gap: 6px; flex-wrap: wrap; padding: 0 1px;
+}
+.tnt__ai-suggest {
+  font-size: 10.5px; padding: 3px 8px; border-radius: 9999px;
+  background: #fff; border: 1px solid #bfdbfe; color: #1d4ed8;
+  cursor: pointer; line-height: 1.3; font-family: inherit;
+}
+.tnt__ai-input {
+  border-top: 1px solid var(--br-border);
+  padding: 8px 10px; display: flex; align-items: center; gap: 6px;
+  background: #fff;
+}
+.tnt__ai-input-q { flex: 1; font-size: 12px; color: var(--br-text-secondary); }
+.tnt__ai-input .iconbtn { width: 24px; height: 24px; background: var(--br-primary); border-color: var(--br-primary); color: #fff; }
+
+/* Modal overlay — used for invite / remove confirm / delete subdomain */
+.tnt__modal-wrap {
+  position: absolute; inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 20; backdrop-filter: blur(2px);
+}
+.tnt__modal {
+  width: 460px; max-width: 90%;
+  background: #fff; border-radius: 12px; box-shadow: var(--shadow-xl);
+  border: 1px solid var(--br-border);
+  overflow: hidden;
+}
+.tnt__modal--wide { width: 560px; }
+.tnt__modal-head {
+  padding: 16px 18px 12px;
+  display: flex; align-items: flex-start; gap: 12px;
+  border-bottom: 1px solid var(--br-border);
+}
+.tnt__modal-icon {
+  width: 36px; height: 36px; border-radius: 9px;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.tnt__modal-icon--info { background: #eff6ff; color: #1d4ed8; }
+.tnt__modal-icon--danger { background: #fef2f2; color: #b91c1c; }
+.tnt__modal-icon [data-lucide] { width: 18px; height: 18px; }
+.tnt__modal-title { font-size: 15px; font-weight: 600; margin: 0; letter-spacing: -0.005em; }
+.tnt__modal-sub { font-size: 12px; color: var(--br-text-secondary); margin: 3px 0 0; }
+.tnt__modal-body { padding: 16px 18px; }
+.tnt__modal-foot {
+  padding: 12px 18px; border-top: 1px solid var(--br-border);
+  background: var(--br-surface);
+  display: flex; justify-content: flex-end; gap: 8px;
+}
+
+/* Field controls */
+.tnt__field { display: flex; flex-direction: column; gap: 5px; }
+.tnt__field-label { font-size: 11.5px; font-weight: 600; color: var(--br-text); }
+.tnt__field-hint { font-size: 11px; color: var(--br-text-secondary); line-height: 1.4; }
+.tnt__input {
+  display: flex; align-items: center;
+  border: 1px solid var(--br-border); border-radius: 6px;
+  background: #fff; padding: 7px 10px;
+  font-size: 12.5px; color: var(--br-text);
+}
+.tnt__input--placeholder { color: var(--br-text-secondary); }
+.tnt__input--focused { box-shadow: 0 0 0 3px rgba(59,130,246,0.18); border-color: var(--br-primary); }
+.tnt__input-suffix { font-family: var(--font-mono); font-size: 11.5px; color: var(--br-text-secondary); margin-left: auto; }
+.tnt__textarea {
+  border: 1px solid var(--br-border); border-radius: 6px;
+  background: #fff; padding: 7px 10px;
+  font-size: 12.5px; color: var(--br-text);
+  font-family: var(--font-sans); min-height: 56px;
+  resize: none;
+}
+
+/* Toggle */
+.tnt__toggle {
+  width: 30px; height: 17px; border-radius: 9999px;
+  background: #cbd5e1; position: relative; flex-shrink: 0;
+  transition: background 0.15s;
+}
+.tnt__toggle::after {
+  content: ""; position: absolute; top: 2px; left: 2px;
+  width: 13px; height: 13px; border-radius: 9999px; background: #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+  transition: transform 0.15s;
+}
+.tnt__toggle.is-on { background: var(--br-primary); }
+.tnt__toggle.is-on::after { transform: translateX(13px); }
+
+/* Tabs (horizontal underlined) */
+.tnt__tabs {
+  display: flex; gap: 0;
+  border-bottom: 1px solid var(--br-border);
+  padding: 0 18px;
+  background: #fff;
+}
+.tnt__tab {
+  border: 0; background: transparent;
+  font-size: 12.5px; font-weight: 500; color: var(--br-text-secondary);
+  padding: 11px 14px; cursor: pointer; font-family: inherit;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.tnt__tab [data-lucide] { width: 13px; height: 13px; }
+.tnt__tab.is-on { color: var(--br-primary); border-color: var(--br-primary); font-weight: 600; }
+
+/* Empty state shell */
+.tnt__empty {
+  text-align: center; padding: 56px 24px;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+.tnt__empty-glyph {
+  width: 64px; height: 64px; border-radius: 16px;
+  background: linear-gradient(135deg, #eff6ff, #ecfeff);
+  border: 1px solid #dbeafe;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--br-primary);
+}
+.tnt__empty-glyph [data-lucide] { width: 28px; height: 28px; }
+.tnt__empty-h { font-size: 17px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+.tnt__empty-p { font-size: 12.5px; color: var(--br-text-secondary); max-width: 360px; line-height: 1.5; margin: 0; }
+
+/* DNS table — recreates the visual feel of real DNS provider UIs */
+.tnt__dns {
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  font-size: 12px;
+}
+.tnt__dns thead th {
+  text-align: left; padding: 8px 12px;
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--br-text-secondary); background: var(--br-surface);
+  border-bottom: 1px solid var(--br-border);
+}
+.tnt__dns tbody td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--br-border);
+  vertical-align: middle;
+  font-family: var(--font-mono); font-size: 11.5px;
+  color: var(--br-text);
+}
+.tnt__dns tbody td.is-label { font-family: var(--font-sans); font-weight: 500; }
+.tnt__dns tbody tr:last-child td { border-bottom: 0; }
+.tnt__dns-type {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: var(--font-mono); font-size: 10.5px; font-weight: 600;
+  padding: 2px 7px; border-radius: 4px;
+  background: #eff6ff; color: #1d4ed8;
+  letter-spacing: 0.04em;
+}
+
+/* Status dots */
+.tnt__dot { width: 7px; height: 7px; border-radius: 9999px; display: inline-block; }
+.tnt__dot--ok { background: #10b981; }
+.tnt__dot--warn { background: #f59e0b; }
+.tnt__dot--err { background: #ef4444; }
+.tnt__dot--idle { background: #cbd5e1; }
+
+/* Permission row — used by Roles & Permissions */
+.tnt__perm-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto auto;
+  gap: 16px; align-items: center;
+  padding: 9px 14px; border-bottom: 1px solid var(--br-border);
+  font-size: 12px;
+}
+.tnt__perm-row:last-child { border-bottom: 0; }
+.tnt__perm-row .head-cell {
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--br-text-secondary);
+  text-align: center;
+}
+.tnt__perm-row .toggle-cell {
+  display: flex; justify-content: center;
+}
+.tnt__perm-name { font-weight: 500; }
+.tnt__perm-desc { font-size: 11px; color: var(--br-text-secondary); margin-top: 2px; line-height: 1.4; }
+
+/* Per-subdomain access matrix */
+.tnt__matrix {
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  font-size: 12px;
+}
+.tnt__matrix th, .tnt__matrix td {
+  padding: 8px 10px; border-bottom: 1px solid var(--br-border);
+}
+.tnt__matrix thead th {
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--br-text-secondary);
+  background: var(--br-surface); text-align: left;
+}
+.tnt__matrix tbody td.center { text-align: center; }
+.tnt__matrix .role-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10.5px; font-weight: 500;
+  padding: 2px 7px; border-radius: 4px;
+  background: #f1f5f9; color: #334155;
+  border: 1px solid transparent;
+}
+.tnt__matrix .role-chip--owner { background: #fef3c7; color: #92400e; }
+.tnt__matrix .role-chip--admin { background: #dbeafe; color: #1d4ed8; }
+.tnt__matrix .role-chip--editor { background: #ede9fe; color: #6d28d9; }
+.tnt__matrix .role-chip--viewer { background: #f1f5f9; color: #475569; }
+.tnt__matrix .role-chip--none { background: #fff; color: #94a3b8; border-color: var(--br-border); }
+.tnt__matrix .role-chip--custom { background: #ccfbf1; color: #115e59; }
+
+/* Color swatch (branding) */
+.tnt__swatch {
+  width: 28px; height: 28px; border-radius: 6px;
+  border: 1px solid rgba(0,0,0,0.08);
+  flex-shrink: 0;
+}
+
+/* KPI / stat tile */
+.tnt__stat {
+  background: #fff; border: 1px solid var(--br-border);
+  border-radius: 10px; padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.tnt__stat-label {
+  font-size: 11px; font-weight: 500; color: var(--br-text-secondary);
+  display: flex; align-items: center; gap: 5px;
+}
+.tnt__stat-label [data-lucide] { width: 12px; height: 12px; }
+.tnt__stat-value {
+  font-size: 24px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1;
+  color: var(--br-text);
+}
+.tnt__stat-delta {
+  font-size: 11.5px; font-weight: 500;
+  display: flex; align-items: center; gap: 4px;
+}
+.tnt__stat-delta--up { color: #047857; }
+.tnt__stat-delta--down { color: #b91c1c; }
+.tnt__stat-delta [data-lucide] { width: 12px; height: 12px; }
+
+/* Sparkline-ish bar mini chart */
+.tnt__bars { display: flex; align-items: flex-end; gap: 3px; height: 28px; }
+.tnt__bars span {
+  flex: 1; background: linear-gradient(180deg, #3b82f6, #93c5fd);
+  border-radius: 2px 2px 0 0; min-height: 2px;
+}
+
+/* Channel/comms list tile */
+.tnt__chan-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px; border-bottom: 1px solid var(--br-border);
+  cursor: pointer;
+}
+.tnt__chan-row:hover { background: var(--br-surface); }
+.tnt__chan-row.is-on { background: #eff6ff; border-left: 3px solid var(--br-primary); padding-left: 11px; }
+.tnt__chan-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: #fff; border: 1px solid var(--br-border);
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.tnt__chan-icon [data-lucide] { width: 15px; height: 15px; color: var(--br-primary); }
+
+/* Banner */
+.tnt__banner {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 11px 14px; border-radius: 10px;
+  border: 1px solid;
+}
+.tnt__banner [data-lucide] { width: 16px; height: 16px; margin-top: 1px; flex-shrink: 0; }
+.tnt__banner--info { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+.tnt__banner--warn { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+.tnt__banner--err { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+.tnt__banner--ok { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+.tnt__banner b { font-weight: 600; }
+.tnt__banner-row {
+  display: flex; flex-direction: column; gap: 2px; flex: 1; font-size: 12px;
+}
+.tnt__banner-row .sub { font-weight: 400; opacity: 0.85; }
+
+/* Wizard stepper */
+.tnt__steps { display: flex; align-items: center; gap: 8px; }
+.tnt__step {
+  display: flex; align-items: center; gap: 7px;
+  padding: 5px 10px; border-radius: 6px;
+  background: var(--br-surface); border: 1px solid var(--br-border);
+  font-size: 11.5px; color: var(--br-text-secondary);
+}
+.tnt__step-n {
+  width: 18px; height: 18px; border-radius: 9999px;
+  background: #fff; border: 1px solid var(--br-border);
+  font-size: 10.5px; font-weight: 600;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--br-text-secondary);
+}
+.tnt__step.is-done { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+.tnt__step.is-done .tnt__step-n { background: #10b981; color: #fff; border-color: #10b981; }
+.tnt__step.is-on { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+.tnt__step.is-on .tnt__step-n { background: var(--br-primary); color: #fff; border-color: var(--br-primary); }
+.tnt__step-arrow { color: #cbd5e1; }
+
+/* Activity feed item */
+.tnt__act-row {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 9px 14px; border-bottom: 1px solid var(--br-border);
+}
+.tnt__act-icon {
+  width: 24px; height: 24px; border-radius: 6px;
+  background: var(--br-surface); border: 1px solid var(--br-border);
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.tnt__act-icon [data-lucide] { width: 12px; height: 12px; }
+.tnt__act-body { font-size: 11.5px; line-height: 1.45; color: var(--br-text); flex: 1; }
+.tnt__act-time { font-size: 10.5px; color: var(--br-text-secondary); }
+
+/* Section header inside content pages */
+.tnt__page-h {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  margin-bottom: 18px; gap: 16px;
+}
+.tnt__page-h h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.015em; margin: 0; }
+.tnt__page-h .sub { font-size: 12.5px; color: var(--br-text-secondary); margin-top: 4px; }

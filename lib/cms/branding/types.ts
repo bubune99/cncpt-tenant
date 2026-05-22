@@ -39,6 +39,43 @@ export interface TenantBranding {
   hidePoweredBy: boolean
   /** Custom CSS injected into the storefront */
   customCss?: string
+  /** Atlas brand preset — the user-selectable design system */
+  brandPreset: BrandPreset
+  /** UI density for tenant surfaces */
+  density: BrandDensity
+}
+
+/** The four selectable Atlas design-system presets. Marigold is the default. */
+export type BrandPreset = 'marigold' | 'boreal' | 'obsidian' | 'meadow'
+
+/** UI density for tenant admin/storefront surfaces. */
+export type BrandDensity = 'compact' | 'regular' | 'spacious'
+
+export const BRAND_PRESETS: readonly BrandPreset[] = [
+  'marigold',
+  'boreal',
+  'obsidian',
+  'meadow',
+] as const
+
+export const BRAND_DENSITIES: readonly BrandDensity[] = [
+  'compact',
+  'regular',
+  'spacious',
+] as const
+
+/** Narrow an untrusted value to a valid BrandPreset (defaults to marigold). */
+export function toBrandPreset(value: unknown): BrandPreset {
+  return BRAND_PRESETS.includes(value as BrandPreset)
+    ? (value as BrandPreset)
+    : 'marigold'
+}
+
+/** Narrow an untrusted value to a valid BrandDensity (defaults to regular). */
+export function toBrandDensity(value: unknown): BrandDensity {
+  return BRAND_DENSITIES.includes(value as BrandDensity)
+    ? (value as BrandDensity)
+    : 'regular'
 }
 
 /** Default branding values for new tenants */
@@ -51,4 +88,6 @@ export const DEFAULT_TENANT_BRANDING: TenantBranding = {
   titleTemplate: '%s | CNCPT Web',
   metaDescription: '',
   hidePoweredBy: false,
+  brandPreset: 'marigold',
+  density: 'regular',
 }

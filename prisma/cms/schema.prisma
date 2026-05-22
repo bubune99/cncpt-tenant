@@ -55,6 +55,9 @@ model User {
   // Canva integration
   canvaConnection CanvaConnection?
 
+  // Atlas redesign — blog contributor credits
+  blogContributions BlogContributor[]
+
   @@index([stackAuthId], map: "users_stack_auth_id_idx")
   @@map("users")
 }
@@ -81,6 +84,10 @@ model Customer {
   notes     String?  @db.Text
   tags      String[] // For segmentation
 
+  // Atlas redesign — lifecycle stage
+  lifecycleStage     CustomerLifecycleStage @default(NEW)
+  lifecycleUpdatedAt DateTime?
+
   // Multi-tenant scoping
   tenantId Int?       @map("tenant_id")
   tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -105,6 +112,10 @@ model Customer {
   averageOrder Int       @default(0) // in cents
   lastOrderAt  DateTime?
 
+  // Atlas redesign — loyalty/credit
+  storeCredit   Int @default(0) // in cents
+  loyaltyPoints Int @default(0)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -113,12 +124,24 @@ model Customer {
   addresses CustomerAddress[]
   wishlists Wishlist[]
   reviews   ProductReview[]
+  // Atlas redesign — structured notes timeline
+  customerNotes CustomerNote[]
+  loyaltyActivities LoyaltyActivity[]
 
   @@unique([tenantId, email]) // Unique emails per tenant
   @@index([tenantId])
   @@index([stripeCustomerId])
   @@index([email])
   @@map("customers")
+}
+
+enum CustomerLifecycleStage {
+  NEW
+  RETURNING
+  LOYAL
+  VIP
+  LAPSED
+  CHURNED
 }
 
 model CustomerAddress {
@@ -525,6 +548,10 @@ model Product {
   // Inventory alerts
   backInStockSubscriptions BackInStockSubscription[]
   stockReservations        StockReservation[]
+
+  // Atlas redesign — G06: pricing stack
+  pricingTiers  ProductPricingTier[]
+  saleSchedules ProductSaleSchedule[]
 
   @@unique([tenantId, slug]) // Unique slugs per tenant
   @@index([tenantId])
@@ -1027,15 +1054,41 @@ model OrderItem {
   price        Int // Price per unit at time of order (cents)
   total        Int // quantity * price
 
+  // Atlas redesign — configurable items + attachments
+  configOptions Json? // customer-selected config {key: value}
+  attachments   Json? // [{name, url, mimeType, size}]
+
   createdAt DateTime @default(now())
 
   // Relations
-  order   Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product         @relation(fields: [productId], references: [id])
-  variant ProductVariant? @relation(fields: [variantId], references: [id])
+  order            Order                        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product          Product                      @relation(fields: [productId], references: [id])
+  variant          ProductVariant?              @relation(fields: [variantId], references: [id])
+  // Atlas redesign — per-line fulfillment steps
+  fulfillmentSteps OrderItemFulfillmentStep[]
 
   @@index([orderId])
   @@map("order_items")
+}
+
+// Atlas redesign — G01: per-line sub-fulfillment steps
+model OrderItemFulfillmentStep {
+  id          String    @id @default(cuid())
+  orderItemId String
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  name        String   // "Pick blank", "Confirm spec", "Embroider", "QC", "Pack"
+  position    Int      @default(0)
+  completed   Boolean  @default(false)
+  completedAt DateTime?
+  completedBy String?  // userId
+  notes       String?  @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orderItemId])
+  @@map("order_item_fulfillment_steps")
 }
 
 model Shipment {
@@ -2873,6 +2926,9 @@ model BlogPost {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Atlas redesign — G03: shop product links
+  shopProductIds String[] @default([])
+
   // Relations
   author        User?              @relation(fields: [authorId], references: [id])
   featuredImage Media?             @relation("BlogFeaturedImage", fields: [featuredImageId], references: [id])
@@ -2880,6 +2936,13 @@ model BlogPost {
   categories    BlogPostCategory[]
   tags          BlogPostTag[]
   comments      BlogComment[]
+
+  // Atlas redesign — G03/G04: series, contributors, related, distribution
+  series       BlogPostSeries[]
+  contributors BlogContributor[]
+  relatedPosts BlogPostRelated[]       @relation("PostRelated")
+  relatedOf    BlogPostRelated[]       @relation("RelatedPost")
+  channels     PostDistributionChannel[]
 
   @@unique([tenantId, slug]) // Unique slugs per tenant
   @@index([tenantId])
@@ -4116,6 +4179,11 @@ model Subdomain {
   emailSubscribers EmailSubscriber[] @relation("TenantEmailSubscribers")
   emailTemplates   EmailTemplate[]   @relation("TenantEmailTemplates")
 
+  // Atlas redesign — new tenant-scoped models
+  analyticsDashboards     AnalyticsDashboard[]
+  blogSeriesList          BlogSeries[]
+  analyticsWidgetTemplates AnalyticsWidgetTemplate[]
+
   @@index([subdomain])
   @@index([userId], map: "idx_subdomains_user_id")
   @@map("subdomains")
@@ -4231,6 +4299,10 @@ model TenantSetting {
   titleTemplate     String? @map("title_template") @db.VarChar(255) // e.g. "%s | My Brand"
   metaDescription   String? @map("meta_description") @db.Text
   hidePoweredBy     Boolean @default(false) @map("hide_powered_by")
+
+  // Atlas design system — user-selectable preset + density (Phase 0)
+  brandPreset       String  @default("marigold") @map("brand_preset") @db.VarChar(20)
+  density           String  @default("regular") @map("density") @db.VarChar(20)
 
   // Relations
   tenant Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -4777,4 +4849,264 @@ model MarketplaceTemplate {
   @@index([source])
   @@index([usageCount])
   @@map("marketplace_templates")
+}
+
+// =============================================================================
+// ATLAS REDESIGN — NEW MODELS (G01, G02, G03, G04, G05, G06, G10)
+// =============================================================================
+
+// G05 — Customer lifecycle stage (enum added inline above)
+
+// G10 — Structured customer notes timeline
+model CustomerNote {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  authorId   String?  // admin userId
+  content    String   @db.Text
+  pinned     Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([customerId])
+  @@index([createdAt])
+  @@map("customer_notes")
+}
+
+// G06 — Product pricing tiers (qty-break / member pricing)
+model ProductPricingTier {
+  id        String          @id @default(cuid())
+  productId String
+  product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  label     String          // "B2B Wholesale", "Studio Members"
+  minQty    Int             // minimum quantity to qualify
+  maxQty    Int?
+  price     Int             // price in cents at this tier
+  type      PricingTierType @default(QTY)
+  enabled   Boolean         @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId])
+  @@map("product_pricing_tiers")
+}
+
+enum PricingTierType {
+  QTY    // B2B quantity break
+  MEMBER // Member/loyalty tier pricing
+}
+
+// G06 — Product sale schedule (timed sale price windows)
+model ProductSaleSchedule {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId String?
+  salePrice Int     // cents
+  startsAt  DateTime
+  endsAt    DateTime
+  enabled   Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId])
+  @@index([startsAt, endsAt])
+  @@map("product_sale_schedules")
+}
+
+// G02 — Analytics dashboards
+model AnalyticsDashboard {
+  id       String     @id @default(cuid())
+  tenantId Int?
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name       String
+  slug       String
+  isDefault  Boolean  @default(false)
+  layout     Json?    // grid layout (positions/sizes)
+  pinnedBy   String[] @default([]) // userIds who pinned
+  sharedWith String[] @default([]) // "public" or userIds
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  widgets AnalyticsWidget[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@map("analytics_dashboards")
+}
+
+// G02 — Analytics widgets
+model AnalyticsWidget {
+  id          String             @id @default(cuid())
+  dashboardId String
+  dashboard   AnalyticsDashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+
+  title      String
+  vizType    String  // "line", "bar", "donut", "kpi", "table", "funnel"
+  query      Json    // { metric, dimension, filters, comparison, groupBy, dateRange }
+  config     Json?   // chart-specific: axes, colors, drillEnabled
+  position   Json    // { x, y, w, h } grid slot
+  templateId String? // if created from template
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([dashboardId])
+  @@map("analytics_widgets")
+}
+
+// G02 — Analytics widget templates library
+model AnalyticsWidgetTemplate {
+  id          String     @id @default(cuid())
+  tenantId    Int?
+  tenant      Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  vizType     String
+  query       Json
+  config      Json?
+  thumbnail   String?
+  category    String? // "Revenue", "Traffic", "Inventory"
+  isSystem    Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@map("analytics_widget_templates")
+}
+
+// G03 — Blog series
+model BlogSeries {
+  id           String     @id @default(cuid())
+  tenantId     Int?
+  tenant       Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title        String
+  slug         String
+  description  String?    @db.Text
+  coverImageId String?
+  postCount    Int        @default(0)
+  position     Int        @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  posts BlogPostSeries[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@map("blog_series")
+}
+
+// G03 — Junction: post belongs to series
+model BlogPostSeries {
+  postId   String
+  seriesId String
+  position Int        @default(0) // chapter number in series
+  post     BlogPost   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  series   BlogSeries @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  @@id([postId, seriesId])
+  @@map("blog_post_series")
+}
+
+// G03 — Blog contributors (author/editor/photographer credits)
+model BlogContributor {
+  postId   String
+  userId   String
+  role     String @default("author") // "author", "editor", "photographer"
+  position Int    @default(0)
+  post     BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([postId, userId])
+  @@map("blog_contributors")
+}
+
+// G03 — Related post links
+model BlogPostRelated {
+  postId        String
+  relatedPostId String
+  position      Int      @default(0)
+  post          BlogPost @relation("PostRelated", fields: [postId], references: [id], onDelete: Cascade)
+  relatedPost   BlogPost @relation("RelatedPost", fields: [relatedPostId], references: [id], onDelete: Cascade)
+
+  @@id([postId, relatedPostId])
+  @@map("blog_post_related")
+}
+
+// G04 — Multi-channel distribution
+model PostDistributionChannel {
+  id          String               @id @default(cuid())
+  postId      String
+  post        BlogPost             @relation(fields: [postId], references: [id], onDelete: Cascade)
+  channel     DistributionChannel
+  enabled     Boolean              @default(false)
+  copy        String?              @db.Text // per-channel copy override
+  scheduledAt DateTime?
+  publishedAt DateTime?
+  status      ChannelPublishStatus @default(DRAFT)
+  metadata    Json?                // {tweetId, instagramMediaId, rssGuid, etc.}
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([postId, channel])
+  @@index([postId])
+  @@map("post_distribution_channels")
+}
+
+enum DistributionChannel {
+  WEB
+  NEWSLETTER
+  RSS
+  TWITTER_X
+  MASTODON
+  INSTAGRAM
+}
+
+enum ChannelPublishStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  FAILED
+}
+
+// ============================================================
+// G-COORDINATOR: Account Summary + Loyalty
+// ============================================================
+
+/// Ledger of loyalty point events per customer
+model LoyaltyActivity {
+  id         String   @id @default(cuid())
+  customerId String   @map("customer_id")
+  tenantId   Int?     @map("tenant_id")
+
+  // Event
+  type        LoyaltyActivityType
+  points      Int  // Positive = earned, negative = redeemed
+  description String?
+  referenceId String? // orderId, etc.
+
+  createdAt DateTime @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([tenantId])
+  @@map("loyalty_activities")
+}
+
+enum LoyaltyActivityType {
+  EARNED_PURCHASE
+  EARNED_REFERRAL
+  EARNED_REVIEW
+  REDEEMED
+  ADJUSTED
+  EXPIRED
 }

@@ -161,37 +161,38 @@ export default function SiteSettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex items-center justify-center" style={{ minHeight: '60vh' }}>
+        <span className="eyebrow">Loading…</span>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-4 sm:py-8 px-4 max-w-5xl">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href={buildPath('/admin')}>
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold">Site Settings</h1>
-            <p className="text-muted-foreground">
-              Configure global site settings and appearance
-            </p>
+    <div data-tour-id="site-settings-page">
+      {/* Main head — Atlas editorial pattern (mirrors settings/page.tsx) */}
+      <div className="main-head" data-tour-id="site-settings-heading">
+        <div>
+          <div className="eyebrow">Site Settings</div>
+          <h1>The <span className="display-i accent">storefront.</span></h1>
+          <div className="sub">
+            Header, footer, announcement bar, branding, SEO &amp; analytics
           </div>
         </div>
-        <Button onClick={handleSave} disabled={isSaving}>
+        <div className="actions">
+          <Link href={buildPath('/admin')} className="btn">
+            <ArrowLeft className="h-4 w-4" style={{ marginRight: 4 }} />Back
+          </Link>
           {isSaving ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            <button className="btn btn-solid" type="button" disabled>
+              <Loader2 className="h-4 w-4 animate-spin" style={{ marginRight: 4 }} />
+              Saving…
+            </button>
           ) : (
-            <Save className="h-4 w-4 mr-2" />
+            <button className="btn btn-solid" type="button" onClick={handleSave}>
+              <Save className="h-4 w-4" style={{ marginRight: 4 }} />Save Changes
+            </button>
           )}
-          Save Changes
-        </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="layout" className="space-y-6">

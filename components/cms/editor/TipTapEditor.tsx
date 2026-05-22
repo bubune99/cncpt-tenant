@@ -45,7 +45,7 @@ export default function TipTapEditor({
   content = '',
   onChange,
   onJsonChange,
-  placeholder = 'Start writing...',
+  placeholder = 'Start writing…',
   editable = true,
   className,
   minHeight = '300px',
@@ -65,9 +65,7 @@ export default function TipTapEditor({
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        heading: {
-          levels: [1, 2, 3, 4],
-        },
+        heading: { levels: [1, 2, 3, 4] },
         codeBlock: {
           HTMLAttributes: {
             class: 'bg-muted rounded-md p-4 font-mono text-sm overflow-x-auto',
@@ -75,19 +73,19 @@ export default function TipTapEditor({
         },
         blockquote: {
           HTMLAttributes: {
-            class: 'border-l-4 border-primary pl-4 italic',
+            class: 'j-pullquote',
           },
         },
       }),
       Link.configure({
         openOnClick: false,
         HTMLAttributes: {
-          class: 'text-primary underline hover:text-primary/80 cursor-pointer',
+          class: 'j-link',
         },
       }),
       Image.configure({
         HTMLAttributes: {
-          class: 'rounded-lg max-w-full h-auto',
+          class: 'j-img',
         },
       }),
       Placeholder.configure({
@@ -95,78 +93,65 @@ export default function TipTapEditor({
         emptyEditorClass: 'is-editor-empty',
       }),
       Underline,
-      TextAlign.configure({
-        types: ['heading', 'paragraph'],
-      }),
-      Highlight.configure({
-        multicolor: true,
-      }),
+      TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      Highlight.configure({ multicolor: true }),
       TextStyle,
       Color,
       Youtube.configure({
-        HTMLAttributes: {
-          class: 'w-full aspect-video rounded-lg',
-        },
+        HTMLAttributes: { class: 'w-full aspect-video rounded-lg' },
         width: 640,
         height: 360,
       }),
       CharacterCount.configure({
-        limit: wordLimit ? wordLimit * 6 : undefined, // Approximate character limit
+        limit: wordLimit ? wordLimit * 6 : undefined,
       }),
-    ] as any[],
+    ] as NonNullable<Parameters<typeof useEditor>[0]>['extensions'],
     content,
     editable,
     autofocus: autofocus ? 'end' : false,
     editorProps: {
       attributes: {
         class: cn(
-          'prose prose-sm sm:prose-base dark:prose-invert max-w-none',
+          'j-article',
           'focus:outline-none',
-          'px-4 py-3'
+          'px-8 py-6'
         ),
       },
     },
-    onUpdate: ({ editor }) => {
-      const html = editor.getHTML();
-      const json = editor.getJSON();
+    onUpdate: ({ editor: ed }) => {
+      const html = ed.getHTML();
+      const json = ed.getJSON();
       onChange?.(html);
       onJsonChange?.(json);
     },
   });
 
-  // Update content when prop changes
+  // Sync content prop → editor
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
       editor.commands.setContent(content);
     }
   }, [content, editor]);
 
-  // Link dialog handlers
+  // Link dialog
   const openLinkDialog = useCallback(() => {
     if (!editor) return;
-    const previousUrl = editor.getAttributes('link').href || '';
-    setLinkUrl(previousUrl);
+    setLinkUrl(editor.getAttributes('link').href ?? '');
     setLinkDialogOpen(true);
   }, [editor]);
 
   const setLink = useCallback(() => {
     if (!editor) return;
-
     if (linkUrl === '') {
       editor.chain().focus().extendMarkRange('link').unsetLink().run();
     } else {
-      editor
-        .chain()
-        .focus()
-        .extendMarkRange('link')
-        .setLink({ href: linkUrl })
-        .run();
+      editor.chain().focus().extendMarkRange('link').setLink({ href: linkUrl }).run();
     }
     setLinkDialogOpen(false);
     setLinkUrl('');
   }, [editor, linkUrl]);
 
-  // Image dialog handlers
+  // Image dialog
   const openImageDialog = useCallback(() => {
     setImageUrl('');
     setImageAlt('');
@@ -175,18 +160,13 @@ export default function TipTapEditor({
 
   const insertImage = useCallback(() => {
     if (!editor || !imageUrl) return;
-
-    editor
-      .chain()
-      .focus()
-      .setImage({ src: imageUrl, alt: imageAlt })
-      .run();
+    editor.chain().focus().setImage({ src: imageUrl, alt: imageAlt }).run();
     setImageDialogOpen(false);
     setImageUrl('');
     setImageAlt('');
   }, [editor, imageUrl, imageAlt]);
 
-  // YouTube dialog handlers
+  // YouTube dialog
   const openYoutubeDialog = useCallback(() => {
     setYoutubeUrl('');
     setYoutubeDialogOpen(true);
@@ -194,7 +174,6 @@ export default function TipTapEditor({
 
   const insertYoutube = useCallback(() => {
     if (!editor || !youtubeUrl) return;
-
     editor.commands.setYoutubeVideo({ src: youtubeUrl });
     setYoutubeDialogOpen(false);
     setYoutubeUrl('');
@@ -202,40 +181,49 @@ export default function TipTapEditor({
 
   if (!editor) {
     return (
-      <div className="border rounded-lg p-4 animate-pulse">
-        <div className="h-10 bg-muted rounded mb-4" />
-        <div className="h-64 bg-muted rounded" />
+      <div style={{
+        border: '1px solid var(--rule)', borderRadius: 4, padding: 16,
+        background: 'var(--paper-2)',
+      }}>
+        <div style={{ height: 8, background: 'var(--rule)', borderRadius: 2, marginBottom: 12, width: '40%' }} />
+        <div style={{ height: 240, background: 'var(--rule-soft)', borderRadius: 2 }} />
       </div>
     );
   }
 
-  const storage = editor.storage as any;
-  const wordCount = storage.characterCount?.words() || 0;
-  const charCount = storage.characterCount?.characters() || 0;
+  const storage = editor.storage as { characterCount?: { words: () => number; characters: () => number } };
+  const wordCount = storage.characterCount?.words() ?? 0;
+  const charCount = storage.characterCount?.characters() ?? 0;
 
   return (
-    <div className={cn('border rounded-lg overflow-hidden', className)}>
+    <div className={cn(className)} style={{ display: 'flex', flexDirection: 'column' }}>
+      {/* Atlas-styled toolbar */}
       <EditorToolbar
         editor={editor}
         onLinkClick={openLinkDialog}
         onImageClick={openImageDialog}
         onYoutubeClick={openYoutubeDialog}
       />
+
+      {/* Writing canvas */}
       <div
-        className="overflow-y-auto"
-        style={{ minHeight, maxHeight }}
+        className="j-canvas"
+        style={{ overflowY: 'auto', minHeight, maxHeight: maxHeight === 'none' ? undefined : maxHeight }}
       >
         <EditorContent editor={editor} />
       </div>
+
       {showWordCount && (
-        <div className="flex items-center justify-between px-4 py-2 border-t bg-muted/30 text-xs text-muted-foreground">
-          <div>
-            {wordCount} words / {charCount} characters
-          </div>
-          {wordLimit && (
-            <div className={cn(wordCount > wordLimit && 'text-destructive')}>
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', padding: '6px 12px',
+          borderTop: '1px solid var(--rule-soft)',
+          fontFamily: 'var(--font-geist-mono)', fontSize: 11, color: 'var(--ink-soft)',
+        }}>
+          <span>{wordCount} words / {charCount} characters</span>
+          {wordLimit !== undefined && (
+            <span style={{ color: wordCount > wordLimit ? 'var(--hot)' : 'inherit' }}>
               {wordLimit - wordCount} words remaining
-            </div>
+            </span>
           )}
         </div>
       )}
@@ -245,9 +233,7 @@ export default function TipTapEditor({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Insert Link</DialogTitle>
-            <DialogDescription>
-              Enter the URL for the link
-            </DialogDescription>
+            <DialogDescription>Enter the URL for the link</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -256,18 +242,14 @@ export default function TipTapEditor({
                 id="link-url"
                 type="url"
                 value={linkUrl}
-                onChange={(e) => setLinkUrl(e.target.value)}
+                onChange={e => setLinkUrl(e.target.value)}
                 placeholder="https://example.com"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setLinkDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={setLink}>
-              {linkUrl ? 'Set Link' : 'Remove Link'}
-            </Button>
+            <Button variant="outline" onClick={() => setLinkDialogOpen(false)}>Cancel</Button>
+            <Button onClick={setLink}>{linkUrl ? 'Set Link' : 'Remove Link'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -277,9 +259,7 @@ export default function TipTapEditor({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Insert Image</DialogTitle>
-            <DialogDescription>
-              Enter the URL of the image
-            </DialogDescription>
+            <DialogDescription>Enter the URL of the image</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -288,7 +268,7 @@ export default function TipTapEditor({
                 id="image-url"
                 type="url"
                 value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
+                onChange={e => setImageUrl(e.target.value)}
                 placeholder="https://example.com/image.jpg"
               />
             </div>
@@ -297,18 +277,14 @@ export default function TipTapEditor({
               <Input
                 id="image-alt"
                 value={imageAlt}
-                onChange={(e) => setImageAlt(e.target.value)}
+                onChange={e => setImageAlt(e.target.value)}
                 placeholder="Describe the image"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setImageDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={insertImage} disabled={!imageUrl}>
-              Insert Image
-            </Button>
+            <Button variant="outline" onClick={() => setImageDialogOpen(false)}>Cancel</Button>
+            <Button onClick={insertImage} disabled={!imageUrl}>Insert Image</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -318,9 +294,7 @@ export default function TipTapEditor({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Embed YouTube Video</DialogTitle>
-            <DialogDescription>
-              Paste a YouTube video URL
-            </DialogDescription>
+            <DialogDescription>Paste a YouTube video URL</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -329,18 +303,14 @@ export default function TipTapEditor({
                 id="youtube-url"
                 type="url"
                 value={youtubeUrl}
-                onChange={(e) => setYoutubeUrl(e.target.value)}
+                onChange={e => setYoutubeUrl(e.target.value)}
                 placeholder="https://www.youtube.com/watch?v=..."
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setYoutubeDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={insertYoutube} disabled={!youtubeUrl}>
-              Embed Video
-            </Button>
+            <Button variant="outline" onClick={() => setYoutubeDialogOpen(false)}>Cancel</Button>
+            <Button onClick={insertYoutube} disabled={!youtubeUrl}>Embed Video</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

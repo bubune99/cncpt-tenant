@@ -44,6 +44,27 @@ export const MCP_SCOPES = {
   // Analytics scopes
   ANALYTICS_READ: "analytics:read",
 
+  // Atlas redesign — new scopes
+  ANALYTICS_WRITE: "analytics:write",
+  ANALYTICS_DASHBOARDS_READ: "analytics:dashboards:read",
+  ANALYTICS_DASHBOARDS_WRITE: "analytics:dashboards:write",
+  ORDERS_FULFILLMENT_READ: "orders:fulfillment:read",
+  ORDERS_FULFILLMENT_WRITE: "orders:fulfillment:write",
+  JOURNAL_READ: "journal:read",
+  JOURNAL_WRITE: "journal:write",
+  CUSTOM_FIELDS_READ: "custom_fields:read",
+  CUSTOM_FIELDS_WRITE: "custom_fields:write",
+  DIGITAL_ASSETS_READ: "digital_assets:read",
+  DIGITAL_ASSETS_WRITE: "digital_assets:write",
+  NOTIFICATIONS_READ: "notifications:read",
+  NOTIFICATIONS_WRITE: "notifications:write",
+  PRICING_READ: "pricing:read",
+  PRICING_WRITE: "pricing:write",
+  // Coordinator scope — account summary + loyalty
+  ACCOUNT_SUMMARY_READ: "account:summary:read",
+  ACCOUNT_LOYALTY_READ: "account:loyalty:read",
+  ACCOUNT_LOYALTY_WRITE: "account:loyalty:write",
+
   // User scopes (admin only)
   USERS_READ: "users:read",
   USERS_WRITE: "users:write",
@@ -86,6 +107,36 @@ export const SCOPE_GROUPS = {
   Administration: [
     MCP_SCOPES.USERS_READ,
     MCP_SCOPES.USERS_WRITE,
+  ],
+  // Atlas redesign scope groups
+  "Content Distribution": [
+    MCP_SCOPES.JOURNAL_READ,
+    MCP_SCOPES.JOURNAL_WRITE,
+  ],
+  "Product Advanced": [
+    MCP_SCOPES.CUSTOM_FIELDS_READ,
+    MCP_SCOPES.CUSTOM_FIELDS_WRITE,
+    MCP_SCOPES.DIGITAL_ASSETS_READ,
+    MCP_SCOPES.DIGITAL_ASSETS_WRITE,
+    MCP_SCOPES.PRICING_READ,
+    MCP_SCOPES.PRICING_WRITE,
+  ],
+  "Operations": [
+    MCP_SCOPES.ORDERS_FULFILLMENT_READ,
+    MCP_SCOPES.ORDERS_FULFILLMENT_WRITE,
+    MCP_SCOPES.NOTIFICATIONS_READ,
+    MCP_SCOPES.NOTIFICATIONS_WRITE,
+  ],
+  "Analytics Advanced": [
+    MCP_SCOPES.ANALYTICS_READ,
+    MCP_SCOPES.ANALYTICS_WRITE,
+    MCP_SCOPES.ANALYTICS_DASHBOARDS_READ,
+    MCP_SCOPES.ANALYTICS_DASHBOARDS_WRITE,
+  ],
+  "Customer Account": [
+    MCP_SCOPES.ACCOUNT_SUMMARY_READ,
+    MCP_SCOPES.ACCOUNT_LOYALTY_READ,
+    MCP_SCOPES.ACCOUNT_LOYALTY_WRITE,
   ],
 } as const
 
@@ -177,6 +228,26 @@ export const SCOPE_DESCRIPTIONS: Record<string, string> = {
   [MCP_SCOPES.READ]: "Read access to all resources (legacy)",
   [MCP_SCOPES.WRITE]: "Write access to all resources (legacy)",
   [MCP_SCOPES.ALL]: "Full access to all resources",
+  // Atlas redesign
+  [MCP_SCOPES.ANALYTICS_WRITE]: "Create and update analytics dashboards",
+  [MCP_SCOPES.ANALYTICS_DASHBOARDS_READ]: "View analytics dashboards and widgets",
+  [MCP_SCOPES.ANALYTICS_DASHBOARDS_WRITE]: "Create, update, delete analytics dashboards",
+  [MCP_SCOPES.ORDERS_FULFILLMENT_READ]: "View per-line fulfillment steps",
+  [MCP_SCOPES.ORDERS_FULFILLMENT_WRITE]: "Update per-line fulfillment steps",
+  [MCP_SCOPES.JOURNAL_READ]: "View journal series and distribution channels",
+  [MCP_SCOPES.JOURNAL_WRITE]: "Manage journal series and distribution channels",
+  [MCP_SCOPES.CUSTOM_FIELDS_READ]: "View custom field definitions and values",
+  [MCP_SCOPES.CUSTOM_FIELDS_WRITE]: "Create and update custom fields",
+  [MCP_SCOPES.DIGITAL_ASSETS_READ]: "View digital assets and license keys",
+  [MCP_SCOPES.DIGITAL_ASSETS_WRITE]: "Manage digital assets and license keys",
+  [MCP_SCOPES.NOTIFICATIONS_READ]: "View notifications",
+  [MCP_SCOPES.NOTIFICATIONS_WRITE]: "Mark notifications read",
+  [MCP_SCOPES.PRICING_READ]: "View pricing tiers and sale schedules",
+  [MCP_SCOPES.PRICING_WRITE]: "Create and update pricing tiers and schedules",
+  // Coordinator scope — account summary + loyalty
+  [MCP_SCOPES.ACCOUNT_SUMMARY_READ]: "View account summary (credits, loyalty, open orders)",
+  [MCP_SCOPES.ACCOUNT_LOYALTY_READ]: "View loyalty tier and activity log",
+  [MCP_SCOPES.ACCOUNT_LOYALTY_WRITE]: "Add loyalty point credits and debits",
 }
 
 /**
@@ -333,4 +404,84 @@ export const TOOL_SCOPES: Record<string, string> = {
   // Users
   list_users: MCP_SCOPES.USERS_READ,
   get_user: MCP_SCOPES.USERS_READ,
+
+  // Atlas redesign — fulfillment (G01)
+  get_order_fulfillment: MCP_SCOPES.ORDERS_FULFILLMENT_READ,
+  update_fulfillment_step: MCP_SCOPES.ORDERS_FULFILLMENT_WRITE,
+
+  // Atlas redesign — analytics dashboards (G02)
+  list_analytics_dashboards: MCP_SCOPES.ANALYTICS_DASHBOARDS_READ,
+  get_analytics_dashboard: MCP_SCOPES.ANALYTICS_DASHBOARDS_READ,
+  create_analytics_dashboard: MCP_SCOPES.ANALYTICS_DASHBOARDS_WRITE,
+  update_analytics_dashboard: MCP_SCOPES.ANALYTICS_DASHBOARDS_WRITE,
+  delete_analytics_dashboard: MCP_SCOPES.ANALYTICS_DASHBOARDS_WRITE,
+  create_analytics_widget: MCP_SCOPES.ANALYTICS_DASHBOARDS_WRITE,
+  update_analytics_widget: MCP_SCOPES.ANALYTICS_DASHBOARDS_WRITE,
+  delete_analytics_widget: MCP_SCOPES.ANALYTICS_DASHBOARDS_WRITE,
+  list_widget_templates: MCP_SCOPES.ANALYTICS_DASHBOARDS_READ,
+  run_analytics_query: MCP_SCOPES.ANALYTICS_READ,
+
+  // Atlas redesign — journal series (G03)
+  list_blog_series: MCP_SCOPES.JOURNAL_READ,
+  get_blog_series: MCP_SCOPES.JOURNAL_READ,
+  create_blog_series: MCP_SCOPES.JOURNAL_WRITE,
+
+  // Atlas redesign — distribution channels (G04)
+  get_post_distribution: MCP_SCOPES.JOURNAL_READ,
+  schedule_post_channel: MCP_SCOPES.JOURNAL_WRITE,
+
+  // Atlas redesign — customer lifecycle (G05)
+  update_customer_lifecycle: MCP_SCOPES.CUSTOMERS_WRITE,
+
+  // Atlas redesign — pricing (G06)
+  get_product_pricing: MCP_SCOPES.PRICING_READ,
+  create_pricing_tier: MCP_SCOPES.PRICING_WRITE,
+  update_pricing_tier: MCP_SCOPES.PRICING_WRITE,
+  delete_pricing_tier: MCP_SCOPES.PRICING_WRITE,
+  create_sale_schedule: MCP_SCOPES.PRICING_WRITE,
+  delete_sale_schedule: MCP_SCOPES.PRICING_WRITE,
+
+  // Atlas redesign — custom fields (G07)
+  list_custom_fields: MCP_SCOPES.CUSTOM_FIELDS_READ,
+  get_product_custom_fields: MCP_SCOPES.CUSTOM_FIELDS_READ,
+  set_variant_field_value: MCP_SCOPES.CUSTOM_FIELDS_WRITE,
+  attach_custom_field_to_product: MCP_SCOPES.CUSTOM_FIELDS_WRITE,
+
+  // Atlas redesign — digital assets (G08)
+  list_digital_assets: MCP_SCOPES.DIGITAL_ASSETS_READ,
+  get_digital_asset: MCP_SCOPES.DIGITAL_ASSETS_READ,
+  list_license_keys: MCP_SCOPES.DIGITAL_ASSETS_READ,
+  revoke_license_key: MCP_SCOPES.DIGITAL_ASSETS_WRITE,
+
+  // Atlas redesign — order stage moves (G09)
+  move_order_to_stage: MCP_SCOPES.ORDERS_WRITE,
+  get_order_workflow: MCP_SCOPES.ORDERS_READ,
+
+  // Atlas redesign — customer notes (G10)
+  list_customer_notes: MCP_SCOPES.CUSTOMERS_READ,
+  add_customer_note: MCP_SCOPES.CUSTOMERS_WRITE,
+  delete_customer_note: MCP_SCOPES.CUSTOMERS_WRITE,
+
+  // Atlas redesign — notifications (G11)
+  list_notifications: MCP_SCOPES.NOTIFICATIONS_READ,
+  mark_notification_read: MCP_SCOPES.NOTIFICATIONS_WRITE,
+  mark_all_notifications_read: MCP_SCOPES.NOTIFICATIONS_WRITE,
+
+  // Atlas redesign — bulk variants (G12)
+  bulk_update_variants: MCP_SCOPES.PRODUCTS_WRITE,
+
+  // Atlas redesign — P2
+  get_brand_preset: MCP_SCOPES.SETTINGS_READ,
+  update_brand_preset: MCP_SCOPES.SETTINGS_WRITE,
+  get_page_tree: MCP_SCOPES.PAGES_READ,
+  list_discount_codes: MCP_SCOPES.PRODUCTS_READ,
+  get_discount_code: MCP_SCOPES.PRODUCTS_READ,
+  create_discount_code: MCP_SCOPES.PRODUCTS_WRITE,
+  get_bundle_composition: MCP_SCOPES.PRODUCTS_READ,
+  update_bundle_items: MCP_SCOPES.PRODUCTS_WRITE,
+
+  // Coordinator scope — account summary + loyalty
+  get_account_summary: MCP_SCOPES.ACCOUNT_SUMMARY_READ,
+  get_account_loyalty: MCP_SCOPES.ACCOUNT_LOYALTY_READ,
+  add_loyalty_activity: MCP_SCOPES.ACCOUNT_LOYALTY_WRITE,
 }

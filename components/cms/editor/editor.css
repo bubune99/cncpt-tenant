@@ -1,0 +1,197 @@
+/*
+ * Atlas Editor Surface CSS — A2 local fallback
+ *
+ * §5 Escalation: Request orchestrator to fold these editor-surface classes
+ * into app/atlas.css (Phase 0 shared layer) so all surface agents can reuse
+ * them. They are faithful ports of Atlas Editors.html <style> lines 130–313.
+ *
+ * Scoped under .atlas to match atlas.css convention. Uses only --atlas tokens
+ * and --wl-* vars — no new hex values.
+ */
+
+/* ── Breadcrumb ──────────────────────────────────────────────────────────── */
+.atlas .crumbs {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--font-geist-mono), "Geist Mono", monospace;
+  font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-soft); margin-bottom: 6px;
+}
+.atlas .crumbs a { color: var(--ink-soft); text-decoration: none; }
+.atlas .crumbs a:hover { color: var(--accent); }
+.atlas .crumbs .sep { color: var(--ink-faint); }
+.atlas .crumbs .here { color: var(--ink); }
+
+/* ── Editor masthead ─────────────────────────────────────────────────────── */
+.atlas .editor-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding-bottom: 12px; border-bottom: 1px solid var(--ink); margin-bottom: 0;
+  gap: 24px;
+}
+.atlas .editor-head h1 {
+  font-family: var(--font-display), "Spectral", serif; font-weight: 500;
+  font-size: 38px; letter-spacing: -0.022em; margin: 4px 0 0; line-height: 1.04;
+}
+.atlas .editor-head .actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+/* ── Editor tab strip ────────────────────────────────────────────────────── */
+.atlas .e-tabs {
+  display: flex; gap: 22px; padding: 10px 0 8px;
+  border-bottom: 1px solid var(--rule); margin-bottom: 14px;
+}
+.atlas .e-tabs .tab {
+  font-family: var(--font-geist-mono), "Geist Mono", monospace;
+  font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 4px 0; color: var(--ink-soft);
+  border-bottom: 2px solid transparent; margin-bottom: -10px; cursor: pointer;
+}
+.atlas .e-tabs .tab.on { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+.atlas .e-tabs .tab .ct { color: var(--ink-faint); margin-left: 4px; font-weight: 400; }
+.atlas .e-tabs .right {
+  margin-left: auto; display: flex; gap: 12px; align-items: baseline;
+  font-family: var(--font-geist-mono), "Geist Mono", monospace; font-size: 10.5px; color: var(--ink-soft);
+}
+
+/* ── Two-column editor body ──────────────────────────────────────────────── */
+.atlas .editor-body {
+  display: grid; grid-template-columns: 1fr 320px; gap: 26px;
+  flex: 1; overflow: hidden; min-height: 0;
+}
+.atlas .editor-col {
+  display: flex; flex-direction: column; gap: 16px; overflow: hidden; min-height: 0;
+}
+
+/* ── Section heads inside editors ────────────────────────────────────────── */
+.atlas .sec {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 0 0 6px; border-bottom: 1px solid var(--ink); margin-bottom: 8px;
+}
+.atlas .sec .n { font-family: var(--font-display), "Spectral", serif; color: var(--accent); font-size: 18px; line-height: 1; }
+.atlas .sec .h { font-family: var(--font-display), "Spectral", serif; font-size: 17px; line-height: 1; }
+.atlas .sec .meta { font-family: var(--font-display), "Spectral", serif; font-style: italic; color: var(--ink-soft); font-size: 12px; }
+.atlas .sec .right { margin-left: auto; font-family: var(--font-geist-mono), "Geist Mono", monospace; font-size: 10px; color: var(--ink-soft); }
+
+/* ── Form fields ─────────────────────────────────────────────────────────── */
+.atlas .field {
+  display: grid; grid-template-columns: 90px 1fr; gap: 10px; align-items: baseline;
+  padding: 7px 0; border-bottom: 1px solid var(--rule-soft);
+}
+.atlas .field .lbl {
+  font-family: var(--font-geist-mono), "Geist Mono", monospace;
+  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft);
+}
+.atlas .field .val { font-size: 13px; }
+.atlas .field .val.mono { font-family: var(--font-geist-mono), "Geist Mono", monospace; font-size: 12px; }
+
+/* ── Stacked input row ───────────────────────────────────────────────────── */
+.atlas .input-row { display: flex; flex-direction: column; gap: 3px; padding: 6px 0; }
+.atlas .input-row .lbl {
+  font-family: var(--font-geist-mono), "Geist Mono", monospace;
+  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft);
+}
+.atlas .input-row .val {
+  font-size: 14px; padding: 4px 8px;
+  background: var(--paper-2); border: 1px solid var(--rule); border-radius: var(--r-sm);
+}
+.atlas .input-row .val.mono { font-family: var(--font-geist-mono), "Geist Mono", monospace; font-size: 12px; }
+.atlas .input-row .val.area { min-height: 60px; }
+
+/* ── Buttons (editor-specific additions) ─────────────────────────────────── */
+.atlas .btn-sm { padding: 4px 9px; font-size: 11px; }
+.atlas .btn-ghost { border-color: var(--rule); color: var(--ink-soft); }
+
+/* ── Timeline ────────────────────────────────────────────────────────────── */
+.atlas .tl { position: relative; padding-left: 18px; }
+.atlas .tl::before {
+  content: ''; position: absolute; left: 4px; top: 4px; bottom: 4px;
+  width: 1px; background: var(--rule);
+}
+.atlas .tl-item { position: relative; padding: 4px 0 10px; }
+.atlas .tl-item::before {
+  content: ''; position: absolute; left: -18px; top: 8px;
+  width: 9px; height: 9px; background: var(--paper); border: 1px solid var(--ink); border-radius: 50%;
+}
+.atlas .tl-item.now::before { background: var(--accent); border-color: var(--accent); }
+.atlas .tl-item .when {
+  font-family: var(--font-geist-mono), "Geist Mono", monospace;
+  font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft);
+}
+.atlas .tl-item .what { font-size: 13px; line-height: 1.4; margin-top: 2px; }
+.atlas .tl-item .what b { font-weight: 500; }
+
+/* ── Stat brick ──────────────────────────────────────────────────────────── */
+.atlas .brick {
+  padding: 8px 10px; border: 1px solid var(--rule);
+  background: var(--paper-2); border-radius: var(--r-sm);
+}
+.atlas .brick .l {
+  font-family: var(--font-geist-mono), "Geist Mono", monospace;
+  font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft);
+}
+.atlas .brick .v {
+  font-family: var(--font-display), "Spectral", serif; font-size: 22px; line-height: 1.1; margin-top: 2px;
+}
+.atlas .brick .d {
+  font-family: var(--font-display), "Spectral", serif; font-style: italic; font-size: 11px; color: var(--ink-soft);
+}
+
+/* ── Media placeholder ───────────────────────────────────────────────────── */
+.atlas .ph-box {
+  background:
+    repeating-linear-gradient(45deg, rgba(26,20,16,0.04) 0 6px, transparent 6px 12px),
+    var(--paper-2);
+  border: 1px solid var(--rule); border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-geist-mono), "Geist Mono", monospace;
+  font-size: 10px; letter-spacing: 0.1em; color: var(--ink-soft); text-transform: uppercase;
+}
+
+/* ── Avatar ──────────────────────────────────────────────────────────────── */
+.atlas .avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--paper); font-family: var(--font-display), "Spectral", serif; font-weight: 500;
+  border: 1px solid var(--ink); border-radius: 50%;
+}
+
+/* ── Content block ───────────────────────────────────────────────────────── */
+.atlas .block {
+  background: var(--paper-2); border: 1px solid var(--rule);
+  padding: 10px 12px 10px 28px; margin-bottom: 6px; border-radius: var(--r-sm); position: relative;
+}
+.atlas .block .b-head { display: flex; justify-content: space-between; align-items: baseline; }
+.atlas .block .b-kind {
+  font-family: var(--font-geist-mono), "Geist Mono", monospace;
+  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent);
+}
+.atlas .block .b-preview {
+  color: var(--ink-soft); font-size: 12.5px;
+  font-family: var(--font-display), "Spectral", serif; font-style: italic; margin-top: 3px; line-height: 1.35;
+}
+
+/* ── Lifecycle stepper ───────────────────────────────────────────────────── */
+.atlas .lifecycle {
+  display: flex; justify-content: space-between; padding: 8px 0 4px; position: relative;
+}
+.atlas .lifecycle-step { text-align: center; flex: 1; position: relative; }
+.atlas .lifecycle-dot {
+  width: 14px; height: 14px; border-radius: 50%; margin: 0 auto;
+  border: 1px solid var(--ink);
+}
+.atlas .lifecycle-label {
+  font-family: var(--font-geist-mono), "Geist Mono", monospace;
+  font-size: 9px; margin-top: 4px; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.atlas .lifecycle-connector {
+  position: absolute; top: 7px; left: 60%; right: -40%; height: 1px;
+}
+
+/* ── Fulfillment sub-step pill ───────────────────────────────────────────── */
+.atlas .sub-step {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 8px 3px 6px; border-radius: var(--r-sm);
+  font-family: var(--font-geist-mono), "Geist Mono", monospace;
+  font-size: 10px; letter-spacing: 0.05em;
+}
+.atlas .sub-step-check {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 12px; height: 12px; border-radius: 2px; font-size: 9px; line-height: 1;
+}

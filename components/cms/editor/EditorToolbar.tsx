@@ -51,6 +51,7 @@ import {
 } from '../ui/popover';
 
 // TipTap extensions add commands dynamically — TypeScript can't infer them from the base ChainedCommands type
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const chain = (editor: Editor) => editor.chain().focus() as any;
 
 interface EditorToolbarProps {
@@ -82,8 +83,10 @@ function ToolbarButton({
           variant="ghost"
           size="icon"
           className={cn(
-            'h-8 w-8',
-            isActive && 'bg-muted text-foreground'
+            'h-7 w-7',
+            isActive
+              ? 'bg-[var(--ink)] text-[var(--paper)]'
+              : 'hover:bg-[var(--paper-2)] text-[var(--ink)]'
           )}
           onClick={onClick}
           disabled={disabled}
@@ -100,22 +103,22 @@ function ToolbarButton({
 
 const HIGHLIGHT_COLORS = [
   { name: 'Yellow', value: '#fef08a' },
-  { name: 'Green', value: '#bbf7d0' },
-  { name: 'Blue', value: '#bfdbfe' },
-  { name: 'Pink', value: '#fbcfe8' },
+  { name: 'Green',  value: '#bbf7d0' },
+  { name: 'Blue',   value: '#bfdbfe' },
+  { name: 'Pink',   value: '#fbcfe8' },
   { name: 'Purple', value: '#e9d5ff' },
   { name: 'Orange', value: '#fed7aa' },
-];
+] as const;
 
 const TEXT_COLORS = [
   { name: 'Default', value: 'inherit' },
-  { name: 'Gray', value: '#6b7280' },
-  { name: 'Red', value: '#dc2626' },
-  { name: 'Orange', value: '#ea580c' },
-  { name: 'Green', value: '#16a34a' },
-  { name: 'Blue', value: '#2563eb' },
-  { name: 'Purple', value: '#9333ea' },
-];
+  { name: 'Gray',    value: '#6b7280' },
+  { name: 'Red',     value: '#dc2626' },
+  { name: 'Orange',  value: '#ea580c' },
+  { name: 'Green',   value: '#16a34a' },
+  { name: 'Blue',    value: '#2563eb' },
+  { name: 'Purple',  value: '#9333ea' },
+] as const;
 
 export default function EditorToolbar({
   editor,
@@ -137,36 +140,49 @@ export default function EditorToolbar({
     if (value === 'p') {
       chain(editor).setParagraph().run();
     } else {
-      const level = parseInt(value) as 1 | 2 | 3 | 4;
+      const level = parseInt(value, 10) as 1 | 2 | 3 | 4;
       chain(editor).toggleHeading({ level }).run();
     }
   };
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="flex flex-wrap items-center gap-0.5 border-b bg-muted/30 p-1">
+      <div
+        className="ed-toolbar-atlas"
+        style={{
+          display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 2,
+          padding: '6px 8px',
+          borderBottom: '1px solid var(--rule)',
+          background: 'var(--paper-2)',
+        }}
+      >
         {/* Undo/Redo */}
         <ToolbarButton
           onClick={() => chain(editor).undo().run()}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           disabled={!(editor.can() as any).undo()}
           tooltip="Undo (Ctrl+Z)"
         >
-          <Undo className="h-4 w-4" />
+          <Undo className="h-3.5 w-3.5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => chain(editor).redo().run()}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           disabled={!(editor.can() as any).redo()}
           tooltip="Redo (Ctrl+Y)"
         >
-          <Redo className="h-4 w-4" />
+          <Redo className="h-3.5 w-3.5" />
         </ToolbarButton>
 
-        <Separator orientation="vertical" className="h-6 mx-1" />
+        <Separator orientation="vertical" className="h-5 mx-0.5" />
 
-        {/* Heading Select */}
+        {/* Style select */}
         <Select value={currentHeading()} onValueChange={setHeading}>
-          <SelectTrigger className="h-8 w-[120px] text-xs">
-            <SelectValue placeholder="Paragraph" />
+          <SelectTrigger
+            className="h-7 w-[110px] text-xs border-[var(--rule)] bg-transparent"
+            style={{ fontFamily: 'var(--font-geist-mono)', letterSpacing: '0.05em' }}
+          >
+            <SelectValue placeholder="Style" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="p">Paragraph</SelectItem>
@@ -177,69 +193,69 @@ export default function EditorToolbar({
           </SelectContent>
         </Select>
 
-        <Separator orientation="vertical" className="h-6 mx-1" />
+        <Separator orientation="vertical" className="h-5 mx-0.5" />
 
-        {/* Text Formatting */}
+        {/* Text formatting */}
         <ToolbarButton
           onClick={() => chain(editor).toggleBold().run()}
           isActive={editor.isActive('bold')}
           tooltip="Bold (Ctrl+B)"
         >
-          <Bold className="h-4 w-4" />
+          <Bold className="h-3.5 w-3.5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => chain(editor).toggleItalic().run()}
           isActive={editor.isActive('italic')}
           tooltip="Italic (Ctrl+I)"
         >
-          <Italic className="h-4 w-4" />
+          <Italic className="h-3.5 w-3.5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => chain(editor).toggleUnderline().run()}
           isActive={editor.isActive('underline')}
           tooltip="Underline (Ctrl+U)"
         >
-          <UnderlineIcon className="h-4 w-4" />
+          <UnderlineIcon className="h-3.5 w-3.5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => chain(editor).toggleStrike().run()}
           isActive={editor.isActive('strike')}
           tooltip="Strikethrough"
         >
-          <Strikethrough className="h-4 w-4" />
+          <Strikethrough className="h-3.5 w-3.5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => chain(editor).toggleCode().run()}
           isActive={editor.isActive('code')}
           tooltip="Inline Code"
         >
-          <Code className="h-4 w-4" />
+          <Code className="h-3.5 w-3.5" />
         </ToolbarButton>
 
-        {/* Highlight Color */}
+        {/* Highlight */}
         <Popover>
           <PopoverTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
               className={cn(
-                'h-8 w-8',
-                editor.isActive('highlight') && 'bg-muted text-foreground'
+                'h-7 w-7',
+                editor.isActive('highlight')
+                  ? 'bg-[var(--ink)] text-[var(--paper)]'
+                  : 'hover:bg-[var(--paper-2)] text-[var(--ink)]'
               )}
             >
-              <Highlighter className="h-4 w-4" />
+              <Highlighter className="h-3.5 w-3.5" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-2">
             <div className="grid grid-cols-3 gap-1">
-              {HIGHLIGHT_COLORS.map((color) => (
+              {HIGHLIGHT_COLORS.map(color => (
                 <button
                   key={color.value}
                   className="w-6 h-6 rounded border hover:scale-110 transition-transform"
                   style={{ backgroundColor: color.value }}
-                  onClick={() =>
-                    chain(editor).toggleHighlight({ color: color.value }).run()
-                  }
+                  onClick={() => chain(editor).toggleHighlight({ color: color.value }).run()}
                   title={color.name}
                 />
               ))}
@@ -254,20 +270,16 @@ export default function EditorToolbar({
           </PopoverContent>
         </Popover>
 
-        {/* Text Color */}
+        {/* Text colour */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-            >
+            <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-[var(--paper-2)] text-[var(--ink)]">
               <span className="text-sm font-bold underline decoration-2 decoration-current">A</span>
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-2">
             <div className="grid grid-cols-4 gap-1">
-              {TEXT_COLORS.map((color) => (
+              {TEXT_COLORS.map(color => (
                 <button
                   key={color.value}
                   className="w-6 h-6 rounded border hover:scale-110 transition-transform flex items-center justify-center"
@@ -288,7 +300,7 @@ export default function EditorToolbar({
           </PopoverContent>
         </Popover>
 
-        <Separator orientation="vertical" className="h-6 mx-1" />
+        <Separator orientation="vertical" className="h-5 mx-0.5" />
 
         {/* Alignment */}
         <ToolbarButton
@@ -296,31 +308,31 @@ export default function EditorToolbar({
           isActive={editor.isActive({ textAlign: 'left' })}
           tooltip="Align Left"
         >
-          <AlignLeft className="h-4 w-4" />
+          <AlignLeft className="h-3.5 w-3.5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => chain(editor).setTextAlign('center').run()}
           isActive={editor.isActive({ textAlign: 'center' })}
           tooltip="Align Center"
         >
-          <AlignCenter className="h-4 w-4" />
+          <AlignCenter className="h-3.5 w-3.5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => chain(editor).setTextAlign('right').run()}
           isActive={editor.isActive({ textAlign: 'right' })}
           tooltip="Align Right"
         >
-          <AlignRight className="h-4 w-4" />
+          <AlignRight className="h-3.5 w-3.5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => chain(editor).setTextAlign('justify').run()}
           isActive={editor.isActive({ textAlign: 'justify' })}
           tooltip="Justify"
         >
-          <AlignJustify className="h-4 w-4" />
+          <AlignJustify className="h-3.5 w-3.5" />
         </ToolbarButton>
 
-        <Separator orientation="vertical" className="h-6 mx-1" />
+        <Separator orientation="vertical" className="h-5 mx-0.5" />
 
         {/* Lists */}
         <ToolbarButton
@@ -328,73 +340,73 @@ export default function EditorToolbar({
           isActive={editor.isActive('bulletList')}
           tooltip="Bullet List"
         >
-          <List className="h-4 w-4" />
+          <List className="h-3.5 w-3.5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => chain(editor).toggleOrderedList().run()}
           isActive={editor.isActive('orderedList')}
           tooltip="Numbered List"
         >
-          <ListOrdered className="h-4 w-4" />
+          <ListOrdered className="h-3.5 w-3.5" />
         </ToolbarButton>
 
-        <Separator orientation="vertical" className="h-6 mx-1" />
+        <Separator orientation="vertical" className="h-5 mx-0.5" />
 
         {/* Blocks */}
         <ToolbarButton
           onClick={() => chain(editor).toggleBlockquote().run()}
           isActive={editor.isActive('blockquote')}
-          tooltip="Quote"
+          tooltip="Pull-quote"
         >
-          <Quote className="h-4 w-4" />
+          <Quote className="h-3.5 w-3.5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => chain(editor).toggleCodeBlock().run()}
           isActive={editor.isActive('codeBlock')}
           tooltip="Code Block"
         >
-          <CodeSquare className="h-4 w-4" />
+          <CodeSquare className="h-3.5 w-3.5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => chain(editor).setHorizontalRule().run()}
-          tooltip="Horizontal Rule"
+          tooltip="Divider"
         >
-          <Minus className="h-4 w-4" />
+          <Minus className="h-3.5 w-3.5" />
         </ToolbarButton>
 
-        <Separator orientation="vertical" className="h-6 mx-1" />
+        <Separator orientation="vertical" className="h-5 mx-0.5" />
 
         {/* Links & Media */}
         <ToolbarButton
           onClick={onLinkClick}
           isActive={editor.isActive('link')}
-          tooltip="Insert Link"
+          tooltip="Insert Link (⌘K)"
         >
-          <LinkIcon className="h-4 w-4" />
+          <LinkIcon className="h-3.5 w-3.5" />
         </ToolbarButton>
         {editor.isActive('link') && (
           <ToolbarButton
             onClick={() => chain(editor).unsetLink().run()}
             tooltip="Remove Link"
           >
-            <Unlink className="h-4 w-4" />
+            <Unlink className="h-3.5 w-3.5" />
           </ToolbarButton>
         )}
         <ToolbarButton onClick={onImageClick} tooltip="Insert Image">
-          <Image className="h-4 w-4" />
+          <Image className="h-3.5 w-3.5" />
         </ToolbarButton>
         <ToolbarButton onClick={onYoutubeClick} tooltip="Embed YouTube">
-          <Youtube className="h-4 w-4" />
+          <Youtube className="h-3.5 w-3.5" />
         </ToolbarButton>
 
-        <Separator orientation="vertical" className="h-6 mx-1" />
+        <Separator orientation="vertical" className="h-5 mx-0.5" />
 
-        {/* Clear Formatting */}
+        {/* Clear formatting */}
         <ToolbarButton
           onClick={() => chain(editor).clearNodes().unsetAllMarks().run()}
           tooltip="Clear Formatting"
         >
-          <RemoveFormatting className="h-4 w-4" />
+          <RemoveFormatting className="h-3.5 w-3.5" />
         </ToolbarButton>
       </div>
     </TooltipProvider>

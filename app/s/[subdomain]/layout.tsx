@@ -78,8 +78,22 @@ export default async function SubdomainLayout({
   // we silently skip the theme injection.
   const themeCss = brandingResult ? generateTenantThemeCss(brandingResult) : ''
 
+  // Resolve the tenant's Atlas brand preset + density (default: marigold/regular).
+  // `display: contents` so the wrapper provides the brand CSS variables to the
+  // whole tenant subtree without introducing a layout box. Server-rendered,
+  // zero client JS. Tenant primary/accent overrides still apply on top.
+  let brandPreset = 'marigold'
+  let density = 'regular'
+  try {
+    const branding = await getTenantBranding(subdomain)
+    brandPreset = branding.brandPreset
+    density = branding.density
+  } catch {
+    // keep defaults
+  }
+
   const content = (
-    <>
+    <div data-brand={brandPreset} data-density={density} style={{ display: 'contents' }}>
       {/* Per-tenant CSS variable overrides (server-rendered, zero JS) */}
       {themeCss && (
         <style
@@ -88,7 +102,7 @@ export default async function SubdomainLayout({
         />
       )}
       {children}
-    </>
+    </div>
   )
 
   // If no auth config exists, allow anonymous browsing only

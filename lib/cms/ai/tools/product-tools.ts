@@ -393,10 +393,60 @@ export const syncProductToStripe = tool({
   },
 });
 
+// Atlas redesign G12 — bulk variant update
+export const bulkUpdateVariants = tool({
+  description: 'Update multiple product variants at once — price, stock, SKU, or enabled state. More efficient than updating one at a time.',
+  inputSchema: z.object({
+    productId: z.string().describe('Parent product ID (for validation)'),
+    updates: z.array(z.object({
+      variantId: z.string(),
+      price: z.number().int().optional().describe('Price in cents'),
+      stock: z.number().int().optional(),
+      sku: z.string().optional(),
+      enabled: z.boolean().optional(),
+    })).min(1).max(200),
+  }),
+  execute: async ({ productId, updates }) => {
+    try {
+      const prisma = await getDb();
+
+      const product = await prisma.product.findUnique({ where: { id: productId }, select: { id: true, title: true } });
+      if (!product) return { success: false, error: 'Product not found' };
+
+      const results = await prisma.$transaction(
+        updates.map(({ variantId, price, stock, sku, enabled }) =>
+          prisma.productVariant.update({
+            where: { id: variantId },
+            data: {
+              ...(price !== undefined ? { price } : {}),
+              ...(stock !== undefined ? { stock } : {}),
+              ...(sku !== undefined ? { sku } : {}),
+              ...(enabled !== undefined ? { enabled } : {}),
+            },
+            select: { id: true, price: true, stock: true, sku: true },
+          })
+        )
+      );
+
+      return {
+        success: true,
+        productId,
+        updated: results.length,
+        variants: results,
+        message: `Updated ${results.length} variants for "${product.title}"`,
+      };
+    } catch (error) {
+      console.error('[ProductTools] bulkUpdateVariants error:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to bulk update variants' };
+    }
+  },
+});
+
 export const productTools = {
   createProduct,
   updateProduct,
   deleteProduct,
   manageProductVariant,
   syncProductToStripe,
+  bulkUpdateVariants,
 };

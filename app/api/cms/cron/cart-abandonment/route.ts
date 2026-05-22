@@ -10,7 +10,7 @@
  *
  * Actions:
  * 1. Mark inactive carts as abandoned
- * 2. Send recovery emails for recently abandoned carts
+ * 2. Send recovery emails for recently abandoned carts (real send via tenant email provider)
  * 3. Clean up old expired carts
  */
 
@@ -21,12 +21,70 @@ import {
   markRecoveryEmailSent,
   cleanupExpiredCarts,
   getCartStats,
+  type CartWithItems,
 } from '@/lib/cms/cart';
+import { sendEmail } from '@/lib/cms/email';
+import { getEmailSettings, getGeneralSettings } from '@/lib/cms/settings';
+import {
+  renderCartAbandonmentEmail,
+  getCartAbandonmentSubject,
+  type CartAbandonmentData,
+  type CartItem,
+} from '@/lib/cms/email/templates/cart-abandonment';
 
 export const dynamic = 'force-dynamic'
 
 // Verify cron secret to prevent unauthorized access
 const CRON_SECRET = process.env.CRON_SECRET;
+
+/**
+ * Build the CartAbandonmentData payload from a recovered cart row.
+ * Only items that have a defined title are included.
+ */
+function buildAbandonmentData(
+  cart: CartWithItems & { email: string },
+  storeUrl: string,
+): CartAbandonmentData {
+  const cartItems: CartItem[] = cart.items
+    .filter((item) => item.title != null)
+    .map((item) => ({
+      id: item.id,
+      name: item.title,
+      variant: item.variantTitle ?? undefined,
+      quantity: item.quantity,
+      price: item.price,
+      imageUrl: item.imageUrl ?? undefined,
+      url: `${storeUrl}/shop/${item.productId}`,
+    }));
+
+  const recoveryUrl = `${storeUrl}/cart?recover=${cart.id}`;
+
+  const discountCode = cart.discountCode;
+
+  return {
+    customer: {
+      name: cart.email,
+      email: cart.email,
+    },
+    cart: {
+      id: cart.id,
+      items: cartItems,
+      subtotal: cart.subtotal,
+      recoveryUrl,
+    },
+    discountCode: discountCode?.code,
+    discountPercent:
+      discountCode?.type === 'PERCENTAGE' && typeof discountCode.value === 'number'
+        ? discountCode.value
+        : undefined,
+    discountAmount:
+      discountCode?.type === 'FIXED_AMOUNT' && typeof discountCode.value === 'number'
+        ? discountCode.value
+        : undefined,
+    emailNumber: 1,
+    expiresIn: '48 hours',
+  };
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -55,21 +113,57 @@ export async function POST(request: NextRequest) {
 
     // 2. Get abandoned carts for recovery emails (1-72 hours old, no email sent yet)
     try {
-      const cartsForRecovery = await getAbandonedCartsForRecovery(60, 72);
+      const [cartsForRecovery, emailSettings, generalSettings] = await Promise.all([
+        getAbandonedCartsForRecovery(60, 72),
+        getEmailSettings(),
+        getGeneralSettings(),
+      ]);
+
+      const storeUrl = generalSettings.siteUrl || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const storeName = generalSettings.siteName || emailSettings.fromName || 'Our Store';
+      const supportEmail = generalSettings.supportEmail || emailSettings.fromEmail || 'support@example.com';
+
+      const storeConfig = {
+        name: storeName,
+        url: storeUrl,
+        supportEmail,
+      };
 
       for (const cart of cartsForRecovery) {
         try {
-          // TODO: Send recovery email via email service (HP-001)
-          // await sendAbandonmentRecoveryEmail(cart);
+          const abandonmentData = buildAbandonmentData(cart, storeUrl);
 
-          // For now, just log and mark as sent
-          console.log(`Would send recovery email to ${cart.email} for cart ${cart.id}`);
+          // Skip carts with no line items — nothing meaningful to recover
+          if (abandonmentData.cart.items.length === 0) {
+            continue;
+          }
 
-          // Mark recovery email as sent
+          const html = renderCartAbandonmentEmail(abandonmentData, storeConfig);
+          const subject = getCartAbandonmentSubject(abandonmentData, storeConfig);
+
+          const sendResult = await sendEmail({
+            to: { email: cart.email, name: abandonmentData.customer.name },
+            subject,
+            html,
+            tags: ['cart-abandonment'],
+            metadata: { cartId: cart.id },
+          });
+
+          if (!sendResult.success) {
+            // Do NOT mark sent if the send failed — allows retry on next cron run
+            results.errors.push(
+              `Recovery email send failed for cart ${cart.id}: ${sendResult.error ?? 'provider error'}`
+            );
+            continue;
+          }
+
+          // Only mark as sent after confirmed delivery to provider
           await markRecoveryEmailSent(cart.id);
           results.recoveryEmailsSent++;
         } catch (emailError) {
-          results.errors.push(`Recovery email failed for cart ${cart.id}: ${emailError instanceof Error ? emailError.message : 'Unknown error'}`);
+          results.errors.push(
+            `Recovery email failed for cart ${cart.id}: ${emailError instanceof Error ? emailError.message : 'Unknown error'}`
+          );
         }
       }
     } catch (error) {
@@ -93,7 +187,6 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Cart abandonment cron error:', error);
     return NextResponse.json(
       {
         success: false,
@@ -106,7 +199,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Also support GET for easier testing/monitoring
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   // Just return stats without running the job
   try {
     const stats = await getCartStats();

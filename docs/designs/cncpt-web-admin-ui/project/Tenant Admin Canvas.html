@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>CNCPT Tenant Admin — Canvas</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<link rel="stylesheet" href="tokens.css" />
+<link rel="stylesheet" href="admin-styles.css" />
+<link rel="stylesheet" href="tenant-styles.css" />
+
+<style>
+  html, body { margin: 0; height: 100%; background: #f1f3f6; }
+  body { font-family: var(--font-sans); }
+
+  /* Cover artboard — sitemap */
+  .cover {
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
+    border-radius: 12px;
+    padding: 40px 44px;
+    display: flex; flex-direction: column;
+    font-family: var(--font-sans);
+    overflow: hidden;
+  }
+  .cover h1 { margin: 0; font-size: 40px; font-weight: 700; letter-spacing: -0.025em; color: #0f172a; line-height: 1.05; }
+  .cover .lead { font-size: 15px; color: #475569; max-width: 760px; margin-top: 14px; line-height: 1.55; }
+  .cover .badge-row { display: flex; gap: 8px; margin-top: 18px; }
+  .cover .badge {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+    padding: 4px 9px; border-radius: 9999px;
+    background: #eff6ff; color: #1d4ed8;
+  }
+  .cover .map {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+    margin-top: auto;
+  }
+  .cover .map-section {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 14px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .cover .map-section .sec-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    color: #94a3b8;
+  }
+  .cover .map-section h3 { margin: 0; font-size: 13px; font-weight: 600; color: #0f172a; }
+  .cover .map-section ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+  .cover .map-section li {
+    font-size: 11.5px; color: #475569;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .cover .map-section li .dot { width: 5px; height: 5px; border-radius: 9999px; background: #3b82f6; }
+  .cover .map-section li.dim { color: #94a3b8; }
+  .cover .map-section li.dim .dot { background: #cbd5e1; }
+
+  .cover .pillrow { display: flex; gap: 8px; margin-top: 22px; flex-wrap: wrap; }
+  .cover .pillrow .p {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11.5px; padding: 4px 10px; border-radius: 9999px;
+    background: #fff; border: 1px solid #e2e8f0; color: #334155;
+  }
+  .cover .pillrow .p .dot { width: 6px; height: 6px; border-radius: 9999px; background: #3b82f6; }
+  .cover .pillrow .p.is-ai { background: linear-gradient(135deg, #eff6ff, #ecfeff); border-color: #bfdbfe; color: #1d4ed8; }
+</style>
+</head>
+<body>
+
+<!-- Lucide icons CDN -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- Modules: canvas + shared mock data + tenant modules -->
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="mock-data.jsx"></script>
+<script type="text/babel" src="tenant-shell.jsx"></script>
+<script type="text/babel" src="tenant-overview-subdomains.jsx"></script>
+<script type="text/babel" src="tenant-team.jsx"></script>
+<script type="text/babel" src="tenant-comms.jsx"></script>
+<script type="text/babel" src="tenant-settings.jsx"></script>
+
+<div id="root"></div>
+
+<script type="text/babel">
+const { useEffect } = React;
+
+// Wrap each screen so it auto-renders icons + sits inside a relative wrapper.
+function Screen({ children }) {
+  useEffect(() => {
+    if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+  });
+  return (
+    <div style={{ width: "100%", height: "100%", position: "relative", display: "flex", overflow: "hidden" }}>
+      {children}
+    </div>
+  );
+}
+
+function Cover() {
+  return (
+    <div className="cover">
+      <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#94a3b8" }}>
+        CNCPT Tenant Admin · Mid-fi pass
+      </span>
+      <h1 style={{ marginTop: 14 }}>The merchant&rsquo;s home base</h1>
+      <p className="lead">
+        Same brand language as the super-admin work, but reframed for a single tenant
+        managing their own sites, team, and customers. Built around three pillars:
+        <strong> subdomains</strong> (with real DNS), <strong>roles &amp; permissions</strong>
+        (built-in + custom roles, per-site overrides), and <strong>communications</strong>
+        (the inbound + outbound channels a merchant cares about). An AI helper sits in
+        the bottom-right of every page to nudge users through complex forms.
+      </p>
+      <div className="badge-row">
+        <span className="badge">Mid-fi</span>
+        <span className="badge">Brand · #3b82f6</span>
+        <span className="badge">18 screens</span>
+        <span className="badge">4 modal states</span>
+        <span className="badge">Spacious density</span>
+      </div>
+
+      <div className="pillrow">
+        <span className="p"><span className="dot"></span> Persona · general commerce (Shopify-like)</span>
+        <span className="p is-ai"><i data-lucide="sparkles" style={{ width: 12, height: 12 }}></i> AI helper present on DNS / Permissions / Branding / Tickets</span>
+        <span className="p"><span className="dot"></span> Custom roles + per-site overrides</span>
+      </div>
+
+      <div className="map">
+        <div className="map-section">
+          <div className="sec-label">Top level</div>
+          <h3>Home</h3>
+          <ul>
+            <li><span className="dot"></span>Overview · KPIs + sites + activity</li>
+            <li><span className="dot"></span>Notifications · platform messages</li>
+          </ul>
+        </div>
+        <div className="map-section">
+          <div className="sec-label">Sites</div>
+          <h3>Subdomains</h3>
+          <ul>
+            <li><span className="dot"></span>List of sites</li>
+            <li><span className="dot"></span>Create wizard (DNS focus)</li>
+            <li><span className="dot"></span>Detail · Overview tab</li>
+            <li><span className="dot"></span>Detail · Visibility</li>
+            <li><span className="dot"></span>Detail · DNS &amp; domains</li>
+            <li><span className="dot"></span>Detail · Branding</li>
+            <li><span className="dot"></span>Detail · Hosting</li>
+            <li><span className="dot"></span>Empty + DNS error states</li>
+          </ul>
+        </div>
+        <div className="map-section">
+          <div className="sec-label">People &amp; Access</div>
+          <h3>Team &amp; permissions</h3>
+          <ul>
+            <li><span className="dot"></span>Members (table + pending)</li>
+            <li><span className="dot"></span>Roles &amp; permission toggles</li>
+            <li><span className="dot"></span>Per-site access matrix</li>
+            <li><span className="dot"></span>Invite modal</li>
+            <li><span className="dot"></span>Remove member confirm</li>
+            <li><span className="dot"></span>Activity log</li>
+          </ul>
+        </div>
+        <div className="map-section">
+          <div className="sec-label">Talk to customers</div>
+          <h3>Communications</h3>
+          <ul>
+            <li><span className="dot"></span>Support inbox (3-pane)</li>
+            <li><span className="dot"></span>Announcements / banners</li>
+            <li><span className="dot"></span>Email campaigns</li>
+            <li><span className="dot"></span>Team messages</li>
+            <li><span className="dot"></span>Customer feedback board</li>
+          </ul>
+        </div>
+        <div className="map-section">
+          <div className="sec-label">Account</div>
+          <h3>Settings</h3>
+          <ul>
+            <li><span className="dot"></span>AI Credits · pool + history</li>
+            <li><span className="dot"></span>Billing &amp; tier</li>
+            <li><span className="dot"></span>Workspace branding</li>
+            <li><span className="dot"></span>Workspace settings</li>
+            <li><span className="dot"></span>Delete subdomain confirm</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  useEffect(() => {
+    if (window.lucide && window.lucide.createIcons) {
+      window.lucide.createIcons();
+      // Re-create after a tick in case some screens mount slowly.
+      const id = setTimeout(() => window.lucide.createIcons(), 250);
+      return () => clearTimeout(id);
+    }
+  }, []);
+
+  const W = 1600, H = 980;
+
+  const sections = [
+    {
+      id: "intro",
+      title: "Overview",
+      artboards: [
+        { id: "cover", label: "Sitemap", width: 1320, height: 820, content: <Cover /> },
+      ],
+    },
+    {
+      id: "top",
+      title: "Top level · Home & notifications",
+      artboards: [
+        { id: "overview", label: "Overview · home", width: W, height: H, content: <Screen><Tnt_Overview /></Screen> },
+        { id: "notifs",   label: "Notifications · system + preferences", width: W, height: H, content: <Screen><Tnt_Notifications /></Screen> },
+      ],
+    },
+    {
+      id: "sites",
+      title: "Sites · subdomains, DNS, branding, hosting",
+      artboards: [
+        { id: "sub-list",  label: "Subdomains · list",                width: W, height: H, content: <Screen><Tnt_Subdomains /></Screen> },
+        { id: "sub-empty", label: "Subdomains · empty state",         width: W, height: H, content: <Screen><Tnt_SubdomainsEmpty /></Screen> },
+        { id: "sub-new",   label: "Create subdomain · DNS step",      width: W, height: H, content: <Screen><Tnt_SubdomainCreate /></Screen> },
+        { id: "sub-ov",    label: "Detail · Overview tab",            width: W, height: H, content: <Screen><Tnt_SubdomainDetail tab="overview" /></Screen> },
+        { id: "sub-vis",   label: "Detail · Visibility tab",          width: W, height: H, content: <Screen><Tnt_SubdomainDetail tab="visibility" /></Screen> },
+        { id: "sub-dns",   label: "Detail · DNS & domains",           width: W, height: H, content: <Screen><Tnt_SubdomainDetail tab="dns" /></Screen> },
+        { id: "sub-bra",   label: "Detail · Branding",                width: W, height: H, content: <Screen><Tnt_SubdomainDetail tab="branding" /></Screen> },
+        { id: "sub-host",  label: "Detail · Hosting & deploys",       width: W, height: H, content: <Screen><Tnt_SubdomainDetail tab="hosting" /></Screen> },
+        { id: "sub-dns-err", label: "Detail · DNS error state",        width: W, height: H, content: <Screen><Tnt_DNSErrorState /></Screen> },
+        { id: "sub-danger", label: "Detail · Danger zone",             width: W, height: H, content: <Screen><Tnt_SubdomainDetail tab="danger" /></Screen> },
+        { id: "sub-del",   label: "Modal · Delete subdomain confirm", width: W, height: H, content: <Screen><Tnt_Subdomains /><Tnt_DeleteSubdomainModal /></Screen> },
+      ],
+    },
+    {
+      id: "team",
+      title: "Team · roles, permissions & access",
+      artboards: [
+        { id: "members",  label: "Members · table + pending invites",      width: W, height: H, content: <Screen><Tnt_Members /></Screen> },
+        { id: "roles",    label: "Roles & Permissions · toggle matrix",    width: W, height: H, content: <Screen><Tnt_RolesPermissions /></Screen> },
+        { id: "matrix",   label: "Per-site access matrix",                  width: W, height: H, content: <Screen><Tnt_PerSiteAccess /></Screen> },
+        { id: "invite",   label: "Modal · Invite a member",                 width: W, height: H, content: <Screen><Tnt_Members modal={<Tnt_InviteModal />} /></Screen> },
+        { id: "remove",   label: "Modal · Remove member confirm",           width: W, height: H, content: <Screen><Tnt_Members modal={<Tnt_RemoveModal />} /></Screen> },
+        { id: "activity", label: "Activity log",                            width: W, height: H, content: <Screen><Tnt_ActivityLog /></Screen> },
+      ],
+    },
+    {
+      id: "comms",
+      title: "Communications · inbound + outbound",
+      artboards: [
+        { id: "tickets",   label: "Support inbox · 3-pane with AI reply", width: W, height: H, content: <Screen><Tnt_SupportInbox /></Screen> },
+        { id: "announce",  label: "Announcements · banners & modals",      width: W, height: H, content: <Screen><Tnt_Announcements /></Screen> },
+        { id: "campaigns", label: "Email campaigns + automations",          width: W, height: H, content: <Screen><Tnt_Campaigns /></Screen> },
+        { id: "team-chat", label: "Team messages · channels + DMs",         width: W, height: H, content: <Screen><Tnt_TeamMessages /></Screen> },
+        { id: "feedback",  label: "Customer feedback · kanban board",       width: W, height: H, content: <Screen><Tnt_Feedback /></Screen> },
+      ],
+    },
+    {
+      id: "account",
+      title: "Account · credits, billing, branding, settings",
+      artboards: [
+        { id: "credits",   label: "AI Credits · pool + top consumers",      width: W, height: H, content: <Screen><Tnt_Credits /></Screen> },
+        { id: "billing",   label: "Billing · plan + invoice history",       width: W, height: H, content: <Screen><Tnt_Billing /></Screen> },
+        { id: "wl",        label: "Workspace branding · white-label",        width: W, height: H, content: <Screen><Tnt_WhiteLabel /></Screen> },
+        { id: "settings",  label: "Workspace settings · general + integrations", width: W, height: H, content: <Screen><Tnt_WorkspaceSettings /></Screen> },
+      ],
+    },
+  ];
+
+  return (
+    <DesignCanvas title="CNCPT Tenant Admin · canvas" initialZoom={0.5}>
+      {sections.map((s) => (
+        <DCSection key={s.id} id={s.id} title={s.title}>
+          {s.artboards.map((a) => (
+            <DCArtboard key={a.id} id={a.id} label={a.label} width={a.width} height={a.height}>
+              {a.content}
+            </DCArtboard>
+          ))}
+        </DCSection>
+      ))}
+    </DesignCanvas>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
+
+</body>
+</html>

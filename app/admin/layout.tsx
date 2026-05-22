@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { requireSuperAdmin } from "@/lib/super-admin"
+import "./cncpt-admin.css"
 
 export const metadata: Metadata = {
   title: "Super Admin",

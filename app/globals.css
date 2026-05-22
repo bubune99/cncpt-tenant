@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "./atlas.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -159,4 +160,121 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* ============================================================================
+ * ATLAS BRAND-PRESET SYSTEM  —  Phase 0 shared foundation
+ *
+ * The user-selectable "design system picker". Marigold is the default; Boreal,
+ * Obsidian (dark) and Meadow are alternatives. A tenant picks one in branding
+ * settings; the choice is server-rendered as `data-brand` on the tenant/admin
+ * wrapper (see app/s/[subdomain]/layout.tsx) — zero client JS.
+ *
+ * `--wl-*` is the single source of truth. `.atlas` aliases it (atlas.css), and
+ * the shadcn semantic tokens below are remapped to it *scoped to [data-brand]*
+ * so the entire existing component tree reskins via the cascade WITHOUT the
+ * public marketing site (bare :root) being affected.
+ * ========================================================================== */
+
+:root {
+  /* Marigold defaults — also consumed by storefront/account opt-in surfaces */
+  --wl-canvas: #d9d3c2;
+  --wl-bg: #faf7ef;
+  --wl-surface: #ffffff;
+  --wl-surface-2: #f5f1e6;
+  --wl-surface-3: #ebe5d4;
+  --wl-text: #1a1410;
+  --wl-text-soft: rgba(26, 20, 16, 0.62);
+  --wl-text-faint: rgba(26, 20, 16, 0.40);
+  --wl-rule: rgba(26, 20, 16, 0.18);
+  --wl-rule-soft: rgba(26, 20, 16, 0.10);
+  --wl-accent: #8b2c1f;
+  --wl-accent-fg: #ffffff;
+  --wl-accent-soft: rgba(139, 44, 31, 0.10);
+  --wl-success: #4f5e3a;
+  --wl-warning: #b58730;
+  --wl-error: #b53d2f;
+  --wl-font-display: var(--font-display), "Spectral", Georgia, serif;
+  --wl-font-body: var(--font-geist-sans), "Geist", -apple-system, sans-serif;
+  --wl-font-mono: var(--font-geist-mono), "Geist Mono", monospace;
+  /* Density (regular) */
+  --wl-pad: 16px;
+  --wl-gap: 16px;
+  --wl-card-pad: 18px;
+  --wl-row-h: 44px;
+  /* Geometry */
+  --wl-radius: 8px;
+  --wl-radius-sm: 4px;
+  --wl-radius-lg: 12px;
+}
+
+[data-brand="marigold"] {
+  --wl-canvas: #d9d3c2;  --wl-bg: #faf7ef;  --wl-surface: #ffffff;
+  --wl-surface-2: #f5f1e6;  --wl-surface-3: #ebe5d4;
+  --wl-text: #1a1410;  --wl-text-soft: rgba(26, 20, 16, 0.62);  --wl-text-faint: rgba(26, 20, 16, 0.40);
+  --wl-rule: rgba(26, 20, 16, 0.18);  --wl-rule-soft: rgba(26, 20, 16, 0.10);
+  --wl-accent: #8b2c1f;  --wl-accent-fg: #ffffff;  --wl-accent-soft: rgba(139, 44, 31, 0.10);
+  --wl-success: #4f5e3a;  --wl-warning: #b58730;  --wl-error: #b53d2f;
+}
+[data-brand="boreal"] {
+  --wl-canvas: #e8e8e6;  --wl-bg: #ffffff;  --wl-surface: #ffffff;
+  --wl-surface-2: #f6f6f4;  --wl-surface-3: #eceae6;
+  --wl-text: #0d1f1c;  --wl-text-soft: rgba(13, 31, 28, 0.62);  --wl-text-faint: rgba(13, 31, 28, 0.40);
+  --wl-rule: rgba(13, 31, 28, 0.14);  --wl-rule-soft: rgba(13, 31, 28, 0.08);
+  --wl-accent: #1a4d3a;  --wl-accent-fg: #ffffff;  --wl-accent-soft: rgba(26, 77, 58, 0.10);
+  --wl-success: #1a4d3a;  --wl-warning: #b89031;  --wl-error: #b53d2f;
+}
+[data-brand="obsidian"] {
+  --wl-canvas: #1a1a1d;  --wl-bg: #0f0f12;  --wl-surface: #16161a;
+  --wl-surface-2: #1c1c20;  --wl-surface-3: #22222a;
+  --wl-text: #f0ede5;  --wl-text-soft: rgba(240, 237, 229, 0.68);  --wl-text-faint: rgba(240, 237, 229, 0.42);
+  --wl-rule: rgba(240, 237, 229, 0.16);  --wl-rule-soft: rgba(240, 237, 229, 0.08);
+  --wl-accent: #d4a84b;  --wl-accent-fg: #0f0f12;  --wl-accent-soft: rgba(212, 168, 75, 0.14);
+  --wl-success: #7faa55;  --wl-warning: #d4a84b;  --wl-error: #b53d2f;
+}
+[data-brand="meadow"] {
+  --wl-canvas: #e6dfd1;  --wl-bg: #f7f3e9;  --wl-surface: #fffdf6;
+  --wl-surface-2: #f0ead7;  --wl-surface-3: #e2dabd;
+  --wl-text: #2d2918;  --wl-text-soft: rgba(45, 41, 24, 0.66);  --wl-text-faint: rgba(45, 41, 24, 0.42);
+  --wl-rule: rgba(45, 41, 24, 0.18);  --wl-rule-soft: rgba(45, 41, 24, 0.10);
+  --wl-accent: #5c7548;  --wl-accent-fg: #fffdf6;  --wl-accent-soft: rgba(92, 117, 72, 0.12);
+  --wl-success: #5c7548;  --wl-warning: #c08a2e;  --wl-error: #b53d2f;
+}
+
+/* Density modes */
+[data-density="compact"]  { --wl-pad: 12px; --wl-gap: 12px; --wl-card-pad: 14px; --wl-row-h: 36px; }
+[data-density="spacious"] { --wl-pad: 22px; --wl-gap: 22px; --wl-card-pad: 24px; --wl-row-h: 52px; }
+
+/*
+ * Reskin the existing shadcn component tree to the active brand — scoped to
+ * the tenant/admin wrapper so the public marketing site (bare :root) keeps the
+ * shadcn defaults. Obsidian additionally flags `.dark` for component variants.
+ */
+[data-brand] {
+  --background: var(--wl-bg);
+  --foreground: var(--wl-text);
+  --card: var(--wl-surface);
+  --card-foreground: var(--wl-text);
+  --popover: var(--wl-surface);
+  --popover-foreground: var(--wl-text);
+  --primary: var(--wl-accent);
+  --primary-foreground: var(--wl-accent-fg);
+  --secondary: var(--wl-surface-2);
+  --secondary-foreground: var(--wl-text);
+  --muted: var(--wl-surface-2);
+  --muted-foreground: var(--wl-text-soft);
+  --accent: var(--wl-accent);
+  --accent-foreground: var(--wl-accent-fg);
+  --destructive: var(--wl-error);
+  --border: var(--wl-rule);
+  --input: var(--wl-rule);
+  --ring: var(--wl-accent);
+  --sidebar: var(--wl-bg);
+  --sidebar-foreground: var(--wl-text);
+  --sidebar-primary: var(--wl-accent);
+  --sidebar-primary-foreground: var(--wl-accent-fg);
+  --sidebar-accent: var(--wl-surface-2);
+  --sidebar-accent-foreground: var(--wl-text);
+  --sidebar-border: var(--wl-rule);
+  --sidebar-ring: var(--wl-accent);
 }

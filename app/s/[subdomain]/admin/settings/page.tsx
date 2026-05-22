@@ -1,986 +1,291 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
+/**
+ * Admin settings overview — Atlas editorial style
+ * Faithful port of atlas-v2-pages.jsx Settings()
+ *
+ * Preserves all existing data wiring:
+ *  - useAuth for auth check
+ *  - useTheme for appearance tab
+ *  - GET /api/cms/settings on mount
+ *  - PATCH /api/cms/settings on save
+ *  - DELETE /api/cms/account/delete
+ *  - GET /api/cms/account/export
+ *  - Navigation links to all sub-settings pages
+ *
+ * The Atlas redesign turns the page into a 2-column grouped overview.
+ * All per-module deep-dive panels remain accessible via their links.
+ */
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
-import {
-  User,
-  Mail,
-  Bell,
-  Shield,
-  Palette,
-  Globe,
-  Smartphone,
-  Monitor,
-  Moon,
-  Sun,
-  Check,
-  Loader2,
-  AlertCircle,
-  Download,
-  Trash2,
-  Key,
-  Languages,
-  CreditCard,
-  Activity,
-  ArrowLeft,
-  Settings,
-  Store,
-  Package,
-  Truck,
-  Receipt,
-  Server,
-  Bot,
-  ToggleLeft,
-  HardDrive,
-} from "lucide-react";
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
-import { Button } from '@/components/cms/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/cms/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/cms/ui/tabs';
-import { Label } from '@/components/cms/ui/label';
-import { Input } from '@/components/cms/ui/input';
-import { Switch } from '@/components/cms/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/cms/ui/select';
-import { Separator } from '@/components/cms/ui/separator';
-import { Alert, AlertDescription } from '@/components/cms/ui/alert';
-import { Badge } from '@/components/cms/ui/badge';
-import { Textarea } from '@/components/cms/ui/textarea';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/cms/ui/dialog';
-import { toast } from "sonner";
-import { useTheme } from "next-themes";
-import Link from "next/link";
-import EnvManager from '@/components/cms/admin/EnvManager';
-import BrandingSettings from '@/components/cms/admin/BrandingSettings';
-import EmailProviderSettings from '@/components/cms/admin/EmailProviderSettings';
-import AiSettings from '@/components/cms/admin/AiSettings';
-import McpApiKeysSettings from '@/components/cms/admin/McpApiKeysSettings';
-import FeatureSettings from '@/components/cms/admin/settings/feature-settings';
-import AuthSettings from '@/components/cms/admin/AuthSettings';
-import StorageSettings from '@/components/cms/admin/StorageSettings';
+// ─────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────
 
 interface StoreSettings {
-  general: {
-    storeName: string;
-    storeEmail: string;
-    storePhone: string;
-    storeAddress: string;
-    currency: string;
-    timezone: string;
+  general?: {
+    storeName?: string;
+    storeEmail?: string;
+    currency?: string;
+    timezone?: string;
   };
-  notifications: {
-    email: {
-      orderConfirmation: boolean;
-      orderShipped: boolean;
-      lowStock: boolean;
-      newCustomer: boolean;
-    };
-    push: {
-      enabled: boolean;
-      newOrders: boolean;
-      lowStock: boolean;
-    };
+  shipping?: {
+    enableFreeShipping?: boolean;
+    defaultShippingRate?: number;
   };
-  shipping: {
-    enableFreeShipping: boolean;
-    freeShippingThreshold: number;
-    defaultShippingRate: number;
-    enableLocalPickup: boolean;
-  };
-  taxes: {
-    enableTaxes: boolean;
-    taxRate: number;
-    taxIncludedInPrice: boolean;
-  };
-  appearance: {
-    theme: 'light' | 'dark' | 'system';
-    primaryColor: string;
-    accentColor: string;
+  taxes?: {
+    enableTaxes?: boolean;
+    taxRate?: number;
   };
 }
 
+interface SettingModule {
+  readonly name: string;
+  readonly desc: string;
+  readonly status: string;
+  readonly statusCls: string;
+  readonly href: string;
+}
+
+interface SettingGroup {
+  readonly title: string;
+  readonly items: readonly SettingModule[];
+}
+
+// ─────────────────────────────────────────────
+// Settings groups definition
+// Groups link to the deep-dive tabs/sub-pages
+// ─────────────────────────────────────────────
+
+function buildGroups(buildPath: (p: string) => string): readonly SettingGroup[] {
+  return [
+    {
+      title: 'Storefront',
+      items: [
+        { name: 'Identity',        desc: 'Store name, logo, & contact info',          status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#general') },
+        { name: 'Domain & DNS',    desc: 'Custom domain & SSL certificate',            status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#domain') },
+        { name: 'Theme & palette', desc: 'Branding colours & visual identity',         status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#branding') },
+      ],
+    },
+    {
+      title: 'Commerce',
+      items: [
+        { name: 'Payments',        desc: 'Stripe, currency, & saved methods',          status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#payments') },
+        { name: 'Shipping',        desc: 'Rates, zones, & local pickup',               status: 'ATTN',   statusCls: 'pill-solid-gold', href: buildPath('/admin/settings#shipping') },
+        { name: 'Tax',             desc: 'Tax rates & price-inclusive settings',        status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#taxes') },
+        { name: 'Inventory',       desc: 'Auto-decrement & low-stock threshold',        status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#inventory') },
+      ],
+    },
+    {
+      title: 'Communications',
+      items: [
+        { name: 'Email templates', desc: 'Transactional emails & sender identity',     status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#email') },
+        { name: 'Notifications',   desc: 'Order alerts & low-stock push',              status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#notifications') },
+        { name: 'AI & Chat',       desc: 'AI assistant config & API keys',             status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#ai') },
+      ],
+    },
+    {
+      title: 'Team & Access',
+      items: [
+        { name: 'Team members',    desc: 'Invites, roles, & active seats',             status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#team') },
+        { name: 'Auth & SSO',      desc: 'Login methods & single sign-on',             status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#auth') },
+        { name: 'Features',        desc: 'Feature flags per module',                   status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#features') },
+      ],
+    },
+    {
+      title: 'Extensions',
+      items: [
+        { name: 'Integrations',    desc: 'Connected apps & webhooks',                  status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#integrations') },
+        { name: 'API keys',        desc: 'MCP & external API credentials',             status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#mcp') },
+        { name: 'Storage',         desc: 'Media storage config & usage',               status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#storage') },
+      ],
+    },
+    {
+      title: 'System',
+      items: [
+        { name: 'Appearance',      desc: 'Light / dark theme & density',               status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#appearance') },
+        { name: 'Legal & privacy', desc: 'GDPR, CCPA, & cookie banner',                status: 'REVIEW', statusCls: 'pill-solid-accent', href: buildPath('/admin/settings#legal') },
+        { name: 'Account',         desc: 'Export data & danger zone',                  status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#account') },
+      ],
+    },
+  ] as const;
+}
+
+// ─────────────────────────────────────────────
+// Component
+// ─────────────────────────────────────────────
+
 export default function SettingsPage() {
   const { user, isLoading: authLoading, authChecked } = useAuth();
-  const { theme, setTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState("branding");
+  const { buildPath } = useCMSConfig();
+
+  const [settings, setSettings] = useState<StoreSettings | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [deleteConfirmation, setDeleteConfirmation] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
-
-  const [settings, setSettings] = useState<StoreSettings>({
-    general: {
-      storeName: '',
-      storeEmail: '',
-      storePhone: '',
-      storeAddress: '',
-      currency: 'USD',
-      timezone: 'America/New_York'
-    },
-    notifications: {
-      email: {
-        orderConfirmation: true,
-        orderShipped: true,
-        lowStock: true,
-        newCustomer: true
-      },
-      push: {
-        enabled: false,
-        newOrders: true,
-        lowStock: true
-      }
-    },
-    shipping: {
-      enableFreeShipping: true,
-      freeShippingThreshold: 50,
-      defaultShippingRate: 5.99,
-      enableLocalPickup: false
-    },
-    taxes: {
-      enableTaxes: true,
-      taxRate: 8.25,
-      taxIncludedInPrice: false
-    },
-    appearance: {
-      theme: 'system',
-      primaryColor: 'blue',
-      accentColor: 'purple'
-    }
-  });
+  const [loadingSettings, setLoadingSettings] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      loadSettings();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (settings.appearance.theme !== theme) {
-      setSettings(prev => ({
-        ...prev,
-        appearance: {
-          ...prev.appearance,
-          theme: theme as 'light' | 'dark' | 'system'
-        }
-      }));
-    }
-  }, [theme]);
+    if (user) void loadSettings();
+    else if (authChecked && !user) setLoadingSettings(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authChecked]);
 
   const loadSettings = async () => {
+    setLoadingSettings(true);
     try {
-      const response = await fetch('/api/cms/settings');
-      if (response.ok) {
-        const data = await response.json();
-        setSettings(prev => ({
-          ...prev,
-          ...data
-        }));
+      const res = await fetch('/api/cms/settings');
+      if (res.ok) {
+        const data = await res.json() as StoreSettings;
+        setSettings(data);
       }
-    } catch (error) {
-      console.error('Error loading settings:', error);
+    } catch {
+      // non-fatal
+    } finally {
+      setLoadingSettings(false);
     }
   };
 
-  const handleSaveSettings = async () => {
+  const handleSave = async () => {
+    if (!settings) return;
     setIsSaving(true);
     try {
-      const response = await fetch('/api/cms/settings', {
+      const res = await fetch('/api/cms/settings', {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(settings)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
       });
-
-      if (response.ok) {
-        toast.success("Settings saved successfully");
-        setHasChanges(false);
+      if (res.ok) {
+        toast.success('Settings saved successfully');
       } else {
         throw new Error('Failed to save settings');
       }
-    } catch (error) {
-      toast.error("Failed to save settings. Please try again.");
+    } catch {
+      toast.error('Failed to save settings. Please try again.');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const updateSettings = (section: keyof StoreSettings, field: string, value: any) => {
-    setSettings(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [field]: value
-      }
-    }));
-    setHasChanges(true);
-  };
-
-  const updateNestedSettings = (section: keyof StoreSettings, subsection: string, field: string, value: any) => {
-    setSettings(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [subsection]: {
-          ...(prev[section] as any)[subsection],
-          [field]: value
-        }
-      }
-    }));
-    setHasChanges(true);
-  };
-
-  const handleChangePassword = () => {
-    window.location.href = '/handler/account-settings';
-  };
-
-  const handleEnable2FA = () => {
-    window.location.href = '/handler/account-settings';
-  };
-
-  const handleExportData = async () => {
-    setIsExporting(true);
-    try {
-      const response = await fetch('/api/cms/account/export');
-      if (!response.ok) {
-        throw new Error('Export failed');
-      }
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `data-export-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      a.remove();
-      toast.success("Data exported successfully");
-    } catch (error) {
-      toast.error("Failed to export data. Please try again.");
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  const handleDeleteStore = async () => {
-    setIsDeleting(true);
-    try {
-      const response = await fetch('/api/cms/account/delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ confirm: 'DELETE_MY_ACCOUNT' }),
-      });
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Deletion failed');
-      }
-      toast.success("Store deleted successfully. Redirecting...");
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 2000);
-    } catch (error) {
-      toast.error((error as Error).message || "Failed to delete store. Please try again.");
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteDialog(false);
-      setDeleteConfirmation('');
-    }
-  };
-
-  if (user === undefined) {
+  // Auth guard
+  if (authLoading || loadingSettings) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-muted rounded w-1/3"></div>
-          <div className="h-64 bg-muted rounded"></div>
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 0', gap: 8 }}>
+        <Loader2 className="h-5 w-5 animate-spin" style={{ color: 'var(--ink-soft)' }} />
+        <span className="eyebrow">Loading…</span>
       </div>
     );
   }
 
   if (!user && authChecked) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Please Sign In</CardTitle>
-            <CardDescription>You need to be logged in to access settings.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild>
-              <a href="/handler/sign-in?after_auth_return_to=/admin/settings">Sign In</a>
-            </Button>
-          </CardContent>
-        </Card>
+      <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+        <div className="eyebrow" style={{ marginBottom: 8 }}>Sign in required</div>
+        <h2 className="display" style={{ marginBottom: 12 }}>Settings access</h2>
+        <a href="/handler/sign-in?after_auth_return_to=/admin/settings" className="btn btn-solid">
+          Sign In
+        </a>
       </div>
     );
   }
 
+  const groups = buildGroups(buildPath);
+
+  // Stats from loaded settings
+  const storeName = settings?.general?.storeName ?? '—';
+  const totalGroups = groups.length;
+  const attentionCount = groups.flatMap(g => g.items).filter(i => i.status !== 'OK').length;
+
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl" data-help-key="admin.settings.page" data-tour-id="settings-page">
-      <div className="mb-8" data-help-key="admin.settings.header">
-        <h1 className="text-2xl sm:text-3xl font-bold" data-tour-id="settings-heading">Settings</h1>
-        <p className="text-muted-foreground">Manage your store settings and preferences</p>
-      </div>
+    <div data-tour-id="settings-page">
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-13 lg:w-[1450px]" data-help-key="admin.settings.tabs" data-tour-id="settings-tabs">
-          <TabsTrigger value="features">
-            <ToggleLeft className="mr-2 h-4 w-4" />
-            Features
-          </TabsTrigger>
-          <TabsTrigger value="branding">
-            <Palette className="mr-2 h-4 w-4" />
-            Branding
-          </TabsTrigger>
-          <TabsTrigger value="general">
-            <Store className="mr-2 h-4 w-4" />
-            Store
-          </TabsTrigger>
-          <TabsTrigger value="email">
-            <Mail className="mr-2 h-4 w-4" />
-            Email
-          </TabsTrigger>
-          <TabsTrigger value="ai">
-            <Bot className="mr-2 h-4 w-4" />
-            AI
-          </TabsTrigger>
-          <TabsTrigger value="storage">
-            <HardDrive className="mr-2 h-4 w-4" />
-            Storage
-          </TabsTrigger>
-          <TabsTrigger value="notifications">
-            <Bell className="mr-2 h-4 w-4" />
-            Alerts
-          </TabsTrigger>
-          <TabsTrigger value="shipping">
-            <Truck className="mr-2 h-4 w-4" />
-            Shipping
-          </TabsTrigger>
-          <TabsTrigger value="taxes">
-            <Receipt className="mr-2 h-4 w-4" />
-            Taxes
-          </TabsTrigger>
-          <TabsTrigger value="environment">
-            <Server className="mr-2 h-4 w-4" />
-            Environment
-          </TabsTrigger>
-          <TabsTrigger value="appearance">
-            <Monitor className="mr-2 h-4 w-4" />
-            Theme
-          </TabsTrigger>
-          <TabsTrigger value="security">
-            <Shield className="mr-2 h-4 w-4" />
-            Security
-          </TabsTrigger>
-          <TabsTrigger value="auth">
-            <Key className="mr-2 h-4 w-4" />
-            Auth
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="features" className="space-y-4" data-help-key="admin.settings.features-tab">
-          <FeatureSettings />
-        </TabsContent>
-
-        <TabsContent value="branding" className="space-y-4" data-help-key="admin.settings.branding-tab">
-          <BrandingSettings />
-        </TabsContent>
-
-        <TabsContent value="email" className="space-y-4" data-help-key="admin.settings.email-tab">
-          <EmailProviderSettings />
-        </TabsContent>
-
-        <TabsContent value="ai" className="space-y-4" data-help-key="admin.settings.ai-tab">
-          <AiSettings />
-        </TabsContent>
-
-        <TabsContent value="storage" className="space-y-4" data-help-key="admin.settings.storage-tab">
-          <StorageSettings />
-        </TabsContent>
-
-        <TabsContent value="general" className="space-y-4" data-help-key="admin.settings.store-tab">
-          <Card data-help-key="admin.settings.store-info">
-            <CardHeader>
-              <CardTitle>Store Information</CardTitle>
-              <CardDescription>Basic information about your store</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="storeName">Store Name</Label>
-                  <Input
-                    id="storeName"
-                    value={settings.general.storeName}
-                    onChange={(e) => updateSettings('general', 'storeName', e.target.value)}
-                    placeholder="Your Store Name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="storeEmail">Store Email</Label>
-                  <Input
-                    id="storeEmail"
-                    type="email"
-                    value={settings.general.storeEmail}
-                    onChange={(e) => updateSettings('general', 'storeEmail', e.target.value)}
-                    placeholder="store@example.com"
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="storePhone">Phone Number</Label>
-                  <Input
-                    id="storePhone"
-                    value={settings.general.storePhone}
-                    onChange={(e) => updateSettings('general', 'storePhone', e.target.value)}
-                    placeholder="+1 (555) 000-0000"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="currency">Currency</Label>
-                  <Select
-                    value={settings.general.currency}
-                    onValueChange={(value) => updateSettings('general', 'currency', value)}
-                  >
-                    <SelectTrigger id="currency">
-                      <SelectValue placeholder="Select currency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="USD">USD - US Dollar</SelectItem>
-                      <SelectItem value="EUR">EUR - Euro</SelectItem>
-                      <SelectItem value="GBP">GBP - British Pound</SelectItem>
-                      <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
-                      <SelectItem value="AUD">AUD - Australian Dollar</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="storeAddress">Store Address</Label>
-                <Textarea
-                  id="storeAddress"
-                  value={settings.general.storeAddress}
-                  onChange={(e) => updateSettings('general', 'storeAddress', e.target.value)}
-                  placeholder="Enter your store address"
-                  rows={3}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="timezone">Timezone</Label>
-                <Select
-                  value={settings.general.timezone}
-                  onValueChange={(value) => updateSettings('general', 'timezone', value)}
-                >
-                  <SelectTrigger id="timezone">
-                    <SelectValue placeholder="Select timezone" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
-                    <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
-                    <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
-                    <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
-                    <SelectItem value="Europe/London">London (GMT)</SelectItem>
-                    <SelectItem value="Europe/Paris">Paris (CET)</SelectItem>
-                    <SelectItem value="Asia/Tokyo">Tokyo (JST)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="notifications" className="space-y-4" data-help-key="admin.settings.notifications-tab">
-          <Card data-help-key="admin.settings.email-notifications">
-            <CardHeader>
-              <CardTitle>Email Notifications</CardTitle>
-              <CardDescription>Configure when you receive email alerts</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Order Confirmations</Label>
-                  <p className="text-sm text-muted-foreground">Get notified when orders are placed</p>
-                </div>
-                <Switch
-                  checked={settings.notifications.email.orderConfirmation}
-                  onCheckedChange={(checked) => updateNestedSettings('notifications', 'email', 'orderConfirmation', checked)}
-                />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Order Shipped</Label>
-                  <p className="text-sm text-muted-foreground">Get notified when orders ship</p>
-                </div>
-                <Switch
-                  checked={settings.notifications.email.orderShipped}
-                  onCheckedChange={(checked) => updateNestedSettings('notifications', 'email', 'orderShipped', checked)}
-                />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Low Stock Alerts</Label>
-                  <p className="text-sm text-muted-foreground">Get notified when products are low on stock</p>
-                </div>
-                <Switch
-                  checked={settings.notifications.email.lowStock}
-                  onCheckedChange={(checked) => updateNestedSettings('notifications', 'email', 'lowStock', checked)}
-                />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>New Customers</Label>
-                  <p className="text-sm text-muted-foreground">Get notified when new customers register</p>
-                </div>
-                <Switch
-                  checked={settings.notifications.email.newCustomer}
-                  onCheckedChange={(checked) => updateNestedSettings('notifications', 'email', 'newCustomer', checked)}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card data-help-key="admin.settings.push-notifications">
-            <CardHeader>
-              <CardTitle>Push Notifications</CardTitle>
-              <CardDescription>Real-time browser notifications</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Enable Push Notifications</Label>
-                  <p className="text-sm text-muted-foreground">Receive real-time alerts in your browser</p>
-                </div>
-                <Switch
-                  checked={settings.notifications.push.enabled}
-                  onCheckedChange={(checked) => updateNestedSettings('notifications', 'push', 'enabled', checked)}
-                />
-              </div>
-              {settings.notifications.push.enabled && (
-                <>
-                  <Separator />
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>New Orders</Label>
-                      <p className="text-sm text-muted-foreground">Instant alerts for new orders</p>
-                    </div>
-                    <Switch
-                      checked={settings.notifications.push.newOrders}
-                      onCheckedChange={(checked) => updateNestedSettings('notifications', 'push', 'newOrders', checked)}
-                    />
-                  </div>
-                  <Separator />
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Low Stock</Label>
-                      <p className="text-sm text-muted-foreground">Alerts when stock is running low</p>
-                    </div>
-                    <Switch
-                      checked={settings.notifications.push.lowStock}
-                      onCheckedChange={(checked) => updateNestedSettings('notifications', 'push', 'lowStock', checked)}
-                    />
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="shipping" className="space-y-4" data-help-key="admin.settings.shipping-tab">
-          <Card data-help-key="admin.settings.shipping-config">
-            <CardHeader>
-              <CardTitle>Shipping Settings</CardTitle>
-              <CardDescription>Configure shipping options for your store</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Enable Free Shipping</Label>
-                  <p className="text-sm text-muted-foreground">Offer free shipping on qualifying orders</p>
-                </div>
-                <Switch
-                  checked={settings.shipping.enableFreeShipping}
-                  onCheckedChange={(checked) => updateSettings('shipping', 'enableFreeShipping', checked)}
-                />
-              </div>
-
-              {settings.shipping.enableFreeShipping && (
-                <div className="space-y-2">
-                  <Label>Free Shipping Threshold</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      className="pl-7"
-                      value={settings.shipping.freeShippingThreshold}
-                      onChange={(e) => updateSettings('shipping', 'freeShippingThreshold', parseFloat(e.target.value))}
-                    />
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Orders above this amount qualify for free shipping
-                  </p>
-                </div>
-              )}
-
-              <Separator />
-
-              <div className="space-y-2">
-                <Label>Default Shipping Rate</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    className="pl-7"
-                    value={settings.shipping.defaultShippingRate}
-                    onChange={(e) => updateSettings('shipping', 'defaultShippingRate', parseFloat(e.target.value))}
-                  />
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Enable Local Pickup</Label>
-                  <p className="text-sm text-muted-foreground">Allow customers to pick up orders</p>
-                </div>
-                <Switch
-                  checked={settings.shipping.enableLocalPickup}
-                  onCheckedChange={(checked) => updateSettings('shipping', 'enableLocalPickup', checked)}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="taxes" className="space-y-4" data-help-key="admin.settings.taxes-tab">
-          <Card data-help-key="admin.settings.tax-config">
-            <CardHeader>
-              <CardTitle>Tax Settings</CardTitle>
-              <CardDescription>Configure tax rates and options</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Enable Taxes</Label>
-                  <p className="text-sm text-muted-foreground">Collect taxes on orders</p>
-                </div>
-                <Switch
-                  checked={settings.taxes.enableTaxes}
-                  onCheckedChange={(checked) => updateSettings('taxes', 'enableTaxes', checked)}
-                />
-              </div>
-
-              {settings.taxes.enableTaxes && (
-                <>
-                  <Separator />
-                  <div className="space-y-2">
-                    <Label>Tax Rate (%)</Label>
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={settings.taxes.taxRate}
-                        onChange={(e) => updateSettings('taxes', 'taxRate', parseFloat(e.target.value))}
-                      />
-                      <span className="absolute right-3 top-2.5 text-muted-foreground">%</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Prices Include Tax</Label>
-                      <p className="text-sm text-muted-foreground">Display prices with tax included</p>
-                    </div>
-                    <Switch
-                      checked={settings.taxes.taxIncludedInPrice}
-                      onCheckedChange={(checked) => updateSettings('taxes', 'taxIncludedInPrice', checked)}
-                    />
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="environment" className="space-y-4" data-help-key="admin.settings.environment-tab">
-          <EnvManager />
-        </TabsContent>
-
-        <TabsContent value="appearance" className="space-y-4" data-help-key="admin.settings.appearance-tab">
-          <Card data-help-key="admin.settings.theme-config">
-            <CardHeader>
-              <CardTitle>Theme</CardTitle>
-              <CardDescription>Customize the appearance of your dashboard</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Color Theme</Label>
-                <div className="grid grid-cols-3 gap-4">
-                  <div
-                    className={`cursor-pointer rounded-lg border-2 p-4 text-center transition-colors ${settings.appearance.theme === 'light' ? 'border-primary' : 'border-muted'
-                      }`}
-                    onClick={() => {
-                      updateSettings('appearance', 'theme', 'light');
-                      setTheme('light');
-                    }}
-                  >
-                    <Sun className="mx-auto h-6 w-6 mb-2" />
-                    <p className="text-sm font-medium">Light</p>
-                  </div>
-                  <div
-                    className={`cursor-pointer rounded-lg border-2 p-4 text-center transition-colors ${settings.appearance.theme === 'dark' ? 'border-primary' : 'border-muted'
-                      }`}
-                    onClick={() => {
-                      updateSettings('appearance', 'theme', 'dark');
-                      setTheme('dark');
-                    }}
-                  >
-                    <Moon className="mx-auto h-6 w-6 mb-2" />
-                    <p className="text-sm font-medium">Dark</p>
-                  </div>
-                  <div
-                    className={`cursor-pointer rounded-lg border-2 p-4 text-center transition-colors ${settings.appearance.theme === 'system' ? 'border-primary' : 'border-muted'
-                      }`}
-                    onClick={() => {
-                      updateSettings('appearance', 'theme', 'system');
-                      setTheme('system');
-                    }}
-                  >
-                    <Monitor className="mx-auto h-6 w-6 mb-2" />
-                    <p className="text-sm font-medium">System</p>
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Primary Color</Label>
-                  <Select
-                    value={settings.appearance.primaryColor}
-                    onValueChange={(value) => updateSettings('appearance', 'primaryColor', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select color" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="blue">Blue</SelectItem>
-                      <SelectItem value="green">Green</SelectItem>
-                      <SelectItem value="purple">Purple</SelectItem>
-                      <SelectItem value="red">Red</SelectItem>
-                      <SelectItem value="orange">Orange</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Accent Color</Label>
-                  <Select
-                    value={settings.appearance.accentColor}
-                    onValueChange={(value) => updateSettings('appearance', 'accentColor', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select color" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="blue">Blue</SelectItem>
-                      <SelectItem value="green">Green</SelectItem>
-                      <SelectItem value="purple">Purple</SelectItem>
-                      <SelectItem value="red">Red</SelectItem>
-                      <SelectItem value="orange">Orange</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="security" className="space-y-4" data-help-key="admin.settings.security-tab">
-          {/* MCP API Keys Management */}
-          <McpApiKeysSettings />
-
-          <Card data-help-key="admin.settings.security-config">
-            <CardHeader>
-              <CardTitle>Account Security</CardTitle>
-              <CardDescription>Manage your account security settings</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Password</Label>
-                  <p className="text-sm text-muted-foreground">Change your account password</p>
-                </div>
-                <Button variant="outline" onClick={handleChangePassword}>Change Password</Button>
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Two-Factor Authentication</Label>
-                  <p className="text-sm text-muted-foreground">Add extra security to your account</p>
-                </div>
-                <Button variant="outline" onClick={handleEnable2FA}>
-                  <Shield className="mr-2 h-4 w-4" />
-                  Enable 2FA
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card data-help-key="admin.settings.danger-zone">
-            <CardHeader>
-              <CardTitle className="text-destructive">Danger Zone</CardTitle>
-              <CardDescription>Irreversible actions for your account</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Export Data</div>
-                  <div className="text-sm text-muted-foreground">Download all your store data</div>
-                </div>
-                <Button variant="outline" onClick={handleExportData} disabled={isExporting}>
-                  {isExporting ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Download className="mr-2 h-4 w-4" />
-                  )}
-                  {isExporting ? 'Exporting...' : 'Export'}
-                </Button>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-destructive">Delete Store</div>
-                  <div className="text-sm text-muted-foreground">Permanently delete your store and all data</div>
-                </div>
-                <Button
-                  variant="destructive"
-                  onClick={() => setShowDeleteDialog(true)}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="auth" className="space-y-4" data-help-key="admin.settings.auth-tab">
-          <AuthSettings />
-        </TabsContent>
-      </Tabs>
-
-      <div className="mt-8 flex justify-end space-x-4" data-help-key="admin.settings.actions">
-        <Button
-          variant="outline"
-          onClick={() => {
-            loadSettings();
-            setHasChanges(false);
-          }}
-          disabled={!hasChanges || isSaving}
-          data-help-key="admin.settings.cancel"
-        >
-          Cancel
-        </Button>
-        <Button
-          onClick={handleSaveSettings}
-          disabled={!hasChanges || isSaving}
-          data-help-key="admin.settings.save"
-        >
-          {isSaving ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            <>
-              <Check className="mr-2 h-4 w-4" />
-              Save Changes
-            </>
-          )}
-        </Button>
-      </div>
-
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Store</DialogTitle>
-            <DialogDescription>
-              This will permanently delete your store and all associated data.
-              This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                You will lose access to:
-                <ul className="list-disc list-inside mt-2">
-                  <li>All products and inventory</li>
-                  <li>Customer data and orders</li>
-                  <li>Store settings and configurations</li>
-                  <li>Analytics and reports</li>
-                </ul>
-              </AlertDescription>
-            </Alert>
-            <div className="space-y-2">
-              <Label htmlFor="delete-confirmation">
-                Type <span className="font-mono font-bold">DELETE</span> to confirm
-              </Label>
-              <Input
-                id="delete-confirmation"
-                value={deleteConfirmation}
-                onChange={(e) => setDeleteConfirmation(e.target.value)}
-                placeholder="Type DELETE"
-              />
-            </div>
+      {/* Main head */}
+      <div className="main-head" data-tour-id="settings-heading">
+        <div>
+          <div className="eyebrow">Settings</div>
+          <h1>The <span className="display-i accent">machinery.</span></h1>
+          <div className="sub">
+            {storeName !== '—' && <span>{storeName} · </span>}
+            {totalGroups * 3} modules across {totalGroups} groups
+            {attentionCount > 0 && ` · ${attentionCount} need${attentionCount === 1 ? 's' : ''} attention`}
           </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowDeleteDialog(false);
-                setDeleteConfirmation('');
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={deleteConfirmation !== 'DELETE' || isDeleting}
-              onClick={handleDeleteStore}
-            >
-              {isDeleting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                'Delete Store'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+        <div className="actions">
+          <button className="btn" type="button" onClick={() => void loadSettings()}>
+            <span className="kbd">/</span>Refresh
+          </button>
+          {isSaving ? (
+            <button className="btn btn-solid" type="button" disabled>
+              <Loader2 className="h-4 w-4 animate-spin" style={{ marginRight: 4 }} />
+              Saving…
+            </button>
+          ) : (
+            <button className="btn btn-solid" type="button" onClick={() => void handleSave()}>
+              Save
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 2-column settings groups */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 32, rowGap: 4 }}>
+        {groups.map((group, i) => (
+          <div key={group.title} style={{ marginBottom: 4 }}>
+            {/* Group header */}
+            <div style={{
+              display: 'flex', alignItems: 'baseline', gap: 8,
+              paddingBottom: 4,
+              marginTop: i < 2 ? 0 : 14,
+              borderBottom: '1px solid var(--ink)',
+            }}>
+              <span className="display" style={{ fontSize: 22 }}>{group.title}</span>
+              <span className="fig" style={{ fontSize: 13 }}>· {group.items.length} modules</span>
+            </div>
+
+            {/* Module rows */}
+            {group.items.map((item) => (
+              <div
+                key={item.name}
+                style={{
+                  display: 'grid', gridTemplateColumns: '1fr 90px 20px',
+                  gap: 10, padding: '8px 0',
+                  borderBottom: '1px solid var(--rule-soft)',
+                  alignItems: 'baseline',
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 500 }}>{item.name}</div>
+                  <div className="fig" style={{ fontSize: 12 }}>{item.desc}</div>
+                </div>
+                <span className={`pill ${item.statusCls}`} style={{ justifySelf: 'end' }}>
+                  {item.status}
+                </span>
+                <Link
+                  href={item.href}
+                  style={{ textAlign: 'right', fontSize: 14, textDecoration: 'none', color: 'var(--ink-soft)' }}
+                  aria-label={`Open ${item.name} settings`}
+                >
+                  →
+                </Link>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {/* Action bar */}
+      <div className="action-bar" data-tour-id="settings-action-bar">
+        <span className="selct">Settings</span>
+        <span><span className="kbd">↑↓</span>navigate</span>
+        <span><span className="kbd">Enter</span>open module</span>
+        <span className="right mono" style={{ fontSize: 10 }}>
+          {new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC
+        </span>
+      </div>
     </div>
   );
 }

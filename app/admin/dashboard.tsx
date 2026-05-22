@@ -67,7 +67,9 @@ import {
   Gift,
   Pencil,
   Plus,
+  Bell,
 } from "lucide-react"
+import "@/app/admin/cncpt-admin.css"
 import { deleteSubdomainAction } from "@/app/actions"
 import { rootDomain, protocol } from "@/lib/utils"
 import { useRouter } from "next/navigation"
@@ -4532,28 +4534,227 @@ export function AdminDashboard({
     }
   }
 
+  // Map section IDs to breadcrumb labels
+  const sectionLabel: Record<AdminSection, string> = {
+    overview: "Overview",
+    users: "Users",
+    teams: "Teams",
+    clients: "Clients",
+    tiers: "Subscription Tiers",
+    subdomains: "Tenants & Subdomains",
+    "ai-credits": "AI Credits",
+    overrides: "Permission Overrides",
+    analytics: "Analytics",
+    activity: "Activity Log",
+    feedback: "Feedback",
+    settings: "Platform Settings",
+  }
+
+  const crumbs = ["CNCPT Admin", sectionLabel[activeSection] ?? activeSection]
+
   return (
-    <div className="flex min-h-screen bg-slate-950">
-      <AdminSidebar
-        activeSection={activeSection}
-        onSectionChange={setActiveSection}
-        pendingClientsCount={clientStats?.pendingApproval}
-      />
+    <div className="cncpt-admin">
+      <div className="ca-board" style={{ minHeight: "100vh" }}>
+        {/* Left sidebar */}
+        <aside className="ca-sidebar">
+          {/* Brand */}
+          <div className="ca-sidebar__brand">
+            <div className="ca-sidebar__brand-mark">
+              <Shield style={{ width: 14, height: 14 }} aria-hidden />
+            </div>
+            <span className="ca-sidebar__brand-name">CNCPT Admin</span>
+          </div>
 
-      <div className="flex-1 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950">
-        <AdminHeader />
+          {/* Search */}
+          <div className="ca-sidebar__search">
+            <Search style={{ width: 13, height: 13 }} aria-hidden />
+            <span className="ca-sidebar__search-q">Search…</span>
+            <span className="ca-kbd">⌘K</span>
+          </div>
 
-        <main className="p-6">{renderActiveSection()}</main>
+          {/* Nav */}
+          <nav className="ca-sidebar__nav">
+            {[
+              { id: "overview" as AdminSection, label: "Overview",             Icon: Home },
+              { id: "users" as AdminSection,    label: "Users",                Icon: Users },
+              { id: "teams" as AdminSection,    label: "Teams",                Icon: Building2 },
+              { id: "clients" as AdminSection,  label: "Clients",              Icon: UserCheck, badge: clientStats?.pendingApproval },
+              { id: "tiers" as AdminSection,    label: "Subscription Tiers",   Icon: CreditCard },
+              { id: "subdomains" as AdminSection, label: "Tenants & Subdomains", Icon: Globe },
+              { id: "ai-credits" as AdminSection, label: "AI Credits",         Icon: Sparkles },
+              { id: "overrides" as AdminSection, label: "Permission Overrides", Icon: Wand2 },
+              { separator: "Feedback" },
+              { id: "feedback" as AdminSection, label: "Feedback",             Icon: MessageSquare },
+              { separator: "Insights" },
+              { id: "analytics" as AdminSection, label: "Analytics",           Icon: BarChart3 },
+              { id: "activity" as AdminSection,  label: "Activity Log",        Icon: History },
+              { separator: "Settings" },
+              { id: "settings" as AdminSection,  label: "Platform Settings",   Icon: Settings },
+            ].map((item, i) => {
+              if ("separator" in item) {
+                return (
+                  <div className="ca-sidebar__nav-h" key={"sep" + i}>
+                    <ChevronLeft style={{ width: 11, height: 11, transform: "rotate(-90deg)" }} aria-hidden />
+                    {item.separator}
+                  </div>
+                )
+              }
+              const { id, label, Icon: ItemIcon, badge } = item
+              const isActive = activeSection === id
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  className={`ca-sidebar__nav-item${isActive ? " is-active" : ""}`}
+                  onClick={() => setActiveSection(id)}
+                >
+                  <ItemIcon style={{ width: 14, height: 14 }} className="ca-nav-icon" aria-hidden />
+                  <span>{label}</span>
+                  {badge !== undefined && badge > 0 && (
+                    <span className="ca-nav-badge is-hot">{badge}</span>
+                  )}
+                </button>
+              )
+            })}
+          </nav>
+
+          {/* Footer */}
+          <div className="ca-sidebar__foot">
+            <div className="ca-avatar ca-avatar--sm ca-avatar--orange">
+              {superAdmin.email.slice(0, 2).toUpperCase()}
+            </div>
+            <div className="ca-col" style={{ flex: 1, minWidth: 0, gap: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 500 }}>
+                {superAdmin.email.split("@")[0]}
+              </div>
+              <div className="ca-muted" style={{ fontSize: 10.5 }}>super admin</div>
+            </div>
+            <button
+              type="button"
+              className="ca-iconbtn ca-iconbtn--sm ca-iconbtn--ghost"
+              onClick={async () => {
+                if (user) {
+                  await user.signOut()
+                }
+              }}
+            >
+              <LogOut style={{ width: 13, height: 13 }} aria-hidden />
+            </button>
+          </div>
+        </aside>
+
+        {/* Main content */}
+        <main className="ca-main">
+          {/* Topbar */}
+          <header className="ca-topbar">
+            <div className="ca-crumbs">
+              {crumbs.map((c, i) => (
+                <Fragment key={i}>
+                  <span className={i === crumbs.length - 1 ? "ca-crumb-active" : "ca-muted"}>
+                    {c}
+                  </span>
+                  {i < crumbs.length - 1 && (
+                    <ChevronRight style={{ width: 12, height: 12, color: "var(--ca-text-faint)" }} aria-hidden />
+                  )}
+                </Fragment>
+              ))}
+            </div>
+            <div className="ca-topbar__spacer" />
+            <button type="button" className="ca-iconbtn ca-iconbtn--sm ca-iconbtn--ghost">
+              <Bell style={{ width: 13, height: 13 }} aria-hidden />
+            </button>
+            <div className="ca-avatar ca-avatar--sm ca-avatar--orange" style={{ marginLeft: 4 }}>
+              {superAdmin.email.slice(0, 2).toUpperCase()}
+            </div>
+          </header>
+
+          {/* Page scroll area */}
+          <div className="ca-page">
+            <div className="ca-page-body">
+              {renderActiveSection()}
+            </div>
+          </div>
+        </main>
+
+        {/* Right activity rail — static, no live data for now */}
+        <aside className="ca-rrail">
+          <div className="ca-rrail__head">
+            <span className="ca-live-dot" aria-hidden />
+            <h3>Live activity</h3>
+          </div>
+          <div className="ca-rrail__tabs">
+            <button type="button" className="is-on">Activity</button>
+            <button type="button">Queue <span className="ca-muted" style={{ marginLeft: 4 }}>5</span></button>
+            <button type="button">Mentions <span className="ca-muted" style={{ marginLeft: 4 }}>2</span></button>
+          </div>
+          <div className="ca-rrail__body">
+            {[
+              { who: "system",  text: "new signup · daydream.io",        time: "1m ago",  color: "#10b981" },
+              { who: "Felix K.",text: "tier changed Starter → Growth",    time: "2m ago",  color: "#1d4ed8" },
+              { who: "Aisha B.",text: "credits topped up +5,000",         time: "8m ago",  color: "#9333ea" },
+              { who: "Jonas B.",text: "requested access · flag",          time: "14m ago", color: "#a16207", actionable: true },
+              { who: "Diego R.",text: "CSAT 1 feedback · billing",        time: "1h ago",  color: "#dc2626" },
+              { who: "system",  text: "subdomain craftshop orphaned",     time: "2h ago",  color: "#dc2626", actionable: true },
+              { who: "Tomás S.",text: "API key revoked",                  time: "3h ago",  color: "#475569" },
+              { who: "Owen R.", text: "suspended · policy violation",     time: "5h ago",  color: "#dc2626" },
+              { who: "Priya S.",text: "joined · daydream tenant",         time: "1d ago",  color: "#10b981" },
+            ].map((ev, i) => (
+              <div
+                key={i}
+                className={`ca-act-row${ev.actionable ? " is-actionable" : ""}`}
+              >
+                <div className="ca-act-icon" style={{ color: ev.color }}>
+                  <Activity style={{ width: 11, height: 11 }} aria-hidden />
+                </div>
+                <div className="ca-act-body">
+                  <span className="ca-act-who">{ev.who}</span>{" "}{ev.text}
+                  <div className="ca-act-time">{ev.time}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </aside>
       </div>
 
+      {/* Toast notifications */}
       {state.error && (
-        <div className="fixed bottom-4 right-4 bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg shadow-lg backdrop-blur-sm z-50">
+        <div
+          style={{
+            position: "fixed",
+            bottom: 16,
+            right: 16,
+            background: "#fef2f2",
+            border: "1px solid #fecaca",
+            color: "#991b1b",
+            padding: "12px 16px",
+            borderRadius: 8,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            zIndex: 50,
+            fontFamily: "var(--ca-font, inherit)",
+            fontSize: 13,
+          }}
+        >
           {state.error}
         </div>
       )}
 
       {state.success && (
-        <div className="fixed bottom-4 right-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-4 py-3 rounded-lg shadow-lg backdrop-blur-sm z-50">
+        <div
+          style={{
+            position: "fixed",
+            bottom: 16,
+            right: 16,
+            background: "#ecfdf5",
+            border: "1px solid #a7f3d0",
+            color: "#065f46",
+            padding: "12px 16px",
+            borderRadius: 8,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            zIndex: 50,
+            fontFamily: "var(--ca-font, inherit)",
+            fontSize: 13,
+          }}
+        >
           {state.success}
         </div>
       )}

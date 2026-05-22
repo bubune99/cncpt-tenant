@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>CNCPT Admin — All Tabs (wireframe)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<link rel="stylesheet" href="tokens.css" />
+<link rel="stylesheet" href="admin-styles.css" />
+
+<style>
+  html, body { margin: 0; height: 100%; background: #f1f3f6; }
+  body { font-family: var(--font-sans); }
+
+  /* Cover artboard styling */
+  .cover {
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
+    border-radius: 12px;
+    padding: 40px 44px;
+    display: flex; flex-direction: column;
+    font-family: var(--font-sans);
+    overflow: hidden;
+  }
+  .cover h1 { margin: 0; font-size: 40px; font-weight: 700; letter-spacing: -0.025em; color: #0f172a; line-height: 1.05; }
+  .cover .lead { font-size: 15px; color: #475569; max-width: 620px; margin-top: 14px; line-height: 1.55; }
+  .cover .badge-row { display: flex; gap: 8px; margin-top: 18px; }
+  .cover .badge {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+    padding: 4px 9px; border-radius: 9999px;
+    background: #eff6ff; color: #1d4ed8;
+  }
+  .cover .map {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+    margin-top: auto;
+  }
+  .cover .map-section {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 14px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .cover .map-section .sec-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    color: #94a3b8;
+  }
+  .cover .map-section h3 { margin: 0; font-size: 13px; font-weight: 600; color: #0f172a; }
+  .cover .map-section ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+  .cover .map-section li {
+    font-size: 11.5px; color: #475569;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .cover .map-section li .dot { width: 5px; height: 5px; border-radius: 9999px; background: #cbd5e1; }
+  .cover .map-section li.is-done { color: #0f172a; font-weight: 500; }
+  .cover .map-section li.is-done .dot { background: #10b981; }
+  .cover .map-section li.is-new { color: #1d4ed8; font-weight: 500; }
+  .cover .map-section li.is-new .dot { background: #3b82f6; }
+</style>
+</head>
+<body>
+
+<!-- Lucide icons CDN -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- Design canvas + content modules -->
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="mock-data.jsx"></script>
+<script type="text/babel" src="direction-hybrid.jsx"></script>
+<script type="text/babel" src="tabs-wireframes-1.jsx"></script>
+<script type="text/babel" src="tabs-wireframes-2.jsx"></script>
+
+<div id="root"></div>
+
+<script type="text/babel">
+const { useEffect } = React;
+
+// Wrap each screen so it auto-renders icons + sits inside a relative wrapper
+function Screen({ children }) {
+  useEffect(() => {
+    if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+  });
+  return (
+    <div style={{ width: "100%", height: "100%", position: "relative", display: "flex", overflow: "hidden" }}>
+      {children}
+    </div>
+  );
+}
+
+function Cover() {
+  return (
+    <div className="cover">
+      <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#94a3b8" }}>
+        CNCPT Admin · All-tabs wireframe
+      </span>
+      <h1 style={{ marginTop: 14 }}>Every tab, one canvas</h1>
+      <p className="lead">
+        Same hybrid chrome (sidebar + breadcrumbs + activity rail) applied across every super-admin
+        navigation item, so we can lock down what each page actually contains before going to hi-fi.
+        Green dots = already drafted in <em>Admin Redesign</em>. Blue dots = new screens below.
+      </p>
+      <div className="badge-row">
+        <span className="badge">Wireframe</span>
+        <span className="badge">Super Admin</span>
+        <span className="badge">10 new screens</span>
+        <span className="badge">Hybrid chrome</span>
+      </div>
+
+      <div className="map">
+        <div className="map-section">
+          <div className="sec-label">Top level</div>
+          <h3>Overview</h3>
+          <ul>
+            <li className="is-done"><span className="dot"></span>Overview / Home</li>
+            <li className="is-new"><span className="dot"></span>Admin Inbox</li>
+          </ul>
+        </div>
+        <div className="map-section">
+          <div className="sec-label">Manage</div>
+          <h3>People & accounts</h3>
+          <ul>
+            <li className="is-done"><span className="dot"></span>Users</li>
+            <li className="is-new"><span className="dot"></span>Teams</li>
+            <li className="is-new"><span className="dot"></span>Tenants & Subdomains</li>
+            <li className="is-new"><span className="dot"></span>Subscription Tiers</li>
+            <li className="is-new"><span className="dot"></span>AI Credits</li>
+            <li className="is-new"><span className="dot"></span>Permission Overrides</li>
+          </ul>
+        </div>
+        <div className="map-section">
+          <div className="sec-label">Feedback</div>
+          <h3>Customer voice</h3>
+          <ul>
+            <li className="is-done"><span className="dot"></span>Inbox</li>
+            <li className="is-done"><span className="dot"></span>Triage Board</li>
+            <li className="is-new"><span className="dot"></span>Shipped</li>
+          </ul>
+        </div>
+        <div className="map-section">
+          <div className="sec-label">Insights</div>
+          <h3>Platform health</h3>
+          <ul>
+            <li className="is-new"><span className="dot"></span>Analytics</li>
+            <li className="is-new"><span className="dot"></span>Activity Log</li>
+          </ul>
+        </div>
+        <div className="map-section">
+          <div className="sec-label">Settings</div>
+          <h3>Configuration</h3>
+          <ul>
+            <li className="is-new"><span className="dot"></span>Platform Settings</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  useEffect(() => {
+    if (window.lucide && window.lucide.createIcons) {
+      window.lucide.createIcons();
+      const id = setTimeout(() => window.lucide.createIcons(), 200);
+      return () => clearTimeout(id);
+    }
+  }, []);
+
+  const W = 1600, H = 960;
+
+  const sections = [
+    {
+      id: "intro",
+      title: "Overview",
+      artboards: [
+        { id: "cover", label: "All-tabs map", width: 1280, height: 760, content: <Cover /> },
+      ],
+    },
+    {
+      id: "top",
+      title: "Top level · Overview & Admin Inbox",
+      artboards: [
+        { id: "overview", label: "Overview · Home (existing)", width: W, height: H, content: <Screen><DirH_Home /></Screen> },
+        { id: "inbox", label: "Admin Inbox · queues + tasks + detail", width: W, height: H, content: <Screen><Tab_AdminInbox /></Screen> },
+      ],
+    },
+    {
+      id: "manage",
+      title: "Manage · People, billing & access",
+      artboards: [
+        { id: "users", label: "Users (existing)", width: W, height: H, content: <Screen><DirH_Users /></Screen> },
+        { id: "user-detail", label: "User detail · Permissions tab (existing)", width: W, height: H, content: <Screen><DirH_UserDetail /></Screen> },
+        { id: "teams", label: "Teams · KPI + table view", width: W, height: H, content: <Screen><Tab_Teams /></Screen> },
+        { id: "tenants", label: "Tenants & Subdomains · orphan banner + table", width: W, height: H, content: <Screen><Tab_Tenants /></Screen> },
+        { id: "tiers", label: "Subscription Tiers · cards + feature matrix + migrations", width: W, height: H, content: <Screen><Tab_Tiers /></Screen> },
+        { id: "credits", label: "AI Credits · usage chart + top consumers + auto-rules", width: W, height: H, content: <Screen><Tab_Credits /></Screen> },
+        { id: "overrides", label: "Permission Overrides · audit-style table", width: W, height: H, content: <Screen><Tab_Overrides /></Screen> },
+      ],
+    },
+    {
+      id: "feedback",
+      title: "Feedback · Voice of customer",
+      artboards: [
+        { id: "fb-inbox", label: "Feedback Inbox (existing)", width: W, height: H, content: <Screen><DirH_Feedback /></Screen> },
+        { id: "fb-board", label: "Triage Board (existing)", width: W, height: H, content: <Screen><DirH_FeedbackBoard /></Screen> },
+        { id: "fb-shipped", label: "Shipped · grouped by release", width: W, height: H, content: <Screen><Tab_Shipped /></Screen> },
+      ],
+    },
+    {
+      id: "insights",
+      title: "Insights · Health & history",
+      artboards: [
+        { id: "analytics", label: "Analytics · growth + retention + tier mix", width: W, height: H, content: <Screen><Tab_Analytics /></Screen> },
+        { id: "activity", label: "Activity Log · filterable audit table", width: W, height: H, content: <Screen><Tab_ActivityLog /></Screen> },
+      ],
+    },
+    {
+      id: "settings",
+      title: "Settings · Configuration",
+      artboards: [
+        { id: "platform", label: "Platform Settings · section nav + form + danger zone", width: W, height: H, content: <Screen><Tab_Settings /></Screen> },
+      ],
+    },
+  ];
+
+  return (
+    <DesignCanvas title="CNCPT Admin · All tabs · wireframe" initialZoom={0.55}>
+      {sections.map((s) => (
+        <DCSection key={s.id} id={s.id} title={s.title}>
+          {s.artboards.map((a) => (
+            <DCArtboard key={a.id} id={a.id} label={a.label} width={a.width} height={a.height}>
+              {a.content}
+            </DCArtboard>
+          ))}
+        </DCSection>
+      ))}
+    </DesignCanvas>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
+
+</body>
+</html>

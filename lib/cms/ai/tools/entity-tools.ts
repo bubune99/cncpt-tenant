@@ -488,6 +488,64 @@ Returns counts and basic aggregates.`,
   },
 })
 
+// Atlas redesign G05 — update customer lifecycle stage
+export const updateCustomerLifecycle = tool({
+  description: 'Update a customer\'s lifecycle stage. Stages: NEW → RETURNING → LOYAL → VIP → LAPSED → CHURNED.',
+  inputSchema: z.object({
+    customerId: z.string().describe('Customer ID'),
+    stage: z.enum(['NEW', 'RETURNING', 'LOYAL', 'VIP', 'LAPSED', 'CHURNED']),
+    tenantId: z.number().int().optional().describe('Tenant ID for isolation check'),
+  }),
+  execute: async ({ customerId, stage, tenantId }) => {
+    try {
+      const prisma = await getDb()
+
+      const result = await prisma.customer.updateMany({
+        where: { id: customerId, ...(tenantId !== undefined ? { tenantId } : {}) },
+        data: { lifecycleStage: stage, lifecycleUpdatedAt: new Date() },
+      })
+
+      if (result.count === 0) return { success: false, error: 'Customer not found or tenant mismatch' }
+
+      return {
+        success: true,
+        customerId,
+        lifecycleStage: stage,
+        updatedAt: new Date().toISOString(),
+        message: `Customer lifecycle updated to ${stage}`,
+      }
+    } catch (error) {
+      console.error('[EntityTools] updateCustomerLifecycle error:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to update lifecycle' }
+    }
+  },
+})
+
+// Atlas redesign G10 — add customer note
+export const addCustomerNote = tool({
+  description: 'Add a timestamped admin note to a customer record.',
+  inputSchema: z.object({
+    customerId: z.string(),
+    content: z.string().describe('Note content'),
+    pinned: z.boolean().optional().describe('Pin note to top of timeline'),
+    authorId: z.string().optional().describe('Admin user ID authoring the note'),
+  }),
+  execute: async ({ customerId, content, pinned, authorId }) => {
+    try {
+      const prisma = await getDb()
+
+      const note = await prisma.customerNote.create({
+        data: { customerId, content, pinned: pinned ?? false, ...(authorId ? { authorId } : {}) },
+      })
+
+      return { success: true, note, message: 'Note added to customer timeline' }
+    } catch (error) {
+      console.error('[EntityTools] addCustomerNote error:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to add note' }
+    }
+  },
+})
+
 /**
  * All entity tools
  */
@@ -495,4 +553,6 @@ export const entityTools = {
   getEntityDetails,
   searchEntities,
   getEntityStats,
+  updateCustomerLifecycle,
+  addCustomerNote,
 }

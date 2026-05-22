@@ -19,7 +19,11 @@ import {
   sanitizeImageUrl,
 } from './sanitize'
 import type { TenantBranding } from './types'
-import { DEFAULT_TENANT_BRANDING } from './types'
+import {
+  DEFAULT_TENANT_BRANDING,
+  toBrandPreset,
+  toBrandDensity,
+} from './types'
 
 // Cross-request in-memory cache (lambda-instance scope): subdomain -> { branding, timestamp }
 // Combined with React `cache()` below for per-request dedup.
@@ -63,6 +67,8 @@ async function getTenantBrandingUncached(subdomain: string): Promise<TenantBrand
     metaDescription: s.metaDescription || s.siteDescription || '',
     hidePoweredBy: s.hidePoweredBy ?? false,
     customCss: sanitizeCustomCss(s.customCss),
+    brandPreset: toBrandPreset((s as { brandPreset?: unknown }).brandPreset),
+    density: toBrandDensity((s as { density?: unknown }).density),
   }
 
   // Update cache
@@ -153,6 +159,12 @@ export async function updateTenantBranding(
   }
   if (updates.customCss !== undefined) {
     data.customCss = sanitizeCustomCss(updates.customCss)
+  }
+  if (updates.brandPreset !== undefined) {
+    data.brandPreset = toBrandPreset(updates.brandPreset)
+  }
+  if (updates.density !== undefined) {
+    data.density = toBrandDensity(updates.density)
   }
 
   await prisma.tenantSetting.upsert({
