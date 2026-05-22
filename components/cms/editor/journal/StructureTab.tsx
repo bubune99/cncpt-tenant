@@ -8,6 +8,8 @@ import type {
   ApiPostSeries,
   ApiContributor,
   ApiRelatedPost,
+  PostStatus,
+  PostVisibility,
 } from './types';
 
 // ── Local display types (derived from API shapes) ─────────────────────────────
@@ -56,6 +58,16 @@ interface StructureTabProps {
   readonly onMetaDescriptionChange: (v: string) => void;
   readonly slug: string;
   readonly onSlugChange: (v: string) => void;
+  readonly status: PostStatus;
+  readonly onStatusChange: (v: PostStatus) => void;
+  readonly excerpt: string;
+  readonly onExcerptChange: (v: string) => void;
+  readonly visibility: PostVisibility;
+  readonly onVisibilityChange: (v: PostVisibility) => void;
+  readonly featured: boolean;
+  readonly onFeaturedChange: (v: boolean) => void;
+  readonly allowComments: boolean;
+  readonly onAllowCommentsChange: (v: boolean) => void;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -406,6 +418,150 @@ function RelatedCard({
   );
 }
 
+// ── PublishingCard — status / excerpt / visibility / featured / comments ──────
+
+const STRUCT_FIELD_LABEL: React.CSSProperties = {
+  fontFamily: 'var(--font-geist-mono)', fontSize: 10, letterSpacing: '0.1em',
+  textTransform: 'uppercase', color: 'var(--ink-soft)', display: 'block', marginBottom: 4,
+};
+
+const STRUCT_SELECT: React.CSSProperties = {
+  width: '100%', background: 'var(--paper-2)', border: '1px solid var(--rule)',
+  borderRadius: 2, padding: '5px 8px', fontSize: 12, color: 'var(--ink)',
+  fontFamily: 'var(--font-geist)',
+};
+
+const STATUS_OPTIONS: ReadonlyArray<{ value: PostStatus; label: string }> = [
+  { value: 'DRAFT',     label: 'Draft' },
+  { value: 'PUBLISHED', label: 'Published' },
+  { value: 'SCHEDULED', label: 'Scheduled' },
+  { value: 'ARCHIVED',  label: 'Archived' },
+];
+
+const VISIBILITY_OPTIONS: ReadonlyArray<{ value: PostVisibility; label: string }> = [
+  { value: 'PUBLIC',             label: 'Public' },
+  { value: 'PRIVATE',            label: 'Private' },
+  { value: 'MEMBERS_ONLY',       label: 'Members only' },
+  { value: 'PASSWORD_PROTECTED', label: 'Password protected' },
+];
+
+/** Atlas-styled inline toggle row. */
+function ToggleRow({
+  label, hint, checked, onChange,
+}: {
+  label: string;
+  hint: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+        padding: '6px 0', borderBottom: '1px solid var(--rule-soft)',
+        background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+      }}
+      aria-pressed={checked}
+    >
+      <span
+        style={{
+          width: 32, height: 18, flexShrink: 0, borderRadius: 10,
+          background: checked ? 'var(--accent)' : 'var(--rule)',
+          border: '1px solid var(--ink)', position: 'relative', transition: 'background 0.12s',
+        }}
+      >
+        <span style={{
+          position: 'absolute', top: 1, left: checked ? 15 : 1,
+          width: 14, height: 14, borderRadius: '50%', background: 'var(--paper)',
+          transition: 'left 0.12s',
+        }} />
+      </span>
+      <span style={{ flex: 1 }}>
+        <span style={{ fontSize: 13, color: 'var(--ink)', display: 'block', fontFamily: 'var(--font-geist)' }}>{label}</span>
+        <span className="fig" style={{ fontSize: 11 }}>{hint}</span>
+      </span>
+    </button>
+  );
+}
+
+function PublishingCard({
+  status, onStatusChange,
+  excerpt, onExcerptChange,
+  visibility, onVisibilityChange,
+  featured, onFeaturedChange,
+  allowComments, onAllowCommentsChange,
+}: {
+  status: PostStatus;
+  onStatusChange: (v: PostStatus) => void;
+  excerpt: string;
+  onExcerptChange: (v: string) => void;
+  visibility: PostVisibility;
+  onVisibilityChange: (v: PostVisibility) => void;
+  featured: boolean;
+  onFeaturedChange: (v: boolean) => void;
+  allowComments: boolean;
+  onAllowCommentsChange: (v: boolean) => void;
+}) {
+  return (
+    <StructCard>
+      <Sec h="Publishing" meta="status, excerpt & access" />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div>
+          <label style={STRUCT_FIELD_LABEL}>Status</label>
+          <select
+            value={status}
+            onChange={e => onStatusChange(e.target.value as PostStatus)}
+            style={STRUCT_SELECT}
+          >
+            {STATUS_OPTIONS.map(o => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label style={STRUCT_FIELD_LABEL}>Excerpt</label>
+          <textarea
+            value={excerpt}
+            onChange={e => onExcerptChange(e.target.value)}
+            placeholder="Short summary — used in search results and social shares"
+            rows={3}
+            style={{ ...STRUCT_SELECT, resize: 'vertical', fontFamily: 'inherit' }}
+          />
+          <div className="fig" style={{ fontSize: 10, marginTop: 2 }}>{excerpt.length} characters</div>
+        </div>
+        <div>
+          <label style={STRUCT_FIELD_LABEL}>Visibility</label>
+          <select
+            value={visibility}
+            onChange={e => onVisibilityChange(e.target.value as PostVisibility)}
+            style={STRUCT_SELECT}
+          >
+            {VISIBILITY_OPTIONS.map(o => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <ToggleRow
+            label="Featured post"
+            hint="surfaces this post in featured slots"
+            checked={featured}
+            onChange={onFeaturedChange}
+          />
+          <ToggleRow
+            label="Allow comments"
+            hint="readers can comment on this post"
+            checked={allowComments}
+            onChange={onAllowCommentsChange}
+          />
+        </div>
+      </div>
+    </StructCard>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function StructureTab({
@@ -416,6 +572,11 @@ export function StructureTab({
   shopLinks,
   metaTitle, metaDescription, onMetaTitleChange, onMetaDescriptionChange,
   slug, onSlugChange,
+  status, onStatusChange,
+  excerpt, onExcerptChange,
+  visibility, onVisibilityChange,
+  featured, onFeaturedChange,
+  allowComments, onAllowCommentsChange,
 }: StructureTabProps) {
   // ── Series state ────────────────────────────────────────────────────────────
   const [seriesMemberships, setSeriesMemberships] = useState<ReadonlyArray<ApiPostSeries>>([]);
@@ -606,6 +767,20 @@ export function StructureTab({
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'start' }}>
       {/* LEFT column */}
       <div>
+        {/* Publishing — status, excerpt, visibility, featured, comments */}
+        <PublishingCard
+          status={status}
+          onStatusChange={onStatusChange}
+          excerpt={excerpt}
+          onExcerptChange={onExcerptChange}
+          visibility={visibility}
+          onVisibilityChange={onVisibilityChange}
+          featured={featured}
+          onFeaturedChange={onFeaturedChange}
+          allowComments={allowComments}
+          onAllowCommentsChange={onAllowCommentsChange}
+        />
+
         {/* Series */}
         <SeriesCard
           postId={postId}

@@ -49,6 +49,8 @@ export function JournalEditor({
   const [content, setContent]           = useState<object | null>(initialData.content ?? null);
   const [status, setStatus]             = useState<PostStatus>(initialData.status ?? 'DRAFT');
   const [visibility, setVisibility]     = useState<PostVisibility>(initialData.visibility ?? 'PUBLIC');
+  const [featured, setFeatured]         = useState<boolean>(initialData.featured ?? false);
+  const [allowComments, setAllowComments] = useState<boolean>(initialData.allowComments ?? true);
   const [categoryIds, setCategoryIds]   = useState<ReadonlyArray<string>>(initialData.categoryIds ?? []);
   const [tagIds, setTagIds]             = useState<ReadonlyArray<string>>(initialData.tagIds ?? []);
   const [metaTitle, setMetaTitle]       = useState(initialData.metaTitle ?? '');
@@ -96,8 +98,8 @@ export function JournalEditor({
     visibility,
     categoryIds,
     tagIds,
-    featured:        initialData.featured ?? false,
-    allowComments:   initialData.allowComments ?? true,
+    featured,
+    allowComments,
     metaTitle:       metaTitle.trim(),
     metaDescription: metaDescription.trim(),
     coverImageUrl:   initialData.coverImageUrl,
@@ -105,8 +107,7 @@ export function JournalEditor({
     seriesPosition:  initialData.seriesPosition,
   }), [
     title, slug, excerpt, contentHtml, content, status, visibility,
-    categoryIds, tagIds, metaTitle, metaDescription,
-    initialData.featured, initialData.allowComments,
+    categoryIds, tagIds, featured, allowComments, metaTitle, metaDescription,
     initialData.coverImageUrl, initialData.series, initialData.seriesPosition,
   ]);
 
@@ -152,9 +153,11 @@ export function JournalEditor({
     readTime,
     lastSaved,
     isSaving,
+    onTitleChange: setTitle,
     onSaveDraft: handleSaveDraft,
     onPreview:   handlePreview,
     onPublish:   handlePublish,
+    onDelete,
   };
 
   return (
@@ -202,6 +205,16 @@ export function JournalEditor({
           onMetaDescriptionChange={setMetaDescription}
           slug={slug}
           onSlugChange={setSlug}
+          status={status}
+          onStatusChange={setStatus}
+          excerpt={excerpt}
+          onExcerptChange={setExcerpt}
+          visibility={visibility}
+          onVisibilityChange={setVisibility}
+          featured={featured}
+          onFeaturedChange={setFeatured}
+          allowComments={allowComments}
+          onAllowCommentsChange={setAllowComments}
         />
       )}
 

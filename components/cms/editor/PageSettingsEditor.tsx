@@ -288,7 +288,7 @@ function SettingsPanel({ page, activeTab, stats, onFieldChange }: SettingsPanelP
       <div className="display-i" style={{ fontSize: 13, color: 'var(--ink-soft)', marginBottom: 12, lineHeight: 1.35 }}>
         Content is edited in the{' '}
         <Link
-          href={`/admin/pages/${page.id}/editor`}
+          href={`/admin/pages/${page.id}/builder`}
           style={{ color: 'var(--accent)' }}
         >
           page builder →
@@ -497,7 +497,7 @@ export function PageSettingsEditor({
         </div>
         <div className="actions">
           <Link
-            href={`/admin/pages/${page.id}/editor`}
+            href={`/admin/pages/${page.id}/builder`}
             className="btn"
           >
             <span className="kbd">B</span>Open builder

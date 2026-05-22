@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import type { JournalTab, PostStatus } from './types';
 
@@ -16,9 +17,11 @@ interface CompactHeadProps {
   readonly readTime: number;
   readonly lastSaved?: string;
   readonly isSaving?: boolean;
+  readonly onTitleChange: (value: string) => void;
   readonly onSaveDraft: () => void;
   readonly onPreview: () => void;
   readonly onPublish: () => void;
+  readonly onDelete?: () => void;
 }
 
 interface JournalEditorChromeProps {
@@ -60,9 +63,54 @@ function Breadcrumbs({ items }: { items: ReadonlyArray<BreadcrumbItem> }) {
   );
 }
 
+/**
+ * Two-step delete control — first click arms a confirm pill, second click
+ * (or the inline "Confirm" button) commits. Auto-disarms on cancel.
+ */
+function DeleteAction({ onDelete, disabled }: { onDelete: () => void; disabled?: boolean }) {
+  const [armed, setArmed] = useState(false);
+
+  if (!armed) {
+    return (
+      <button
+        className="btn"
+        type="button"
+        disabled={disabled}
+        onClick={() => setArmed(true)}
+        style={{ color: 'var(--accent)' }}
+        aria-label="Delete post"
+      >
+        Delete
+      </button>
+    );
+  }
+
+  return (
+    <span style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+      <button
+        className="btn btn-accent"
+        type="button"
+        disabled={disabled}
+        onClick={() => { setArmed(false); onDelete(); }}
+        aria-label="Confirm delete post"
+      >
+        Confirm delete
+      </button>
+      <button
+        className="btn"
+        type="button"
+        onClick={() => setArmed(false)}
+        aria-label="Cancel delete"
+      >
+        Cancel
+      </button>
+    </span>
+  );
+}
+
 function EditorHead({
   title, slug, status, wordCount, readTime, lastSaved, isSaving,
-  onSaveDraft, onPreview, onPublish,
+  onTitleChange, onSaveDraft, onPreview, onPublish, onDelete,
 }: CompactHeadProps) {
   const pill = STATUS_PILL[status];
   return (
@@ -72,9 +120,21 @@ function EditorHead({
     }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="eyebrow">Journal · Feature · {readTime} min read · {wordCount.toLocaleString()} words</div>
-        <div className="display" style={{ fontSize: 20, lineHeight: 1.1, marginTop: 2, letterSpacing: '-0.02em' }}>
-          {title || <span style={{ color: 'var(--ink-faint)', fontStyle: 'italic' }}>Untitled</span>}
-        </div>
+        <input
+          className="display"
+          value={title}
+          onChange={(e) => onTitleChange(e.target.value)}
+          placeholder="Untitled post"
+          aria-label="Post title"
+          style={{
+            display: 'block', width: '100%',
+            fontSize: 20, lineHeight: 1.1, marginTop: 2, letterSpacing: '-0.02em',
+            background: 'transparent', border: 'none', borderBottom: '1px solid transparent',
+            padding: '1px 0', color: 'var(--ink)', outline: 'none',
+          }}
+          onFocus={(e) => { e.currentTarget.style.borderBottomColor = 'var(--rule)'; }}
+          onBlur={(e) => { e.currentTarget.style.borderBottomColor = 'transparent'; }}
+        />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
           <span className={`pill ${pill.cls}`}>{pill.label}</span>
           <span className="mono soft" style={{ fontSize: 11 }}>{slug ? `/${slug}` : '/untitled'}</span>
@@ -84,6 +144,7 @@ function EditorHead({
         </div>
       </div>
       <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+        {onDelete && <DeleteAction onDelete={onDelete} disabled={isSaving} />}
         <button className="btn" onClick={onPreview} type="button">
           <span className="kbd">⌘P</span>Preview
         </button>
