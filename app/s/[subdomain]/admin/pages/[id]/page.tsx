@@ -28,9 +28,9 @@ import {
   Save,
   Loader2,
   Eye,
-  Pencil,
   FileText,
   Layers,
+  Settings,
   ExternalLink,
   AlertCircle,
 } from 'lucide-react';
@@ -218,10 +218,16 @@ export default function PageEditPage() {
               Preview
             </Link>
           </Button>
-          <Button asChild>
+          <Button variant="outline" asChild>
             <Link href={`/admin/pages/${id}/editor`}>
-              <Pencil className="mr-2 h-4 w-4" />
-              Open Editor
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href={`/admin/pages/${id}/builder`}>
+              <Layers className="mr-2 h-4 w-4" />
+              Open Builder
             </Link>
           </Button>
           <Button onClick={handleSave} disabled={isSaving}>
@@ -377,9 +383,9 @@ export default function PageEditPage() {
                   )}
                 </div>
                 <Button asChild size="lg">
-                  <Link href={`/admin/pages/${id}/editor`}>
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Open Editor
+                  <Link href={`/admin/pages/${id}/builder`}>
+                    <Layers className="mr-2 h-4 w-4" />
+                    Open Builder
                   </Link>
                 </Button>
               </div>
@@ -437,9 +443,15 @@ export default function PageEditPage() {
                 </Link>
               </Button>
               <Button variant="outline" className="w-full justify-start" asChild>
+                <Link href={`/admin/pages/${id}/builder`}>
+                  <Layers className="mr-2 h-4 w-4" />
+                  Visual Builder
+                </Link>
+              </Button>
+              <Button variant="outline" className="w-full justify-start" asChild>
                 <Link href={`/admin/pages/${id}/editor`}>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Visual Editor
+                  <Settings className="mr-2 h-4 w-4" />
+                  Page Settings
                 </Link>
               </Button>
               <Button variant="outline" className="w-full justify-start" asChild>

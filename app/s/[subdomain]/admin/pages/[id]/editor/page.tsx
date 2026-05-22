@@ -2,7 +2,8 @@
  * Page Settings Editor — Atlas A2
  *
  * Magazine-style preview (left) + highlighted settings panel (right).
- * Content editing lives in the block builder at /admin/pages/[id]/builder.
+ * Content editing lives in the block builder at /admin/pages/[id]/builder
+ * (sibling route — see ./builder/page.tsx).
  *
  * This route is for: status, SEO, scheduling, access, versions.
  */
