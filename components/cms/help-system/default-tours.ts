@@ -116,7 +116,7 @@ export const pageEditorTour: Omit<HelpTour, 'id'> = {
   title: 'Using the Visual Page Editor',
   description: 'Learn how to build beautiful pages with drag-and-drop.',
   isActive: true,
-  route: '/editor',
+  route: '/builder',
   steps: [
     {
       target: '[data-help-key="editor.components"]',
