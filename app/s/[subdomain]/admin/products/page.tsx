@@ -289,7 +289,7 @@ export default function ProductsPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuItem asChild>
-                            <Link href={`/admin/products/${product.id}/configure`}>
+                            <Link href={`/admin/products/${product.id}`}>
                               <Settings className="mr-2 h-4 w-4" />
                               Configure
                             </Link>

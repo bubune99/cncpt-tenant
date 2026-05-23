@@ -4,11 +4,13 @@
  *
  * Route: /s/[subdomain]/admin/products/[id]
  *
- * Renders the full Atlas product editor for an existing product.
- * The legacy `configure/` sub-route (ProductEditor) is preserved for rollback.
+ * Single editor target. The Atlas editor handles all product types and now
+ * carries the full legacy-parity field set (featured, barcode, tax, shipping
+ * dimensions, low-stock threshold, backorder, Media tab, Stripe sync action,
+ * subscription/service/bundle/digital type-specific fields, SEO).
  *
- * A1 note: Products list links to `/admin/products/${product.id}` (this page).
- *          The old `/admin/products/${product.id}/configure` still works too.
+ * Products list links here for "Configure". The legacy `/configure` sub-route
+ * has been retired (see ATLAS-COMPLETENESS-AUDIT R21).
  */
 
 import { useParams } from "next/navigation";

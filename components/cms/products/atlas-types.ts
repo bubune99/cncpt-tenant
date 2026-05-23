@@ -36,6 +36,10 @@ export type LicenseKeyStatusKind =
 export type ProductStatusKind = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
 
 // ── Atlas Product shape (flat, from API) ──────────────────────────────────
+// Mirrors the columns on the Prisma `Product` model that the editor surfaces.
+// Optional fields cover legacy-parity capabilities (featured, barcode, tax,
+// shipping, low-stock threshold, backorder, subscription/service/bundle/digital
+// type-specific fields, SEO, Shopify sync, etc.).
 export interface AtlasProduct {
   readonly id: string;
   readonly title: string;
@@ -52,6 +56,31 @@ export interface AtlasProduct {
   readonly stripeProductId: string | null;
   readonly stripePriceId: string | null;
   readonly stripeSyncedAt: string | null;
+  // ── Legacy parity (optional, may be undefined when loaded from legacy callers) ──
+  readonly featured?: boolean;
+  readonly barcode?: string | null;
+  readonly taxable?: boolean;
+  readonly taxCode?: string | null;
+  readonly requiresShipping?: boolean;
+  readonly weight?: number | null;
+  readonly length?: number | null;
+  readonly width?: number | null;
+  readonly height?: number | null;
+  readonly lowStockThreshold?: number;
+  readonly allowBackorder?: boolean;
+  readonly stripeSyncError?: string | null;
+  readonly subscriptionInterval?: string | null;
+  readonly subscriptionIntervalCount?: number | null;
+  readonly trialDays?: number | null;
+  readonly bundlePriceMode?: string | null;
+  readonly digitalAssetId?: string | null;
+  readonly serviceDuration?: number | null;
+  readonly serviceCapacity?: number | null;
+  readonly metaTitle?: string | null;
+  readonly metaDescription?: string | null;
+  readonly bundleItems?: unknown;
+  readonly shopifyProductId?: string | null;
+  readonly shopifySyncedAt?: string | null;
 }
 
 // ── Variant (from API, for grid) ──────────────────────────────────────────
