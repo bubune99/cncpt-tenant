@@ -30,7 +30,9 @@ import "./atlas-product-editor.css";
 import { CompactHead, EditorTabs, SaveBar, Crumbs } from "./atlas-product-ui";
 import { SpreadsheetGrid } from "./SpreadsheetGrid";
 import { MatrixView, type MatrixAxisValue, type MatrixCell } from "./MatrixView";
+import { VariantCards } from "./VariantCards";
 import { TypeMorph } from "./TypeMorph";
+import { CustomFieldsBuilder } from "./CustomFieldsBuilder";
 import { BundleComposer } from "./BundleComposer";
 import { DigitalEditor } from "./DigitalEditor";
 import { PricingStack } from "./PricingStack";
@@ -53,6 +55,7 @@ import type {
   AtlasVariant,
   AtlasProductOption,
   AtlasProductCustomField,
+  AtlasCustomField,
   AtlasDigitalAsset,
   AtlasBundleItem,
   AtlasGridColumn,
@@ -71,6 +74,7 @@ type TabLabel =
   | "Detail"
   | "Media"
   | "Variants"
+  | "Fields"
   | "Files"
   | "Schedule"
   | "Billing"
@@ -82,8 +86,8 @@ type TabLabel =
   | "Type";
 
 const TABS_BY_TYPE: Readonly<Record<ProductTypeKind, ReadonlyArray<TabLabel>>> = {
-  SIMPLE:       ["Detail", "Media", "Pricing", "Inventory", "Channels", "SEO", "Type"],
-  VARIABLE:     ["Detail", "Media", "Variants", "Pricing", "Inventory", "Channels", "SEO", "Type"],
+  SIMPLE:       ["Detail", "Media", "Fields", "Pricing", "Inventory", "Channels", "SEO", "Type"],
+  VARIABLE:     ["Detail", "Media", "Variants", "Fields", "Pricing", "Inventory", "Channels", "SEO", "Type"],
   DIGITAL:      ["Detail", "Media", "Files", "Pricing", "Channels", "SEO", "Type"],
   SERVICE:      ["Detail", "Media", "Schedule", "Pricing", "Channels", "SEO", "Type"],
   SUBSCRIPTION: ["Detail", "Media", "Billing", "Pricing", "Channels", "SEO", "Type"],
@@ -495,6 +499,7 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
 
   // ── Stripe sync state ────────────────────────────────────────────────────────
   const [syncingStripe, setSyncingStripe] = React.useState(false);
+  const [globalCustomFields, setGlobalCustomFields] = React.useState<ReadonlyArray<AtlasCustomField>>([]);
 
   // Mirror the latest variants into a ref so the save path always reads the
   // current grid state, immune to any stale-closure timing in handleSave.
@@ -612,31 +617,50 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
     };
   }, [effectiveProductId, isNew]);
 
-  // ── Load custom fields once we have a product ────────────────────────────────
+  // ── Custom fields: load attached (assignedFields) + global library (availableFields) ──
+  // The API returns { assignedFields: [...flattened CustomField + position + enabled],
+  // availableFields: CustomField[] }. The join (ProductCustomField) has no own id and
+  // no required/showInGrid — required lives on the global field; we map `enabled`→showInGrid.
+  const mapApiCustomField = React.useCallback((f: Record<string, unknown>): AtlasCustomField => ({
+    id: String(f.id ?? ""),
+    name: String(f.name ?? ""),
+    slug: String(f.slug ?? ""),
+    type: (f.type as AtlasCustomField["type"]) ?? "TEXT",
+    options: f.options ?? null,
+    defaultValue: f.defaultValue ?? null,
+    required: !!f.required,
+    showInGrid: (f.enabled as boolean | undefined) !== false,
+  }), []);
+
+  const reloadCustomFields = React.useCallback(async () => {
+    if (isNew || !effectiveProductId || effectiveProductId === "new") return;
+    try {
+      const res = await fetch(`/api/cms/products/${effectiveProductId}/custom-fields`, {
+        credentials: "same-origin",
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const assigned = ((data.assignedFields ?? []) as Array<Record<string, unknown>>).map((f) => ({
+        id: String(f.id ?? ""),
+        productId: effectiveProductId,
+        customFieldId: String(f.id ?? ""),
+        required: !!f.required,
+        showInGrid: (f.enabled as boolean | undefined) !== false,
+        position: Number(f.position ?? 0),
+        customField: mapApiCustomField(f),
+      } satisfies AtlasProductCustomField));
+      const available = ((data.availableFields ?? []) as Array<Record<string, unknown>>).map(mapApiCustomField);
+      setState((prev) => ({ ...prev, customFields: assigned }));
+      setGlobalCustomFields(available);
+    } catch {
+      // non-critical
+    }
+  }, [effectiveProductId, isNew, mapApiCustomField]);
+
   React.useEffect(() => {
     if (isNew || !state.product?.id) return;
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const res = await fetch(`/api/cms/products/${effectiveProductId}/custom-fields`, {
-          credentials: "same-origin",
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (cancelled) return;
-        setState((prev) => ({
-          ...prev,
-          customFields: (data.customFields ?? []) as ReadonlyArray<AtlasProductCustomField>,
-        }));
-      } catch {
-        // non-critical
-      }
-    };
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [effectiveProductId, isNew, state.product?.id]);
+    void reloadCustomFields();
+  }, [reloadCustomFields, isNew, state.product?.id]);
 
   // ── Load categories ──────────────────────────────────────────────────────────
   React.useEffect(() => {
@@ -977,6 +1001,122 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
     patchProduct({ type });
     setActiveTab("Detail");
   }, [patchProduct]);
+
+  // ── Custom field handlers (design F5) ─────────────────────────────────────────
+  const handleCreateCustomField = React.useCallback(
+    async (field: { name: string; type: string; slug: string; description: string; options: ReadonlyArray<{ label: string; slug: string }>; defaultValue: string; required: boolean }) => {
+      if (isNew || !effectiveProductId) {
+        setSaveError("Save the product before adding custom fields.");
+        return;
+      }
+      try {
+        // 1. Create the global field.
+        const createRes = await fetch(`/api/cms/custom-fields`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            name: field.name,
+            slug: field.slug || undefined,
+            description: field.description || undefined,
+            type: field.type,
+            options: field.options.length
+              ? field.options.map((o) => ({ value: o.slug || o.label, label: o.label }))
+              : undefined,
+            defaultValue: field.defaultValue || undefined,
+            required: field.required,
+          }),
+        });
+        if (!createRes.ok) throw new Error(`Create field failed (HTTP ${createRes.status})`);
+        const created = await createRes.json();
+        const newId = String(created.id ?? created.field?.id ?? "");
+        // 2. Attach it to this product.
+        if (newId) {
+          await fetch(`/api/cms/products/${effectiveProductId}/custom-fields`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({ fieldIds: [newId] }),
+          });
+        }
+        await reloadCustomFields();
+      } catch (err) {
+        setSaveError(err instanceof Error ? err.message : "Failed to create custom field");
+      }
+    },
+    [effectiveProductId, isNew, reloadCustomFields]
+  );
+
+  const handleAttachCustomField = React.useCallback(
+    async (fieldId: string) => {
+      if (isNew || !effectiveProductId) return;
+      try {
+        await fetch(`/api/cms/products/${effectiveProductId}/custom-fields`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ fieldIds: [fieldId] }),
+        });
+        await reloadCustomFields();
+      } catch {
+        /* non-critical */
+      }
+    },
+    [effectiveProductId, isNew, reloadCustomFields]
+  );
+
+  const handleDetachCustomField = React.useCallback(
+    async (customFieldId: string) => {
+      if (isNew || !effectiveProductId) return;
+      try {
+        await fetch(
+          `/api/cms/products/${effectiveProductId}/custom-fields?fieldIds=${encodeURIComponent(customFieldId)}&removeValues=true`,
+          { method: "DELETE", credentials: "same-origin" }
+        );
+        await reloadCustomFields();
+      } catch {
+        /* non-critical */
+      }
+    },
+    [effectiveProductId, isNew, reloadCustomFields]
+  );
+
+  // "Show in grid" maps to the join's `enabled` flag (no showInGrid column exists).
+  const handleToggleFieldGrid = React.useCallback(
+    async (customFieldId: string, showInGrid: boolean) => {
+      if (isNew || !effectiveProductId) return;
+      try {
+        await fetch(`/api/cms/products/${effectiveProductId}/custom-fields`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ fieldId: customFieldId, enabled: showInGrid }),
+        });
+        await reloadCustomFields();
+      } catch {
+        /* non-critical */
+      }
+    },
+    [effectiveProductId, isNew, reloadCustomFields]
+  );
+
+  // "Required" lives on the global CustomField definition.
+  const handleToggleFieldRequired = React.useCallback(
+    async (customFieldId: string, required: boolean) => {
+      try {
+        await fetch(`/api/cms/custom-fields/${customFieldId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ required }),
+        });
+        await reloadCustomFields();
+      } catch {
+        /* non-critical */
+      }
+    },
+    [reloadCustomFields]
+  );
 
   // ── Category selection handler ───────────────────────────────────────────────
   const handleCategoriesChange = React.useCallback((ids: ReadonlyArray<string>) => {
@@ -1560,24 +1700,44 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
                 savedAt={savedAt}
               />
             ) : (
-              <div className="prod-editor-shell" style={{ paddingTop: 24 }}>
-                <div className="sec">
-                  <span className="h">Cards view</span>
-                  <span className="meta">· list / matrix recommended</span>
-                </div>
-                <p
-                  style={{
-                    color: "var(--ink-soft)",
-                    fontFamily: "var(--font-geist), sans-serif",
-                    fontSize: 13,
-                    padding: "12px 0",
-                  }}
-                >
-                  Cards view is not yet implemented. Use list or matrix above.
-                </p>
-              </div>
+              <VariantCards
+                rows={gridRows}
+                options={state.options}
+                fieldColumns={gridColumns.filter((c) => c.kind === "field")}
+                viewMode={viewMode}
+                onViewChange={setViewMode}
+                onSave={() => void handleSave()}
+                isDirty={isDirty}
+                savedAt={savedAt}
+              />
             )}
           </>
+        )}
+
+        {safeActiveTab === "Fields" && (
+          !hasBeenSaved ? (
+            <div className="prod-editor-shell" style={{ paddingTop: 8 }}>
+              <div className="sec">
+                <span className="h">Custom fields</span>
+                <span className="meta">· save the product first</span>
+              </div>
+              <p style={{ color: "var(--ink-soft)", fontFamily: "var(--font-geist), sans-serif", fontSize: 13, padding: "12px 0" }}>
+                Save the Detail tab first, then attach custom fields here.
+              </p>
+            </div>
+          ) : (
+            <CustomFieldsBuilder
+              globalFields={globalCustomFields}
+              attachedFields={state.customFields}
+              onCreateField={(f) => void handleCreateCustomField(f)}
+              onAttach={(id) => void handleAttachCustomField(id)}
+              onDetach={(id) => void handleDetachCustomField(id)}
+              onToggleShowInGrid={(id, v) => void handleToggleFieldGrid(id, v)}
+              onToggleRequired={(id, v) => void handleToggleFieldRequired(id, v)}
+              isDirty={isDirty}
+              savedAt={savedAt}
+            />
+          )
         )}
 
         {safeActiveTab === "Type" && (
