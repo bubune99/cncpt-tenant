@@ -35,6 +35,7 @@ interface MatrixViewProps {
   readonly showing: "stock" | "price" | "pace" | "cost";
   readonly onShowingChange?: (s: "stock" | "price" | "pace" | "cost") => void;
   readonly onCellBulkEdit?: (keys: ReadonlyArray<{ rowKey: string; colKey: string }>, value: number) => void;
+  readonly onViewChange?: (mode: "list" | "matrix" | "cards") => void;
   readonly onSave?: () => void;
   /** Option names for the axes (e.g. "Color", "Size"). Drives the corner + totals labels. */
   readonly rowAxisName?: string;
@@ -57,6 +58,7 @@ export function MatrixView({
   showing,
   onShowingChange,
   onCellBulkEdit,
+  onViewChange,
   onSave,
   rowAxisName,
   colAxisName,
@@ -196,9 +198,9 @@ export function MatrixView({
         <div className="group" style={{ marginLeft: "auto" }}>
           <span className="lbl-mono">View</span>
           <div className="view-switch">
-            <button>List</button>
+            <button onClick={() => onViewChange?.("list")}>List</button>
             <button className="on">Matrix</button>
-            <button>Cards</button>
+            <button onClick={() => onViewChange?.("cards")}>Cards</button>
           </div>
         </div>
       </div>

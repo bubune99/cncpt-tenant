@@ -142,7 +142,13 @@ export function SpreadsheetGrid({
     const row = rows[rowIndex];
     const rawVal = row[colId];
     setEditingCell({ rowIndex, colId });
-    setEditValue(rawVal != null ? String(rawVal) : "");
+    // Price/cost are stored in cents; show dollars in the editor so the
+    // ×100 on commit round-trips correctly (was showing raw cents → 100× inflation).
+    if ((colId === "price" || colId === "costPrice") && rawVal != null) {
+      setEditValue((Number(rawVal) / 100).toString());
+    } else {
+      setEditValue(rawVal != null ? String(rawVal) : "");
+    }
   }, [allColumns, rows]);
 
   const commitEdit = useCallback(() => {

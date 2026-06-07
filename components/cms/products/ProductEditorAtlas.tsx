@@ -496,6 +496,11 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
   // ── Stripe sync state ────────────────────────────────────────────────────────
   const [syncingStripe, setSyncingStripe] = React.useState(false);
 
+  // Mirror the latest variants into a ref so the save path always reads the
+  // current grid state, immune to any stale-closure timing in handleSave.
+  const variantsRef = React.useRef<ReadonlyArray<AtlasVariant>>(state.variants);
+  variantsRef.current = state.variants;
+
   // ── Fetch product on mount / when id changes ─────────────────────────────────
   React.useEffect(() => {
     if (isNew) return;
@@ -893,7 +898,8 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
         const updated = await res.json();
         const product = mapApiProduct(updated);
         // Persist variant edits (price/cost/stock/weight/sku) made in the grid.
-        await persistVariants(effectiveProductId, state.variants);
+        // Read from the ref to avoid any stale-closure capture of state.variants.
+        await persistVariants(effectiveProductId, variantsRef.current);
         setState((prev) => ({ ...prev, product }));
         setIsDirty(false);
         setSavedAt(`Saved · ${new Date().toLocaleTimeString()}`);
@@ -1548,6 +1554,7 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
                 showing={matrixShowing}
                 onShowingChange={setMatrixShowing}
                 onCellBulkEdit={handleMatrixBulkEdit}
+                onViewChange={setViewMode}
                 onSave={() => void handleSave()}
                 isDirty={isDirty}
                 savedAt={savedAt}
