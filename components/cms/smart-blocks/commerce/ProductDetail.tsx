@@ -48,7 +48,7 @@ export default function ProductDetail({ block, data, className }: SmartBlockProp
     if (adding) return
     setAdding(true)
     try {
-      const res = await fetch('/api/cms/cart', {
+      const res = await fetch('/api/cms/cart/items', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

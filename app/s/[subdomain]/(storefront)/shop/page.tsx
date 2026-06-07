@@ -20,6 +20,7 @@ import {
 } from '@/lib/cms/block-editor/smart-blocks';
 import { ShopPageLayout } from '@/components/cms/shop/shop-page-layout';
 import { getTenantContext } from '../../lib/tenant-context';
+import { runWithTenant } from '@/lib/cms/db/tenant-context';
 
 export const dynamic = 'force-dynamic';
 
@@ -89,7 +90,8 @@ export default async function ShopPage({ params }: PageProps) {
   // If a CMS page exists with content, render it via the block editor
   if (blocks.length > 0) {
     registerCommerceFetchers();
-    const dataMap = await resolveSmartBlockData(blocks);
+    // Scope commerce fetchers to this tenant (see shop/[slug] for rationale).
+    const dataMap = await runWithTenant(tenantContext.id, () => resolveSmartBlockData(blocks));
     const smartBlockData = serializeSmartBlockData(dataMap);
     return <BlockPageRenderer blocks={blocks} smartBlockData={smartBlockData} />;
   }

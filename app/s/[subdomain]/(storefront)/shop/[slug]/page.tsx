@@ -10,6 +10,7 @@
 
 import { prisma } from '@/lib/cms/db';
 import { notFound } from 'next/navigation';
+import { runWithTenant } from '@/lib/cms/db/tenant-context';
 import type { Metadata } from 'next';
 import { BlockPageRenderer } from '@/components/cms/page-wrapper/block-page-renderer';
 import type { Block } from '@/lib/cms/block-editor/types';
@@ -129,7 +130,10 @@ export default async function ProductDetailPage({ params }: PageProps) {
   }
 
   registerCommerceFetchers();
-  const dataMap = await resolveSmartBlockData(finalBlocks);
+  // Run block-data resolution inside the tenant context so the commerce fetchers
+  // (fetchProduct etc.) are scoped to THIS tenant — otherwise the Prisma tenant
+  // middleware has no tenant and the product lookup returns nothing ("Product not found").
+  const dataMap = await runWithTenant(tenantContext.id, () => resolveSmartBlockData(finalBlocks));
   const smartBlockData = serializeSmartBlockData(dataMap);
 
   return <BlockPageRenderer blocks={finalBlocks} smartBlockData={smartBlockData} />;
