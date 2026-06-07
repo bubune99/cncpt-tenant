@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/cms/db'
+import { prisma, getCurrentTenant } from '@/lib/cms/db'
 import { getStripeSettings, clearStripeSettingsCache } from '@/lib/cms/stripe'
 import { encrypt } from '@/lib/cms/encryption'
 import type { StripeSettings } from '@/lib/cms/stripe/types'
@@ -85,10 +85,13 @@ export const PUT = withPermission('settings.edit', async (request, _context) => 
       updates.push({ key: 'stripe.billingAddressCollection', value: body.billingAddressCollection, encrypted: false })
     }
 
-    // Upsert each setting
+    // Upsert each setting scoped to the CURRENT tenant (per-tenant Stripe config;
+    // each store keeps its own keys. Falls back to platform env vars at read time
+    // for tenants that haven't entered their own — supporting both payment models).
+    const tenantId = getCurrentTenant()
     for (const update of updates) {
       const existing = await prisma.setting.findFirst({
-        where: { key: update.key, tenantId: null },
+        where: { key: update.key, tenantId },
       })
       if (existing) {
         await prisma.setting.update({
@@ -105,7 +108,7 @@ export const PUT = withPermission('settings.edit', async (request, _context) => 
             value: update.value,
             group: 'payments',
             encrypted: update.encrypted,
-            tenantId: null,
+            tenantId,
           },
         })
       }

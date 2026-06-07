@@ -76,7 +76,7 @@ function buildGroups(buildPath: (p: string) => string): readonly SettingGroup[] 
     {
       title: 'Commerce',
       items: [
-        { name: 'Payments',        desc: 'Stripe, currency, & saved methods',          status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#payments') },
+        { name: 'Payments',        desc: 'Stripe, currency, & saved methods',          status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings/payments') },
         { name: 'Shipping',        desc: 'Rates, zones, & local pickup',               status: 'ATTN',   statusCls: 'pill-solid-gold', href: buildPath('/admin/settings#shipping') },
         { name: 'Tax',             desc: 'Tax rates & price-inclusive settings',        status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#taxes') },
         { name: 'Inventory',       desc: 'Auto-decrement & low-stock threshold',        status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#inventory') },

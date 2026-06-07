@@ -5,7 +5,7 @@
  */
 
 import Stripe from 'stripe'
-import { prisma } from '../db'
+import { prisma, getCurrentTenant } from '../db'
 import { safeDecrypt } from '../encryption'
 import type {
   StripeSettings,
@@ -20,9 +20,9 @@ import type {
 } from './types'
 import { DEFAULT_STRIPE_SETTINGS } from './types'
 
-// Cache for settings
-let settingsCache: StripeSettings | null = null
-let settingsCacheTime = 0
+// Cache for settings — keyed PER TENANT (a single global cache would leak one
+// tenant's Stripe keys to every other tenant).
+const settingsCacheByTenant = new Map<string, { settings: StripeSettings; time: number }>()
 const SETTINGS_CACHE_TTL = 60 * 1000 // 1 minute
 
 // Get Stripe client instance
@@ -53,10 +53,15 @@ async function getStripeClient(): Promise<Stripe> {
  */
 export async function getStripeSettings(): Promise<StripeSettings> {
   const now = Date.now()
-  if (settingsCache && now - settingsCacheTime < SETTINGS_CACHE_TTL) {
-    return settingsCache
+  const cacheKey = String(getCurrentTenant() ?? 'platform')
+  const cached = settingsCacheByTenant.get(cacheKey)
+  if (cached && now - cached.time < SETTINGS_CACHE_TTL) {
+    return cached.settings
   }
 
+  // Tenant-scoped by the Prisma tenant middleware (when in a tenant context),
+  // so each tenant reads its own stripe.* settings; env vars below are the
+  // platform-account fallback for tenants that haven't entered their own keys.
   const settingRecords = await prisma.setting.findMany({
     where: {
       key: { startsWith: 'stripe.' },
@@ -112,8 +117,7 @@ export async function getStripeSettings(): Promise<StripeSettings> {
     settings.webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
   }
 
-  settingsCache = settings
-  settingsCacheTime = now
+  settingsCacheByTenant.set(cacheKey, { settings, time: now })
 
   return settings
 }
@@ -122,8 +126,7 @@ export async function getStripeSettings(): Promise<StripeSettings> {
  * Clear settings cache
  */
 export function clearStripeSettingsCache(): void {
-  settingsCache = null
-  settingsCacheTime = 0
+  settingsCacheByTenant.clear()
   stripeClient = null
 }
 
