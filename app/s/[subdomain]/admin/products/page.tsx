@@ -249,7 +249,13 @@ export default function ProductsPage() {
                           className="h-10 w-10 rounded-md object-cover"
                         />
                         <div>
-                          <div className="font-medium">{product.name}</div>
+                          <Link
+                            href={`/admin/products/${product.id}`}
+                            className="font-medium hover:underline"
+                            style={{ color: "inherit" }}
+                          >
+                            {product.name}
+                          </Link>
                           <div className="text-xs text-muted-foreground">
                             {(product.category || 'uncategorized')
                               .split("-")

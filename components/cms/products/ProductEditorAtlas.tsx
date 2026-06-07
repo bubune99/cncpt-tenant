@@ -1808,7 +1808,7 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
           >
             {state.error}
           </p>
-          <Link href={`/s/${subdomain}/admin/products`} className="btn btn-ghost">
+          <Link href={`/admin/products`} className="btn btn-ghost">
             ← Back to products
           </Link>
         </div>
@@ -1823,7 +1823,7 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
     <div className="atlas" style={{ position: "relative" }}>
       <Crumbs
         items={[
-          ["Products", `/s/${subdomain}/admin/products`],
+          ["Products", `/admin/products`],
           [isNew ? "New product" : product.title || "Untitled"],
         ]}
       />

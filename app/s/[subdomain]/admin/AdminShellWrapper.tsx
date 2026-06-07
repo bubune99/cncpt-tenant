@@ -194,7 +194,10 @@ export function AdminShellWrapper({
 
   // Build config
   const config = {
-    basePath: `/s/${subdomain}`,
+    // Admin is served at /admin/* on the tenant subdomain (middleware maps host
+    // → tenant), so nav/breadcrumb links must be host-relative /admin/...; a
+    // /s/<subdomain> prefix 404s on the subdomain. Keep empty for bare hrefs.
+    basePath: ``,
     siteUrl: '/',
     siteName: isDemo ? DEMO_CONFIG.siteName : subdomain,
     hiddenItems: [] as string[],

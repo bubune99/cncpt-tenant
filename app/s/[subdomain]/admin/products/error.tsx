@@ -49,7 +49,7 @@ export default function ProductsError({ error, reset }: ProductsErrorProps) {
             Try again
           </button>
           <Link
-            href={subdomain ? `/s/${subdomain}/admin/products` : "/admin/products"}
+            href={"/admin/products"}
             className="inline-flex items-center rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-muted"
           >
             Back to products
