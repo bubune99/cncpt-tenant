@@ -29,7 +29,7 @@ import "./atlas-product-editor.css";
 
 import { CompactHead, EditorTabs, SaveBar, Crumbs } from "./atlas-product-ui";
 import { SpreadsheetGrid } from "./SpreadsheetGrid";
-import { MatrixView } from "./MatrixView";
+import { MatrixView, type MatrixAxisValue, type MatrixCell } from "./MatrixView";
 import { TypeMorph } from "./TypeMorph";
 import { BundleComposer } from "./BundleComposer";
 import { DigitalEditor } from "./DigitalEditor";
@@ -170,6 +170,78 @@ function buildGridRows(
 
 function formatCentsStatic(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
+}
+
+const SYNTHETIC_ROW_ID = "__all__";
+
+function slugCode(value: string): string {
+  return value.toLowerCase().replace(/\s+/g, "-");
+}
+
+// Build matrix axes + cells from the product's real options & variants.
+// 2+ options → first option (by position) on rows, second on columns.
+// 1 option   → values on columns with a single synthetic "All" row (graceful 1-D).
+// Cells are matched to (row,col) by each variant's option-value ids — not by
+// option name, so it works regardless of how options are named.
+function buildMatrixData(
+  options: ReadonlyArray<AtlasProductOption>,
+  variants: ReadonlyArray<AtlasVariant>,
+): {
+  rows: ReadonlyArray<MatrixAxisValue>;
+  cols: ReadonlyArray<MatrixAxisValue>;
+  cells: ReadonlyArray<MatrixCell>;
+  rowAxisName: string;
+  colAxisName: string;
+} {
+  const sorted = [...options].sort((a, b) => a.position - b.position);
+  if (sorted.length === 0) {
+    return { rows: [], cols: [], cells: [], rowAxisName: "", colAxisName: "" };
+  }
+
+  const oneDim = sorted.length < 2;
+  const rowOpt = oneDim ? null : sorted[0];
+  const colOpt = oneDim ? sorted[0] : sorted[1];
+
+  const sortByPos = <T extends { position: number }>(a: T, b: T) => a.position - b.position;
+
+  const cols: MatrixAxisValue[] = [...colOpt.values]
+    .sort(sortByPos)
+    .map((v) => ({ id: v.id, label: v.value, code: slugCode(v.value) }));
+
+  const rows: MatrixAxisValue[] = rowOpt
+    ? [...rowOpt.values].sort(sortByPos).map((v) => ({ id: v.id, label: v.value, code: slugCode(v.value) }))
+    : [{ id: SYNTHETIC_ROW_ID, label: "All", code: "" }];
+
+  const cells: MatrixCell[] = [];
+  for (const v of variants) {
+    const ovs = Object.values(v.optionValues);
+    const colOv = ovs.find((o) => o.optionId === colOpt.id);
+    if (!colOv) continue;
+    const rowKey = rowOpt
+      ? ovs.find((o) => o.optionId === rowOpt.id)?.valueId
+      : SYNTHETIC_ROW_ID;
+    if (rowOpt && !rowKey) continue;
+    const stock = Number(v.stock ?? 0);
+    cells.push({
+      rowKey: rowKey as string,
+      colKey: colOv.valueId,
+      variantId: v.id,
+      sku: v.sku ?? "",
+      stock,
+      price: Number(v.price ?? 0),
+      cost: v.costPrice != null ? Number(v.costPrice) : undefined,
+      pace: 0,
+      status: stock <= 0 ? "out" : stock <= 5 ? "low" : "in",
+    });
+  }
+
+  return {
+    rows,
+    cols,
+    cells,
+    rowAxisName: rowOpt?.name ?? "",
+    colAxisName: colOpt.name,
+  };
 }
 
 function slugify(input: string): string {
@@ -404,6 +476,7 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
   const [saveError, setSaveError] = React.useState<string | null>(null);
   const [savedAt, setSavedAt] = React.useState<string>("");
   const [viewMode, setViewMode] = React.useState<VariantsViewMode>("list");
+  const [matrixShowing, setMatrixShowing] = React.useState<"stock" | "price" | "pace" | "cost">("stock");
 
   // ── Categories (loaded from /api/cms/shop/collections) ─────────────────────
   const [categories, setCategories] = React.useState<ReadonlyArray<EditorCategory>>([]);
@@ -716,6 +789,38 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
     setIsDirty(true);
   }, []);
 
+  // ── Variant persistence ───────────────────────────────────────────────────────
+  // The Atlas grid edits variants in local state; this writes them through to the
+  // bulk-update endpoint. Scalar fields only — option-value joins are left intact
+  // (we don't send optionValues, so the route's delete+recreate guard never fires).
+  const persistVariants = React.useCallback(
+    async (productId: string, variants: ReadonlyArray<AtlasVariant>) => {
+      if (variants.length === 0) return;
+      const payloadVariants = variants.map((v) => ({
+        id: v.id,
+        sku: v.sku ?? undefined,
+        price: Math.round(Number(v.price) || 0),
+        costPrice: v.costPrice != null ? Math.round(Number(v.costPrice)) : undefined,
+        stock: Math.round(Number(v.stock) || 0),
+        weight: v.weight != null ? Math.round(Number(v.weight)) : undefined,
+        enabled: v.enabled,
+      }));
+      const res = await fetch(`/api/cms/products/${productId}/variants`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ variants: payloadVariants }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(
+          (body as { error?: string }).error ?? `Variant save failed (HTTP ${res.status})`
+        );
+      }
+    },
+    []
+  );
+
   // ── Save handler — POST on create, PUT on edit ───────────────────────────────
   const handleSave = React.useCallback(async () => {
     if (!state.product) return;
@@ -787,6 +892,8 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
         }
         const updated = await res.json();
         const product = mapApiProduct(updated);
+        // Persist variant edits (price/cost/stock/weight/sku) made in the grid.
+        await persistVariants(effectiveProductId, state.variants);
         setState((prev) => ({ ...prev, product }));
         setIsDirty(false);
         setSavedAt(`Saved · ${new Date().toLocaleTimeString()}`);
@@ -796,7 +903,7 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
     } finally {
       setSaving(false);
     }
-  }, [state.product, state.categoryIds, isNew, effectiveProductId, saving]);
+  }, [state.product, state.categoryIds, state.variants, isNew, effectiveProductId, saving, persistVariants]);
 
   // ── Stripe sync handler ──────────────────────────────────────────────────────
   const handleStripeSync = React.useCallback(async () => {
@@ -1141,6 +1248,61 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
   );
   const gridRows = React.useMemo(() => buildGridRows(state.variants), [state.variants]);
 
+  // ── Matrix (crosstab) data + bulk edit ────────────────────────────────────────
+  const matrixData = React.useMemo(
+    () => buildMatrixData(state.options, state.variants),
+    [state.options, state.variants]
+  );
+
+  const handleMatrixBulkEdit = React.useCallback(
+    (keys: ReadonlyArray<{ rowKey: string; colKey: string }>, value: number) => {
+      // Map (rowKey,colKey) → variantId via the matrix cells, then set stock.
+      const cellIndex = new Map<string, string>();
+      for (const cell of matrixData.cells) {
+        cellIndex.set(`${cell.rowKey}|${cell.colKey}`, cell.variantId);
+      }
+      const targetIds = new Set<string>();
+      for (const k of keys) {
+        const id = cellIndex.get(`${k.rowKey}|${k.colKey}`);
+        if (id) targetIds.add(id);
+      }
+      if (targetIds.size === 0) return;
+      setState((prev) => ({
+        ...prev,
+        variants: prev.variants.map((v) =>
+          targetIds.has(v.id) ? { ...v, stock: value } : v
+        ),
+      }));
+      setIsDirty(true);
+    },
+    [matrixData.cells]
+  );
+
+  // ── Spreadsheet bulk edits (price/stock across selected rows) ──────────────────
+  const handleBulkSetPrice = React.useCallback(
+    (rowIndexes: ReadonlyArray<number>, price: number) => {
+      const idxSet = new Set(rowIndexes);
+      setState((prev) => ({
+        ...prev,
+        variants: prev.variants.map((v, i) => (idxSet.has(i) ? { ...v, price } : v)),
+      }));
+      setIsDirty(true);
+    },
+    []
+  );
+
+  const handleBulkSetStock = React.useCallback(
+    (rowIndexes: ReadonlyArray<number>, stock: number) => {
+      const idxSet = new Set(rowIndexes);
+      setState((prev) => ({
+        ...prev,
+        variants: prev.variants.map((v, i) => (idxSet.has(i) ? { ...v, stock } : v)),
+      }));
+      setIsDirty(true);
+    },
+    []
+  );
+
   const productType = state.product?.type ?? "SIMPLE";
   const tabs = TABS_BY_TYPE[productType].map((label) => ({
     label,
@@ -1370,33 +1532,23 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
                 viewMode={viewMode}
                 onViewChange={setViewMode}
                 onCellChange={handleCellChange}
+                onBulkSetPrice={handleBulkSetPrice}
+                onBulkSetStock={handleBulkSetStock}
                 onSave={() => void handleSave()}
                 isDirty={isDirty}
                 savedAt={savedAt}
               />
             ) : viewMode === "matrix" ? (
               <MatrixView
-                rows={
-                  (state.options.find((o) => o.name.toLowerCase().includes("color"))?.values ?? []).map(
-                    (v) => ({
-                      id: v.id,
-                      label: v.value,
-                      code: v.value.toLowerCase().replace(/\s+/g, "-"),
-                      hex: undefined,
-                    })
-                  )
-                }
-                cols={
-                  (state.options.find((o) => o.name.toLowerCase().includes("size"))?.values ?? []).map(
-                    (v) => ({
-                      id: v.id,
-                      label: v.value,
-                      code: v.value.toLowerCase().replace(/\s+/g, "-"),
-                    })
-                  )
-                }
-                cells={[]}
-                showing="stock"
+                rows={matrixData.rows}
+                cols={matrixData.cols}
+                cells={matrixData.cells}
+                rowAxisName={matrixData.rowAxisName}
+                colAxisName={matrixData.colAxisName}
+                showing={matrixShowing}
+                onShowingChange={setMatrixShowing}
+                onCellBulkEdit={handleMatrixBulkEdit}
+                onSave={() => void handleSave()}
                 isDirty={isDirty}
                 savedAt={savedAt}
               />

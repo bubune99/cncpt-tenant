@@ -23,6 +23,7 @@ export interface MatrixCell {
   readonly sku: string;
   readonly stock: number;
   readonly price: number; // cents
+  readonly cost?: number; // cents
   readonly pace: number;
   readonly status: "in" | "low" | "out";
 }
@@ -34,6 +35,10 @@ interface MatrixViewProps {
   readonly showing: "stock" | "price" | "pace" | "cost";
   readonly onShowingChange?: (s: "stock" | "price" | "pace" | "cost") => void;
   readonly onCellBulkEdit?: (keys: ReadonlyArray<{ rowKey: string; colKey: string }>, value: number) => void;
+  readonly onSave?: () => void;
+  /** Option names for the axes (e.g. "Color", "Size"). Drives the corner + totals labels. */
+  readonly rowAxisName?: string;
+  readonly colAxisName?: string;
   readonly savedAt?: string;
   readonly isDirty?: boolean;
 }
@@ -52,9 +57,16 @@ export function MatrixView({
   showing,
   onShowingChange,
   onCellBulkEdit,
+  onSave,
+  rowAxisName,
+  colAxisName,
   savedAt,
   isDirty = false,
 }: MatrixViewProps) {
+  const cornerLabel = colAxisName && rowAxisName
+    ? `${rowAxisName} × ${colAxisName}`
+    : colAxisName || "matrix";
+  const colAxisLower = (colAxisName || "size").toLowerCase();
   const [selectedKeys, setSelectedKeys] = useState<ReadonlyArray<CellKey>>([]);
   const [isDragSelecting, setIsDragSelecting] = useState(false);
   const [dragStart, setDragStart] = useState<CellKey | null>(null);
@@ -140,6 +152,7 @@ export function MatrixView({
     switch (showing) {
       case "stock": return cell.stock;
       case "price": return `$${(cell.price / 100).toFixed(0)}`;
+      case "cost": return cell.cost != null ? `$${(cell.cost / 100).toFixed(0)}` : "—";
       case "pace": return cell.pace;
       default: return cell.stock;
     }
@@ -228,7 +241,7 @@ export function MatrixView({
               fontStyle: "italic", fontSize: 12,
               textTransform: "none", letterSpacing: 0, color: "var(--ink-soft)"
             }}>
-              color × size
+              {cornerLabel}
             </span>
           </div>
 
@@ -280,7 +293,7 @@ export function MatrixView({
                     }
                     onClick={(e) => handleCellClick(row.id, col.id, e)}
                   >
-                    <span className="badge-mini">{col.label}·{row.code}</span>
+                    <span className="badge-mini">{row.code ? `${col.label}·${row.code}` : col.label}</span>
                     <div
                       className={"stock-big" +
                         (cell?.status === "out" ? " out" : cell?.status === "low" ? " low" : "")}
@@ -313,7 +326,7 @@ export function MatrixView({
             <span style={{
               fontFamily: "var(--font-geist-mono), monospace", fontSize: 10,
               color: "var(--ink-soft)", letterSpacing: ".08em", textTransform: "uppercase"
-            }}>Total / size</span>
+            }}>Total / {colAxisLower}</span>
           </div>
           {cols.map((c, ci) => (
             <div key={c.id} className="mx-cell totals" style={{ alignItems: "center", justifyContent: "center", minHeight: 50 }}>
@@ -345,6 +358,7 @@ export function MatrixView({
       <SaveBar
         savedAt={selectedKeys.length > 0 ? `${selectedKeys.length} cells selected` : savedAt}
         isDirty={isDirty}
+        onSave={onSave}
         hints={[
           ["↵", "inspect"],
           ["⌘D", "fill"],

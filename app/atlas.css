@@ -27,6 +27,9 @@
   --gold:       var(--wl-warning, #b58730);
   --moss:       var(--wl-success, #4f5e3a);
   --hot:        #c8443a;
+  /* Drag-to-fill / range-select highlight (spreadsheet + matrix cells) */
+  --range-fill:   var(--wl-accent-soft, rgba(139, 44, 31, 0.08));
+  --range-fill-2: rgba(139, 44, 31, 0.18);
   --r:    4px;
   --r-sm: 3px;
 
