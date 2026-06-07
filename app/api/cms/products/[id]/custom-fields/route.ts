@@ -219,6 +219,14 @@ export async function DELETE(
       return NextResponse.json({ error: 'No field IDs provided' }, { status: 400 })
     }
 
+    // Verify the product belongs to this tenant before detaching fields (IDOR guard;
+    // ProductCustomField isn't auto tenant-scoped). Product is tenant-scoped, so a
+    // cross-tenant id returns null here.
+    const ownsProduct = await prisma.product.findUnique({ where: { id: productId }, select: { id: true } })
+    if (!ownsProduct) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+    }
+
     // If removeValues is true, also delete the variant values for these fields
     if (removeValues) {
       // Get all variants for this product

@@ -42,8 +42,18 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
       const { updates } = parsed.data
 
+      // Tenant isolation: only allow updating variants that belong to THIS product.
+      // (ProductVariant isn't tenant-scoped by Prisma middleware, so an attacker
+      // could otherwise pass another tenant's variant ids — IDOR.)
+      const owned = await prisma.productVariant.findMany({
+        where: { productId, id: { in: updates.map((u) => u.variantId) } },
+        select: { id: true },
+      })
+      const ownedIds = new Set(owned.map((v) => v.id))
+      const safeUpdates = updates.filter((u) => ownedIds.has(u.variantId))
+
       const results = await prisma.$transaction(
-        updates.map(({ variantId, price, stock, sku, enabled }) =>
+        safeUpdates.map(({ variantId, price, stock, sku, enabled }) =>
           prisma.productVariant.update({
             where: { id: variantId },
             data: {

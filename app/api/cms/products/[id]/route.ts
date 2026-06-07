@@ -128,8 +128,11 @@ export async function PUT(
         'compareAtPrice', 'status', 'featured', 'type', 'sku', 'barcode',
         'costPrice', 'taxable', 'taxCode', 'requiresShipping', 'weight',
         'length', 'width', 'height', 'trackInventory', 'stock',
-        'lowStockThreshold', 'allowBackorder', 'stripeProductId', 'stripePriceId',
-        'stripeSyncedAt', 'stripeSyncError', 'subscriptionInterval',
+        'lowStockThreshold', 'allowBackorder',
+        // NOTE: stripeProductId/stripePriceId/stripeSyncedAt/stripeSyncError are
+        // intentionally NOT user-writable — only the server-side Stripe sync job
+        // sets them (prevents pointing a product at another tenant's Stripe price).
+        'subscriptionInterval',
         'subscriptionIntervalCount', 'trialDays', 'bundleItems', 'bundlePriceMode',
         'digitalAssetId', 'serviceDuration', 'serviceCapacity', 'metaTitle',
         'metaDescription',

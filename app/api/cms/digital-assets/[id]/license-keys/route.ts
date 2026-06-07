@@ -21,7 +21,9 @@ const bulkImportSchema = z.object({
 })
 
 export async function GET(request: NextRequest, context: RouteContext) {
-  return withTenant(request, async (tenant) => {
+  // License key strings + assignee emails must not be readable unauthenticated —
+  // require an authenticated tenant member (view), not just tenant scoping.
+  return withTenantAuth(request, 'view', async (tenant) => {
     try {
       const { id: digitalAssetId } = await context.params
       const { searchParams } = new URL(request.url)

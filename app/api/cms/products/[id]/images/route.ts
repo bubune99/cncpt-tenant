@@ -49,7 +49,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withTenantAuth(request, 'edit', async () => {
+  return withTenantAuth(request, 'edit', async (tenant) => {
     try {
       const { id } = await params
       const body = (await request.json()) as {
@@ -68,7 +68,9 @@ export async function POST(
         return NextResponse.json({ error: 'Product not found' }, { status: 404 })
       }
 
-      const media = await prisma.media.findUnique({ where: { id: mediaId } })
+      // Explicit tenant scope on the media lookup (IDOR guard — don't attach
+      // another tenant's media to this product).
+      const media = await prisma.media.findFirst({ where: { id: mediaId, tenantId: tenant.tenantId } })
       if (!media) {
         return NextResponse.json({ error: 'Media not found' }, { status: 404 })
       }

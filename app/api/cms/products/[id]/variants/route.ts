@@ -188,6 +188,38 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
     }
 
+    // ── Tenant isolation: reject any referenced optionValue / customField / media
+    // id that doesn't belong to this product/tenant (these child models aren't
+    // auto-scoped by the Prisma middleware, so verify explicitly — IDOR guard).
+    const refOptionValueIds = [...new Set(body.variants.flatMap((v) => v.optionValues ?? []))]
+    const refCustomFieldIds = [...new Set(body.variants.flatMap((v) => (v.customFields ?? []).map((c) => c.customFieldId)))]
+    const refImageIds = [...new Set(body.variants.map((v) => v.imageId).filter((x): x is string => !!x))]
+
+    if (refOptionValueIds.length > 0) {
+      const productOptionIds = (await prisma.productOption.findMany({ where: { productId }, select: { id: true } })).map((o) => o.id)
+      const validOptionValues = await prisma.productOptionValue.findMany({
+        where: { id: { in: refOptionValueIds }, optionId: { in: productOptionIds } },
+        select: { id: true },
+      })
+      if (validOptionValues.length !== refOptionValueIds.length) {
+        return NextResponse.json({ error: 'One or more option values do not belong to this product' }, { status: 400 })
+      }
+    }
+    if (refCustomFieldIds.length > 0) {
+      // CustomField is tenant-scoped via Prisma middleware → only own-tenant rows return.
+      const validFields = await prisma.customField.findMany({ where: { id: { in: refCustomFieldIds } }, select: { id: true } })
+      if (validFields.length !== refCustomFieldIds.length) {
+        return NextResponse.json({ error: 'One or more custom fields are not accessible' }, { status: 400 })
+      }
+    }
+    if (refImageIds.length > 0) {
+      // Media is tenant-scoped via Prisma middleware → only own-tenant rows return.
+      const validMedia = await prisma.media.findMany({ where: { id: { in: refImageIds } }, select: { id: true } })
+      if (validMedia.length !== refImageIds.length) {
+        return NextResponse.json({ error: 'One or more images are not accessible' }, { status: 400 })
+      }
+    }
+
     const results: { created: string[]; updated: string[]; deleted: string[]; errors: string[] } = {
       created: [],
       updated: [],
