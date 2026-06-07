@@ -45,6 +45,7 @@ interface SpreadsheetGridProps {
   readonly onCellChange?: (rowIndex: number, colId: string, value: unknown) => void;
   readonly onBulkSetPrice?: (rowIndexes: ReadonlyArray<number>, price: number) => void;
   readonly onBulkSetStock?: (rowIndexes: ReadonlyArray<number>, stock: number) => void;
+  readonly onInspectRow?: (rowIndex: number) => void;
   readonly onSave?: () => void;
   readonly isDirty?: boolean;
   readonly savedAt?: string;
@@ -71,6 +72,7 @@ export function SpreadsheetGrid({
   onCellChange,
   onBulkSetPrice,
   onBulkSetStock,
+  onInspectRow,
   onSave,
   isDirty = false,
   savedAt,
@@ -177,9 +179,50 @@ export function SpreadsheetGrid({
 
   const handleFillMouseDown = useCallback((e: React.MouseEvent, rowIndex: number) => {
     e.stopPropagation();
+    e.preventDefault();
     setIsDraggingFill(true);
     setFillFromRow(rowIndex);
   }, []);
+
+  // Drag-to-fill: while dragging the active cell's handle, fill that column
+  // from the source row down/up to the row under the cursor on release.
+  React.useEffect(() => {
+    if (!isDraggingFill || fillFromRow == null || !activeCell) return;
+    const colId = activeCell.colId;
+    const sourceVal = rows[fillFromRow]?.[colId];
+
+    const rowIndexAt = (clientX: number, clientY: number): number | null => {
+      const el = document.elementFromPoint(clientX, clientY);
+      const tr = el?.closest("tr[data-row-index]");
+      const idx = tr?.getAttribute("data-row-index");
+      return idx != null ? Number(idx) : null;
+    };
+
+    const onMove = (e: MouseEvent) => {
+      const target = rowIndexAt(e.clientX, e.clientY);
+      const count = target != null ? Math.abs(target - fillFromRow) : 0;
+      setFillTooltip({ top: e.clientY + 12, left: e.clientX + 12, text: count > 0 ? `fill ${count} cell${count > 1 ? "s" : ""}` : "drag to fill" });
+    };
+    const onUp = (e: MouseEvent) => {
+      const target = rowIndexAt(e.clientX, e.clientY);
+      if (target != null && target !== fillFromRow && sourceVal !== undefined) {
+        const lo = Math.min(fillFromRow, target);
+        const hi = Math.max(fillFromRow, target);
+        for (let i = lo; i <= hi; i++) {
+          if (i !== fillFromRow) onCellChange?.(i, colId, sourceVal);
+        }
+      }
+      setIsDraggingFill(false);
+      setFillFromRow(null);
+      setFillTooltip(null);
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+    return () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+  }, [isDraggingFill, fillFromRow, activeCell, rows, onCellChange]);
 
   const handleBulkSetPrice = useCallback(() => {
     const priceStr = window.prompt("Set price for selected variants ($):", "");
@@ -315,6 +358,7 @@ export function SpreadsheetGrid({
               return (
                 <tr
                   key={row.id}
+                  data-row-index={rowIndex}
                   className={isSel ? "sel-row" : ""}
                   style={!inFilter ? { opacity: 0.42 } : {}}
                   onClick={(e) => handleCellClick(rowIndex, "", e)}
@@ -327,8 +371,17 @@ export function SpreadsheetGrid({
                       onClick={(e) => e.stopPropagation()}
                     />
                   </td>
-                  <td className="num" style={{ color: "var(--ink-faint)" }}>
+                  <td className="num" style={{ color: "var(--ink-faint)", whiteSpace: "nowrap" }}>
                     {rowIndex + 1}
+                    {onInspectRow && (
+                      <span
+                        onClick={(e) => { e.stopPropagation(); onInspectRow(rowIndex); }}
+                        title="Inspect variant"
+                        style={{ cursor: "pointer", marginLeft: 5, color: "var(--ink-soft)" }}
+                      >
+                        ⤢
+                      </span>
+                    )}
                   </td>
                   {allColumns.map((col) => {
                     const isEditingThis =

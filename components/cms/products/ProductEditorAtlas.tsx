@@ -34,6 +34,8 @@ import { VariantCards } from "./VariantCards";
 import { TypeMorph } from "./TypeMorph";
 import { CustomFieldsBuilder } from "./CustomFieldsBuilder";
 import { MediaBulkAssign } from "./MediaBulkAssign";
+import { OptionBuilder } from "./OptionBuilder";
+import { VariantInspector } from "./VariantInspector";
 import { BundleComposer } from "./BundleComposer";
 import { DigitalEditor } from "./DigitalEditor";
 import { PricingStack } from "./PricingStack";
@@ -563,6 +565,11 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
   const [syncingStripe, setSyncingStripe] = React.useState(false);
   const [globalCustomFields, setGlobalCustomFields] = React.useState<ReadonlyArray<AtlasCustomField>>([]);
   const [mediaLibrary, setMediaLibrary] = React.useState<ReadonlyArray<{ id: string; name: string; url: string }>>([]);
+  // Bundle option toggles (no backing column yet — session-local).
+  const [bundleConfig, setBundleConfig] = React.useState({ allowVariantChoice: false, allowSubstitutions: false, includeGiftWrap: false });
+  const [reloadNonce, setReloadNonce] = React.useState(0);
+  const [generatingVariants, setGeneratingVariants] = React.useState(false);
+  const [inspectorRow, setInspectorRow] = React.useState<number | null>(null);
 
   // Mirror the latest variants into a ref so the save path always reads the
   // current grid state, immune to any stale-closure timing in handleSave.
@@ -682,7 +689,7 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
     return () => {
       cancelled = true;
     };
-  }, [effectiveProductId, isNew]);
+  }, [effectiveProductId, isNew, reloadNonce]);
 
   // ── Custom fields: load attached (assignedFields) + global library (availableFields) ──
   // The API returns { assignedFields: [...flattened CustomField + position + enabled],
@@ -1527,6 +1534,172 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
     [effectiveProductId, isNew, state.variants]
   );
 
+  // ── Bundle handlers (design F7) — items live in product.bundleItems (jsonb) ─────
+  const handleBundleAddItem = React.useCallback(async () => {
+    const term = window.prompt("Add bundle item — search products by title or SKU:");
+    if (!term) return;
+    try {
+      const res = await fetch(
+        `/api/cms/products?search=${encodeURIComponent(term)}&limit=5`,
+        { credentials: "same-origin" }
+      );
+      const data = await res.json();
+      const list = (data.products ?? data.data ?? []) as Array<Record<string, unknown>>;
+      const p = list.find((x) => String(x.id) !== effectiveProductId) ?? list[0];
+      if (!p) { setSaveError(`No product found for "${term}".`); return; }
+      const newItem = {
+        productId: String(p.id),
+        productTitle: String(p.title ?? "Untitled"),
+        variantId: null,
+        variantLabel: "Default",
+        productType: String(p.type ?? "SIMPLE"),
+        price: Number(p.basePrice ?? 0),
+        quantity: 1,
+        stock: p.type === "DIGITAL" ? null : Number(p.stock ?? 0),
+        hex: "#808080",
+      };
+      const raw = Array.isArray(state.product?.bundleItems) ? (state.product!.bundleItems as unknown[]) : [];
+      patchProduct({ bundleItems: [...raw, newItem] });
+    } catch {
+      setSaveError("Failed to search products.");
+    }
+  }, [effectiveProductId, state.product, patchProduct]);
+
+  const handleBundleRemoveItem = React.useCallback((index: number) => {
+    const raw = Array.isArray(state.product?.bundleItems) ? (state.product!.bundleItems as unknown[]) : [];
+    patchProduct({ bundleItems: raw.filter((_, i) => i !== index) });
+  }, [state.product, patchProduct]);
+
+  const handleBundleUpdateQty = React.useCallback((index: number, qty: number) => {
+    const raw = Array.isArray(state.product?.bundleItems) ? (state.product!.bundleItems as Array<Record<string, unknown>>) : [];
+    patchProduct({ bundleItems: raw.map((it, i) => (i === index ? { ...it, quantity: Math.max(1, qty) } : it)) });
+  }, [state.product, patchProduct]);
+
+  // ── Digital handlers (design F8) — license keys + delivery on the DigitalAsset ──
+  const reloadDigitalAsset = React.useCallback(async (assetId: string) => {
+    try {
+      const res = await fetch(`/api/cms/digital-assets/${assetId}`, { credentials: "same-origin" });
+      if (!res.ok) return;
+      const data = await res.json();
+      const asset = data.asset ?? data;
+      setState((prev) => ({ ...prev, digitalAsset: asset }));
+    } catch { /* non-critical */ }
+  }, []);
+
+  const handleGenerateKeys = React.useCallback(async (count: number) => {
+    const assetId = state.digitalAsset?.id;
+    if (!assetId || count <= 0) return;
+    // Generate unique key strings client-side; the API stores + dedupes them.
+    const stamp = effectiveProductId.slice(-4).toUpperCase();
+    const block = () => Math.random().toString(36).slice(2, 6).toUpperCase();
+    const keys = Array.from({ length: Math.min(count, 1000) }, (_, i) =>
+      `${stamp}-${block()}-${block()}-${String(i).padStart(4, "0")}`
+    );
+    try {
+      const res = await fetch(`/api/cms/digital-assets/${assetId}/license-keys`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ keys }),
+      });
+      if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error((b as { error?: string }).error ?? `HTTP ${res.status}`); }
+      setSavedAt(`Generated ${keys.length} keys · ${new Date().toLocaleTimeString()}`);
+      await reloadDigitalAsset(assetId);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Failed to generate keys");
+    }
+  }, [state.digitalAsset?.id, effectiveProductId, reloadDigitalAsset]);
+
+  const handleRevokeKey = React.useCallback(async (keyId: string) => {
+    const assetId = state.digitalAsset?.id;
+    if (!assetId) return;
+    try {
+      await fetch(`/api/cms/digital-assets/${assetId}/license-keys/${keyId}`, { method: "DELETE", credentials: "same-origin" });
+      await reloadDigitalAsset(assetId);
+    } catch { /* non-critical */ }
+  }, [state.digitalAsset?.id, reloadDigitalAsset]);
+
+  const handleDeliveryChange = React.useCallback(async (settings: Record<string, unknown>) => {
+    const assetId = state.digitalAsset?.id;
+    if (!assetId) return;
+    const payload: Record<string, unknown> = {};
+    if ("maxDownloads" in settings) payload.downloadLimit = settings.maxDownloads;
+    if ("linkExpiry" in settings) payload.downloadExpiry = settings.linkExpiry;
+    if ("useLicenseKeys" in settings) payload.useLicenseKeys = settings.useLicenseKeys;
+    if ("method" in settings) payload.deliveryMethod = settings.method;
+    try {
+      await fetch(`/api/cms/digital-assets/${assetId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify(payload),
+      });
+      await reloadDigitalAsset(assetId);
+    } catch { /* non-critical */ }
+  }, [state.digitalAsset?.id, reloadDigitalAsset]);
+
+  // ── Option + variant generation (unblocks brand-new VARIABLE products) ──────────
+  // Options are created via the product PUT (replace-all); then we POST the cartesian
+  // product of option values as variants, then reload.
+  const handleGenerateVariants = React.useCallback(
+    async (optionSpecs: ReadonlyArray<{ name: string; values: ReadonlyArray<string> }>) => {
+      if (!state.product || isNew || !effectiveProductId) return;
+      const specs = optionSpecs
+        .map((o) => ({ name: o.name.trim(), values: o.values.map((v) => v.trim()).filter(Boolean) }))
+        .filter((o) => o.name && o.values.length);
+      if (specs.length === 0) return;
+      setGeneratingVariants(true);
+      setSaveError(null);
+      try {
+        // 1. Create options via product PUT.
+        const slug = state.product.slug?.trim() || slugify(state.product.title);
+        const putRes = await fetch(`/api/cms/products/${effectiveProductId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ ...buildSavePayload(state.product), slug, type: "VARIABLE", categoryIds: state.categoryIds, options: specs }),
+        });
+        if (!putRes.ok) throw new Error(`Create options failed (HTTP ${putRes.status})`);
+        const updated = await putRes.json();
+        const opts = (updated.options ?? []) as Array<{ id: string; name: string; values: Array<{ id: string; value: string }> }>;
+        if (opts.length === 0) throw new Error("No options returned");
+
+        // 2. Cartesian product of option-value ids.
+        const axes = opts.map((o) => o.values.map((v) => ({ id: v.id, value: v.value })));
+        let combos: Array<Array<{ id: string; value: string }>> = [[]];
+        for (const axis of axes) {
+          const next: Array<Array<{ id: string; value: string }>> = [];
+          for (const combo of combos) for (const val of axis) next.push([...combo, val]);
+          combos = next;
+        }
+        const baseSku = state.product.sku || "SKU";
+        const variants = combos.map((combo) => ({
+          price: state.product!.basePrice || 0,
+          sku: `${baseSku}-${combo.map((c) => c.value.slice(0, 3).toUpperCase()).join("-")}`,
+          stock: 0,
+          optionValues: combo.map((c) => c.id),
+        }));
+
+        // 3. Create the variants.
+        const vRes = await fetch(`/api/cms/products/${effectiveProductId}/variants`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ variants }),
+        });
+        if (!vRes.ok) throw new Error(`Create variants failed (HTTP ${vRes.status})`);
+
+        setSavedAt(`Generated ${variants.length} variants · ${new Date().toLocaleTimeString()}`);
+        setReloadNonce((n) => n + 1);
+      } catch (err) {
+        setSaveError(err instanceof Error ? err.message : "Failed to generate variants");
+      } finally {
+        setGeneratingVariants(false);
+      }
+    },
+    [state.product, state.categoryIds, effectiveProductId, isNew]
+  );
+
   const handleMatrixBulkEdit = React.useCallback(
     (keys: ReadonlyArray<{ rowKey: string; colKey: string }>, value: number) => {
       // Map (rowKey,colKey) → variantId via the matrix cells, then set stock.
@@ -1644,7 +1817,7 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
   const hasBeenSaved = !isNew && Boolean(product.id);
 
   return (
-    <div className="atlas">
+    <div className="atlas" style={{ position: "relative" }}>
       <Crumbs
         items={[
           ["Products", `/s/${subdomain}/admin/products`],
@@ -1797,6 +1970,11 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
                   Detail tab first, then return here.
                 </p>
               </div>
+            ) : state.options.length === 0 ? (
+              <OptionBuilder
+                onGenerate={(specs) => void handleGenerateVariants(specs)}
+                busy={generatingVariants}
+              />
             ) : viewMode === "list" ? (
               <SpreadsheetGrid
                 productId={product.id}
@@ -1821,6 +1999,7 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
                 onCellChange={handleCellChange}
                 onBulkSetPrice={handleBulkSetPrice}
                 onBulkSetStock={handleBulkSetStock}
+                onInspectRow={setInspectorRow}
                 onSave={() => void handleSave()}
                 isDirty={isDirty}
                 savedAt={savedAt}
@@ -1903,11 +2082,17 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
             items={bundleItems}
             priceMode={(product.bundlePriceMode === "fixed" ? "fixed" : "calculated") as "fixed" | "calculated"}
             fixedPrice={product.basePrice}
-            allowVariantChoice={false}
-            allowSubstitutions={false}
-            includeGiftWrap={false}
+            allowVariantChoice={bundleConfig.allowVariantChoice}
+            allowSubstitutions={bundleConfig.allowSubstitutions}
+            includeGiftWrap={bundleConfig.includeGiftWrap}
+            onAddItem={() => void handleBundleAddItem()}
+            onRemoveItem={handleBundleRemoveItem}
+            onUpdateQty={handleBundleUpdateQty}
             onPriceModeChange={(mode) => patchProduct({ bundlePriceMode: mode })}
             onFixedPriceChange={(price) => patchProduct({ basePrice: price })}
+            onAllowVariantChoiceChange={(v) => setBundleConfig((c) => ({ ...c, allowVariantChoice: v }))}
+            onAllowSubstitutionsChange={(v) => setBundleConfig((c) => ({ ...c, allowSubstitutions: v }))}
+            onIncludeGiftWrapChange={(v) => setBundleConfig((c) => ({ ...c, includeGiftWrap: v }))}
             isDirty={isDirty}
             savedAt={savedAt}
           />
@@ -1924,6 +2109,10 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
               useLicenseKeys: state.digitalAsset?.useLicenseKeys ?? false,
               maxActivations: null,
             }}
+            onGenerateKeys={(count) => void handleGenerateKeys(count)}
+            onRevokeKey={(keyId) => void handleRevokeKey(keyId)}
+            onDeliveryChange={(s) => void handleDeliveryChange(s as Record<string, unknown>)}
+            onUploadNew={() => void handleAddImage()}
             isDirty={isDirty}
             savedAt={savedAt}
           />
@@ -1997,7 +2186,7 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
       </div>
 
       <SaveBar
-        savedAt={savedAt || (isDirty ? "Unsaved changes" : "— autosaved —")}
+        savedAt={savedAt || (isDirty ? "Unsaved changes" : "All changes saved")}
         hints={[
           ["T", "switch type"],
           ["P", "pricing"],
@@ -2006,6 +2195,17 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
         isDirty={isDirty}
         onSave={() => void handleSave()}
       />
+
+      {/* Single-row deep-edit drawer (design memo) */}
+      {inspectorRow != null && gridRows[inspectorRow] && (
+        <VariantInspector
+          row={gridRows[inspectorRow]}
+          rowIndex={inspectorRow}
+          columns={gridColumns}
+          onChange={handleCellChange}
+          onClose={() => setInspectorRow(null)}
+        />
+      )}
     </div>
   );
 }
