@@ -215,7 +215,7 @@ export function AdminShell({
             {/* ── Outer page-frame ── */}
             <div
               className="page-frame"
-              style={{ maxWidth: 1440, margin: '0 auto', minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}
+              style={{ width: '100%', minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative', border: 'none', borderRadius: 0 }}
               data-tour-id="admin-page-frame"
             >
               {/* ── Top bar (38px) ── */}
