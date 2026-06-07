@@ -33,6 +33,7 @@ import { MatrixView, type MatrixAxisValue, type MatrixCell } from "./MatrixView"
 import { VariantCards } from "./VariantCards";
 import { TypeMorph } from "./TypeMorph";
 import { CustomFieldsBuilder } from "./CustomFieldsBuilder";
+import { MediaBulkAssign } from "./MediaBulkAssign";
 import { BundleComposer } from "./BundleComposer";
 import { DigitalEditor } from "./DigitalEditor";
 import { PricingStack } from "./PricingStack";
@@ -177,6 +178,67 @@ function formatCentsStatic(cents: number): string {
 }
 
 const SYNTHETIC_ROW_ID = "__all__";
+
+// Map common option-value names to a swatch hex (best-effort; falls back neutral).
+const COLOR_NAME_HEX: Readonly<Record<string, string>> = {
+  bone: "#efe7d8", ivory: "#f3ecda", white: "#f7f4ec", cream: "#f0e8d6",
+  marigold: "#d4a017", gold: "#b58730", yellow: "#e0b020", amber: "#c8901f",
+  moss: "#4f5e3a", green: "#4f5e3a", olive: "#6b6233", sage: "#9aa07c",
+  rust: "#8b2c1f", red: "#a83226", crimson: "#8b2c1f", terracotta: "#b5573a",
+  black: "#1a1410", charcoal: "#3a342e", grey: "#8a857c", gray: "#8a857c",
+  navy: "#2a3a5a", blue: "#2a4a73", teal: "#2a5a5a", brown: "#5a4632",
+  pink: "#d39", rose: "#c47", purple: "#6a3d7a", tan: "#c8a97e",
+};
+function nameToHex(name: string): string {
+  return COLOR_NAME_HEX[name.toLowerCase().trim()] ?? "var(--paper-3)";
+}
+
+// Build the F3 media bulk-assign view model from options + variants + the media library.
+// The first option (by position) is treated as the colour/group axis; cover = variant.imageId set.
+function buildMediaData(
+  options: ReadonlyArray<AtlasProductOption>,
+  variants: ReadonlyArray<AtlasVariant>,
+  library: ReadonlyArray<{ id: string; name: string; url: string }>,
+) {
+  const sorted = [...options].sort((a, b) => a.position - b.position);
+  const groupOpt = sorted[0] ?? null;
+  const sizeOpt = sorted[1] ?? null;
+
+  const colorGroups = groupOpt
+    ? [...groupOpt.values].sort((a, b) => a.position - b.position).map((v) => ({
+        id: v.value, label: v.value, hex: nameToHex(v.value), code: v.value.slice(0, 3).toUpperCase(),
+      }))
+    : [{ id: SYNTHETIC_ROW_ID, label: "All variants", hex: "var(--paper-3)", code: "ALL" }];
+
+  const variantRows = variants.map((v) => {
+    const ovs = Object.values(v.optionValues);
+    const group = groupOpt ? (ovs.find((o) => o.optionId === groupOpt.id)?.value ?? SYNTHETIC_ROW_ID) : SYNTHETIC_ROW_ID;
+    const size = sizeOpt ? (ovs.find((o) => o.optionId === sizeOpt.id)?.value ?? "") : "";
+    const hasCover = !!v.imageId;
+    return {
+      variantId: v.id,
+      colorGroup: group,
+      colorHex: nameToHex(group),
+      colorCode: group.slice(0, 3).toUpperCase(),
+      sizeLabel: size,
+      sku: v.sku ?? "",
+      slots: [hasCover ? "cover" : "empty", "empty", "empty", "empty", "empty"] as ReadonlyArray<"cover" | "alt" | "empty" | "missing">,
+    };
+  });
+
+  const withCover = variants.filter((v) => v.imageId).length;
+  const total = variants.length;
+  const coverage = [
+    { slot: "Cover", have: withCover, total, note: withCover < total ? `${total - withCover} missing` : "complete" },
+  ];
+
+  const libraryItems = library.map((m) => {
+    const assignedVariant = variants.find((v) => v.imageId === m.id);
+    return { id: m.id, name: m.name, url: m.url, assignedTo: assignedVariant ? (assignedVariant.sku ?? "assigned") : null };
+  });
+
+  return { colorGroups, variantRows, coverage, libraryItems };
+}
 
 function slugCode(value: string): string {
   return value.toLowerCase().replace(/\s+/g, "-");
@@ -500,6 +562,7 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
   // ── Stripe sync state ────────────────────────────────────────────────────────
   const [syncingStripe, setSyncingStripe] = React.useState(false);
   const [globalCustomFields, setGlobalCustomFields] = React.useState<ReadonlyArray<AtlasCustomField>>([]);
+  const [mediaLibrary, setMediaLibrary] = React.useState<ReadonlyArray<{ id: string; name: string; url: string }>>([]);
 
   // Mirror the latest variants into a ref so the save path always reads the
   // current grid state, immune to any stale-closure timing in handleSave.
@@ -536,6 +599,10 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
             stock: Number(v.stock ?? 0),
             enabled: (v.enabled ?? true) !== false,
             weight: v.weight != null ? Number(v.weight) : null,
+            imageId:
+              (v.imageId as string | null | undefined) ??
+              ((v.image as Record<string, unknown> | undefined)?.id as string | undefined) ??
+              null,
             optionValues: Object.fromEntries(
               ((v.optionValues as Array<Record<string, unknown>>) ?? []).map(
                 (ov: Record<string, unknown>) => {
@@ -661,6 +728,29 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
     if (isNew || !state.product?.id) return;
     void reloadCustomFields();
   }, [reloadCustomFields, isNew, state.product?.id]);
+
+  // ── Load media library (for the Media tab's bulk variant-image assign, F3) ──────
+  React.useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await fetch("/api/cms/media?type=image&limit=100", { credentials: "same-origin" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        const items = ((data.media ?? data.items ?? data.data ?? []) as Array<Record<string, unknown>>).map((m) => ({
+          id: String(m.id ?? ""),
+          name: String(m.title ?? m.originalName ?? m.filename ?? m.id ?? ""),
+          url: String(m.url ?? ""),
+        })).filter((m) => m.id);
+        setMediaLibrary(items);
+      } catch {
+        /* non-critical */
+      }
+    };
+    void load();
+    return () => { cancelled = true; };
+  }, [effectiveProductId]);
 
   // ── Load categories ──────────────────────────────────────────────────────────
   React.useEffect(() => {
@@ -833,6 +923,7 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
         stock: Math.round(Number(v.stock) || 0),
         weight: v.weight != null ? Math.round(Number(v.weight)) : undefined,
         enabled: v.enabled,
+        imageId: v.imageId ?? undefined,
       }));
       const res = await fetch(`/api/cms/products/${productId}/variants`, {
         method: "POST",
@@ -1400,6 +1491,42 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
     [state.options, state.variants]
   );
 
+  const mediaData = React.useMemo(
+    () => buildMediaData(state.options, state.variants, mediaLibrary),
+    [state.options, state.variants, mediaLibrary]
+  );
+
+  // F3 — assign a library image as the cover (variant.imageId) to target variants, persist now.
+  const handleAssignMedia = React.useCallback(
+    async (mediaIds: ReadonlyArray<string>, variantIds: ReadonlyArray<string>) => {
+      const mediaId = mediaIds[0];
+      if (!mediaId || variantIds.length === 0 || isNew) return;
+      const idSet = new Set(variantIds);
+      // Optimistic local update.
+      setState((prev) => ({
+        ...prev,
+        variants: prev.variants.map((v) => (idSet.has(v.id) ? { ...v, imageId: mediaId } : v)),
+      }));
+      try {
+        await fetch(`/api/cms/products/${effectiveProductId}/variants`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            variants: variantIds.map((id) => {
+              const v = state.variants.find((x) => x.id === id);
+              return { id, price: Math.round(Number(v?.price) || 0), imageId: mediaId };
+            }),
+          }),
+        });
+        setSavedAt(`Assigned image · ${new Date().toLocaleTimeString()}`);
+      } catch {
+        setSaveError("Failed to assign image to variants");
+      }
+    },
+    [effectiveProductId, isNew, state.variants]
+  );
+
   const handleMatrixBulkEdit = React.useCallback(
     (keys: ReadonlyArray<{ rowKey: string; colKey: string }>, value: number) => {
       // Map (rowKey,colKey) → variantId via the matrix cells, then set stock.
@@ -1625,15 +1752,29 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
         )}
 
         {safeActiveTab === "Media" && (
-          <MediaTab
-            images={state.images}
-            productId={effectiveProductId}
-            canUpload={hasBeenSaved}
-            onAddImage={() => void handleAddImage()}
-            onRemoveImage={(id) => void handleRemoveImage(id)}
-            onUpdateAlt={handleUpdateAlt}
-            onReorder={handleReorderImage}
-          />
+          <>
+            <MediaTab
+              images={state.images}
+              productId={effectiveProductId}
+              canUpload={hasBeenSaved}
+              onAddImage={() => void handleAddImage()}
+              onRemoveImage={(id) => void handleRemoveImage(id)}
+              onUpdateAlt={handleUpdateAlt}
+              onReorder={handleReorderImage}
+            />
+            {hasBeenSaved && state.variants.length > 0 && (
+              <div style={{ marginTop: 18, borderTop: "1px solid var(--rule)", paddingTop: 14 }}>
+                <MediaBulkAssign
+                  library={mediaData.libraryItems}
+                  variantRows={mediaData.variantRows}
+                  colorGroups={mediaData.colorGroups}
+                  coverage={mediaData.coverage}
+                  onAssign={(mediaIds, variantIds) => void handleAssignMedia(mediaIds, variantIds)}
+                  savedAt={savedAt}
+                />
+              </div>
+            )}
+          </>
         )}
 
         {safeActiveTab === "Variants" && (

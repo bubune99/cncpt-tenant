@@ -92,6 +92,7 @@ export interface AtlasVariant {
   readonly stock: number;
   readonly enabled: boolean;
   readonly weight: number | null;
+  readonly imageId: string | null;
   // Option values keyed by option name
   readonly optionValues: Readonly<Record<string, Readonly<{ optionId: string; valueId: string; value: string }>>>;
   // Custom field values keyed by field slug

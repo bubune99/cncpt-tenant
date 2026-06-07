@@ -73,13 +73,13 @@ export function MediaBulkAssign({
     rows: variantRows.filter((r) => r.colorGroup === cg.id),
   }));
 
-  // Alert colors (missing cover)
+  // Alert colors (missing cover) — per-group: a group is "missing" if any of its
+  // variant rows has no cover slot filled. (Was a global all-or-nothing check.)
   const missingCoverGroups = new Set(
     colorGroups
-      .filter((cg) => {
-        const cov = coverage.find((c) => c.slot === "Cover");
-        return cov && cov.have < cov.total;
-      })
+      .filter((cg) =>
+        variantRows.some((r) => r.colorGroup === cg.id && !r.slots.includes("cover"))
+      )
       .map((cg) => cg.id)
   );
 
