@@ -18,6 +18,10 @@ import {
   resolveSmartBlockData,
   serializeSmartBlockData,
 } from '@/lib/cms/block-editor/smart-blocks';
+// Side-effect import: registers commerce smart-block DEFINITIONS in the server
+// registry so resolveSmartBlockData can emit their data requirements server-side.
+// (block-page-renderer's copy of this import is client-only — see shop/[slug].)
+import '@/components/cms/smart-blocks/commerce';
 import { ShopPageLayout } from '@/components/cms/shop/shop-page-layout';
 import { getTenantContext } from '../../lib/tenant-context';
 import { runWithTenant } from '@/lib/cms/db/tenant-context';

@@ -111,44 +111,35 @@ async function fetchProducts(args: Record<string, unknown>): Promise<SerializedP
 
 async function fetchProduct(args: Record<string, unknown>): Promise<SerializedProduct | null> {
   const slug = args.slug as string
-  if (!slug) {
-    console.error('[fetchProduct] DIAG: no slug in args', JSON.stringify(args))
-    return null
-  }
+  if (!slug) return null
 
-  try {
-    const product = await prisma.product.findFirst({
-      where: { slug, status: 'ACTIVE' },
-      include: {
-        images: {
-          orderBy: { position: 'asc' },
-          include: { media: true },
-        },
-        variants: {
-          where: { enabled: true },
-          include: {
-            optionValues: {
-              include: {
-                optionValue: {
-                  include: { option: true },
-                },
+  const product = await prisma.product.findFirst({
+    where: { slug, status: 'ACTIVE' },
+    include: {
+      images: {
+        orderBy: { position: 'asc' },
+        include: { media: true },
+      },
+      variants: {
+        where: { enabled: true },
+        include: {
+          optionValues: {
+            include: {
+              optionValue: {
+                include: { option: true },
               },
             },
           },
         },
-        categories: {
-          include: { category: true },
-        },
       },
-    })
+      categories: {
+        include: { category: true },
+      },
+    },
+  })
 
-    console.error('[fetchProduct] DIAG slug=' + slug + ' found=' + (product ? product.id : 'NULL'))
-    if (!product) return null
-    return serializeProduct(product)
-  } catch (e) {
-    console.error('[fetchProduct] DIAG THREW for slug=' + slug + ': ' + (e instanceof Error ? e.message.replace(/\n/g, ' ') : String(e)))
-    return null
-  }
+  if (!product) return null
+  return serializeProduct(product)
 }
 
 async function fetchCategories(_args: Record<string, unknown>): Promise<SerializedCategory[]> {

@@ -19,6 +19,13 @@ import {
   resolveSmartBlockData,
   serializeSmartBlockData,
 } from '@/lib/cms/block-editor/smart-blocks';
+// Side-effect import: registers the commerce smart-block DEFINITIONS (incl. their
+// dataRequirements) in the SERVER-side registry. block-page-renderer also imports
+// this, but it is a 'use client' module so that import only runs in the client
+// bundle — without this line getSmartBlock('ProductDetail') is undefined on the
+// server, no data requirement is emitted, fetchProduct never runs, and the page
+// renders "Product not found".
+import '@/components/cms/smart-blocks/commerce';
 import { defaultProductDetailBlocks } from '@/lib/cms/block-editor/smart-blocks/default-templates';
 import { getTenantContext } from '../../../lib/tenant-context';
 
