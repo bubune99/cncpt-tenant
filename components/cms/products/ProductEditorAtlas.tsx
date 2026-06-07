@@ -1660,8 +1660,11 @@ export function ProductEditorAtlas({ productId, subdomain }: ProductEditorAtlasP
           body: JSON.stringify({ ...buildSavePayload(state.product), slug, type: "VARIABLE", categoryIds: state.categoryIds, options: specs }),
         });
         if (!putRes.ok) throw new Error(`Create options failed (HTTP ${putRes.status})`);
-        const updated = await putRes.json();
-        const opts = (updated.options ?? []) as Array<{ id: string; name: string; values: Array<{ id: string; value: string }> }>;
+        // Re-fetch via the variants endpoint — it reliably returns options with
+        // their generated value ids (the PUT response shape can't be relied on).
+        const optRes = await fetch(`/api/cms/products/${effectiveProductId}/variants`, { credentials: "same-origin" });
+        const optData = await optRes.json();
+        const opts = (optData.options ?? []) as Array<{ id: string; name: string; values: Array<{ id: string; value: string }> }>;
         if (opts.length === 0) throw new Error("No options returned");
 
         // 2. Cartesian product of option-value ids.
