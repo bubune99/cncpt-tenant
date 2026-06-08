@@ -24,6 +24,7 @@ import { CanvasSites } from "./canvas-sites"
 import { CanvasSubdomainDetail } from "./canvas-subdomain-detail"
 import { CanvasTeam } from "./canvas-team"
 import { CanvasComms } from "./canvas-comms"
+import { CanvasAccount } from "./canvas-account"
 import { CommandPalette } from "./command-palette"
 import "./canvas.css"
 
@@ -41,6 +42,9 @@ const SECTION_LABEL: Record<string, string> = {
   sites: "Subdomains",
   team: "Team",
   comms: "Communications",
+  "comms-announce": "Communications",
+  "comms-campaigns": "Communications",
+  "comms-feedback": "Communications",
   analytics: "Analytics",
   branding: "Branding",
   domains: "Custom domains",
@@ -117,8 +121,19 @@ export function CanvasShell({
     if (activeSection === "team") {
       return <CanvasTeam user={user} />
     }
-    if (activeSection === "comms") {
-      return <CanvasComms />
+    if (activeSection.startsWith("comms")) {
+      const commsTab =
+        activeSection === "comms-announce" ? "announce"
+        : activeSection === "comms-campaigns" ? "campaigns"
+        : activeSection === "comms-feedback" ? "feedback"
+        : "tickets"
+      return <CanvasComms key={activeSection} initialTab={commsTab} />
+    }
+    // Account: AI Credits + Billing + Branding + Workspace settings under one
+    // tabbed surface. The three sidebar entries open the matching tab.
+    if (activeSection === "credits" || activeSection === "billing" || activeSection === "settings") {
+      const initialTab = activeSection === "billing" ? "billing" : activeSection === "settings" ? "settings" : "credits"
+      return <CanvasAccount key={activeSection} initialTab={initialTab} selectedSubdomain={selectedSubdomain} />
     }
     // Existing shadcn sections, hosted inside the canvas shell.
     return (

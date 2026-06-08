@@ -57,6 +57,7 @@ function firstName(user: any): string | null {
 export function CanvasOverview({ user, subdomains, selectedSubdomain }: CanvasOverviewProps) {
   const router = useRouter()
   const [balance, setBalance] = useState<CreditBalance | null>(null)
+  const [supportStats, setSupportStats] = useState<{ open: number; total: number } | null>(null)
   const [bannerDismissed, setBannerDismissed] = useState(false)
 
   useEffect(() => {
@@ -74,6 +75,14 @@ export function CanvasOverview({ user, subdomains, selectedSubdomain }: CanvasOv
             lifetimeUsed: Number(b.lifetimeUsed) || 0,
           })
         }
+      })
+      .catch(() => {})
+
+    // Real support stats for the support widget.
+    fetch("/api/dashboard/support")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.stats) setSupportStats({ open: Number(data.stats.open) || 0, total: Number(data.stats.total) || 0 })
       })
       .catch(() => {})
   }, [])
@@ -113,7 +122,7 @@ export function CanvasOverview({ user, subdomains, selectedSubdomain }: CanvasOv
               <span className="sub"> — add branding, connect a custom domain, and choose a launch date.</span>
             </span>
           </div>
-          <button className="btn btn--secondary btn--xs" onClick={() => router.push("/dashboard?section=branding")}>Open setup</button>
+          <button className="btn btn--secondary btn--xs" onClick={() => window.dispatchEvent(new CustomEvent("navigate-to-section", { detail: "branding" }))}>Open setup</button>
           <button className="iconbtn iconbtn--sm iconbtn--ghost" onClick={() => setBannerDismissed(true)}><X style={{ width: 12, height: 12 }} /></button>
         </div>
       ) : null}
@@ -148,7 +157,7 @@ export function CanvasOverview({ user, subdomains, selectedSubdomain }: CanvasOv
         <div className="card">
           <div className="card__head">
             <h3 className="card__title">Your sites</h3>
-            <button className="btn btn--ghost btn--xs" onClick={() => router.push("/dashboard?section=overview")}>
+            <button className="btn btn--ghost btn--xs" onClick={() => window.dispatchEvent(new CustomEvent("navigate-to-section", { detail: "sites" }))}>
               Manage all <ArrowRight style={{ width: 11, height: 11 }} />
             </button>
           </div>
@@ -222,21 +231,32 @@ export function CanvasOverview({ user, subdomains, selectedSubdomain }: CanvasOv
 
       {/* Support + credits */}
       <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 16, marginTop: 16 }}>
-        {/* Customer support — links to real support route, list is placeholder */}
+        {/* Customer support — REAL open/total ticket counts */}
         <div className="card">
           <div className="card__head">
             <h3 className="card__title">Customer support</h3>
-            <button className="btn btn--ghost btn--xs" onClick={() => router.push("/dashboard/support")}>
+            <button className="btn btn--ghost btn--xs" onClick={() => window.dispatchEvent(new CustomEvent("navigate-to-section", { detail: "comms" }))}>
               Open inbox <ArrowRight style={{ width: 11, height: 11 }} />
             </button>
           </div>
           <div className="card__body" style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div className="tnt__act-icon" style={{ width: 32, height: 32 }}><MessageSquare /></div>
             <div className="col" style={{ flex: 1, gap: 1 }}>
-              <span style={{ fontSize: 12.5, fontWeight: 500 }}>Support inbox</span>
-              <span className="muted" style={{ fontSize: 11 }}>Customer tickets are managed in the Support area.</span>
+              {supportStats ? (
+                <>
+                  <span style={{ fontSize: 12.5, fontWeight: 500 }}>
+                    {supportStats.open} open · {supportStats.total} total ticket{supportStats.total === 1 ? "" : "s"}
+                  </span>
+                  <span className="muted" style={{ fontSize: 11 }}>Manage customer tickets in the Communications inbox.</span>
+                </>
+              ) : (
+                <>
+                  <span style={{ fontSize: 12.5, fontWeight: 500 }}>Support inbox</span>
+                  <span className="muted" style={{ fontSize: 11 }}>Loading ticket counts…</span>
+                </>
+              )}
             </div>
-            <button className="btn btn--secondary btn--xs" onClick={() => router.push("/dashboard/support")}>Go</button>
+            <button className="btn btn--secondary btn--xs" onClick={() => window.dispatchEvent(new CustomEvent("navigate-to-section", { detail: "comms" }))}>Go</button>
           </div>
         </div>
 
@@ -244,7 +264,7 @@ export function CanvasOverview({ user, subdomains, selectedSubdomain }: CanvasOv
         <div className="card">
           <div className="card__head">
             <h3 className="card__title">AI credits</h3>
-            <button className="btn btn--ghost btn--xs" onClick={() => router.push("/dashboard?section=credits")}>Details</button>
+            <button className="btn btn--ghost btn--xs" onClick={() => window.dispatchEvent(new CustomEvent("navigate-to-section", { detail: "credits" }))}>Details</button>
           </div>
           <div className="card__body">
             {balance ? (
@@ -263,10 +283,10 @@ export function CanvasOverview({ user, subdomains, selectedSubdomain }: CanvasOv
                   <span><strong>{balance.purchased.toLocaleString()}</strong> <span className="muted">purchased</span></span>
                 </div>
                 <div className="row" style={{ gap: 6, marginTop: 12 }}>
-                  <button className="btn btn--primary btn--xs" onClick={() => router.push("/dashboard?section=credits")}>
+                  <button className="btn btn--primary btn--xs" onClick={() => window.dispatchEvent(new CustomEvent("navigate-to-section", { detail: "credits" }))}>
                     <Zap style={{ width: 12, height: 12 }} /> Top up
                   </button>
-                  <button className="btn btn--ghost btn--xs" onClick={() => router.push("/dashboard?section=credits")}>Usage details</button>
+                  <button className="btn btn--ghost btn--xs" onClick={() => window.dispatchEvent(new CustomEvent("navigate-to-section", { detail: "credits" }))}>Usage details</button>
                 </div>
               </>
             ) : (

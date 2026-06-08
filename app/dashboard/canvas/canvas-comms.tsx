@@ -39,8 +39,8 @@ interface Ticket {
 }
 interface Stats { open: number; inProgress: number; resolved: number; closed: number; total: number }
 
-export function CanvasComms() {
-  const [tab, setTab] = useState<Tab>("tickets")
+export function CanvasComms({ initialTab = "tickets" }: { initialTab?: Tab }) {
+  const [tab, setTab] = useState<Tab>(initialTab)
   return (
     <>
       <div className="tnt__tabs">

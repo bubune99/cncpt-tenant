@@ -76,9 +76,9 @@ export const NAV: NavEntry[] = [
 
   { heading: "Communications" },
   { id: "tickets", label: "Support inbox", icon: MessageSquare, section: "comms" },
-  { id: "announce", label: "Announcements", icon: Megaphone, section: "comms", phase2: true },
-  { id: "campaigns", label: "Email campaigns", icon: Send, section: "comms", phase2: true },
-  { id: "feedback", label: "Feedback board", icon: Lightbulb, section: "comms", phase2: true },
+  { id: "announce", label: "Announcements", icon: Megaphone, section: "comms-announce", phase2: true },
+  { id: "campaigns", label: "Email campaigns", icon: Send, section: "comms-campaigns", phase2: true },
+  { id: "feedback", label: "Feedback board", icon: Lightbulb, section: "comms-feedback", phase2: true },
 
   { heading: "Account" },
   { id: "mcp", label: "MCP / AI Agents", icon: Bot, section: "mcp" },
@@ -99,6 +99,9 @@ export function activeNavId(section: string): string {
     sites: "subdomains",
     team: "members",
     comms: "tickets",
+    "comms-announce": "announce",
+    "comms-campaigns": "campaigns",
+    "comms-feedback": "feedback",
     analytics: "analytics",
     branding: "branding",
     domains: "domains",
