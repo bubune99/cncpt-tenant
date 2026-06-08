@@ -3,11 +3,10 @@
 import { useState, useEffect, useRef, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { getUserSubdomains } from "@/app/actions"
-import { DashboardSidebar } from "./dashboard-sidebar"
-import { DashboardContent } from "./dashboard-content"
 import { useUser } from "@stackframe/stack"
 import { HelpProvider } from "@/components/help-system"
 import { DashboardChat } from "@/components/dashboard-chat"
+import { CanvasShell } from "./canvas/canvas-shell"
 
 export const dynamic = "force-dynamic"
 
@@ -162,20 +161,14 @@ export default function DashboardPage() {
           ))}
         </div>
       )}
-      <div className="min-h-screen bg-background flex">
-        <DashboardSidebar
+      <div className="min-h-screen bg-background">
+        <CanvasShell
           user={user}
           subdomains={subdomains}
           activeSection={activeSection}
           setActiveSection={setActiveSection}
           selectedSubdomain={selectedSubdomain}
           setSelectedSubdomain={setSelectedSubdomain}
-        />
-        <DashboardContent
-          user={user}
-          subdomains={subdomains}
-          activeSection={activeSection}
-          selectedSubdomain={selectedSubdomain}
         />
         <DashboardChat />
       </div>

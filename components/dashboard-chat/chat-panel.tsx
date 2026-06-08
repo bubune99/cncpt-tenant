@@ -154,6 +154,18 @@ export function ChatPanel({ className }: ChatPanelProps) {
     contextRef.current = context
   }, [context])
 
+  // ⌘J / Ctrl+J toggles the "Ask CNCPT" dock (matches the launcher hint).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "j") {
+        e.preventDefault()
+        togglePanel()
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [togglePanel])
+
   // Memoize transport to prevent recreation
   const transport = useMemo(
     () =>
@@ -324,31 +336,20 @@ export function ChatPanel({ className }: ChatPanelProps) {
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0, opacity: 0 }}
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
-        className={cn("fixed bottom-6 right-6 z-50", className)}
+        className={cn(className)}
+        data-tnt-ai-dock
       >
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={togglePanel}
-                size="icon"
-                className={cn(
-                  "h-14 w-14 rounded-full shadow-lg",
-                  "bg-gradient-to-br from-primary to-primary/80",
-                  "hover:scale-110 hover:shadow-xl hover:shadow-primary/20",
-                  "active:scale-95",
-                  "transition-all duration-200"
-                )}
-              >
-                <Sparkles className="h-6 w-6" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="left">
-              <p>Open AI Assistant</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        <span className="absolute inset-0 -z-10 rounded-full bg-primary/20 animate-ping" />
+        {/* "Ask CNCPT" dock — restyled launcher matching the Tenant Admin
+            Canvas tnt__ai-dock head (blue→cyan mark, pill, ⌘J hint). */}
+        <button
+          onClick={togglePanel}
+          className="tnt-ai-dock-pill"
+          aria-label="Ask CNCPT"
+        >
+          <span className="mark"><Sparkles /></span>
+          <span className="title">Ask CNCPT</span>
+          <span className="kbd">⌘J</span>
+        </button>
       </motion.div>
     )
   }

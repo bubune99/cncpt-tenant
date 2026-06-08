@@ -1,0 +1,426 @@
+/* ============================================================================
+ * Tenant Admin Canvas — scoped stylesheet
+ *
+ * Ports the design handoff (tokens.css BRAND palette + admin-styles.css dirH
+ * chrome + tenant-styles.css) into a single scope: `.br-theme.tnt`.
+ *
+ * Everything here is scoped under `.tnt-canvas` so it never bleeds into the
+ * marketing site or the existing shadcn dashboard components. The class names
+ * (dirH__rail, dirH__nav, tnt__ai-dock, badge.is-hot, etc.) are recreated
+ * faithfully from the prototype so the markup maps 1:1.
+ * ========================================================================== */
+
+.tnt-canvas {
+  /* --- BRAND palette (DEFAULT_COLOR_THEME from white-labeling.ts) --------- */
+  --br-primary: #3b82f6;
+  --br-primary-600: #2563eb;
+  --br-primary-50: #eff6ff;
+  --br-primary-foreground: #ffffff;
+  --br-secondary: #64748b;
+  --br-accent: #06b6d4;
+
+  --br-background: #ffffff;
+  --br-surface: #f8fafc;
+  --br-surface-hover: #f9fafb;
+  --br-text: #1f2937;
+  --br-text-secondary: #6b7280;
+  --br-border: #e5e7eb;
+
+  --br-error: #ef4444;
+  --br-warning: #f59e0b;
+  --br-success: #10b981;
+  --br-info: #3b82f6;
+
+  --gr-blue-purple: linear-gradient(90deg, #2563eb 0%, #9333ea 100%);
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.10), 0 1px 2px -1px rgb(0 0 0 / 0.10);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.10), 0 2px 4px -2px rgb(0 0 0 / 0.10);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.10), 0 4px 6px -4px rgb(0 0 0 / 0.10);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.10), 0 8px 10px -6px rgb(0 0 0 / 0.10);
+
+  /* Map to the self-hosted geist variables loaded in app/layout.tsx */
+  --br-font-sans: var(--font-geist-sans), "Geist", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --br-font-mono: var(--font-geist-mono), "Geist Mono", ui-monospace, SFMono-Regular,
+    Menlo, Consolas, "Liberation Mono", monospace;
+
+  font-family: var(--br-font-sans);
+  color: var(--br-text);
+  background: var(--br-surface);
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  overflow: hidden;
+}
+
+.tnt-canvas *,
+.tnt-canvas *::before,
+.tnt-canvas *::after { box-sizing: border-box; }
+.tnt-canvas button { font-family: inherit; cursor: pointer; }
+.tnt-canvas input, .tnt-canvas textarea { font-family: inherit; }
+
+/* ---------- generic atoms ---------- */
+.tnt-canvas .row { display: flex; align-items: center; gap: 8px; }
+.tnt-canvas .col { display: flex; flex-direction: column; }
+.tnt-canvas .between { justify-content: space-between; }
+.tnt-canvas .mono { font-family: var(--br-font-mono); }
+.tnt-canvas .muted { color: var(--br-text-secondary); }
+
+.tnt-canvas .avatar {
+  width: 28px; height: 28px; border-radius: 9999px;
+  background: var(--gr-blue-purple); color: #fff;
+  font-size: 11px; font-weight: 600;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.tnt-canvas .avatar--xs { width: 20px; height: 20px; font-size: 9.5px; }
+.tnt-canvas .avatar--sm { width: 24px; height: 24px; font-size: 10px; }
+.tnt-canvas .avatar--lg { width: 56px; height: 56px; font-size: 18px; }
+.tnt-canvas .avatar--orange { background: linear-gradient(135deg, #ea580c, #dc2626); }
+.tnt-canvas .avatar--green { background: linear-gradient(135deg, #10b981, #059669); }
+.tnt-canvas .avatar--purple { background: linear-gradient(135deg, #a855f7, #ec4899); }
+.tnt-canvas .avatar--slate { background: linear-gradient(135deg, #475569, #1e293b); }
+
+.tnt-canvas .kbd {
+  font-family: var(--br-font-mono); font-size: 10.5px;
+  background: #fff; border: 1px solid var(--br-border);
+  border-bottom-width: 2px;
+  padding: 1px 5px; border-radius: 4px; color: var(--br-text-secondary);
+  line-height: 1; display: inline-flex; align-items: center;
+}
+
+.tnt-canvas .pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 500; padding: 2px 8px;
+  border-radius: 9999px;
+  background: var(--br-surface); color: var(--br-text);
+  border: 1px solid var(--br-border);
+}
+.tnt-canvas .pill .dot { width: 6px; height: 6px; border-radius: 9999px; background: currentColor; opacity: 0.8; }
+.tnt-canvas .pill--blue { background: #dbeafe; color: #1d4ed8; border-color: transparent; }
+.tnt-canvas .pill--green { background: #d1fae5; color: #047857; border-color: transparent; }
+.tnt-canvas .pill--amber { background: #fef3c7; color: #92400e; border-color: transparent; }
+.tnt-canvas .pill--rose { background: #ffe4e6; color: #be123c; border-color: transparent; }
+.tnt-canvas .pill--violet { background: #ede9fe; color: #6d28d9; border-color: transparent; }
+.tnt-canvas .pill--slate { background: #e2e8f0; color: #334155; border-color: transparent; }
+
+.tnt-canvas .tag-sm {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10.5px; padding: 1px 6px; border-radius: 4px;
+  background: var(--br-surface); color: var(--br-text-secondary);
+  border: 1px solid var(--br-border);
+}
+
+.tnt-canvas .btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; font-weight: 500;
+  padding: 6px 11px; border-radius: 6px;
+  border: 1px solid transparent; background: transparent;
+  color: var(--br-text); line-height: 1;
+  white-space: nowrap;
+}
+.tnt-canvas .btn svg { width: 14px; height: 14px; }
+.tnt-canvas .btn--primary { background: var(--br-primary); color: #fff; border-color: var(--br-primary); }
+.tnt-canvas .btn--primary:hover { background: var(--br-primary-600); }
+.tnt-canvas .btn--secondary { background: #fff; border-color: var(--br-border); color: var(--br-text); }
+.tnt-canvas .btn--secondary:hover { background: var(--br-surface); }
+.tnt-canvas .btn--ghost { color: var(--br-text-secondary); }
+.tnt-canvas .btn--ghost:hover { background: var(--br-surface); color: var(--br-text); }
+.tnt-canvas .btn--danger { background: #fff; border-color: #fecaca; color: #b91c1c; }
+.tnt-canvas .btn--xs { padding: 4px 8px; font-size: 11.5px; }
+.tnt-canvas .btn--lg { padding: 9px 14px; font-size: 13.5px; }
+
+.tnt-canvas .iconbtn {
+  width: 28px; height: 28px; border-radius: 6px;
+  border: 1px solid var(--br-border); background: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--br-text);
+}
+.tnt-canvas .iconbtn--sm { width: 24px; height: 24px; }
+.tnt-canvas .iconbtn--ghost { background: transparent; border-color: transparent; color: var(--br-text-secondary); }
+.tnt-canvas .iconbtn--ghost:hover { background: var(--br-surface); color: var(--br-text); }
+.tnt-canvas .iconbtn svg { width: 14px; height: 14px; }
+
+.tnt-canvas .card {
+  background: #fff;
+  border: 1px solid var(--br-border);
+  border-radius: 10px;
+}
+.tnt-canvas .card__head { padding: 14px 16px; border-bottom: 1px solid var(--br-border); display: flex; align-items: center; justify-content: space-between; }
+.tnt-canvas .card__title { font-size: 13.5px; font-weight: 600; margin: 0; }
+.tnt-canvas .card__body { padding: 14px 16px; }
+
+.tnt-canvas ::-webkit-scrollbar { width: 8px; height: 8px; }
+.tnt-canvas ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 4px; }
+.tnt-canvas ::-webkit-scrollbar-track { background: transparent; }
+
+/* ============================================================
+ * dirH chrome — rail / nav / topbar / activity rail
+ * ============================================================ */
+.tnt-canvas.dirH { background: var(--br-surface); }
+
+.tnt-canvas .dirH__rail {
+  width: 224px; background: #fff;
+  border-right: 1px solid var(--br-border);
+  display: flex; flex-direction: column;
+  flex-shrink: 0;
+  height: 100vh; position: sticky; top: 0;
+}
+.tnt-canvas .dirH__brand {
+  padding: 11px 12px; display: flex; align-items: center; gap: 8px;
+  border-bottom: 1px solid var(--br-border);
+  background: transparent; border-width: 0 0 1px 0; width: 100%; text-align: left;
+}
+.tnt-canvas .dirH__brand-mark {
+  width: 24px; height: 24px; border-radius: 6px;
+  /* tenant blue->cyan mark, per tenant-styles.css */
+  background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+  color: #fff; display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.tnt-canvas .dirH__brand-mark svg { width: 14px; height: 14px; }
+.tnt-canvas .dirH__brand-name { font-weight: 600; font-size: 12.5px; }
+.tnt-canvas .dirH__brand-chev { margin-left: auto; color: var(--br-text-secondary); }
+
+.tnt-canvas .tnt__site-switch {
+  margin: 8px 10px 6px;
+  display: flex; align-items: center; gap: 8px;
+  background: var(--br-surface); border: 1px solid var(--br-border);
+  border-radius: 7px; padding: 6px 8px;
+  cursor: pointer; width: calc(100% - 20px); text-align: left;
+}
+.tnt-canvas .tnt__site-mark {
+  width: 22px; height: 22px; border-radius: 5px;
+  background: #fff; border: 1px solid var(--br-border);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: var(--br-primary);
+  flex-shrink: 0;
+}
+.tnt-canvas .tnt__site-name { font-size: 12.5px; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tnt-canvas .tnt__site-host { font-size: 10.5px; color: var(--br-text-secondary); font-family: var(--br-font-mono); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.tnt-canvas .dirH__search {
+  margin: 8px 10px 4px;
+  display: flex; align-items: center; gap: 6px;
+  background: var(--br-surface); border: 1px solid var(--br-border);
+  border-radius: 6px; padding: 5px 9px;
+  font-size: 12px; color: var(--br-text-secondary);
+  width: calc(100% - 20px);
+}
+.tnt-canvas .dirH__search svg { width: 13px; height: 13px; color: var(--br-text-secondary); }
+.tnt-canvas .dirH__search-q { flex: 1; font-size: 12px; color: var(--br-text-secondary); text-align: left; }
+
+.tnt-canvas .dirH__nav { padding: 4px 6px 8px; flex: 1; overflow: auto; }
+.tnt-canvas .dirH__nav-h {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 10.5px; font-weight: 500; color: var(--br-text-secondary);
+  padding: 10px 8px 4px;
+}
+.tnt-canvas .dirH__nav-h svg { width: 11px; height: 11px; color: #94a3b8; }
+.tnt-canvas .dirH__nav-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 8px; border-radius: 5px;
+  background: transparent; border: 0; width: 100%;
+  font-size: 12.5px; color: var(--br-text); text-align: left;
+  font-family: inherit; cursor: pointer;
+}
+.tnt-canvas .dirH__nav-item svg { width: 14px; height: 14px; color: var(--br-text-secondary); flex-shrink: 0; }
+.tnt-canvas .dirH__nav-item:hover { background: var(--br-surface); }
+.tnt-canvas .dirH__nav-item.is-active { background: #eff6ff; color: #1d4ed8; font-weight: 500; }
+.tnt-canvas .dirH__nav-item.is-active svg { color: #2563eb; }
+.tnt-canvas .dirH__nav-item .badge {
+  margin-left: auto;
+  font-size: 10.5px; color: var(--br-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.tnt-canvas .dirH__nav-item .badge.is-hot { color: #dc2626; font-weight: 600; }
+.tnt-canvas .dirH__nav-item .badge.is-blue { color: #1d4ed8; font-weight: 600; }
+
+.tnt-canvas .dirH__rail-foot {
+  border-top: 1px solid var(--br-border);
+  padding: 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.tnt-canvas .dirH__rail-foot .col { gap: 0; flex: 1; min-width: 0; }
+
+/* Main column */
+.tnt-canvas .dirH__main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.tnt-canvas .dirH__top {
+  height: 48px; background: #fff;
+  border-bottom: 1px solid var(--br-border);
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 16px;
+  flex-shrink: 0;
+}
+.tnt-canvas .dirH__crumbs { font-size: 12.5px; display: flex; align-items: center; gap: 6px; }
+.tnt-canvas .dirH__crumbs svg { width: 12px; height: 12px; color: #94a3b8; }
+.tnt-canvas .dirH__crumb-active { font-weight: 600; }
+.tnt-canvas .dirH__page { flex: 1; overflow: auto; }
+
+/* Right activity rail */
+.tnt-canvas .dirH__rrail {
+  width: 304px; flex-shrink: 0;
+  border-left: 1px solid var(--br-border);
+  background: #fff;
+  display: flex; flex-direction: column;
+  height: 100vh; position: sticky; top: 0;
+}
+.tnt-canvas .dirH__rrail--collapsed { width: 44px; }
+.tnt-canvas .dirH__rrail-h {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--br-border);
+  flex-shrink: 0;
+}
+.tnt-canvas .dirH__rrail-h h3 { font-size: 12.5px; font-weight: 600; margin: 0; }
+.tnt-canvas .dirH__rrail-h .live-dot {
+  width: 7px; height: 7px; border-radius: 9999px; background: #10b981;
+  box-shadow: 0 0 0 0 rgba(16,185,129,0.6); animation: tnt-ping 1.8s infinite;
+}
+@keyframes tnt-ping {
+  0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.6); }
+  70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); }
+  100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+}
+.tnt-canvas .dirH__rrail-body { flex: 1; overflow: auto; padding: 4px 0; }
+
+/* ============================================================
+ * tenant-only bits — AI dock launcher accent, tabs, banners,
+ * stat tiles, status dots, activity feed, page headers
+ * ============================================================ */
+
+/* Status dots */
+.tnt-canvas .tnt__dot { width: 7px; height: 7px; border-radius: 9999px; display: inline-block; }
+.tnt-canvas .tnt__dot--ok { background: #10b981; }
+.tnt-canvas .tnt__dot--warn { background: #f59e0b; }
+.tnt-canvas .tnt__dot--err { background: #ef4444; }
+.tnt-canvas .tnt__dot--idle { background: #cbd5e1; }
+
+/* Banner */
+.tnt-canvas .tnt__banner {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 11px 14px; border-radius: 10px;
+  border: 1px solid;
+}
+.tnt-canvas .tnt__banner svg { width: 16px; height: 16px; margin-top: 1px; flex-shrink: 0; }
+.tnt-canvas .tnt__banner--info { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+.tnt-canvas .tnt__banner--warn { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+.tnt-canvas .tnt__banner--err { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+.tnt-canvas .tnt__banner--ok { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+.tnt-canvas .tnt__banner b { font-weight: 600; }
+.tnt-canvas .tnt__banner-row { display: flex; flex-direction: column; gap: 2px; flex: 1; font-size: 12px; }
+.tnt-canvas .tnt__banner-row .sub { font-weight: 400; opacity: 0.85; }
+
+/* KPI / stat tile */
+.tnt-canvas .tnt__stat {
+  background: #fff; border: 1px solid var(--br-border);
+  border-radius: 10px; padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.tnt-canvas .tnt__stat-label {
+  font-size: 11px; font-weight: 500; color: var(--br-text-secondary);
+  display: flex; align-items: center; gap: 5px;
+}
+.tnt-canvas .tnt__stat-label svg { width: 12px; height: 12px; }
+.tnt-canvas .tnt__stat-value {
+  font-size: 24px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1;
+  color: var(--br-text);
+}
+.tnt-canvas .tnt__stat-delta {
+  font-size: 11.5px; font-weight: 500;
+  display: flex; align-items: center; gap: 4px;
+}
+.tnt-canvas .tnt__stat-delta--up { color: #047857; }
+.tnt-canvas .tnt__stat-delta--down { color: #b91c1c; }
+.tnt-canvas .tnt__stat-delta svg { width: 12px; height: 12px; }
+
+/* Sparkline-ish bar mini chart */
+.tnt-canvas .tnt__bars { display: flex; align-items: flex-end; gap: 3px; height: 28px; }
+.tnt-canvas .tnt__bars span {
+  flex: 1; background: linear-gradient(180deg, #3b82f6, #93c5fd);
+  border-radius: 2px 2px 0 0; min-height: 2px;
+}
+
+/* Activity feed item */
+.tnt-canvas .tnt__act-row {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 9px 14px; border-bottom: 1px solid var(--br-border);
+}
+.tnt-canvas .tnt__act-icon {
+  width: 24px; height: 24px; border-radius: 6px;
+  background: var(--br-surface); border: 1px solid var(--br-border);
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.tnt-canvas .tnt__act-icon svg { width: 12px; height: 12px; }
+.tnt-canvas .tnt__act-body { font-size: 11.5px; line-height: 1.45; color: var(--br-text); flex: 1; }
+.tnt-canvas .tnt__act-time { font-size: 10.5px; color: var(--br-text-secondary); }
+
+/* Section header inside content pages */
+.tnt-canvas .tnt__page-h {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  margin-bottom: 18px; gap: 16px;
+}
+.tnt-canvas .tnt__page-h h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.015em; margin: 0; }
+.tnt-canvas .tnt__page-h .sub { font-size: 12.5px; color: var(--br-text-secondary); margin-top: 4px; }
+
+/* Empty state shell */
+.tnt-canvas .tnt__empty {
+  text-align: center; padding: 56px 24px;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+.tnt-canvas .tnt__empty-glyph {
+  width: 64px; height: 64px; border-radius: 16px;
+  background: linear-gradient(135deg, #eff6ff, #ecfeff);
+  border: 1px solid #dbeafe;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--br-primary);
+}
+.tnt-canvas .tnt__empty-glyph svg { width: 28px; height: 28px; }
+.tnt-canvas .tnt__empty-h { font-size: 17px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+.tnt-canvas .tnt__empty-p { font-size: 12.5px; color: var(--br-text-secondary); max-width: 360px; line-height: 1.5; margin: 0; }
+
+/* Embedded section host — wraps existing shadcn dashboard sections (Phase 2+
+ * targets). Neutralise the .tnt-canvas inherited font-size so the shadcn
+ * components inside render at their own scale. */
+.tnt-canvas .tnt__embed { font-size: 14px; line-height: 1.5; color: initial; }
+
+/* ============================================================
+ * Ask CNCPT dock — restyle the reused DashboardChat launcher so the
+ * floating bottom-right entry point reads as the "Ask CNCPT" dock.
+ * The DashboardChat renders outside .tnt-canvas, so this rule is global
+ * but namespaced by the data attribute we add to the launcher.
+ * ============================================================ */
+[data-tnt-ai-dock] {
+  position: fixed; right: 16px; bottom: 16px; z-index: 50;
+}
+.tnt-ai-dock-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #fff; border: 1px solid #e5e7eb;
+  border-radius: 12px; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.10), 0 4px 6px -4px rgb(0 0 0 / 0.10);
+  padding: 9px 12px; cursor: pointer;
+  font-family: var(--font-geist-sans), "Geist", sans-serif;
+}
+.tnt-ai-dock-pill:hover { box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.12); }
+.tnt-ai-dock-pill .mark {
+  width: 22px; height: 22px; border-radius: 6px;
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  color: #fff; display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.tnt-ai-dock-pill .mark svg { width: 13px; height: 13px; }
+.tnt-ai-dock-pill .title { font-size: 12px; font-weight: 600; color: #1f2937; }
+.tnt-ai-dock-pill .kbd {
+  font-family: var(--font-geist-mono), monospace; font-size: 10.5px;
+  background: #f8fafc; border: 1px solid #e5e7eb; border-bottom-width: 2px;
+  padding: 1px 5px; border-radius: 4px; color: #6b7280; line-height: 1;
+}
