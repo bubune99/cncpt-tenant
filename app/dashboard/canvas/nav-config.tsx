@@ -63,7 +63,7 @@ export const NAV: NavEntry[] = [
   { id: "analytics", label: "Analytics", icon: BarChart3, section: "analytics" },
 
   { heading: "Sites" },
-  { id: "subdomains", label: "Subdomains", icon: Globe, section: "overview" },
+  { id: "subdomains", label: "Subdomains", icon: Globe, section: "sites" },
   { id: "branding", label: "Branding", icon: Paintbrush, section: "branding" },
   { id: "domains", label: "Custom domains", icon: LinkIcon, section: "domains" },
   { id: "frontend", label: "Hosting", icon: Server, section: "frontend" },
@@ -96,6 +96,7 @@ export function isHeading(e: NavEntry): e is { heading: string } {
 export function activeNavId(section: string): string {
   const sectionToNav: Record<string, string> = {
     overview: "overview",
+    sites: "subdomains",
     analytics: "analytics",
     branding: "branding",
     domains: "domains",

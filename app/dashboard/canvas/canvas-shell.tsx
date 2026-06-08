@@ -20,6 +20,8 @@ import { CanvasSidebar } from "./canvas-sidebar"
 import { CanvasTopbar } from "./canvas-topbar"
 import { CanvasActivityRail } from "./canvas-activity-rail"
 import { CanvasOverview } from "./canvas-overview"
+import { CanvasSites } from "./canvas-sites"
+import { CanvasSubdomainDetail } from "./canvas-subdomain-detail"
 import { CommandPalette } from "./command-palette"
 import "./canvas.css"
 
@@ -34,6 +36,7 @@ interface CanvasShellProps {
 
 const SECTION_LABEL: Record<string, string> = {
   overview: "Overview",
+  sites: "Subdomains",
   analytics: "Analytics",
   branding: "Branding",
   domains: "Custom domains",
@@ -61,6 +64,13 @@ export function CanvasShell({
   setSelectedSubdomain,
 }: CanvasShellProps) {
   const [paletteOpen, setPaletteOpen] = useState(false)
+  // When viewing a single subdomain's detail (Sites section).
+  const [detailSubdomain, setDetailSubdomain] = useState<string | null>(null)
+
+  // Leave detail view whenever the section changes away from Sites.
+  useEffect(() => {
+    if (activeSection !== "sites") setDetailSubdomain(null)
+  }, [activeSection])
 
   // ⌘K / Ctrl+K opens the command palette.
   useEffect(() => {
@@ -75,7 +85,45 @@ export function CanvasShell({
   }, [])
 
   const crumbs = ["Workspace", SECTION_LABEL[activeSection] ?? "Overview"]
-  const isOverview = activeSection === "overview"
+  const isSitesDetail = activeSection === "sites" && detailSubdomain
+
+  // The Sites detail renders its own topbar (with tabs); every other view uses
+  // the default CanvasTopbar.
+  const renderMain = () => {
+    if (activeSection === "overview") {
+      return <CanvasOverview user={user} subdomains={subdomains} selectedSubdomain={selectedSubdomain} />
+    }
+    if (activeSection === "sites") {
+      if (detailSubdomain) {
+        return (
+          <CanvasSubdomainDetail
+            subdomain={detailSubdomain}
+            subdomains={subdomains}
+            onBack={() => setDetailSubdomain(null)}
+          />
+        )
+      }
+      return (
+        <CanvasSites
+          subdomains={subdomains}
+          onManage={(s) => { setSelectedSubdomain(s); setDetailSubdomain(s) }}
+        />
+      )
+    }
+    // Existing shadcn sections, hosted inside the canvas shell.
+    return (
+      <div className="dirH__page">
+        <div className="tnt__embed">
+          <DashboardContent
+            user={user}
+            subdomains={subdomains}
+            activeSection={activeSection}
+            selectedSubdomain={selectedSubdomain}
+          />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="tnt-canvas dirH br-theme">
@@ -90,24 +138,8 @@ export function CanvasShell({
       />
 
       <div className="dirH__main">
-        <CanvasTopbar crumbs={crumbs} userInitials={userInitials(user)} />
-
-        {isOverview ? (
-          <CanvasOverview user={user} subdomains={subdomains} selectedSubdomain={selectedSubdomain} />
-        ) : (
-          <div className="dirH__page">
-            {/* Existing shadcn sections, hosted inside the canvas shell.
-                .tnt__embed resets the canvas font-scale so they look right. */}
-            <div className="tnt__embed">
-              <DashboardContent
-                user={user}
-                subdomains={subdomains}
-                activeSection={activeSection}
-                selectedSubdomain={selectedSubdomain}
-              />
-            </div>
-          </div>
-        )}
+        {isSitesDetail ? null : <CanvasTopbar crumbs={crumbs} userInitials={userInitials(user)} />}
+        {renderMain()}
       </div>
 
       <CanvasActivityRail subdomains={subdomains} />
