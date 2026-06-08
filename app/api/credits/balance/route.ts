@@ -19,20 +19,30 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Get balance
+    // Get balance (getUserCreditBalance already fails safe to a zero balance)
     const balance = await getUserCreditBalance(user.id)
 
-    // Get recent transactions
-    const rows = await sql`
-      SELECT id, type,
-        CASE WHEN type = 'usage' THEN -(monthly_amount + purchased_amount)
-             ELSE (monthly_amount + purchased_amount) END as amount,
-        feature, description, created_at
-      FROM ai_credit_transactions
-      WHERE user_id = ${user.id}
-      ORDER BY created_at DESC
-      LIMIT 20
-    `
+    // Get recent transactions. The credit ledger table may not be provisioned
+    // in every environment (e.g. tenants where the credits feature was never
+    // migrated). Isolate this query so a missing table degrades to an empty
+    // transaction list instead of failing the whole endpoint with a 500 — the
+    // balance above is still useful on its own.
+    let rows: Array<Record<string, unknown>> = []
+    try {
+      rows = await sql`
+        SELECT id, type,
+          CASE WHEN type = 'usage' THEN -(monthly_amount + purchased_amount)
+               ELSE (monthly_amount + purchased_amount) END as amount,
+          feature, description, created_at
+        FROM ai_credit_transactions
+        WHERE user_id = ${user.id}
+        ORDER BY created_at DESC
+        LIMIT 20
+      `
+    } catch (txError) {
+      console.warn("[credits-balance] transactions unavailable:", txError)
+      rows = []
+    }
 
     return NextResponse.json({
       balance: {
