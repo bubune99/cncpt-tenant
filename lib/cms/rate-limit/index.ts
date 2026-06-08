@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Ratelimit } from '@upstash/ratelimit';
 import { redis } from '@/lib/redis';
+import { resolveRateLimit } from './resolve';
 
 // ---------------------------------------------------------------------------
 // IP extraction helper
@@ -79,34 +80,90 @@ function getLimiter(config: RateLimitConfig): Ratelimit {
 // Main helper — call at the top of any route handler
 // ---------------------------------------------------------------------------
 
+/** Optional context that lets owner-configured rules apply to this request. */
+export interface RateLimitCheckOptions {
+  /** Logical endpoint name (preset key) for endpoint-scoped rules. */
+  name?: string;
+  /** Tenant subdomain, when known, for tenant-scoped rules. */
+  tenant?: string | null;
+}
+
 /**
  * Check rate limit for the current request.
  *
- * Returns `null` if the request is within limits, or a `NextResponse` (429)
- * if the limit has been exceeded.
+ * Layers owner-configured DB rules (global / per-tenant / per-endpoint) on top
+ * of the hardcoded `config` preset, which always remains the safety floor.
+ *
+ * Behaviour depends on the resolved mode:
+ * - "off"     → never limited (returns null)
+ * - "observe" → counts the request but NEVER blocks (returns null even when
+ *               over the limit); exposes `X-RateLimit-Mode: observe` so the
+ *               overage is still measurable. This is the safe default and
+ *               cannot lock anyone out.
+ * - "enforce" → returns a 429 when the limit is exceeded.
+ *
+ * Returns `null` when the request may proceed, or a `NextResponse` (429) when
+ * enforced and over the limit.
  *
  * Usage:
  * ```ts
- * export async function POST(request: NextRequest) {
- *   const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.auth);
- *   if (limited) return limited;
- *   // ... rest of handler
- * }
+ * const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.auth, { name: 'auth' });
+ * if (limited) return limited;
  * ```
  */
 export async function rateLimitCheck(
   request: NextRequest,
   config: RateLimitConfig,
+  options: RateLimitCheckOptions = {},
 ): Promise<NextResponse | null> {
+  const path = new URL(request.url).pathname;
+
+  // Per-tenant rules apply automatically: middleware sets `x-subdomain` on
+  // tenant requests, so we can resolve the tenant without changing call sites.
+  const tenant =
+    options.tenant ?? request.headers.get('x-subdomain') ?? null;
+
+  // Resolve the effective limit + mode from owner config (fails open).
+  let resolved;
+  try {
+    resolved = await resolveRateLimit({
+      preset: config,
+      name: options.name ?? config.keyPrefix,
+      path,
+      tenant,
+    });
+  } catch (error) {
+    // Never let the config layer break a live route — fall back to the preset
+    // in enforce mode (its original behaviour).
+    console.error('[rate-limit] resolve failed, using preset:', error);
+    resolved = {
+      maxRequests: config.maxRequests,
+      windowMs: config.windowMs,
+      mode: 'enforce' as const,
+      source: 'preset' as const,
+    };
+  }
+
+  if (resolved.mode === 'off') return null;
+
   const ip = getClientIp(request);
-  const prefix = config.keyPrefix ?? new URL(request.url).pathname;
+  const prefix = config.keyPrefix ?? path;
   const key = `${prefix}:${ip}`;
 
-  const limiter = getLimiter(config);
-  const { success, remaining, reset } = await limiter.limit(key);
+  const limiter = getLimiter({ maxRequests: resolved.maxRequests, windowMs: resolved.windowMs });
+  const { success, reset } = await limiter.limit(key);
 
   if (!success) {
     const retryAfterSec = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
+
+    // Observe mode: record the overage but let the request through.
+    if (resolved.mode === 'observe') {
+      console.warn(
+        `[rate-limit] OBSERVE overage key=${key} source=${resolved.source} limit=${resolved.maxRequests}/${resolved.windowMs}ms`,
+      );
+      return null;
+    }
+
     return NextResponse.json(
       {
         error: 'Too many requests. Please try again later.',
@@ -116,9 +173,11 @@ export async function rateLimitCheck(
         status: 429,
         headers: {
           'Retry-After': String(retryAfterSec),
-          'X-RateLimit-Limit': String(config.maxRequests),
+          'X-RateLimit-Limit': String(resolved.maxRequests),
           'X-RateLimit-Remaining': '0',
           'X-RateLimit-Reset': String(Math.ceil(reset / 1000)),
+          'X-RateLimit-Mode': resolved.mode,
+          'X-RateLimit-Source': resolved.source,
         },
       },
     );

@@ -68,6 +68,7 @@ import {
   Pencil,
   Plus,
   Bell,
+  Gauge,
 } from "lucide-react"
 import "@/app/admin/cncpt-admin.css"
 import { deleteSubdomainAction } from "@/app/actions"
@@ -76,6 +77,7 @@ import { useRouter } from "next/navigation"
 import { useUser } from "@stackframe/stack"
 import { TiersPageContent } from "./tiers/page"
 import { ClientsPageContent } from "./clients/page"
+import { RateLimitsSection } from "./rate-limits-section"
 import type { SubscriptionTier, ClientStats } from "@/types/admin"
 
 type Tenant = {
@@ -94,7 +96,7 @@ type SuperAdminInfo = {
   permissions: string[]
 }
 
-type AdminSection = "overview" | "clients" | "tiers" | "subdomains" | "users" | "teams" | "analytics" | "activity" | "feedback" | "settings" | "ai-credits" | "overrides"
+type AdminSection = "overview" | "clients" | "tiers" | "subdomains" | "users" | "teams" | "analytics" | "activity" | "feedback" | "settings" | "ai-credits" | "overrides" | "rate-limits"
 
 function AdminSidebar({
   activeSection,
@@ -4529,6 +4531,8 @@ export function AdminDashboard({
         return <FeedbackSection adminUserId={adminUserId} />
       case "settings":
         return <SettingsSection />
+      case "rate-limits":
+        return <RateLimitsSection />
       default:
         return <OverviewSection />
     }
@@ -4548,6 +4552,7 @@ export function AdminDashboard({
     activity: "Activity Log",
     feedback: "Feedback",
     settings: "Platform Settings",
+    "rate-limits": "Rate Limiting",
   }
 
   const crumbs = ["CNCPT Admin", sectionLabel[activeSection] ?? activeSection]
@@ -4589,6 +4594,7 @@ export function AdminDashboard({
               { id: "analytics" as AdminSection, label: "Analytics",           Icon: BarChart3 },
               { id: "activity" as AdminSection,  label: "Activity Log",        Icon: History },
               { separator: "Settings" },
+              { id: "rate-limits" as AdminSection, label: "Rate Limiting",      Icon: Gauge },
               { id: "settings" as AdminSection,  label: "Platform Settings",   Icon: Settings },
             ].map((item, i) => {
               if ("separator" in item) {
