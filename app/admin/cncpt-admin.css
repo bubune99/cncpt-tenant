@@ -93,6 +93,23 @@
   font-family: inherit;
 }
 
+/* --- Dark theme -------------------------------------------------------- *
+ * Brand accent stays constant; neutral surface/text/border tokens derive
+ * from the shadcn semantic variables (globals.css :root / .dark) so the whole
+ * super-admin shell + sections flip with the theme toggle and stay consistent
+ * with the embedded shadcn components (dialogs, selects, popovers). */
+.dark .cncpt-admin {
+  --ca-bg: var(--background);
+  --ca-surface: var(--card);
+  --ca-surface-2: var(--muted);
+  --ca-text: var(--foreground);
+  --ca-text-soft: var(--muted-foreground);
+  --ca-text-faint: var(--muted-foreground);
+  --ca-border: var(--border);
+  --ca-border-soft: var(--border);
+  --ca-primary-50: color-mix(in srgb, var(--ca-primary) 18%, transparent);
+}
+
 /* --------------------------------------------------------------------------
  * Layout shell — full-screen flex row: sidebar | main | rrail
  * ---------------------------------------------------------------------- */
@@ -197,7 +214,7 @@
 }
 
 .ca-sidebar__role-switch button.is-on {
-  background: #fff;
+  background: var(--ca-surface);
   color: var(--ca-text);
   box-shadow: var(--ca-shadow-sm);
 }
@@ -519,7 +536,7 @@
 .ca-kbd {
   font-family: var(--ca-mono);
   font-size: 10.5px;
-  background: #fff;
+  background: var(--ca-surface);
   border: 1px solid var(--ca-border);
   border-bottom-width: 2px;
   padding: 1px 5px;
@@ -546,7 +563,7 @@
 
 .ca-pill .ca-dot { width: 6px; height: 6px; border-radius: var(--ca-r-pill); background: currentColor; opacity: 0.8; }
 
-.ca-pill--blue   { background: #dbeafe; color: #1d4ed8; border-color: transparent; }
+.ca-pill--blue   { background: #dbeafe; color: var(--ca-primary-600); border-color: transparent; }
 .ca-pill--green  { background: #d1fae5; color: #047857; border-color: transparent; }
 .ca-pill--amber  { background: #fef3c7; color: #92400e; border-color: transparent; }
 .ca-pill--rose   { background: #ffe4e6; color: #be123c; border-color: transparent; }
@@ -586,11 +603,11 @@
 
 .ca-btn--primary { background: var(--ca-primary); color: #fff; border-color: var(--ca-primary); }
 .ca-btn--primary:hover { background: var(--ca-primary-600); border-color: var(--ca-primary-600); }
-.ca-btn--secondary { background: #fff; border-color: var(--ca-border); color: var(--ca-text); }
+.ca-btn--secondary { background: var(--ca-surface); border-color: var(--ca-border); color: var(--ca-text); }
 .ca-btn--secondary:hover { background: var(--ca-bg); }
 .ca-btn--ghost { color: var(--ca-text-soft); }
 .ca-btn--ghost:hover { background: var(--ca-bg); color: var(--ca-text); }
-.ca-btn--danger { background: #fff; border-color: #fecaca; color: #b91c1c; }
+.ca-btn--danger { background: var(--ca-surface); border-color: #fecaca; color: #b91c1c; }
 .ca-btn--danger:hover { background: #fef2f2; }
 .ca-btn--grad { background: linear-gradient(135deg, #2563eb 0%, #ea580c 100%); color: #fff; border-color: transparent; }
 
@@ -604,7 +621,7 @@
   height: 28px;
   border-radius: 6px;
   border: 1px solid var(--ca-border);
-  background: #fff;
+  background: var(--ca-surface);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -757,7 +774,7 @@
   vertical-align: middle;
 }
 
-.ca-table tbody tr:hover { background: #f8fafc; }
+.ca-table tbody tr:hover { background: var(--ca-bg); }
 .ca-table tbody tr.is-selected { background: var(--ca-primary-50); }
 .ca-table tbody tr:last-child td { border-bottom: 0; }
 
@@ -856,7 +873,7 @@
   font-size: 12.5px;
 }
 
-.ca-banner--info  { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+.ca-banner--info  { background: var(--ca-primary-50); border-color: #bfdbfe; color: #1e40af; }
 .ca-banner--warn  { background: #fffbeb; border-color: #fde68a; color: #92400e; }
 .ca-banner--err   { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
 .ca-banner--ok    { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
@@ -880,9 +897,9 @@
 }
 
 .ca-role-chip--owner    { background: #fef3c7; color: #92400e; }
-.ca-role-chip--admin    { background: #dbeafe; color: #1d4ed8; }
+.ca-role-chip--admin    { background: #dbeafe; color: var(--ca-primary-600); }
 .ca-role-chip--editor   { background: #ede9fe; color: #6d28d9; }
-.ca-role-chip--viewer   { background: #f1f5f9; color: #475569; }
+.ca-role-chip--viewer   { background: var(--ca-surface-2); color: #475569; }
 .ca-role-chip--custom   { background: #ccfbf1; color: #115e59; }
 .ca-role-chip--trial    { background: #fef3c7; color: #92400e; }
 .ca-role-chip--active   { background: #d1fae5; color: #047857; }
@@ -1032,7 +1049,7 @@
   width: 13px;
   height: 13px;
   border-radius: var(--ca-r-pill);
-  background: #fff;
+  background: var(--ca-surface);
   box-shadow: 0 1px 2px rgba(0,0,0,0.15);
   transition: transform 0.15s;
 }
@@ -1088,7 +1105,7 @@
   flex-shrink: 0;
 }
 
-.ca-modal__icon--info   { background: #eff6ff; color: #1d4ed8; }
+.ca-modal__icon--info   { background: var(--ca-primary-50); color: var(--ca-primary-600); }
 .ca-modal__icon--danger { background: #fef2f2; color: #b91c1c; }
 .ca-modal__icon--ok     { background: #ecfdf5; color: #047857; }
 

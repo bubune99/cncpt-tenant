@@ -77,8 +77,8 @@ export function OrderSummaryCard({
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-3">
         <div>
-          <p className="font-semibold text-gray-900 dark:text-white">#{orderNumber}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{date}</p>
+          <p className="font-semibold text-foreground dark:text-white">#{orderNumber}</p>
+          <p className="text-sm text-muted-foreground dark:text-gray-400">{date}</p>
         </div>
         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${config.color}`}>
           <StatusIcon className="h-3.5 w-3.5" />
@@ -87,12 +87,12 @@ export function OrderSummaryCard({
       </div>
 
       <div className="flex items-center justify-between text-sm mb-3">
-        <span className="text-gray-600 dark:text-gray-300">{itemCount} item{itemCount !== 1 ? 's' : ''}</span>
-        <span className="font-semibold text-gray-900 dark:text-white">{total}</span>
+        <span className="text-muted-foreground dark:text-gray-300">{itemCount} item{itemCount !== 1 ? 's' : ''}</span>
+        <span className="font-semibold text-foreground dark:text-white">{total}</span>
       </div>
 
       {trackingNumber && (
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+        <p className="text-xs text-muted-foreground dark:text-gray-400 mb-3">
           Tracking: <span className="font-mono">{trackingNumber}</span>
         </p>
       )}
@@ -156,7 +156,7 @@ export function OrderHistoryList({
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+        <h3 className="text-lg font-semibold text-foreground dark:text-white flex items-center gap-2">
           <ShoppingBag className="h-5 w-5" />
           {title}
         </h3>
@@ -177,15 +177,15 @@ export function OrderHistoryList({
 
       {isLoading ? (
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : isError ? (
-        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+        <div className="text-center py-8 text-muted-foreground dark:text-gray-400">
           <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50 text-red-400" />
           <p>Unable to load orders</p>
         </div>
       ) : orders.length === 0 ? (
-        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+        <div className="text-center py-8 text-muted-foreground dark:text-gray-400">
           <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
           <p>{emptyMessage}</p>
         </div>
@@ -250,19 +250,19 @@ export function ShippingTracker({
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+      <h3 className="text-lg font-semibold text-foreground dark:text-white mb-4 flex items-center gap-2">
         <Truck className="h-5 w-5" />
         {title}
       </h3>
 
       <div className="flex items-center justify-between text-sm mb-6">
         <div>
-          <p className="text-gray-500 dark:text-gray-400">Carrier</p>
-          <p className="font-medium text-gray-900 dark:text-white">{carrier}</p>
+          <p className="text-muted-foreground dark:text-gray-400">Carrier</p>
+          <p className="font-medium text-foreground dark:text-white">{carrier}</p>
         </div>
         <div className="text-right">
-          <p className="text-gray-500 dark:text-gray-400">Est. Delivery</p>
-          <p className="font-medium text-gray-900 dark:text-white">{estimatedDelivery}</p>
+          <p className="text-muted-foreground dark:text-gray-400">Est. Delivery</p>
+          <p className="font-medium text-foreground dark:text-white">{estimatedDelivery}</p>
         </div>
       </div>
 
@@ -280,12 +280,12 @@ export function ShippingTracker({
                   className={`w-10 h-10 rounded-full flex items-center justify-center ${
                     isCompleted
                       ? 'bg-green-500 text-white'
-                      : 'bg-gray-200 dark:bg-gray-700 text-gray-400'
+                      : 'bg-muted dark:bg-gray-700 text-muted-foreground'
                   } ${isCurrent ? 'ring-2 ring-green-300 ring-offset-2' : ''}`}
                 >
                   <StepIcon className="h-5 w-5" />
                 </div>
-                <p className={`text-xs mt-2 text-center ${isCompleted ? 'text-green-600 font-medium' : 'text-gray-400'}`}>
+                <p className={`text-xs mt-2 text-center ${isCompleted ? 'text-green-600 font-medium' : 'text-muted-foreground'}`}>
                   {step.label}
                 </p>
               </div>
@@ -293,7 +293,7 @@ export function ShippingTracker({
           })}
         </div>
         {/* Progress Line */}
-        <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200 dark:bg-gray-700 -z-0" style={{ marginLeft: '20px', marginRight: '20px' }}>
+        <div className="absolute top-5 left-0 right-0 h-0.5 bg-muted dark:bg-gray-700 -z-0" style={{ marginLeft: '20px', marginRight: '20px' }}>
           <div
             className="h-full bg-green-500 transition-all duration-500"
             style={{ width: `${(currentIndex / (steps.length - 1)) * 100}%` }}
@@ -302,8 +302,8 @@ export function ShippingTracker({
       </div>
 
       <div className="text-sm">
-        <p className="text-gray-500 dark:text-gray-400">Tracking Number</p>
-        <p className="font-mono text-gray-900 dark:text-white">{trackingNumber}</p>
+        <p className="text-muted-foreground dark:text-gray-400">Tracking Number</p>
+        <p className="font-mono text-foreground dark:text-white">{trackingNumber}</p>
       </div>
     </div>
   );
@@ -358,7 +358,7 @@ export function AccountOverview({
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       </div>
     );
@@ -367,11 +367,11 @@ export function AccountOverview({
   if (!isAuthenticated || !profile) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+        <h3 className="text-lg font-semibold text-foreground dark:text-white mb-4 flex items-center gap-2">
           <User className="h-5 w-5" />
           {title}
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-sm text-muted-foreground dark:text-gray-400">
           Please sign in to view your account.
         </p>
         <a
@@ -387,7 +387,7 @@ export function AccountOverview({
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+      <h3 className="text-lg font-semibold text-foreground dark:text-white mb-4 flex items-center gap-2">
         <User className="h-5 w-5" />
         {title}
       </h3>
@@ -407,15 +407,15 @@ export function AccountOverview({
           )
         )}
         <div className="flex-1">
-          <p className="font-semibold text-gray-900 dark:text-white">{displayName}</p>
+          <p className="font-semibold text-foreground dark:text-white">{displayName}</p>
           {showEmail && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+            <p className="text-sm text-muted-foreground dark:text-gray-400 flex items-center gap-1">
               <Mail className="h-3.5 w-3.5" />
               {profile.email}
             </p>
           )}
           {showMemberSince && memberSince && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+            <p className="text-sm text-muted-foreground dark:text-gray-400 flex items-center gap-1">
               <Calendar className="h-3.5 w-3.5" />
               Member since {memberSince}
             </p>
@@ -470,8 +470,8 @@ export function AddressCard({
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-gray-400" />
-          <span className="text-sm font-medium text-gray-600 dark:text-gray-300 capitalize">{type}</span>
+          <MapPin className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium text-muted-foreground dark:text-gray-300 capitalize">{type}</span>
         </div>
         {isDefault && (
           <span className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-2 py-0.5 rounded">
@@ -480,13 +480,13 @@ export function AddressCard({
         )}
       </div>
 
-      <div className="text-sm text-gray-900 dark:text-white">
+      <div className="text-sm text-foreground dark:text-white">
         <p className="font-medium">{name}</p>
         <p>{street}</p>
         <p>{city}, {state} {zip}</p>
         <p>{country}</p>
         {phone && (
-          <p className="flex items-center gap-1 mt-1 text-gray-500 dark:text-gray-400">
+          <p className="flex items-center gap-1 mt-1 text-muted-foreground dark:text-gray-400">
             <Phone className="h-3.5 w-3.5" />
             {phone}
           </p>
@@ -531,7 +531,7 @@ export function WishlistItem({
 }: WishlistItemProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-      <div className="aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg mb-3 overflow-hidden">
+      <div className="aspect-square bg-muted dark:bg-gray-700 rounded-lg mb-3 overflow-hidden">
         <img
           src={productImage}
           alt={productName}
@@ -542,12 +542,12 @@ export function WishlistItem({
         />
       </div>
 
-      <h4 className="font-medium text-gray-900 dark:text-white text-sm mb-1 line-clamp-2">{productName}</h4>
+      <h4 className="font-medium text-foreground dark:text-white text-sm mb-1 line-clamp-2">{productName}</h4>
 
       <div className="flex items-center gap-2 mb-2">
-        <span className="font-semibold text-gray-900 dark:text-white">{price}</span>
+        <span className="font-semibold text-foreground dark:text-white">{price}</span>
         {originalPrice && (
-          <span className="text-sm text-gray-400 line-through">{originalPrice}</span>
+          <span className="text-sm text-muted-foreground line-through">{originalPrice}</span>
         )}
       </div>
 
@@ -565,7 +565,7 @@ export function WishlistItem({
           </button>
         )}
         {showRemove && (
-          <button className="p-2 text-gray-400 hover:text-red-500">
+          <button className="p-2 text-muted-foreground hover:text-red-500">
             <Heart className="h-5 w-5 fill-current" />
           </button>
         )}
@@ -603,27 +603,27 @@ export function LoyaltyPointsWidget({
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+      <h3 className="text-lg font-semibold text-foreground dark:text-white mb-4 flex items-center gap-2">
         <Gift className="h-5 w-5" />
         {title}
       </h3>
 
       <div className="flex items-center gap-4 mb-4">
         <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${tierColors[tier] || tierColors.Bronze} flex items-center justify-center`}>
-          <Star className="h-8 w-8 text-white" />
+          <Star className="h-8 w-8 text-foreground" />
         </div>
         <div>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">{points.toLocaleString()}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{tier} Member</p>
+          <p className="text-3xl font-bold text-foreground dark:text-white">{points.toLocaleString()}</p>
+          <p className="text-sm text-muted-foreground dark:text-gray-400">{tier} Member</p>
         </div>
       </div>
 
       <div className="mb-4">
         <div className="flex justify-between text-sm mb-1">
-          <span className="text-gray-500 dark:text-gray-400">Next Tier</span>
+          <span className="text-muted-foreground dark:text-gray-400">Next Tier</span>
           <span className="text-gray-700 dark:text-gray-300">{pointsToNextTier} points away</span>
         </div>
-        <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div className="h-2 bg-muted dark:bg-gray-700 rounded-full overflow-hidden">
           <div
             className={`h-full bg-gradient-to-r ${tierColors[tier] || tierColors.Bronze}`}
             style={{ width: `${Math.max(10, 100 - (pointsToNextTier / 50))}%` }}
@@ -672,11 +672,11 @@ export function SupportWidget({
 }: SupportWidgetProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+      <h3 className="text-lg font-semibold text-foreground dark:text-white mb-2 flex items-center gap-2">
         <HelpCircle className="h-5 w-5" />
         {title}
       </h3>
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{description}</p>
+      <p className="text-sm text-muted-foreground dark:text-gray-400 mb-4">{description}</p>
 
       <div className="space-y-3">
         {showEmail && (
@@ -759,13 +759,13 @@ export function QuickActionsGrid({
     green: 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400',
     red: 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400',
     purple: 'bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-400',
-    gray: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',
+    gray: 'bg-muted text-muted-foreground dark:bg-gray-700 dark:text-gray-400',
     yellow: 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-400',
   };
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{title}</h3>
+      <h3 className="text-lg font-semibold text-foreground dark:text-white mb-4">{title}</h3>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {actions.map((action, index) => {
@@ -776,7 +776,7 @@ export function QuickActionsGrid({
             <a
               key={index}
               href={action.url}
-              className="flex flex-col items-center p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="flex flex-col items-center p-4 rounded-lg hover:bg-muted dark:hover:bg-gray-700 transition-colors"
             >
               <div className={`w-12 h-12 rounded-full ${colorClass} flex items-center justify-center mb-2`}>
                 <Icon className="h-6 w-6" />
@@ -847,12 +847,12 @@ export function PaymentMethodsList({
   if (isLoading || isLoadingMethods) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+        <h3 className="text-lg font-semibold text-foreground dark:text-white mb-4 flex items-center gap-2">
           <CreditCard className="h-5 w-5" />
           {title}
         </h3>
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       </div>
     );
@@ -861,11 +861,11 @@ export function PaymentMethodsList({
   if (!isAuthenticated) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+        <h3 className="text-lg font-semibold text-foreground dark:text-white mb-4 flex items-center gap-2">
           <CreditCard className="h-5 w-5" />
           {title}
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-sm text-muted-foreground dark:text-gray-400">
           Please sign in to view your payment methods.
         </p>
       </div>
@@ -874,13 +874,13 @@ export function PaymentMethodsList({
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+      <h3 className="text-lg font-semibold text-foreground dark:text-white mb-4 flex items-center gap-2">
         <CreditCard className="h-5 w-5" />
         {title}
       </h3>
 
       {methods.length === 0 ? (
-        <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+        <div className="text-center py-6 text-muted-foreground dark:text-gray-400">
           <CreditCard className="h-10 w-10 mx-auto mb-2 opacity-50" />
           <p className="text-sm">No payment methods saved</p>
         </div>
@@ -892,14 +892,14 @@ export function PaymentMethodsList({
               className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg"
             >
               <div className="flex items-center gap-3">
-                <div className="w-12 h-8 bg-gray-100 dark:bg-gray-700 rounded flex items-center justify-center text-xs font-bold text-gray-600 dark:text-gray-400">
+                <div className="w-12 h-8 bg-muted dark:bg-gray-700 rounded flex items-center justify-center text-xs font-bold text-muted-foreground dark:text-gray-400">
                   {cardIcons[method.type] || method.type.toUpperCase()}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  <p className="text-sm font-medium text-foreground dark:text-white">
                     •••• {method.last4}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Expires {method.expiry}</p>
+                  <p className="text-xs text-muted-foreground dark:text-gray-400">Expires {method.expiry}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -908,7 +908,7 @@ export function PaymentMethodsList({
                     Default
                   </span>
                 )}
-                <button className="text-sm text-gray-400 hover:text-gray-600">Edit</button>
+                <button className="text-sm text-muted-foreground hover:text-foreground">Edit</button>
               </div>
             </div>
           ))}

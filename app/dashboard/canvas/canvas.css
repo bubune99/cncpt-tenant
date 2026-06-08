@@ -62,6 +62,22 @@
   overflow: hidden;
 }
 
+/* --- Dark theme -------------------------------------------------------- *
+ * The brand accent stays constant; the neutral surface/text/border tokens
+ * derive from the shadcn semantic variables (globals.css :root / .dark) so
+ * the entire Canvas chrome + every section flips with the theme toggle and
+ * stays consistent with the embedded shadcn components. */
+.dark .tnt-canvas {
+  --br-background: var(--card);
+  --br-surface: var(--background);
+  --br-surface-hover: var(--muted);
+  --br-text: var(--foreground);
+  --br-text-secondary: var(--muted-foreground);
+  --br-text-faint: var(--muted-foreground);
+  --br-border: var(--border);
+  --br-primary-50: color-mix(in srgb, var(--br-primary) 18%, transparent);
+}
+
 .tnt-canvas *,
 .tnt-canvas *::before,
 .tnt-canvas *::after { box-sizing: border-box; }
@@ -94,7 +110,7 @@
 
 .tnt-canvas .kbd {
   font-family: var(--br-font-mono); font-size: 10.5px;
-  background: #fff; border: 1px solid var(--br-border);
+  background: var(--br-background); border: 1px solid var(--br-border);
   border-bottom-width: 2px;
   padding: 1px 5px; border-radius: 4px; color: var(--br-text-secondary);
   line-height: 1; display: inline-flex; align-items: center;
@@ -108,12 +124,12 @@
   border: 1px solid var(--br-border);
 }
 .tnt-canvas .pill .dot { width: 6px; height: 6px; border-radius: 9999px; background: currentColor; opacity: 0.8; }
-.tnt-canvas .pill--blue { background: #dbeafe; color: #1d4ed8; border-color: transparent; }
+.tnt-canvas .pill--blue { background: #dbeafe; color: var(--br-primary-600); border-color: transparent; }
 .tnt-canvas .pill--green { background: #d1fae5; color: #047857; border-color: transparent; }
 .tnt-canvas .pill--amber { background: #fef3c7; color: #92400e; border-color: transparent; }
 .tnt-canvas .pill--rose { background: #ffe4e6; color: #be123c; border-color: transparent; }
 .tnt-canvas .pill--violet { background: #ede9fe; color: #6d28d9; border-color: transparent; }
-.tnt-canvas .pill--slate { background: #e2e8f0; color: #334155; border-color: transparent; }
+.tnt-canvas .pill--slate { background: var(--br-surface); color: var(--br-text); border-color: transparent; }
 
 .tnt-canvas .tag-sm {
   display: inline-flex; align-items: center; gap: 4px;
@@ -133,17 +149,17 @@
 .tnt-canvas .btn svg { width: 14px; height: 14px; }
 .tnt-canvas .btn--primary { background: var(--br-primary); color: #fff; border-color: var(--br-primary); }
 .tnt-canvas .btn--primary:hover { background: var(--br-primary-600); }
-.tnt-canvas .btn--secondary { background: #fff; border-color: var(--br-border); color: var(--br-text); }
+.tnt-canvas .btn--secondary { background: var(--br-background); border-color: var(--br-border); color: var(--br-text); }
 .tnt-canvas .btn--secondary:hover { background: var(--br-surface); }
 .tnt-canvas .btn--ghost { color: var(--br-text-secondary); }
 .tnt-canvas .btn--ghost:hover { background: var(--br-surface); color: var(--br-text); }
-.tnt-canvas .btn--danger { background: #fff; border-color: #fecaca; color: #b91c1c; }
+.tnt-canvas .btn--danger { background: var(--br-background); border-color: #fecaca; color: #b91c1c; }
 .tnt-canvas .btn--xs { padding: 4px 8px; font-size: 11.5px; }
 .tnt-canvas .btn--lg { padding: 9px 14px; font-size: 13.5px; }
 
 .tnt-canvas .iconbtn {
   width: 28px; height: 28px; border-radius: 6px;
-  border: 1px solid var(--br-border); background: #fff;
+  border: 1px solid var(--br-border); background: var(--br-background);
   display: inline-flex; align-items: center; justify-content: center;
   color: var(--br-text);
 }
@@ -153,7 +169,7 @@
 .tnt-canvas .iconbtn svg { width: 14px; height: 14px; }
 
 .tnt-canvas .card {
-  background: #fff;
+  background: var(--br-background);
   border: 1px solid var(--br-border);
   border-radius: 10px;
 }
@@ -171,7 +187,7 @@
 .tnt-canvas.dirH { background: var(--br-surface); }
 
 .tnt-canvas .dirH__rail {
-  width: 224px; background: #fff;
+  width: 224px; background: var(--br-background);
   border-right: 1px solid var(--br-border);
   display: flex; flex-direction: column;
   flex-shrink: 0;
@@ -202,7 +218,7 @@
 }
 .tnt-canvas .tnt__site-mark {
   width: 22px; height: 22px; border-radius: 5px;
-  background: #fff; border: 1px solid var(--br-border);
+  background: var(--br-background); border: 1px solid var(--br-border);
   display: inline-flex; align-items: center; justify-content: center;
   font-size: 11px; font-weight: 700; color: var(--br-primary);
   flex-shrink: 0;
@@ -227,7 +243,7 @@
   font-size: 10.5px; font-weight: 500; color: var(--br-text-secondary);
   padding: 10px 8px 4px;
 }
-.tnt-canvas .dirH__nav-h svg { width: 11px; height: 11px; color: #94a3b8; }
+.tnt-canvas .dirH__nav-h svg { width: 11px; height: 11px; color: var(--br-text-faint, var(--br-text-secondary)); }
 .tnt-canvas .dirH__nav-item {
   display: flex; align-items: center; gap: 8px;
   padding: 5px 8px; border-radius: 5px;
@@ -237,15 +253,15 @@
 }
 .tnt-canvas .dirH__nav-item svg { width: 14px; height: 14px; color: var(--br-text-secondary); flex-shrink: 0; }
 .tnt-canvas .dirH__nav-item:hover { background: var(--br-surface); }
-.tnt-canvas .dirH__nav-item.is-active { background: #eff6ff; color: #1d4ed8; font-weight: 500; }
-.tnt-canvas .dirH__nav-item.is-active svg { color: #2563eb; }
+.tnt-canvas .dirH__nav-item.is-active { background: var(--br-primary-50); color: var(--br-primary-600); font-weight: 500; }
+.tnt-canvas .dirH__nav-item.is-active svg { color: var(--br-primary-600); }
 .tnt-canvas .dirH__nav-item .badge {
   margin-left: auto;
   font-size: 10.5px; color: var(--br-text-secondary);
   font-variant-numeric: tabular-nums;
 }
 .tnt-canvas .dirH__nav-item .badge.is-hot { color: #dc2626; font-weight: 600; }
-.tnt-canvas .dirH__nav-item .badge.is-blue { color: #1d4ed8; font-weight: 600; }
+.tnt-canvas .dirH__nav-item .badge.is-blue { color: var(--br-primary-600); font-weight: 600; }
 
 .tnt-canvas .dirH__rail-foot {
   border-top: 1px solid var(--br-border);
@@ -257,14 +273,14 @@
 /* Main column */
 .tnt-canvas .dirH__main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
 .tnt-canvas .dirH__top {
-  height: 48px; background: #fff;
+  height: 48px; background: var(--br-background);
   border-bottom: 1px solid var(--br-border);
   display: flex; align-items: center; gap: 10px;
   padding: 0 16px;
   flex-shrink: 0;
 }
 .tnt-canvas .dirH__crumbs { font-size: 12.5px; display: flex; align-items: center; gap: 6px; }
-.tnt-canvas .dirH__crumbs svg { width: 12px; height: 12px; color: #94a3b8; }
+.tnt-canvas .dirH__crumbs svg { width: 12px; height: 12px; color: var(--br-text-faint, var(--br-text-secondary)); }
 .tnt-canvas .dirH__crumb-active { font-weight: 600; }
 .tnt-canvas .dirH__page { flex: 1; overflow: auto; }
 
@@ -272,7 +288,7 @@
 .tnt-canvas .dirH__rrail {
   width: 304px; flex-shrink: 0;
   border-left: 1px solid var(--br-border);
-  background: #fff;
+  background: var(--br-background);
   display: flex; flex-direction: column;
   height: 100vh; position: sticky; top: 0;
 }
@@ -314,7 +330,7 @@
   border: 1px solid;
 }
 .tnt-canvas .tnt__banner svg { width: 16px; height: 16px; margin-top: 1px; flex-shrink: 0; }
-.tnt-canvas .tnt__banner--info { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+.tnt-canvas .tnt__banner--info { background: var(--br-primary-50); border-color: #bfdbfe; color: #1e40af; }
 .tnt-canvas .tnt__banner--warn { background: #fffbeb; border-color: #fde68a; color: #92400e; }
 .tnt-canvas .tnt__banner--err { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
 .tnt-canvas .tnt__banner--ok { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
@@ -324,7 +340,7 @@
 
 /* KPI / stat tile */
 .tnt-canvas .tnt__stat {
-  background: #fff; border: 1px solid var(--br-border);
+  background: var(--br-background); border: 1px solid var(--br-border);
   border-radius: 10px; padding: 14px 16px;
   display: flex; flex-direction: column; gap: 4px;
 }
@@ -407,7 +423,7 @@
 }
 .tnt-ai-dock-pill {
   display: inline-flex; align-items: center; gap: 8px;
-  background: #fff; border: 1px solid #e5e7eb;
+  background: var(--br-background); border: 1px solid var(--br-border);
   border-radius: 12px; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.10), 0 4px 6px -4px rgb(0 0 0 / 0.10);
   padding: 9px 12px; cursor: pointer;
   font-family: var(--font-geist-sans), "Geist", sans-serif;
@@ -420,11 +436,11 @@
   flex-shrink: 0;
 }
 .tnt-ai-dock-pill .mark svg { width: 13px; height: 13px; }
-.tnt-ai-dock-pill .title { font-size: 12px; font-weight: 600; color: #1f2937; }
+.tnt-ai-dock-pill .title { font-size: 12px; font-weight: 600; color: var(--br-text); }
 .tnt-ai-dock-pill .kbd {
   font-family: var(--font-geist-mono), monospace; font-size: 10.5px;
-  background: #f8fafc; border: 1px solid #e5e7eb; border-bottom-width: 2px;
-  padding: 1px 5px; border-radius: 4px; color: #6b7280; line-height: 1;
+  background: var(--br-surface); border: 1px solid var(--br-border); border-bottom-width: 2px;
+  padding: 1px 5px; border-radius: 4px; color: var(--br-text-secondary); line-height: 1;
 }
 
 /* ============================================================
@@ -436,7 +452,7 @@
 /* Tabs (horizontal underlined) */
 .tnt-canvas .tnt__tabs {
   display: flex; gap: 0; border-bottom: 1px solid var(--br-border);
-  padding: 0 18px; background: #fff; flex-shrink: 0;
+  padding: 0 18px; background: var(--br-background); flex-shrink: 0;
 }
 .tnt-canvas .tnt__tab {
   border: 0; background: transparent;
@@ -464,7 +480,7 @@
 .tnt-canvas .tnt__dns-type {
   display: inline-flex; align-items: center; gap: 4px;
   font-family: var(--br-font-mono); font-size: 10.5px; font-weight: 600;
-  padding: 2px 7px; border-radius: 4px; background: #eff6ff; color: #1d4ed8; letter-spacing: 0.04em;
+  padding: 2px 7px; border-radius: 4px; background: var(--br-primary-50); color: var(--br-primary-600); letter-spacing: 0.04em;
 }
 
 /* Toggle */
@@ -474,7 +490,7 @@
 }
 .tnt-canvas .tnt__toggle::after {
   content: ""; position: absolute; top: 2px; left: 2px;
-  width: 13px; height: 13px; border-radius: 9999px; background: #fff;
+  width: 13px; height: 13px; border-radius: 9999px; background: var(--br-background);
   box-shadow: 0 1px 2px rgba(0,0,0,0.15); transition: transform 0.15s;
 }
 .tnt-canvas .tnt__toggle.is-on { background: var(--br-primary); }
@@ -486,7 +502,7 @@
 .tnt-canvas .tnt__field-hint { font-size: 11px; color: var(--br-text-secondary); line-height: 1.4; }
 .tnt-canvas .tnt__input {
   display: flex; align-items: center; border: 1px solid var(--br-border); border-radius: 6px;
-  background: #fff; padding: 7px 10px; font-size: 12.5px; color: var(--br-text); width: 100%;
+  background: var(--br-background); padding: 7px 10px; font-size: 12.5px; color: var(--br-text); width: 100%;
 }
 .tnt-canvas .tnt__input--placeholder { color: var(--br-text-secondary); }
 .tnt-canvas .tnt__input-suffix { font-family: var(--br-font-mono); font-size: 11.5px; color: var(--br-text-secondary); margin-left: auto; }
@@ -501,12 +517,12 @@
   background: var(--br-surface); border: 1px solid var(--br-border); font-size: 11.5px; color: var(--br-text-secondary);
 }
 .tnt-canvas .tnt__step-n {
-  width: 18px; height: 18px; border-radius: 9999px; background: #fff; border: 1px solid var(--br-border);
+  width: 18px; height: 18px; border-radius: 9999px; background: var(--br-background); border: 1px solid var(--br-border);
   font-size: 10.5px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; color: var(--br-text-secondary);
 }
 .tnt-canvas .tnt__step.is-done { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
 .tnt-canvas .tnt__step.is-done .tnt__step-n { background: #10b981; color: #fff; border-color: #10b981; }
-.tnt-canvas .tnt__step.is-on { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+.tnt-canvas .tnt__step.is-on { background: var(--br-primary-50); border-color: #bfdbfe; color: var(--br-primary-600); }
 .tnt-canvas .tnt__step.is-on .tnt__step-n { background: var(--br-primary); color: #fff; border-color: var(--br-primary); }
 .tnt-canvas .tnt__step-arrow { color: #cbd5e1; }
 
@@ -538,13 +554,13 @@
 .tnt-canvas .tnt__matrix tbody td.center { text-align: center; }
 .tnt-canvas .tnt__matrix .role-chip {
   display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 500;
-  padding: 2px 7px; border-radius: 4px; background: #f1f5f9; color: #334155; border: 1px solid transparent;
+  padding: 2px 7px; border-radius: 4px; background: var(--br-surface); color: var(--br-text); border: 1px solid transparent;
 }
 .tnt-canvas .tnt__matrix .role-chip--owner { background: #fef3c7; color: #92400e; }
-.tnt-canvas .tnt__matrix .role-chip--admin { background: #dbeafe; color: #1d4ed8; }
+.tnt-canvas .tnt__matrix .role-chip--admin { background: #dbeafe; color: var(--br-primary-600); }
 .tnt-canvas .tnt__matrix .role-chip--editor { background: #ede9fe; color: #6d28d9; }
-.tnt-canvas .tnt__matrix .role-chip--viewer { background: #f1f5f9; color: #475569; }
-.tnt-canvas .tnt__matrix .role-chip--none { background: #fff; color: #94a3b8; border-color: var(--br-border); }
+.tnt-canvas .tnt__matrix .role-chip--viewer { background: var(--br-surface); color: var(--br-text-secondary); }
+.tnt-canvas .tnt__matrix .role-chip--none { background: var(--br-background); color: var(--br-text-faint, var(--br-text-secondary)); border-color: var(--br-border); }
 .tnt-canvas .tnt__matrix .role-chip--custom { background: #ccfbf1; color: #115e59; }
 
 /* Channel / comms list */
@@ -554,9 +570,9 @@
   background: transparent; text-align: left; font-family: inherit;
 }
 .tnt-canvas .tnt__chan-row:hover { background: var(--br-surface); }
-.tnt-canvas .tnt__chan-row.is-on { background: #eff6ff; border-left-color: var(--br-primary); }
+.tnt-canvas .tnt__chan-row.is-on { background: var(--br-primary-50); border-left-color: var(--br-primary); }
 .tnt-canvas .tnt__chan-icon {
-  width: 32px; height: 32px; border-radius: 8px; background: #fff; border: 1px solid var(--br-border);
+  width: 32px; height: 32px; border-radius: 8px; background: var(--br-background); border: 1px solid var(--br-border);
   display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .tnt-canvas .tnt__chan-icon svg { width: 15px; height: 15px; color: var(--br-primary); }
@@ -567,13 +583,13 @@
   display: flex; align-items: center; justify-content: center; z-index: 55; backdrop-filter: blur(2px);
 }
 .tnt-canvas .tnt__modal {
-  width: 460px; max-width: 90%; background: #fff; border-radius: 12px;
+  width: 460px; max-width: 90%; background: var(--br-background); border-radius: 12px;
   box-shadow: var(--shadow-xl); border: 1px solid var(--br-border); overflow: hidden;
 }
 .tnt-canvas .tnt__modal--wide { width: 560px; }
 .tnt-canvas .tnt__modal-head { padding: 16px 18px 12px; display: flex; align-items: flex-start; gap: 12px; border-bottom: 1px solid var(--br-border); }
 .tnt-canvas .tnt__modal-icon { width: 36px; height: 36px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.tnt-canvas .tnt__modal-icon--info { background: #eff6ff; color: #1d4ed8; }
+.tnt-canvas .tnt__modal-icon--info { background: var(--br-primary-50); color: var(--br-primary-600); }
 .tnt-canvas .tnt__modal-icon--danger { background: #fef2f2; color: #b91c1c; }
 .tnt-canvas .tnt__modal-icon svg { width: 18px; height: 18px; }
 .tnt-canvas .tnt__modal-title { font-size: 15px; font-weight: 600; margin: 0; letter-spacing: -0.005em; }
@@ -584,11 +600,11 @@
 /* Helper template tiles (empty states) */
 .tnt-canvas .tnt__template {
   cursor: pointer; padding: 14px; border: 1px solid var(--br-border); border-radius: 10px;
-  display: flex; flex-direction: column; gap: 8px; background: #fff;
+  display: flex; flex-direction: column; gap: 8px; background: var(--br-background);
 }
 .tnt-canvas .tnt__template:hover { border-color: var(--br-primary); }
 .tnt-canvas .tnt__template-glyph {
-  width: 32px; height: 32px; border-radius: 8px; background: #eff6ff; color: var(--br-primary);
+  width: 32px; height: 32px; border-radius: 8px; background: var(--br-primary-50); color: var(--br-primary);
   display: inline-flex; align-items: center; justify-content: center;
 }
 .tnt-canvas .tnt__template-glyph svg { width: 16px; height: 16px; }

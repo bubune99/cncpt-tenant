@@ -125,15 +125,15 @@ function AdminSidebar({
   ]
 
   return (
-    <div className="w-64 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 min-h-screen border-r border-white/[0.08]">
-      <div className="p-6 border-b border-white/[0.08]">
+    <div className="w-64 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 min-h-screen border-r border-border">
+      <div className="p-6 border-b border-border">
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-blue-600 to-orange-500 flex items-center justify-center">
-            <Shield className="h-5 w-5 text-white" />
+            <Shield className="h-5 w-5 text-foreground" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-white">CNCPT Web Admin</h2>
-            <p className="text-xs text-slate-400">{rootDomain}</p>
+            <h2 className="text-lg font-semibold text-foreground">CNCPT Web Admin</h2>
+            <p className="text-xs text-muted-foreground">{rootDomain}</p>
           </div>
         </div>
       </div>
@@ -149,7 +149,7 @@ function AdminSidebar({
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-all duration-200 ${
                     isActive
                       ? "bg-gradient-to-r from-blue-600/20 to-orange-500/10 text-white border border-blue-500/30 shadow-lg shadow-blue-500/10"
-                      : "text-slate-400 hover:text-white hover:bg-white/[0.05]"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -183,20 +183,20 @@ function AdminHeader() {
   }
 
   return (
-    <div className="bg-slate-900/50 backdrop-blur-sm border-b border-white/[0.08] px-6 py-4 sticky top-0 z-10">
+    <div className="bg-muted/50 backdrop-blur-sm border-b border-border px-6 py-4 sticky top-0 z-10">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-xl font-semibold text-white">Super Admin Dashboard</h1>
-          <p className="text-sm text-slate-400">Platform-wide administration</p>
+          <h1 className="text-xl font-semibold text-foreground">Super Admin Dashboard</h1>
+          <p className="text-sm text-muted-foreground">Platform-wide administration</p>
         </div>
         <div className="flex items-center gap-3">
           {user && (
             <div className="flex items-center gap-3 bg-gradient-to-r from-blue-600/10 to-orange-500/10 px-4 py-2 rounded-lg border border-blue-500/20">
               <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-600 to-orange-500 flex items-center justify-center">
-                <Crown className="h-4 w-4 text-white" />
+                <Crown className="h-4 w-4 text-foreground" />
               </div>
               <div className="text-sm">
-                <div className="font-medium text-white">{user.displayName || user.primaryEmail}</div>
+                <div className="font-medium text-foreground">{user.displayName || user.primaryEmail}</div>
                 <div className="text-orange-400 text-xs">Super Admin</div>
               </div>
             </div>
@@ -205,7 +205,7 @@ function AdminHeader() {
             variant="outline"
             size="sm"
             onClick={handleSignOut}
-            className="flex items-center gap-2 bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5 hover:border-white/20"
+            className="flex items-center gap-2 bg-transparent border-border text-foreground hover:text-foreground hover:bg-muted hover:border-white/20"
           >
             <LogOut className="h-4 w-4" />
             Sign Out
@@ -250,7 +250,7 @@ function OverviewSection() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     )
   }
@@ -259,7 +259,7 @@ function OverviewSection() {
     return (
       <div className="text-center py-12">
         <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
-        <p className="text-gray-600">{error || "Failed to load overview data"}</p>
+        <p className="text-muted-foreground">{error || "Failed to load overview data"}</p>
       </div>
     )
   }
@@ -267,12 +267,12 @@ function OverviewSection() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-white">Platform Overview</h2>
+        <h2 className="text-xl font-semibold text-foreground">Platform Overview</h2>
         <Button
           variant="outline"
           size="sm"
           onClick={() => fetchOverviewData()}
-          className="flex items-center gap-2 bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5"
+          className="flex items-center gap-2 bg-transparent border-border text-foreground hover:text-foreground hover:bg-muted"
         >
           <RefreshCw className="h-4 w-4" />
           Refresh
@@ -280,89 +280,89 @@ function OverviewSection() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-slate-800/50 border-white/[0.08] hover:border-white/[0.15] transition-colors">
+        <Card className="bg-card border-border hover:border-white/[0.15] transition-colors">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-slate-400">Total Users</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
               <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
                 <Users className="h-4 w-4 text-blue-400" />
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white">{data.users.total}</div>
+            <div className="text-3xl font-bold text-foreground">{data.users.total}</div>
             <p className="text-xs text-emerald-400 mt-1">+{data.users.newLast30Days} last 30 days</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-white/[0.08] hover:border-white/[0.15] transition-colors">
+        <Card className="bg-card border-border hover:border-white/[0.15] transition-colors">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-slate-400">Total Subdomains</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Subdomains</CardTitle>
               <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
                 <Globe className="h-4 w-4 text-emerald-400" />
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white">{data.subdomains.total}</div>
+            <div className="text-3xl font-bold text-foreground">{data.subdomains.total}</div>
             <p className="text-xs text-emerald-400 mt-1">+{data.subdomains.last30Days} last 30 days</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-white/[0.08] hover:border-white/[0.15] transition-colors">
+        <Card className="bg-card border-border hover:border-white/[0.15] transition-colors">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-slate-400">This Week</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">This Week</CardTitle>
               <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
                 <Activity className="h-4 w-4 text-orange-400" />
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white">{data.subdomains.last7Days}</div>
-            <p className="text-xs text-slate-400 mt-1">New subdomains</p>
+            <div className="text-3xl font-bold text-foreground">{data.subdomains.last7Days}</div>
+            <p className="text-xs text-muted-foreground mt-1">New subdomains</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-white/[0.08] hover:border-white/[0.15] transition-colors">
+        <Card className="bg-card border-border hover:border-white/[0.15] transition-colors">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-slate-400">Teams</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Teams</CardTitle>
               <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
                 <Building2 className="h-4 w-4 text-amber-400" />
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white">{data.teams.total}</div>
-            <p className="text-xs text-slate-400 mt-1">{data.teams.totalMembers} total members</p>
+            <div className="text-3xl font-bold text-foreground">{data.teams.total}</div>
+            <p className="text-xs text-muted-foreground mt-1">{data.teams.totalMembers} total members</p>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="bg-slate-800/50 border-white/[0.08]">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-white">Top Users by Subdomains</CardTitle>
+          <CardTitle className="text-foreground">Top Users by Subdomains</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             {data.topUsers.length === 0 ? (
-              <p className="text-sm text-slate-400">No users with subdomains yet</p>
+              <p className="text-sm text-muted-foreground">No users with subdomains yet</p>
             ) : (
               data.topUsers.map((user, index) => (
                 <div
                   key={user.userId}
-                  className="flex items-center justify-between py-2 border-b border-white/[0.05] last:border-0"
+                  className="flex items-center justify-between py-2 border-b border-border last:border-0"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-600 to-orange-500 flex items-center justify-center text-sm font-medium text-white">
                       {index + 1}
                     </div>
                     <div>
-                      <div className="font-medium text-white">{user.displayName || user.email}</div>
+                      <div className="font-medium text-foreground">{user.displayName || user.email}</div>
                       {user.displayName && (
-                        <div className="text-sm text-slate-400">{user.email}</div>
+                        <div className="text-sm text-muted-foreground">{user.email}</div>
                       )}
                     </div>
                   </div>
@@ -375,9 +375,9 @@ function OverviewSection() {
       </Card>
 
       {data.users.dailySignups && data.users.dailySignups.length > 0 && (
-        <Card className="bg-slate-800/50 border-white/[0.08]">
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-white">New Users (Last 14 Days)</CardTitle>
+            <CardTitle className="text-foreground">New Users (Last 14 Days)</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-end gap-1 h-24">
@@ -394,7 +394,7 @@ function OverviewSection() {
                 )
               })}
             </div>
-            <div className="flex justify-between mt-2 text-xs text-slate-500">
+            <div className="flex justify-between mt-2 text-xs text-muted-foreground">
               <span>{data.users.dailySignups[0]?.date}</span>
               <span>{data.users.dailySignups[data.users.dailySignups.length - 1]?.date}</span>
             </div>
@@ -402,9 +402,9 @@ function OverviewSection() {
         </Card>
       )}
 
-      <Card className="bg-slate-800/50 border-white/[0.08]">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
+          <CardTitle className="text-foreground flex items-center gap-2">
             <Activity className="h-5 w-5 text-emerald-400" />
             Platform Health
           </CardTitle>
@@ -413,17 +413,17 @@ function OverviewSection() {
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-emerald-400">●</div>
-              <p className="text-sm text-slate-400">API Status</p>
+              <p className="text-sm text-muted-foreground">API Status</p>
               <p className="text-xs text-emerald-400">Operational</p>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-emerald-400">●</div>
-              <p className="text-sm text-slate-400">Database</p>
+              <p className="text-sm text-muted-foreground">Database</p>
               <p className="text-xs text-emerald-400">Connected</p>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-emerald-400">●</div>
-              <p className="text-sm text-slate-400">Auth Service</p>
+              <p className="text-sm text-muted-foreground">Auth Service</p>
               <p className="text-xs text-emerald-400">Active</p>
             </div>
           </div>
@@ -765,15 +765,15 @@ function SubdomainsSection({
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold text-white">Subdomain Management</h2>
-          <p className="text-sm text-slate-400">{total} total subdomains - Create and assign ownership to users</p>
+          <h2 className="text-xl font-semibold text-foreground">Subdomain Management</h2>
+          <p className="text-sm text-muted-foreground">{total} total subdomains - Create and assign ownership to users</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => setShowCreateDialog(true)} size="sm" className="bg-gradient-to-r from-blue-700 to-orange-500 hover:from-blue-600 hover:to-orange-400 text-white border-0">
             <Globe className="h-4 w-4 mr-2" />
             Create Subdomain
           </Button>
-          <Button onClick={fetchSubdomains} variant="outline" size="sm" className="bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5">
+          <Button onClick={fetchSubdomains} variant="outline" size="sm" className="bg-transparent border-border text-foreground hover:text-foreground hover:bg-muted">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
@@ -783,7 +783,7 @@ function SubdomainsSection({
       {/* Search */}
       <div className="flex gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search subdomains..."
             value={search}
@@ -791,45 +791,45 @@ function SubdomainsSection({
               setSearch(e.target.value)
               setPage(1)
             }}
-            className="pl-10 bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
+            className="pl-10 bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500/50"
           />
         </div>
       </div>
 
       {/* Subdomains Table */}
-      <Card className="bg-slate-800/50 border-white/[0.08] overflow-hidden">
+      <Card className="bg-card border-border overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="border-white/[0.08] hover:bg-transparent">
-              <TableHead className="text-slate-400">Subdomain</TableHead>
-              <TableHead className="text-slate-400">Owner</TableHead>
-              <TableHead className="text-slate-400">Plan</TableHead>
-              <TableHead className="text-slate-400">Status</TableHead>
-              <TableHead className="text-slate-400">Teams</TableHead>
-              <TableHead className="w-44 text-slate-400">Actions</TableHead>
+            <TableRow className="border-border hover:bg-transparent">
+              <TableHead className="text-muted-foreground">Subdomain</TableHead>
+              <TableHead className="text-muted-foreground">Owner</TableHead>
+              <TableHead className="text-muted-foreground">Plan</TableHead>
+              <TableHead className="text-muted-foreground">Status</TableHead>
+              <TableHead className="text-muted-foreground">Teams</TableHead>
+              <TableHead className="w-44 text-muted-foreground">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow className="border-white/[0.08]">
+              <TableRow className="border-border">
                 <TableCell colSpan={6} className="text-center py-12">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-400" />
                 </TableCell>
               </TableRow>
             ) : subdomains.length === 0 ? (
-              <TableRow className="border-white/[0.08]">
-                <TableCell colSpan={6} className="text-center py-12 text-slate-500">
-                  <Globe className="h-12 w-12 text-slate-700 mx-auto mb-4" />
+              <TableRow className="border-border">
+                <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                  <Globe className="h-12 w-12 text-foreground mx-auto mb-4" />
                   <p>No subdomains found</p>
                 </TableCell>
               </TableRow>
             ) : (
               subdomains.map((sub) => (
-                <TableRow key={sub.id} className="border-white/[0.08] hover:bg-white/[0.02]">
+                <TableRow key={sub.id} className="border-border hover:bg-muted">
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <div>
-                        <div className="font-medium text-white">{sub.subdomain}</div>
+                        <div className="font-medium text-foreground">{sub.subdomain}</div>
                         <a
                           href={`${protocol}://${sub.subdomain}.${rootDomain}`}
                           target="_blank"
@@ -844,9 +844,9 @@ function SubdomainsSection({
                   <TableCell>
                     {sub.owner ? (
                       <div>
-                        <div className="font-medium text-sm text-white">{sub.owner.displayName || sub.owner.email}</div>
+                        <div className="font-medium text-sm text-foreground">{sub.owner.displayName || sub.owner.email}</div>
                         {sub.owner.displayName && (
-                          <div className="text-xs text-slate-400">{sub.owner.email}</div>
+                          <div className="text-xs text-muted-foreground">{sub.owner.email}</div>
                         )}
                       </div>
                     ) : (
@@ -861,7 +861,7 @@ function SubdomainsSection({
                         value={sub.tierId || ""}
                         disabled={tierSaving === sub.id}
                         onChange={(e) => handleAssignTier(sub, e.target.value || null)}
-                        className="bg-slate-900/50 border border-white/[0.08] text-white text-xs rounded-md px-2 py-1 focus:border-blue-500/50 outline-none"
+                        className="bg-muted/50 border border-border text-foreground text-xs rounded-md px-2 py-1 focus:border-blue-500/50 outline-none"
                       >
                         <option value="">Unassigned</option>
                         {tierOptions.map((t) => (
@@ -870,7 +870,7 @@ function SubdomainsSection({
                           </option>
                         ))}
                       </select>
-                      {tierSaving === sub.id && <Loader2 className="h-3 w-3 animate-spin text-slate-400" />}
+                      {tierSaving === sub.id && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -882,9 +882,9 @@ function SubdomainsSection({
                   </TableCell>
                   <TableCell>
                     {sub.teamShareCount > 0 ? (
-                      <Badge className="bg-slate-700 text-slate-300">{sub.teamShareCount} teams</Badge>
+                      <Badge className="bg-muted text-foreground">{sub.teamShareCount} teams</Badge>
                     ) : (
-                      <span className="text-slate-600">-</span>
+                      <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
                   <TableCell>
@@ -946,7 +946,7 @@ function SubdomainsSection({
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-between items-center">
-          <p className="text-sm text-gray-500">Page {page} of {totalPages}</p>
+          <p className="text-sm text-muted-foreground">Page {page} of {totalPages}</p>
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -980,12 +980,12 @@ function SubdomainsSection({
           <div className="space-y-4 py-4">
             {selectedSubdomain?.owner && (
               <div className="p-3 bg-gray-50 rounded-lg">
-                <Label className="text-xs text-gray-500">Current Owner</Label>
+                <Label className="text-xs text-muted-foreground">Current Owner</Label>
                 <div className="font-medium">
                   {selectedSubdomain.owner.displayName || selectedSubdomain.owner.email}
                 </div>
                 {selectedSubdomain.owner.displayName && (
-                  <div className="text-sm text-gray-500">{selectedSubdomain.owner.email}</div>
+                  <div className="text-sm text-muted-foreground">{selectedSubdomain.owner.email}</div>
                 )}
               </div>
             )}
@@ -1023,7 +1023,7 @@ function SubdomainsSection({
                 <div className="mt-1 text-sm">
                   {foundUser.displayName || foundUser.email}
                   {foundUser.displayName && (
-                    <span className="text-gray-500"> ({foundUser.email})</span>
+                    <span className="text-muted-foreground"> ({foundUser.email})</span>
                   )}
                 </div>
               </div>
@@ -1080,9 +1080,9 @@ function SubdomainsSection({
                   onChange={(e) => setNewSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
                   className="flex-1"
                 />
-                <span className="text-sm text-gray-500">.{rootDomain}</span>
+                <span className="text-sm text-muted-foreground">.{rootDomain}</span>
               </div>
-              <p className="text-xs text-gray-500">Lowercase letters, numbers, and hyphens only</p>
+              <p className="text-xs text-muted-foreground">Lowercase letters, numbers, and hyphens only</p>
             </div>
 
             <div className="space-y-2">
@@ -1130,7 +1130,7 @@ function SubdomainsSection({
                 <div className="mt-1 text-sm">
                   {assignFoundUser.displayName || assignFoundUser.email}
                   {assignFoundUser.displayName && (
-                    <span className="text-gray-500"> ({assignFoundUser.email})</span>
+                    <span className="text-muted-foreground"> ({assignFoundUser.email})</span>
                   )}
                 </div>
               </div>
@@ -1150,35 +1150,35 @@ function SubdomainsSection({
 
       {/* Suspend (soft-disable) Dialog */}
       <Dialog open={!!suspendTarget} onOpenChange={() => { setSuspendTarget(null); setSuspendReason(""); setSuspendUnassign(false) }}>
-        <DialogContent className="bg-slate-900 border-white/[0.08]">
+        <DialogContent className="bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-2">
+            <DialogTitle className="text-foreground flex items-center gap-2">
               <Shield className="h-5 w-5 text-amber-400" />
               Suspend Tenant
             </DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogDescription className="text-muted-foreground">
               Soft-disable <strong>{suspendTarget?.subdomain}</strong>. This is reversible — it sets
               the tenant to maintenance mode and marks it disabled. You can re-enable anytime.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <Label className="text-slate-400 text-sm">Reason (optional)</Label>
+              <Label className="text-muted-foreground text-sm">Reason (optional)</Label>
               <textarea
                 value={suspendReason}
                 onChange={(e) => setSuspendReason(e.target.value)}
                 rows={3}
-                className="w-full mt-1.5 bg-slate-800/50 border border-white/[0.08] text-white text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none resize-none placeholder:text-slate-500"
+                className="w-full mt-1.5 bg-card border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none resize-none placeholder:text-muted-foreground"
                 placeholder="Why is this tenant being suspended?"
               />
             </div>
-            <label className="flex items-center gap-2 text-sm text-slate-300">
+            <label className="flex items-center gap-2 text-sm text-foreground">
               <input type="checkbox" checked={suspendUnassign} onChange={(e) => setSuspendUnassign(e.target.checked)} />
               Also unassign the owner
             </label>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setSuspendTarget(null); setSuspendReason("") }} className="bg-transparent border-white/10 text-slate-300">
+            <Button variant="outline" onClick={() => { setSuspendTarget(null); setSuspendReason("") }} className="bg-transparent border-border text-foreground">
               Cancel
             </Button>
             <Button onClick={handleSuspend} disabled={lifecycleBusy} className="bg-amber-600 hover:bg-amber-500 text-white">
@@ -1191,13 +1191,13 @@ function SubdomainsSection({
 
       {/* Hard-delete Dialog — gated, type-the-name to confirm */}
       <Dialog open={!!deleteTarget} onOpenChange={() => { setDeleteTarget(null); setDeleteConfirm("") }}>
-        <DialogContent className="bg-slate-900 border-white/[0.08]">
+        <DialogContent className="bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-2">
+            <DialogTitle className="text-foreground flex items-center gap-2">
               <Trash2 className="h-5 w-5 text-red-400" />
               Hard-Delete Tenant
             </DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogDescription className="text-muted-foreground">
               Permanently delete <strong>{deleteTarget?.subdomain}</strong> and cascade its CMS data.
               This is irreversible. Prefer Suspend unless you are certain.
             </DialogDescription>
@@ -1207,19 +1207,19 @@ function SubdomainsSection({
               This deletes the subdomain row and all tenant-scoped content (FK cascade). It cannot be undone.
             </div>
             <div>
-              <Label className="text-slate-400 text-sm">
+              <Label className="text-muted-foreground text-sm">
                 Type <span className="text-red-400 font-mono">{deleteTarget?.subdomain}</span> to confirm
               </Label>
               <Input
                 value={deleteConfirm}
                 onChange={(e) => setDeleteConfirm(e.target.value)}
-                className="mt-1.5 bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-red-500/50 font-mono"
+                className="mt-1.5 bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-red-500/50 font-mono"
                 placeholder="Type subdomain to confirm…"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setDeleteTarget(null); setDeleteConfirm("") }} className="bg-transparent border-white/10 text-slate-300">
+            <Button variant="outline" onClick={() => { setDeleteTarget(null); setDeleteConfirm("") }} className="bg-transparent border-border text-foreground">
               Cancel
             </Button>
             <Button
@@ -1668,9 +1668,9 @@ function UsersSection() {
       case "suspended":
         return <Badge className="bg-red-500/10 text-red-400 border-red-500/20">Suspended</Badge>
       case "deactivated":
-        return <Badge className="bg-slate-500/10 text-slate-400 border-slate-500/20">Deactivated</Badge>
+        return <Badge className="bg-slate-500/10 text-muted-foreground border-slate-500/20">Deactivated</Badge>
       default:
-        return <Badge className="bg-slate-700 text-slate-300">{status}</Badge>
+        return <Badge className="bg-muted text-foreground">{status}</Badge>
     }
   }
 
@@ -1699,15 +1699,15 @@ function UsersSection() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold text-white">User Management</h2>
-          <p className="text-sm text-slate-400">{total} total users</p>
+          <h2 className="text-xl font-semibold text-foreground">User Management</h2>
+          <p className="text-sm text-muted-foreground">{total} total users</p>
         </div>
         <div className="flex gap-2">
           <Button
             onClick={() => { setShowInvites(!showInvites); if (!showInvites) fetchInvites() }}
             variant="outline"
             size="sm"
-            className={`bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5 ${showInvites ? "border-orange-500/30 text-orange-400" : ""}`}
+            className={`bg-transparent border-border text-foreground hover:text-foreground hover:bg-muted ${showInvites ? "border-orange-500/30 text-orange-400" : ""}`}
           >
             <Mail className="h-4 w-4 mr-2" />
             Invites {(inviteStatusCounts.pending || 0) > 0 && <Badge className="ml-1 bg-orange-500/20 text-orange-400 text-[10px] px-1.5">{inviteStatusCounts.pending}</Badge>}
@@ -1720,7 +1720,7 @@ function UsersSection() {
             <Plus className="h-4 w-4 mr-2" />
             Invite User
           </Button>
-          <Button onClick={fetchUsers} variant="outline" size="sm" className="bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5">
+          <Button onClick={fetchUsers} variant="outline" size="sm" className="bg-transparent border-border text-foreground hover:text-foreground hover:bg-muted">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
@@ -1729,14 +1729,14 @@ function UsersSection() {
 
       {/* Invites Panel */}
       {showInvites && (
-        <Card className="bg-slate-800/50 border-white/[0.08]">
+        <Card className="bg-card border-border">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-white text-base flex items-center gap-2">
+              <CardTitle className="text-foreground text-base flex items-center gap-2">
                 <Mail className="h-4 w-4 text-orange-400" />
                 Pending Invitations
               </CardTitle>
-              <Button onClick={fetchInvites} variant="ghost" size="sm" className="text-slate-400 hover:text-white">
+              <Button onClick={fetchInvites} variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
                 <RefreshCw className="h-3 w-3" />
               </Button>
             </div>
@@ -1747,39 +1747,39 @@ function UsersSection() {
                 <Loader2 className="h-5 w-5 animate-spin text-orange-400" />
               </div>
             ) : invites.length === 0 ? (
-              <p className="text-sm text-slate-500 text-center py-4">No invites sent yet</p>
+              <p className="text-sm text-muted-foreground text-center py-4">No invites sent yet</p>
             ) : (
               <div className="space-y-2">
                 {invites.map((inv) => (
-                  <div key={inv.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-900/50 border border-white/[0.05]">
+                  <div key={inv.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="h-8 w-8 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0">
-                        <Mail className="h-3.5 w-3.5 text-slate-400" />
+                      <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                        <Mail className="h-3.5 w-3.5 text-muted-foreground" />
                       </div>
                       <div className="min-w-0">
-                        <div className="text-sm font-medium text-white truncate">
+                        <div className="text-sm font-medium text-foreground truncate">
                           {inv.name || inv.email}
                         </div>
-                        <div className="text-xs text-slate-400 truncate">{inv.email}</div>
+                        <div className="text-xs text-muted-foreground truncate">{inv.email}</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <Badge className={
                         inv.status === "pending" ? "bg-amber-500/10 text-amber-400 border-amber-500/20" :
                         inv.status === "accepted" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
-                        inv.status === "expired" ? "bg-slate-500/10 text-slate-400 border-slate-500/20" :
+                        inv.status === "expired" ? "bg-slate-500/10 text-muted-foreground border-slate-500/20" :
                         "bg-red-500/10 text-red-400 border-red-500/20"
                       }>
                         {inv.status}
                       </Badge>
-                      <span className="text-xs text-slate-500">{formatDate(inv.createdAt)}</span>
+                      <span className="text-xs text-muted-foreground">{formatDate(inv.createdAt)}</span>
                       {inv.status === "pending" && (
                         <div className="flex gap-1">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleCopyInviteLink(inv.inviteLink, inv.id)}
-                            className="h-7 px-2 text-slate-400 hover:text-white"
+                            className="h-7 px-2 text-muted-foreground hover:text-foreground"
                             title="Copy invite link"
                           >
                             {copiedInviteId === inv.id ? (
@@ -1792,7 +1792,7 @@ function UsersSection() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleResendInvite(inv.id)}
-                            className="h-7 px-2 text-slate-400 hover:text-white"
+                            className="h-7 px-2 text-muted-foreground hover:text-foreground"
                             title="Resend invite"
                           >
                             <RefreshCw className="h-3 w-3" />
@@ -1830,7 +1830,7 @@ function UsersSection() {
       )}
 
       {/* Status Filter Tabs */}
-      <div className="flex items-center gap-1 bg-slate-800/30 rounded-lg p-1 w-fit">
+      <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1 w-fit">
         {([
           { key: "all" as UserStatusFilter, label: "All" },
           { key: "active" as UserStatusFilter, label: "Active" },
@@ -1842,13 +1842,13 @@ function UsersSection() {
             onClick={() => { setStatusFilter(key); setPage(1) }}
             className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
               statusFilter === key
-                ? "bg-slate-700 text-white"
-                : "text-slate-400 hover:text-white hover:bg-white/5"
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
             }`}
           >
             {label}
             {statusCounts[key] !== undefined && (
-              <span className="ml-1.5 text-xs text-slate-500">({statusCounts[key]})</span>
+              <span className="ml-1.5 text-xs text-muted-foreground">({statusCounts[key]})</span>
             )}
           </button>
         ))}
@@ -1857,7 +1857,7 @@ function UsersSection() {
       {/* Search and Filters */}
       <div className="flex gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by email or name..."
             value={search}
@@ -1865,13 +1865,13 @@ function UsersSection() {
               setSearch(e.target.value)
               setPage(1)
             }}
-            className="pl-10 bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
+            className="pl-10 bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500/50"
           />
         </div>
         <select
           value={roleFilter}
           onChange={(e) => { setRoleFilter(e.target.value as UserRoleFilter); setPage(1) }}
-          className="bg-slate-800/50 border border-white/[0.08] text-white text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none"
+          className="bg-card border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none"
         >
           <option value="all">All Roles</option>
           <option value="user">Users</option>
@@ -1899,7 +1899,7 @@ function UsersSection() {
               variant="outline"
               size="sm"
               onClick={() => setSelectedUserIds(new Set())}
-              className="bg-transparent border-white/10 text-slate-300 hover:text-white"
+              className="bg-transparent border-border text-foreground hover:text-foreground"
             >
               Clear
             </Button>
@@ -1908,67 +1908,67 @@ function UsersSection() {
       )}
 
       {/* Users Table */}
-      <Card className="bg-slate-800/50 border-white/[0.08] overflow-hidden">
+      <Card className="bg-card border-border overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="border-white/[0.08] hover:bg-transparent">
+            <TableRow className="border-border hover:bg-transparent">
               <TableHead className="w-10">
                 <input
                   type="checkbox"
                   checked={users.length > 0 && selectedUserIds.size === users.length}
                   onChange={toggleSelectAll}
-                  className="rounded border-slate-600 bg-slate-800 text-blue-500 focus:ring-blue-500/20"
+                  className="rounded border-border bg-card text-blue-500 focus:ring-blue-500/20"
                 />
               </TableHead>
-              <TableHead className="text-slate-400">
-                <button onClick={() => handleSort("name")} className="flex items-center hover:text-white transition-colors">
+              <TableHead className="text-muted-foreground">
+                <button onClick={() => handleSort("name")} className="flex items-center hover:text-foreground transition-colors">
                   User<SortIndicator field="name" />
                 </button>
               </TableHead>
-              <TableHead className="text-slate-400">Status</TableHead>
-              <TableHead className="text-slate-400">
-                <button onClick={() => handleSort("email")} className="flex items-center hover:text-white transition-colors">
+              <TableHead className="text-muted-foreground">Status</TableHead>
+              <TableHead className="text-muted-foreground">
+                <button onClick={() => handleSort("email")} className="flex items-center hover:text-foreground transition-colors">
                   Tier<SortIndicator field="email" />
                 </button>
               </TableHead>
-              <TableHead className="text-slate-400">Sites</TableHead>
-              <TableHead className="text-slate-400">
-                <button onClick={() => handleSort("lastLogin")} className="flex items-center hover:text-white transition-colors">
+              <TableHead className="text-muted-foreground">Sites</TableHead>
+              <TableHead className="text-muted-foreground">
+                <button onClick={() => handleSort("lastLogin")} className="flex items-center hover:text-foreground transition-colors">
                   Last Active<SortIndicator field="lastLogin" />
                 </button>
               </TableHead>
-              <TableHead className="text-slate-400">
-                <button onClick={() => handleSort("createdAt")} className="flex items-center hover:text-white transition-colors">
+              <TableHead className="text-muted-foreground">
+                <button onClick={() => handleSort("createdAt")} className="flex items-center hover:text-foreground transition-colors">
                   Joined<SortIndicator field="createdAt" />
                 </button>
               </TableHead>
-              <TableHead className="text-slate-400">Role</TableHead>
+              <TableHead className="text-muted-foreground">Role</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow className="border-white/[0.08]">
+              <TableRow className="border-border">
                 <TableCell colSpan={9} className="text-center py-12">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-400" />
                 </TableCell>
               </TableRow>
             ) : users.length === 0 ? (
-              <TableRow className="border-white/[0.08]">
-                <TableCell colSpan={9} className="text-center py-12 text-slate-500">
-                  <Users className="h-12 w-12 text-slate-700 mx-auto mb-4" />
+              <TableRow className="border-border">
+                <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
+                  <Users className="h-12 w-12 text-foreground mx-auto mb-4" />
                   <p>No users found</p>
                 </TableCell>
               </TableRow>
             ) : (
               users.map((user) => (
-                <TableRow key={user.id} className={`border-white/[0.08] hover:bg-white/[0.02] ${user.status === "suspended" ? "opacity-70" : ""}`}>
+                <TableRow key={user.id} className={`border-border hover:bg-muted ${user.status === "suspended" ? "opacity-70" : ""}`}>
                   <TableCell>
                     <input
                       type="checkbox"
                       checked={selectedUserIds.has(user.id)}
                       onChange={() => toggleSelectUser(user.id)}
-                      className="rounded border-slate-600 bg-slate-800 text-blue-500 focus:ring-blue-500/20"
+                      className="rounded border-border bg-card text-blue-500 focus:ring-blue-500/20"
                     />
                   </TableCell>
                   <TableCell>
@@ -1976,25 +1976,25 @@ function UsersSection() {
                       {user.profileImageUrl ? (
                         <img src={user.profileImageUrl} alt="" className="h-8 w-8 rounded-full object-cover" />
                       ) : (
-                        <div className="h-8 w-8 bg-slate-700 rounded-full flex items-center justify-center">
-                          <User className="h-4 w-4 text-slate-400" />
+                        <div className="h-8 w-8 bg-muted rounded-full flex items-center justify-center">
+                          <User className="h-4 w-4 text-muted-foreground" />
                         </div>
                       )}
                       <div className="min-w-0">
-                        <div className="font-medium text-white truncate">{user.displayName || user.email}</div>
-                        <div className="text-xs text-slate-400 truncate">{user.email}</div>
+                        <div className="font-medium text-foreground truncate">{user.displayName || user.email}</div>
+                        <div className="text-xs text-muted-foreground truncate">{user.email}</div>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>{getStatusBadge(user.status)}</TableCell>
-                  <TableCell className="text-sm text-slate-300">
-                    {user.tierName || <span className="text-slate-500">-</span>}
+                  <TableCell className="text-sm text-foreground">
+                    {user.tierName || <span className="text-muted-foreground">-</span>}
                   </TableCell>
-                  <TableCell className="text-white">{user.subdomainCount}</TableCell>
-                  <TableCell className="text-sm text-slate-400">
-                    {user.lastActiveAt ? formatDate(user.lastActiveAt) : <span className="text-slate-600">Never</span>}
+                  <TableCell className="text-foreground">{user.subdomainCount}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {user.lastActiveAt ? formatDate(user.lastActiveAt) : <span className="text-muted-foreground">Never</span>}
                   </TableCell>
-                  <TableCell className="text-sm text-slate-400">
+                  <TableCell className="text-sm text-muted-foreground">
                     {formatDate(user.createdAt)}
                   </TableCell>
                   <TableCell>
@@ -2006,14 +2006,14 @@ function UsersSection() {
                         </Badge>
                       )}
                       {user.isAdmin && !user.isSuperAdmin && (
-                        <Badge className="bg-slate-700 text-slate-300">Admin</Badge>
+                        <Badge className="bg-muted text-foreground">Admin</Badge>
                       )}
                     </div>
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white">
+                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -2071,7 +2071,7 @@ function UsersSection() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-between items-center">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             Page {page} of {totalPages} ({total} users)
           </p>
           <div className="flex gap-2">
@@ -2080,7 +2080,7 @@ function UsersSection() {
               size="sm"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5"
+              className="bg-transparent border-border text-foreground hover:text-foreground hover:bg-muted"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -2089,7 +2089,7 @@ function UsersSection() {
               size="sm"
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5"
+              className="bg-transparent border-border text-foreground hover:text-foreground hover:bg-muted"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -2099,19 +2099,19 @@ function UsersSection() {
 
       {/* ===== User Detail Dialog ===== */}
       <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-slate-900 border-white/[0.08]">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-3">
+            <DialogTitle className="text-foreground flex items-center gap-3">
               {selectedUser?.profileImageUrl ? (
                 <img src={selectedUser.profileImageUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
               ) : (
-                <div className="h-10 w-10 bg-slate-700 rounded-full flex items-center justify-center">
-                  <User className="h-5 w-5 text-slate-400" />
+                <div className="h-10 w-10 bg-muted rounded-full flex items-center justify-center">
+                  <User className="h-5 w-5 text-muted-foreground" />
                 </div>
               )}
               <div>
                 <div>{selectedUser?.displayName || selectedUser?.email}</div>
-                <div className="text-sm font-normal text-slate-400">{selectedUser?.email}</div>
+                <div className="text-sm font-normal text-muted-foreground">{selectedUser?.email}</div>
               </div>
             </DialogTitle>
             <DialogDescription className="sr-only">User detail view</DialogDescription>
@@ -2120,7 +2120,7 @@ function UsersSection() {
           {selectedUser && (
             <div className="space-y-4">
               {/* Detail Tabs */}
-              <div className="flex gap-1 bg-slate-800/50 rounded-lg p-1 border border-white/[0.05]">
+              <div className="flex gap-1 bg-card rounded-lg p-1 border border-border">
                 {([
                   { key: "profile" as const, label: "Profile", icon: User },
                   { key: "subdomains" as const, label: "Subdomains", icon: Globe },
@@ -2132,8 +2132,8 @@ function UsersSection() {
                     onClick={() => setDetailTab(key)}
                     className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       detailTab === key
-                        ? "bg-slate-700 text-white"
-                        : "text-slate-400 hover:text-white"
+                        ? "bg-muted text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     <Icon className="h-3.5 w-3.5" />
@@ -2152,16 +2152,16 @@ function UsersSection() {
                   {detailTab === "profile" && (
                     <div className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-slate-800/50 rounded-lg p-3 border border-white/[0.05]">
-                          <Label className="text-slate-500 text-xs">Display Name</Label>
-                          <p className="font-medium text-white mt-1">{userDetails.user.displayName || "Not set"}</p>
+                        <div className="bg-card rounded-lg p-3 border border-border">
+                          <Label className="text-muted-foreground text-xs">Display Name</Label>
+                          <p className="font-medium text-foreground mt-1">{userDetails.user.displayName || "Not set"}</p>
                         </div>
-                        <div className="bg-slate-800/50 rounded-lg p-3 border border-white/[0.05]">
-                          <Label className="text-slate-500 text-xs">User ID</Label>
-                          <p className="font-mono text-xs text-slate-300 mt-1 break-all">{userDetails.user.id}</p>
+                        <div className="bg-card rounded-lg p-3 border border-border">
+                          <Label className="text-muted-foreground text-xs">User ID</Label>
+                          <p className="font-mono text-xs text-foreground mt-1 break-all">{userDetails.user.id}</p>
                         </div>
-                        <div className="bg-slate-800/50 rounded-lg p-3 border border-white/[0.05]">
-                          <Label className="text-slate-500 text-xs">Status</Label>
+                        <div className="bg-card rounded-lg p-3 border border-border">
+                          <Label className="text-muted-foreground text-xs">Status</Label>
                           <div className="mt-1">{getStatusBadge(userDetails.user.status)}</div>
                           {userDetails.user.suspendedAt && (
                             <p className="text-xs text-red-400 mt-1">
@@ -2170,40 +2170,40 @@ function UsersSection() {
                             </p>
                           )}
                         </div>
-                        <div className="bg-slate-800/50 rounded-lg p-3 border border-white/[0.05]">
-                          <Label className="text-slate-500 text-xs">Tier</Label>
-                          <p className="font-medium text-white mt-1">{userDetails.user.tierName || "No tier"}</p>
+                        <div className="bg-card rounded-lg p-3 border border-border">
+                          <Label className="text-muted-foreground text-xs">Tier</Label>
+                          <p className="font-medium text-foreground mt-1">{userDetails.user.tierName || "No tier"}</p>
                         </div>
-                        <div className="bg-slate-800/50 rounded-lg p-3 border border-white/[0.05]">
-                          <Label className="text-slate-500 text-xs">Joined</Label>
-                          <p className="text-slate-300 mt-1">{formatDateTime(userDetails.user.createdAt)}</p>
+                        <div className="bg-card rounded-lg p-3 border border-border">
+                          <Label className="text-muted-foreground text-xs">Joined</Label>
+                          <p className="text-foreground mt-1">{formatDateTime(userDetails.user.createdAt)}</p>
                         </div>
-                        <div className="bg-slate-800/50 rounded-lg p-3 border border-white/[0.05]">
-                          <Label className="text-slate-500 text-xs">Last Active</Label>
-                          <p className="text-slate-300 mt-1">{formatDateTime(userDetails.user.lastActiveAt)}</p>
+                        <div className="bg-card rounded-lg p-3 border border-border">
+                          <Label className="text-muted-foreground text-xs">Last Active</Label>
+                          <p className="text-foreground mt-1">{formatDateTime(userDetails.user.lastActiveAt)}</p>
                         </div>
-                        <div className="bg-slate-800/50 rounded-lg p-3 border border-white/[0.05]">
-                          <Label className="text-slate-500 text-xs">AI Credits</Label>
+                        <div className="bg-card rounded-lg p-3 border border-border">
+                          <Label className="text-muted-foreground text-xs">AI Credits</Label>
                           <p className="font-medium text-blue-400 mt-1">{userDetails.user.creditBalance.toLocaleString()}</p>
                         </div>
-                        <div className="bg-slate-800/50 rounded-lg p-3 border border-white/[0.05]">
-                          <Label className="text-slate-500 text-xs">Subdomains</Label>
-                          <p className="font-medium text-white mt-1">{userDetails.subdomains.length}</p>
+                        <div className="bg-card rounded-lg p-3 border border-border">
+                          <Label className="text-muted-foreground text-xs">Subdomains</Label>
+                          <p className="font-medium text-foreground mt-1">{userDetails.subdomains.length}</p>
                         </div>
                       </div>
 
                       {/* Teams */}
                       {userDetails.teams.length > 0 && (
                         <div>
-                          <Label className="text-slate-500 text-xs mb-2 block">Teams ({userDetails.teams.length})</Label>
+                          <Label className="text-muted-foreground text-xs mb-2 block">Teams ({userDetails.teams.length})</Label>
                           <div className="space-y-1.5">
                             {userDetails.teams.map((t) => (
-                              <div key={t.id} className="flex items-center justify-between p-2 bg-slate-800/50 rounded-lg border border-white/[0.05]">
+                              <div key={t.id} className="flex items-center justify-between p-2 bg-card rounded-lg border border-border">
                                 <div className="flex items-center gap-2">
-                                  <Building2 className="h-4 w-4 text-slate-500" />
-                                  <span className="text-sm text-white">{t.name}</span>
+                                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm text-foreground">{t.name}</span>
                                 </div>
-                                <Badge className="bg-slate-700 text-slate-300 text-xs">{t.role}</Badge>
+                                <Badge className="bg-muted text-foreground text-xs">{t.role}</Badge>
                               </div>
                             ))}
                           </div>
@@ -2211,7 +2211,7 @@ function UsersSection() {
                       )}
 
                       {/* Actions */}
-                      <div className="flex flex-wrap gap-2 pt-2 border-t border-white/[0.05]">
+                      <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
                         {selectedUser.status === "suspended" ? (
                           <Button
                             size="sm"
@@ -2246,7 +2246,7 @@ function UsersSection() {
                           href={`${protocol}://${rootDomain}/dashboard`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-transparent border border-white/10 text-slate-300 hover:text-white hover:bg-white/5 text-sm"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-transparent border border-border text-foreground hover:text-foreground hover:bg-muted text-sm"
                         >
                           <Eye className="h-4 w-4" />
                           View as User
@@ -2258,18 +2258,18 @@ function UsersSection() {
                   {/* Subdomains Tab */}
                   {detailTab === "subdomains" && (
                     <div>
-                      <Label className="text-slate-500 text-xs mb-3 block">
+                      <Label className="text-muted-foreground text-xs mb-3 block">
                         Subdomains ({userDetails.subdomains.length})
                       </Label>
                       {userDetails.subdomains.length > 0 ? (
                         <div className="space-y-2">
                           {userDetails.subdomains.map((s) => (
-                            <div key={s.subdomain} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-white/[0.05]">
+                            <div key={s.subdomain} className="flex items-center justify-between p-3 bg-card rounded-lg border border-border">
                               <div className="flex items-center gap-3">
                                 <Globe className="h-4 w-4 text-emerald-400" />
                                 <div>
-                                  <span className="font-medium text-white">{s.subdomain}</span>
-                                  <div className="text-xs text-slate-500">Created {formatDate(s.createdAt)}</div>
+                                  <span className="font-medium text-foreground">{s.subdomain}</span>
+                                  <div className="text-xs text-muted-foreground">Created {formatDate(s.createdAt)}</div>
                                 </div>
                               </div>
                               <a
@@ -2284,7 +2284,7 @@ function UsersSection() {
                           ))}
                         </div>
                       ) : (
-                        <p className="text-slate-500 text-sm text-center py-6">No subdomains</p>
+                        <p className="text-muted-foreground text-sm text-center py-6">No subdomains</p>
                       )}
                     </div>
                   )}
@@ -2292,17 +2292,17 @@ function UsersSection() {
                   {/* Activity Tab */}
                   {detailTab === "activity" && (
                     <div>
-                      <Label className="text-slate-500 text-xs mb-3 block">Recent Activity</Label>
+                      <Label className="text-muted-foreground text-xs mb-3 block">Recent Activity</Label>
                       {userDetails.recentActivity.length > 0 ? (
                         <div className="space-y-2">
                           {userDetails.recentActivity.map((act) => (
-                            <div key={act.id} className="flex items-start gap-3 p-3 bg-slate-800/50 rounded-lg border border-white/[0.05]">
+                            <div key={act.id} className="flex items-start gap-3 p-3 bg-card rounded-lg border border-border">
                               <Activity className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
                               <div className="min-w-0">
-                                <div className="text-sm text-white">{act.action.replace(/\./g, " ").replace(/^./, (c) => c.toUpperCase())}</div>
-                                <div className="text-xs text-slate-500">{formatDateTime(act.createdAt)}</div>
+                                <div className="text-sm text-foreground">{act.action.replace(/\./g, " ").replace(/^./, (c) => c.toUpperCase())}</div>
+                                <div className="text-xs text-muted-foreground">{formatDateTime(act.createdAt)}</div>
                                 {Object.keys(act.details).length > 0 && (
-                                  <div className="text-xs text-slate-400 mt-1 bg-slate-900/50 rounded p-2 font-mono break-all">
+                                  <div className="text-xs text-muted-foreground mt-1 bg-muted/50 rounded p-2 font-mono break-all">
                                     {JSON.stringify(act.details, null, 0)}
                                   </div>
                                 )}
@@ -2311,7 +2311,7 @@ function UsersSection() {
                           ))}
                         </div>
                       ) : (
-                        <p className="text-slate-500 text-sm text-center py-6">No recent activity</p>
+                        <p className="text-muted-foreground text-sm text-center py-6">No recent activity</p>
                       )}
                     </div>
                   )}
@@ -2320,13 +2320,13 @@ function UsersSection() {
                   {detailTab === "notes" && (
                     <div>
                       <div className="flex items-center justify-between mb-3">
-                        <Label className="text-slate-500 text-xs">Admin Notes</Label>
+                        <Label className="text-muted-foreground text-xs">Admin Notes</Label>
                         {!editingNotes && (
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => { setEditingNotes(true); setNotesText(userDetails.user.adminNotes || "") }}
-                            className="text-slate-400 hover:text-white"
+                            className="text-muted-foreground hover:text-foreground"
                           >
                             <Pencil className="h-3 w-3 mr-1" />
                             Edit
@@ -2339,11 +2339,11 @@ function UsersSection() {
                             value={notesText}
                             onChange={(e) => setNotesText(e.target.value)}
                             rows={6}
-                            className="w-full bg-slate-800/50 border border-white/[0.08] text-white text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none resize-none placeholder:text-slate-500"
+                            className="w-full bg-card border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none resize-none placeholder:text-muted-foreground"
                             placeholder="Add admin notes about this user..."
                           />
                           <div className="flex gap-2 justify-end">
-                            <Button variant="outline" size="sm" onClick={() => setEditingNotes(false)} className="bg-transparent border-white/10 text-slate-300">
+                            <Button variant="outline" size="sm" onClick={() => setEditingNotes(false)} className="bg-transparent border-border text-foreground">
                               Cancel
                             </Button>
                             <Button size="sm" onClick={handleSaveNotes} disabled={savingNotes} className="bg-blue-600 hover:bg-blue-500 text-white">
@@ -2353,11 +2353,11 @@ function UsersSection() {
                           </div>
                         </div>
                       ) : (
-                        <div className="bg-slate-800/50 rounded-lg p-4 border border-white/[0.05] min-h-[120px]">
+                        <div className="bg-card rounded-lg p-4 border border-border min-h-[120px]">
                           {userDetails.user.adminNotes ? (
-                            <p className="text-sm text-slate-300 whitespace-pre-wrap">{userDetails.user.adminNotes}</p>
+                            <p className="text-sm text-foreground whitespace-pre-wrap">{userDetails.user.adminNotes}</p>
                           ) : (
-                            <p className="text-sm text-slate-600 italic">No admin notes</p>
+                            <p className="text-sm text-muted-foreground italic">No admin notes</p>
                           )}
                         </div>
                       )}
@@ -2372,13 +2372,13 @@ function UsersSection() {
 
       {/* ===== Suspend Dialog ===== */}
       <Dialog open={!!suspendUser} onOpenChange={() => { setSuspendUser(null); setSuspendReason("") }}>
-        <DialogContent className="bg-slate-900 border-white/[0.08]">
+        <DialogContent className="bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-2">
+            <DialogTitle className="text-foreground flex items-center gap-2">
               <Shield className="h-5 w-5 text-amber-400" />
               Suspend User
             </DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogDescription className="text-muted-foreground">
               This will prevent {suspendUser?.email} from logging in and using the platform.
             </DialogDescription>
           </DialogHeader>
@@ -2389,18 +2389,18 @@ function UsersSection() {
               </p>
             </div>
             <div>
-              <Label className="text-slate-400 text-sm">Reason for suspension</Label>
+              <Label className="text-muted-foreground text-sm">Reason for suspension</Label>
               <textarea
                 value={suspendReason}
                 onChange={(e) => setSuspendReason(e.target.value)}
                 rows={3}
-                className="w-full mt-1.5 bg-slate-800/50 border border-white/[0.08] text-white text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none resize-none placeholder:text-slate-500"
+                className="w-full mt-1.5 bg-card border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none resize-none placeholder:text-muted-foreground"
                 placeholder="Reason for suspending this user..."
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setSuspendUser(null); setSuspendReason("") }} className="bg-transparent border-white/10 text-slate-300">
+            <Button variant="outline" onClick={() => { setSuspendUser(null); setSuspendReason("") }} className="bg-transparent border-border text-foreground">
               Cancel
             </Button>
             <Button onClick={handleSuspend} disabled={actionLoading} className="bg-amber-600 hover:bg-amber-500 text-white">
@@ -2413,13 +2413,13 @@ function UsersSection() {
 
       {/* ===== Delete Dialog ===== */}
       <Dialog open={!!deleteUser} onOpenChange={() => { setDeleteUser(null); setDeleteConfirmEmail(""); setDeleteReason("") }}>
-        <DialogContent className="bg-slate-900 border-white/[0.08]">
+        <DialogContent className="bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-2">
+            <DialogTitle className="text-foreground flex items-center gap-2">
               <Trash2 className="h-5 w-5 text-red-400" />
               Delete User
             </DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogDescription className="text-muted-foreground">
               This action will schedule {deleteUser?.email} for deletion.
             </DialogDescription>
           </DialogHeader>
@@ -2444,30 +2444,30 @@ function UsersSection() {
             )}
 
             <div>
-              <Label className="text-slate-400 text-sm">Reason for deletion (optional)</Label>
+              <Label className="text-muted-foreground text-sm">Reason for deletion (optional)</Label>
               <textarea
                 value={deleteReason}
                 onChange={(e) => setDeleteReason(e.target.value)}
                 rows={2}
-                className="w-full mt-1.5 bg-slate-800/50 border border-white/[0.08] text-white text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none resize-none placeholder:text-slate-500"
+                className="w-full mt-1.5 bg-card border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none resize-none placeholder:text-muted-foreground"
                 placeholder="Reason for deletion..."
               />
             </div>
 
             <div>
-              <Label className="text-slate-400 text-sm">
+              <Label className="text-muted-foreground text-sm">
                 Type <span className="text-red-400 font-mono">{deleteUser?.email}</span> to confirm
               </Label>
               <Input
                 value={deleteConfirmEmail}
                 onChange={(e) => setDeleteConfirmEmail(e.target.value)}
-                className="mt-1.5 bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-red-500/50"
+                className="mt-1.5 bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-red-500/50"
                 placeholder="Type email to confirm..."
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setDeleteUser(null); setDeleteConfirmEmail(""); setDeleteReason("") }} className="bg-transparent border-white/10 text-slate-300">
+            <Button variant="outline" onClick={() => { setDeleteUser(null); setDeleteConfirmEmail(""); setDeleteReason("") }} className="bg-transparent border-border text-foreground">
               Cancel
             </Button>
             <Button
@@ -2484,42 +2484,42 @@ function UsersSection() {
 
       {/* ===== Invite Dialog ===== */}
       <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
-        <DialogContent className="bg-slate-900 border-white/[0.08]">
+        <DialogContent className="bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-2">
+            <DialogTitle className="text-foreground flex items-center gap-2">
               <Mail className="h-5 w-5 text-blue-400" />
               Invite New User
             </DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogDescription className="text-muted-foreground">
               Send an invitation email to join the platform.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <Label className="text-slate-400 text-sm">Email *</Label>
+              <Label className="text-muted-foreground text-sm">Email *</Label>
               <Input
                 type="email"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
-                className="mt-1.5 bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
+                className="mt-1.5 bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500/50"
                 placeholder="user@example.com"
               />
             </div>
             <div>
-              <Label className="text-slate-400 text-sm">Name (optional)</Label>
+              <Label className="text-muted-foreground text-sm">Name (optional)</Label>
               <Input
                 value={inviteName}
                 onChange={(e) => setInviteName(e.target.value)}
-                className="mt-1.5 bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
+                className="mt-1.5 bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500/50"
                 placeholder="John Doe"
               />
             </div>
             <div>
-              <Label className="text-slate-400 text-sm">Tier</Label>
+              <Label className="text-muted-foreground text-sm">Tier</Label>
               <select
                 value={inviteTier}
                 onChange={(e) => setInviteTier(e.target.value)}
-                className="w-full mt-1.5 bg-slate-800/50 border border-white/[0.08] text-white text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none"
+                className="w-full mt-1.5 bg-card border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none"
               >
                 <option value="starter">Starter</option>
                 <option value="professional">Professional</option>
@@ -2528,18 +2528,18 @@ function UsersSection() {
               </select>
             </div>
             <div>
-              <Label className="text-slate-400 text-sm">Personal message (optional)</Label>
+              <Label className="text-muted-foreground text-sm">Personal message (optional)</Label>
               <textarea
                 value={inviteMessage}
                 onChange={(e) => setInviteMessage(e.target.value)}
                 rows={3}
-                className="w-full mt-1.5 bg-slate-800/50 border border-white/[0.08] text-white text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none resize-none placeholder:text-slate-500"
+                className="w-full mt-1.5 bg-card border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none resize-none placeholder:text-muted-foreground"
                 placeholder="Hi! I'd like to invite you to try out our platform..."
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowInviteDialog(false)} className="bg-transparent border-white/10 text-slate-300">
+            <Button variant="outline" onClick={() => setShowInviteDialog(false)} className="bg-transparent border-border text-foreground">
               Cancel
             </Button>
             <Button onClick={handleInvite} disabled={inviting || !inviteEmail} className="bg-gradient-to-r from-blue-700 to-orange-500 hover:from-blue-600 hover:to-orange-400 text-white border-0">
@@ -2699,11 +2699,11 @@ function TeamsSection() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold text-white">Team Management</h2>
-          <p className="text-sm text-slate-400">{total} total teams</p>
+          <h2 className="text-xl font-semibold text-foreground">Team Management</h2>
+          <p className="text-sm text-muted-foreground">{total} total teams</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={fetchTeams} variant="outline" size="sm" className="bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5">
+          <Button onClick={fetchTeams} variant="outline" size="sm" className="bg-transparent border-border text-foreground hover:text-foreground hover:bg-muted">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
@@ -2723,7 +2723,7 @@ function TeamsSection() {
 
       <div className="flex gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by team name..."
             value={search}
@@ -2731,58 +2731,58 @@ function TeamsSection() {
               setSearch(e.target.value)
               setPage(1)
             }}
-            className="pl-10 bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
+            className="pl-10 bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500/50"
           />
         </div>
       </div>
 
-      <Card className="bg-slate-800/50 border-white/[0.08] overflow-hidden">
+      <Card className="bg-card border-border overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="border-white/[0.08] hover:bg-transparent">
-              <TableHead className="text-slate-400">Team</TableHead>
-              <TableHead className="text-slate-400">Slug</TableHead>
-              <TableHead className="text-slate-400">Members</TableHead>
-              <TableHead className="text-slate-400">Created</TableHead>
+            <TableRow className="border-border hover:bg-transparent">
+              <TableHead className="text-muted-foreground">Team</TableHead>
+              <TableHead className="text-muted-foreground">Slug</TableHead>
+              <TableHead className="text-muted-foreground">Members</TableHead>
+              <TableHead className="text-muted-foreground">Created</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow className="border-white/[0.08]">
+              <TableRow className="border-border">
                 <TableCell colSpan={5} className="text-center py-12">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-400" />
                 </TableCell>
               </TableRow>
             ) : teams.length === 0 ? (
-              <TableRow className="border-white/[0.08]">
-                <TableCell colSpan={5} className="text-center py-12 text-slate-500">
+              <TableRow className="border-border">
+                <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
                   No teams found
                 </TableCell>
               </TableRow>
             ) : (
               teams.map((team) => (
-                <TableRow key={team.id} className="border-white/[0.08] hover:bg-white/[0.02]">
+                <TableRow key={team.id} className="border-border hover:bg-muted">
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <div className="h-8 w-8 bg-blue-500/10 rounded flex items-center justify-center">
                         <Building2 className="h-4 w-4 text-blue-400" />
                       </div>
                       <div>
-                        <div className="font-medium text-white">{team.name}</div>
+                        <div className="font-medium text-foreground">{team.name}</div>
                         {team.description && (
-                          <div className="text-sm text-slate-400 truncate max-w-xs">
+                          <div className="text-sm text-muted-foreground truncate max-w-xs">
                             {team.description}
                           </div>
                         )}
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="font-mono text-sm text-slate-400">
+                  <TableCell className="font-mono text-sm text-muted-foreground">
                     {team.slug}
                   </TableCell>
-                  <TableCell className="text-white">{team.memberCount}</TableCell>
-                  <TableCell className="text-sm text-slate-400">
+                  <TableCell className="text-foreground">{team.memberCount}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
                     {new Date(team.createdAt).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
@@ -2821,7 +2821,7 @@ function TeamsSection() {
 
       {totalPages > 1 && (
         <div className="flex justify-between items-center">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Page {page} of {totalPages}
           </p>
           <div className="flex gap-2">
@@ -2921,8 +2921,8 @@ function TeamsSection() {
               />
             </div>
             {selectedTeam && (
-              <div className="text-sm text-gray-500">
-                Slug: <code className="bg-gray-100 px-1 rounded">{selectedTeam.slug}</code>
+              <div className="text-sm text-muted-foreground">
+                Slug: <code className="bg-muted px-1 rounded">{selectedTeam.slug}</code>
               </div>
             )}
           </div>
@@ -2972,7 +2972,7 @@ function AnalyticsSection() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h2 className="text-xl font-semibold text-white">Platform Analytics</h2>
+        <h2 className="text-xl font-semibold text-foreground">Platform Analytics</h2>
         <div className="py-12 text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-orange-400" />
         </div>
@@ -2983,11 +2983,11 @@ function AnalyticsSection() {
   if (!analytics) {
     return (
       <div className="space-y-6">
-        <h2 className="text-xl font-semibold text-white">Platform Analytics</h2>
-        <Card className="bg-slate-800/50 border-white/[0.08]">
+        <h2 className="text-xl font-semibold text-foreground">Platform Analytics</h2>
+        <Card className="bg-card border-border">
           <CardContent className="py-12 text-center">
-            <AlertCircle className="h-12 w-12 text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-400">Failed to load analytics</p>
+            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">Failed to load analytics</p>
           </CardContent>
         </Card>
       </div>
@@ -2996,74 +2996,74 @@ function AnalyticsSection() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-white">Platform Analytics</h2>
+      <h2 className="text-xl font-semibold text-foreground">Platform Analytics</h2>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-slate-800/50 border-white/[0.08] hover:border-white/[0.15] transition-colors">
+        <Card className="bg-card border-border hover:border-white/[0.15] transition-colors">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-slate-400">Total Users</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
               <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
                 <Users className="h-4 w-4 text-blue-400" />
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white">{analytics.users.total}</div>
+            <div className="text-3xl font-bold text-foreground">{analytics.users.total}</div>
             <p className="text-xs text-emerald-400 mt-1">+{analytics.users.newLast30Days} last 30 days</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-white/[0.08] hover:border-white/[0.15] transition-colors">
+        <Card className="bg-card border-border hover:border-white/[0.15] transition-colors">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-slate-400">Subdomains</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Subdomains</CardTitle>
               <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
                 <Globe className="h-4 w-4 text-emerald-400" />
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white">{analytics.subdomains.total}</div>
+            <div className="text-3xl font-bold text-foreground">{analytics.subdomains.total}</div>
             <p className="text-xs text-emerald-400 mt-1">+{analytics.subdomains.last7Days} this week</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-white/[0.08] hover:border-white/[0.15] transition-colors">
+        <Card className="bg-card border-border hover:border-white/[0.15] transition-colors">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-slate-400">Teams</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Teams</CardTitle>
               <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
                 <Building2 className="h-4 w-4 text-orange-400" />
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white">{analytics.teams.total}</div>
-            <p className="text-xs text-slate-400 mt-1">Avg {analytics.teams.avgSize.toFixed(1)} members</p>
+            <div className="text-3xl font-bold text-foreground">{analytics.teams.total}</div>
+            <p className="text-xs text-muted-foreground mt-1">Avg {analytics.teams.avgSize.toFixed(1)} members</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-white/[0.08] hover:border-white/[0.15] transition-colors">
+        <Card className="bg-card border-border hover:border-white/[0.15] transition-colors">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-slate-400">Pending Invites</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Pending Invites</CardTitle>
               <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
                 <Mail className="h-4 w-4 text-amber-400" />
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white">{analytics.invitations.pending}</div>
-            <p className="text-xs text-slate-400 mt-1">{analytics.invitations.accepted} accepted</p>
+            <div className="text-3xl font-bold text-foreground">{analytics.invitations.pending}</div>
+            <p className="text-xs text-muted-foreground mt-1">{analytics.invitations.accepted} accepted</p>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card className="bg-slate-800/50 border-white/[0.08]">
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-white">User Signups (Last 14 Days)</CardTitle>
+            <CardTitle className="text-foreground">User Signups (Last 14 Days)</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[200px] flex items-end gap-1">
@@ -3077,7 +3077,7 @@ function AnalyticsSection() {
                       style={{ height: `${Math.max(height, 2)}%` }}
                       title={`${day.date}: ${day.count}`}
                     />
-                    <div className="text-[10px] text-slate-500 mt-1 -rotate-45 origin-top-left">
+                    <div className="text-[10px] text-muted-foreground mt-1 -rotate-45 origin-top-left">
                       {day.date.slice(5)}
                     </div>
                   </div>
@@ -3087,9 +3087,9 @@ function AnalyticsSection() {
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-white/[0.08]">
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-white">Top Users by Subdomains</CardTitle>
+            <CardTitle className="text-foreground">Top Users by Subdomains</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -3099,7 +3099,7 @@ function AnalyticsSection() {
                     <div className="h-6 w-6 rounded-full bg-gradient-to-br from-blue-600 to-orange-500 flex items-center justify-center text-xs font-medium text-white">
                       {index + 1}
                     </div>
-                    <span className="text-sm text-slate-300 truncate max-w-[200px]">{user.email}</span>
+                    <span className="text-sm text-foreground truncate max-w-[200px]">{user.email}</span>
                   </div>
                   <Badge className="bg-blue-500/10 text-orange-400 border-blue-500/20">{user.subdomainCount}</Badge>
                 </div>
@@ -3164,40 +3164,40 @@ function ActivitySection() {
     if (action.includes("delete") || action.includes("revoke")) return "text-red-400 bg-red-500/10 border-red-500/20"
     if (action.includes("create") || action.includes("grant")) return "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
     if (action.includes("update") || action.includes("edit")) return "text-blue-400 bg-blue-500/10 border-blue-500/20"
-    return "text-slate-400 bg-slate-500/10 border-slate-500/20"
+    return "text-muted-foreground bg-slate-500/10 border-slate-500/20"
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold text-white">Activity Log</h2>
-          <p className="text-sm text-slate-400">Platform-wide activity history</p>
+          <h2 className="text-xl font-semibold text-foreground">Activity Log</h2>
+          <p className="text-sm text-muted-foreground">Platform-wide activity history</p>
         </div>
-        <Button onClick={fetchLogs} variant="outline" size="sm" className="bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5">
+        <Button onClick={fetchLogs} variant="outline" size="sm" className="bg-transparent border-border text-foreground hover:text-foreground hover:bg-muted">
           <RefreshCw className="h-4 w-4 mr-2" />
           Refresh
         </Button>
       </div>
 
-      <Card className="bg-slate-800/50 border-white/[0.08]">
-        <div className="divide-y divide-white/[0.05]">
+      <Card className="bg-card border-border">
+        <div className="divide-y divide-border">
           {loading ? (
             <div className="py-12 text-center">
               <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-400" />
             </div>
           ) : logs.length === 0 ? (
-            <div className="py-12 text-center text-slate-500">
-              <History className="h-12 w-12 text-slate-700 mx-auto mb-4" />
+            <div className="py-12 text-center text-muted-foreground">
+              <History className="h-12 w-12 text-foreground mx-auto mb-4" />
               <p>No activity logged yet</p>
             </div>
           ) : (
             logs.map((log) => (
-              <div key={log.id} className="p-4 hover:bg-white/[0.02]">
+              <div key={log.id} className="p-4 hover:bg-muted">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-3">
                     <div className="mt-1">
-                      <Activity className="h-4 w-4 text-slate-500" />
+                      <Activity className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
@@ -3205,28 +3205,28 @@ function ActivitySection() {
                           {formatAction(log.action)}
                         </Badge>
                         {log.targetType && (
-                          <span className="text-sm text-slate-400">
+                          <span className="text-sm text-muted-foreground">
                             on {log.targetType}
                           </span>
                         )}
                       </div>
-                      <div className="text-sm text-slate-400 mt-1">
+                      <div className="text-sm text-muted-foreground mt-1">
                         {log.actorEmail || "System"}
-                        {log.ipAddress && <span className="ml-2 text-slate-500">({log.ipAddress})</span>}
+                        {log.ipAddress && <span className="ml-2 text-muted-foreground">({log.ipAddress})</span>}
                       </div>
                       {Object.keys(log.details).length > 0 && (
                         <details className="mt-2">
-                          <summary className="text-xs text-slate-500 cursor-pointer hover:text-slate-300">
+                          <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
                             View details
                           </summary>
-                          <pre className="mt-1 text-xs bg-slate-900/50 text-slate-400 p-2 rounded overflow-x-auto border border-white/[0.05]">
+                          <pre className="mt-1 text-xs bg-muted/50 text-muted-foreground p-2 rounded overflow-x-auto border border-border">
                             {JSON.stringify(log.details, null, 2)}
                           </pre>
                         </details>
                       )}
                     </div>
                   </div>
-                  <div className="text-sm text-slate-500">
+                  <div className="text-sm text-muted-foreground">
                     {new Date(log.createdAt).toLocaleString()}
                   </div>
                 </div>
@@ -3238,7 +3238,7 @@ function ActivitySection() {
 
       {totalPages > 1 && (
         <div className="flex justify-between items-center">
-          <p className="text-sm text-gray-500">Page {page} of {totalPages}</p>
+          <p className="text-sm text-muted-foreground">Page {page} of {totalPages}</p>
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -3367,7 +3367,7 @@ function FeedbackSection({ adminUserId }: { adminUserId: string }) {
       REVIEWED: "bg-amber-500/10 text-amber-400 border-amber-500/20",
       IN_PROGRESS: "bg-blue-500/10 text-orange-400 border-blue-500/20",
       RESOLVED: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-      ARCHIVED: "bg-slate-500/10 text-slate-400 border-slate-500/20",
+      ARCHIVED: "bg-slate-500/10 text-muted-foreground border-slate-500/20",
     }
     return <Badge className={colors[status] || "bg-slate-500/10"}>{status}</Badge>
   }
@@ -3378,8 +3378,8 @@ function FeedbackSection({ adminUserId }: { adminUserId: string }) {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold text-white">User Feedback</h2>
-          <p className="text-sm text-slate-400">
+          <h2 className="text-xl font-semibold text-foreground">User Feedback</h2>
+          <p className="text-sm text-muted-foreground">
             {newCount > 0 ? `${newCount} new feedback items` : "Review and respond to user feedback"}
           </p>
         </div>
@@ -3387,7 +3387,7 @@ function FeedbackSection({ adminUserId }: { adminUserId: string }) {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-white/[0.08] rounded-md text-sm bg-slate-800/50 text-white"
+            className="px-3 py-2 border border-border rounded-md text-sm bg-card text-foreground"
           >
             <option value="all">All Status</option>
             <option value="NEW">New</option>
@@ -3396,7 +3396,7 @@ function FeedbackSection({ adminUserId }: { adminUserId: string }) {
             <option value="RESOLVED">Resolved</option>
             <option value="ARCHIVED">Archived</option>
           </select>
-          <Button onClick={fetchFeedback} variant="outline" size="sm" className="bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5">
+          <Button onClick={fetchFeedback} variant="outline" size="sm" className="bg-transparent border-border text-foreground hover:text-foreground hover:bg-muted">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
@@ -3406,15 +3406,15 @@ function FeedbackSection({ adminUserId }: { adminUserId: string }) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Feedback List */}
         <div className="lg:col-span-2">
-          <Card className="bg-slate-800/50 border-white/[0.08]">
-            <div className="divide-y divide-white/[0.05] max-h-[600px] overflow-y-auto">
+          <Card className="bg-card border-border">
+            <div className="divide-y divide-border max-h-[600px] overflow-y-auto">
               {loading ? (
                 <div className="py-12 text-center">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-400" />
                 </div>
               ) : feedback.length === 0 ? (
-                <div className="py-12 text-center text-slate-500">
-                  <MessageSquare className="h-12 w-12 text-slate-700 mx-auto mb-4" />
+                <div className="py-12 text-center text-muted-foreground">
+                  <MessageSquare className="h-12 w-12 text-foreground mx-auto mb-4" />
                   <p>No feedback yet</p>
                 </div>
               ) : (
@@ -3425,7 +3425,7 @@ function FeedbackSection({ adminUserId }: { adminUserId: string }) {
                       setSelectedItem(item)
                       setAdminNotes(item.adminNotes || "")
                     }}
-                    className={`p-4 cursor-pointer hover:bg-white/[0.02] transition-colors ${
+                    className={`p-4 cursor-pointer hover:bg-muted transition-colors ${
                       selectedItem?.id === item.id ? "bg-blue-500/10 border-l-2 border-l-blue-500" : ""
                     }`}
                   >
@@ -3434,12 +3434,12 @@ function FeedbackSection({ adminUserId }: { adminUserId: string }) {
                         {getTypeIcon(item.type)}
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-sm text-white">
+                            <span className="font-medium text-sm text-foreground">
                               {item.subject || item.message.slice(0, 40) + "..."}
                             </span>
                             {getStatusBadge(item.status)}
                           </div>
-                          <div className="text-xs text-slate-400 mt-1">
+                          <div className="text-xs text-muted-foreground mt-1">
                             {item.userName || item.userEmail} • {new Date(item.createdAt).toLocaleDateString()}
                           </div>
                         </div>
@@ -3454,37 +3454,37 @@ function FeedbackSection({ adminUserId }: { adminUserId: string }) {
 
         {/* Detail Panel */}
         <div className="lg:col-span-1">
-          <Card className="sticky top-4 bg-slate-800/50 border-white/[0.08]">
+          <Card className="sticky top-4 bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-lg text-white">Details</CardTitle>
+              <CardTitle className="text-lg text-foreground">Details</CardTitle>
             </CardHeader>
             <CardContent>
               {selectedItem ? (
                 <div className="space-y-4">
                   <div>
-                    <Label className="text-xs text-slate-500">Type</Label>
+                    <Label className="text-xs text-muted-foreground">Type</Label>
                     <div className="flex items-center gap-2 mt-1">
                       {getTypeIcon(selectedItem.type)}
-                      <span className="font-medium text-white">{selectedItem.type}</span>
+                      <span className="font-medium text-foreground">{selectedItem.type}</span>
                     </div>
                   </div>
 
                   <div>
-                    <Label className="text-xs text-slate-500">From</Label>
-                    <p className="text-sm text-white">{selectedItem.userName || "Unknown"}</p>
-                    <p className="text-xs text-slate-400">{selectedItem.userEmail}</p>
+                    <Label className="text-xs text-muted-foreground">From</Label>
+                    <p className="text-sm text-foreground">{selectedItem.userName || "Unknown"}</p>
+                    <p className="text-xs text-muted-foreground">{selectedItem.userEmail}</p>
                   </div>
 
                   <div>
-                    <Label className="text-xs text-slate-500">Message</Label>
-                    <p className="text-sm mt-1 whitespace-pre-wrap bg-slate-900/50 p-2 rounded border border-white/[0.05] text-slate-300">
+                    <Label className="text-xs text-muted-foreground">Message</Label>
+                    <p className="text-sm mt-1 whitespace-pre-wrap bg-muted/50 p-2 rounded border border-border text-foreground">
                       {selectedItem.message}
                     </p>
                   </div>
 
                   {selectedItem.pageUrl && (
                     <div>
-                      <Label className="text-xs text-slate-500">Page URL</Label>
+                      <Label className="text-xs text-muted-foreground">Page URL</Label>
                       <a
                         href={selectedItem.pageUrl}
                         target="_blank"
@@ -3497,7 +3497,7 @@ function FeedbackSection({ adminUserId }: { adminUserId: string }) {
                   )}
 
                   <div>
-                    <Label className="text-xs text-slate-500">Status</Label>
+                    <Label className="text-xs text-muted-foreground">Status</Label>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {["NEW", "REVIEWED", "IN_PROGRESS", "RESOLVED", "ARCHIVED"].map((status) => (
                         <Button
@@ -3508,7 +3508,7 @@ function FeedbackSection({ adminUserId }: { adminUserId: string }) {
                           disabled={updating}
                           className={`text-xs ${selectedItem.status === status
                             ? "bg-blue-600 hover:bg-blue-500 text-white border-0"
-                            : "bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5"}`}
+                            : "bg-transparent border-border text-foreground hover:text-foreground hover:bg-muted"}`}
                         >
                           {status.replace("_", " ")}
                         </Button>
@@ -3517,11 +3517,11 @@ function FeedbackSection({ adminUserId }: { adminUserId: string }) {
                   </div>
 
                   <div>
-                    <Label className="text-xs text-slate-500">Admin Notes</Label>
+                    <Label className="text-xs text-muted-foreground">Admin Notes</Label>
                     <textarea
                       value={adminNotes}
                       onChange={(e) => setAdminNotes(e.target.value)}
-                      className="w-full mt-1 p-2 bg-slate-900/50 border border-white/[0.08] rounded-md text-sm text-white placeholder:text-slate-500"
+                      className="w-full mt-1 p-2 bg-muted/50 border border-border rounded-md text-sm text-foreground placeholder:text-muted-foreground"
                       rows={3}
                       placeholder="Add internal notes..."
                     />
@@ -3536,7 +3536,7 @@ function FeedbackSection({ adminUserId }: { adminUserId: string }) {
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-slate-500">Select a feedback item to view details</p>
+                <p className="text-sm text-muted-foreground">Select a feedback item to view details</p>
               )}
             </CardContent>
           </Card>
@@ -3602,7 +3602,7 @@ function SettingsSection() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h2 className="text-xl font-semibold text-white">Platform Settings</h2>
+        <h2 className="text-xl font-semibold text-foreground">Platform Settings</h2>
         <div className="py-12 text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-orange-400" />
         </div>
@@ -3613,11 +3613,11 @@ function SettingsSection() {
   if (!settings) {
     return (
       <div className="space-y-6">
-        <h2 className="text-xl font-semibold text-white">Platform Settings</h2>
-        <Card className="bg-slate-800/50 border-white/[0.08]">
+        <h2 className="text-xl font-semibold text-foreground">Platform Settings</h2>
+        <Card className="bg-card border-border">
           <CardContent className="py-12 text-center">
-            <AlertCircle className="h-12 w-12 text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-400">Failed to load settings</p>
+            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">Failed to load settings</p>
           </CardContent>
         </Card>
       </div>
@@ -3627,7 +3627,7 @@ function SettingsSection() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-white">Platform Settings</h2>
+        <h2 className="text-xl font-semibold text-foreground">Platform Settings</h2>
         <Button onClick={handleSave} disabled={saving} className="bg-gradient-to-r from-blue-700 to-orange-500 hover:from-blue-600 hover:to-orange-400 text-white border-0">
           {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
           Save Changes
@@ -3635,9 +3635,9 @@ function SettingsSection() {
       </div>
 
       <div className="grid gap-6">
-        <Card className="bg-slate-800/50 border-white/[0.08]">
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
+            <CardTitle className="flex items-center gap-2 text-foreground">
               <Settings className="h-5 w-5 text-orange-400" />
               General Settings
             </CardTitle>
@@ -3645,60 +3645,60 @@ function SettingsSection() {
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="platformName" className="text-slate-300">Platform Name</Label>
+                <Label htmlFor="platformName" className="text-foreground">Platform Name</Label>
                 <Input
                   id="platformName"
                   value={settings.platformName}
                   onChange={(e) => updateSetting("platformName", e.target.value)}
-                  className="bg-slate-900/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
+                  className="bg-muted/50 border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500/50"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="supportEmail" className="text-slate-300">Support Email</Label>
+                <Label htmlFor="supportEmail" className="text-foreground">Support Email</Label>
                 <Input
                   id="supportEmail"
                   type="email"
                   value={settings.supportEmail}
                   onChange={(e) => updateSetting("supportEmail", e.target.value)}
-                  className="bg-slate-900/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
+                  className="bg-muted/50 border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500/50"
                 />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-white/[0.08]">
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
+            <CardTitle className="flex items-center gap-2 text-foreground">
               <Shield className="h-5 w-5 text-orange-400" />
               Access Control
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between py-2 border-b border-white/[0.05]">
+            <div className="flex items-center justify-between py-2 border-b border-border">
               <div>
-                <Label className="text-white">Registration Enabled</Label>
-                <p className="text-sm text-slate-400">Allow new users to sign up</p>
+                <Label className="text-foreground">Registration Enabled</Label>
+                <p className="text-sm text-muted-foreground">Allow new users to sign up</p>
               </div>
               <Switch
                 checked={settings.registrationEnabled}
                 onCheckedChange={(v) => updateSetting("registrationEnabled", v)}
               />
             </div>
-            <div className="flex items-center justify-between py-2 border-b border-white/[0.05]">
+            <div className="flex items-center justify-between py-2 border-b border-border">
               <div>
-                <Label className="text-white">Invite Only Mode</Label>
-                <p className="text-sm text-slate-400">Require invitation to sign up</p>
+                <Label className="text-foreground">Invite Only Mode</Label>
+                <p className="text-sm text-muted-foreground">Require invitation to sign up</p>
               </div>
               <Switch
                 checked={settings.inviteOnlyMode}
                 onCheckedChange={(v) => updateSetting("inviteOnlyMode", v)}
               />
             </div>
-            <div className="flex items-center justify-between py-2 border-b border-white/[0.05]">
+            <div className="flex items-center justify-between py-2 border-b border-border">
               <div>
-                <Label className="text-white">Maintenance Mode</Label>
-                <p className="text-sm text-slate-400">Temporarily disable access for non-admins</p>
+                <Label className="text-foreground">Maintenance Mode</Label>
+                <p className="text-sm text-muted-foreground">Temporarily disable access for non-admins</p>
               </div>
               <Switch
                 checked={settings.maintenanceMode}
@@ -3707,8 +3707,8 @@ function SettingsSection() {
             </div>
             <div className="flex items-center justify-between py-2">
               <div>
-                <Label className="text-white">Require Email Verification</Label>
-                <p className="text-sm text-slate-400">Users must verify email before access</p>
+                <Label className="text-foreground">Require Email Verification</Label>
+                <p className="text-sm text-muted-foreground">Users must verify email before access</p>
               </div>
               <Switch
                 checked={settings.requireEmailVerification}
@@ -3718,9 +3718,9 @@ function SettingsSection() {
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-white/[0.08]">
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
+            <CardTitle className="flex items-center gap-2 text-foreground">
               <Database className="h-5 w-5 text-orange-400" />
               Limits
             </CardTitle>
@@ -3728,51 +3728,51 @@ function SettingsSection() {
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-3">
               <div className="space-y-2">
-                <Label htmlFor="maxSubdomains" className="text-slate-300">Max Subdomains per User</Label>
+                <Label htmlFor="maxSubdomains" className="text-foreground">Max Subdomains per User</Label>
                 <Input
                   id="maxSubdomains"
                   type="number"
                   value={settings.maxSubdomainsPerUser}
                   onChange={(e) => updateSetting("maxSubdomainsPerUser", parseInt(e.target.value) || 0)}
-                  className="bg-slate-900/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
+                  className="bg-muted/50 border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500/50"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="maxTeams" className="text-slate-300">Max Teams per User</Label>
+                <Label htmlFor="maxTeams" className="text-foreground">Max Teams per User</Label>
                 <Input
                   id="maxTeams"
                   type="number"
                   value={settings.maxTeamsPerUser}
                   onChange={(e) => updateSetting("maxTeamsPerUser", parseInt(e.target.value) || 0)}
-                  className="bg-slate-900/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
+                  className="bg-muted/50 border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500/50"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="maxMembers" className="text-slate-300">Max Members per Team</Label>
+                <Label htmlFor="maxMembers" className="text-foreground">Max Members per Team</Label>
                 <Input
                   id="maxMembers"
                   type="number"
                   value={settings.maxMembersPerTeam}
                   onChange={(e) => updateSetting("maxMembersPerTeam", parseInt(e.target.value) || 0)}
-                  className="bg-slate-900/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
+                  className="bg-muted/50 border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500/50"
                 />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-white/[0.08]">
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
+            <CardTitle className="flex items-center gap-2 text-foreground">
               <Globe className="h-5 w-5 text-orange-400" />
               Features
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between py-2 border-b border-white/[0.05]">
+            <div className="flex items-center justify-between py-2 border-b border-border">
               <div>
-                <Label className="text-white">Allow Custom Domains</Label>
-                <p className="text-sm text-slate-400">Let users connect their own domains</p>
+                <Label className="text-foreground">Allow Custom Domains</Label>
+                <p className="text-sm text-muted-foreground">Let users connect their own domains</p>
               </div>
               <Switch
                 checked={settings.allowCustomDomains}
@@ -3780,11 +3780,11 @@ function SettingsSection() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="trialDays" className="text-slate-300">Default Trial Days</Label>
+              <Label htmlFor="trialDays" className="text-foreground">Default Trial Days</Label>
               <Input
                 id="trialDays"
                 type="number"
-                className="w-32 bg-slate-900/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
+                className="w-32 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500/50"
                 value={settings.defaultTrialDays}
                 onChange={(e) => updateSetting("defaultTrialDays", parseInt(e.target.value) || 0)}
               />
@@ -3969,10 +3969,10 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold text-white">AI Credits Management</h2>
-          <p className="text-sm text-slate-400">Monitor and allocate AI credits across all users</p>
+          <h2 className="text-xl font-semibold text-foreground">AI Credits Management</h2>
+          <p className="text-sm text-muted-foreground">Monitor and allocate AI credits across all users</p>
         </div>
-        <Button onClick={fetchBalances} variant="outline" size="sm" className="bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5">
+        <Button onClick={fetchBalances} variant="outline" size="sm" className="bg-transparent border-border text-foreground hover:text-foreground hover:bg-muted">
           <RefreshCw className="h-4 w-4 mr-2" />
           Refresh
         </Button>
@@ -3981,23 +3981,23 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
       {/* Stats Cards */}
       {stats && (
         <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
-          <Card className="bg-slate-800/50 border-white/[0.08] hover:border-white/[0.15] transition-colors">
+          <Card className="bg-card border-border hover:border-white/[0.15] transition-colors">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-slate-400">Total Users</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
                 <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
                   <Users className="h-4 w-4 text-blue-400" />
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.totalUsers}</div>
+              <div className="text-2xl font-bold text-foreground">{stats.totalUsers}</div>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-white/[0.08] hover:border-white/[0.15] transition-colors">
+          <Card className="bg-card border-border hover:border-white/[0.15] transition-colors">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-slate-400">With Credits</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">With Credits</CardTitle>
                 <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
                   <UserCheck className="h-4 w-4 text-emerald-400" />
                 </div>
@@ -4007,10 +4007,10 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
               <div className="text-2xl font-bold text-emerald-400">{stats.usersWithCredits ?? 0}</div>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-white/[0.08] hover:border-white/[0.15] transition-colors">
+          <Card className="bg-card border-border hover:border-white/[0.15] transition-colors">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-slate-400">Monthly Credits</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Credits</CardTitle>
                 <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
                   <Calendar className="h-4 w-4 text-blue-400" />
                 </div>
@@ -4020,10 +4020,10 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
               <div className="text-2xl font-bold text-blue-400">{stats.totalMonthlyCredits.toLocaleString()}</div>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-white/[0.08] hover:border-white/[0.15] transition-colors">
+          <Card className="bg-card border-border hover:border-white/[0.15] transition-colors">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-slate-400">Purchased Credits</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Purchased Credits</CardTitle>
                 <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
                   <CreditCard className="h-4 w-4 text-emerald-400" />
                 </div>
@@ -4033,10 +4033,10 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
               <div className="text-2xl font-bold text-emerald-400">{stats.totalPurchasedCredits.toLocaleString()}</div>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-white/[0.08] hover:border-white/[0.15] transition-colors">
+          <Card className="bg-card border-border hover:border-white/[0.15] transition-colors">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-slate-400">Total Used</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Used</CardTitle>
                 <div className="h-8 w-8 rounded-lg bg-orange-500/10 flex items-center justify-center">
                   <Activity className="h-4 w-4 text-orange-400" />
                 </div>
@@ -4046,10 +4046,10 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
               <div className="text-2xl font-bold text-orange-400">{stats.totalUsedCredits.toLocaleString()}</div>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-white/[0.08] hover:border-white/[0.15] transition-colors">
+          <Card className="bg-card border-border hover:border-white/[0.15] transition-colors">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-slate-400">Avg Balance</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Avg Balance</CardTitle>
                 <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
                   <TrendingUp className="h-4 w-4 text-amber-400" />
                 </div>
@@ -4065,7 +4065,7 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
       {/* Search */}
       <div className="flex gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by email or name..."
             value={search}
@@ -4073,37 +4073,37 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
               setSearch(e.target.value)
               setPage(1)
             }}
-            className="pl-10 bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
+            className="pl-10 bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500/50"
           />
         </div>
       </div>
 
       {/* Balances Table */}
-      <Card className="bg-slate-800/50 border-white/[0.08] overflow-hidden">
+      <Card className="bg-card border-border overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="border-white/[0.08] hover:bg-transparent">
-              <TableHead className="text-slate-400">User</TableHead>
-              <TableHead className="text-slate-400">Status</TableHead>
-              <TableHead className="text-right text-slate-400">Monthly</TableHead>
-              <TableHead className="text-right text-slate-400">Purchased</TableHead>
-              <TableHead className="text-right text-slate-400">Total</TableHead>
-              <TableHead className="text-right text-slate-400">Lifetime Used</TableHead>
-              <TableHead className="text-slate-400">Last Updated</TableHead>
+            <TableRow className="border-border hover:bg-transparent">
+              <TableHead className="text-muted-foreground">User</TableHead>
+              <TableHead className="text-muted-foreground">Status</TableHead>
+              <TableHead className="text-right text-muted-foreground">Monthly</TableHead>
+              <TableHead className="text-right text-muted-foreground">Purchased</TableHead>
+              <TableHead className="text-right text-muted-foreground">Total</TableHead>
+              <TableHead className="text-right text-muted-foreground">Lifetime Used</TableHead>
+              <TableHead className="text-muted-foreground">Last Updated</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow className="border-white/[0.08]">
+              <TableRow className="border-border">
                 <TableCell colSpan={8} className="text-center py-12">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-400" />
                 </TableCell>
               </TableRow>
             ) : balances.length === 0 ? (
-              <TableRow className="border-white/[0.08]">
-                <TableCell colSpan={8} className="text-center py-12 text-slate-500">
-                  <Sparkles className="h-12 w-12 text-slate-700 mx-auto mb-4" />
+              <TableRow className="border-border">
+                <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+                  <Sparkles className="h-12 w-12 text-foreground mx-auto mb-4" />
                   <p>No users found</p>
                 </TableCell>
               </TableRow>
@@ -4111,7 +4111,7 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
               balances.map((balance) => (
                 <Fragment key={balance.userId}>
                   <TableRow
-                    className={`border-white/[0.08] hover:bg-white/[0.02] cursor-pointer ${balance.hasCredits === false ? "opacity-60" : ""} ${historyUser?.userId === balance.userId ? "bg-blue-500/5 border-l-2 border-l-blue-500" : ""}`}
+                    className={`border-border hover:bg-muted cursor-pointer ${balance.hasCredits === false ? "opacity-60" : ""} ${historyUser?.userId === balance.userId ? "bg-blue-500/5 border-l-2 border-l-blue-500" : ""}`}
                     onClick={() => handleRowClick(balance)}
                   >
                     <TableCell>
@@ -4119,13 +4119,13 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
                         <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
                           balance.hasCredits !== false
                             ? "bg-gradient-to-br from-blue-600 to-orange-500"
-                            : "bg-slate-700"
+                            : "bg-muted"
                         }`}>
-                          <Sparkles className={`h-4 w-4 ${balance.hasCredits !== false ? "text-white" : "text-slate-500"}`} />
+                          <Sparkles className={`h-4 w-4 ${balance.hasCredits !== false ? "text-foreground" : "text-muted-foreground"}`} />
                         </div>
                         <div>
-                          <div className="font-medium text-white">{balance.userDisplayName || balance.userEmail || "Unknown"}</div>
-                          <div className="text-sm text-slate-400">{balance.userEmail}</div>
+                          <div className="font-medium text-foreground">{balance.userDisplayName || balance.userEmail || "Unknown"}</div>
+                          <div className="text-sm text-muted-foreground">{balance.userEmail}</div>
                         </div>
                       </div>
                     </TableCell>
@@ -4135,7 +4135,7 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
                           Has Credits
                         </Badge>
                       ) : (
-                        <Badge className="bg-slate-700 text-slate-400">
+                        <Badge className="bg-muted text-muted-foreground">
                           No Credits
                         </Badge>
                       )}
@@ -4146,13 +4146,13 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
                     <TableCell className="text-right font-medium text-emerald-400">
                       {balance.purchasedBalance.toLocaleString()}
                     </TableCell>
-                    <TableCell className="text-right font-bold text-white">
+                    <TableCell className="text-right font-bold text-foreground">
                       {balance.totalBalance.toLocaleString()}
                     </TableCell>
-                    <TableCell className="text-right text-slate-400">
+                    <TableCell className="text-right text-muted-foreground">
                       {balance.lifetimeUsed.toLocaleString()}
                     </TableCell>
-                    <TableCell className="text-sm text-slate-400">
+                    <TableCell className="text-sm text-muted-foreground">
                       {formatDate(balance.updatedAt)}
                     </TableCell>
                     <TableCell>
@@ -4172,11 +4172,11 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
                   </TableRow>
                   {/* Expanded grant history row */}
                   {historyUser?.userId === balance.userId && (
-                    <TableRow className="border-white/[0.08] bg-slate-900/50">
+                    <TableRow className="border-border bg-muted/50">
                       <TableCell colSpan={8} className="p-0">
                         <div className="px-6 py-4 border-l-2 border-l-blue-500">
                           <div className="flex items-center justify-between mb-3">
-                            <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+                            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
                               <History className="h-4 w-4 text-blue-400" />
                               Grant History for {balance.userDisplayName || balance.userEmail}
                             </h4>
@@ -4198,11 +4198,11 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
                               <Loader2 className="h-5 w-5 animate-spin text-blue-400" />
                             </div>
                           ) : grants.length === 0 ? (
-                            <p className="text-sm text-slate-500 py-4">No credit grants recorded for this user.</p>
+                            <p className="text-sm text-muted-foreground py-4">No credit grants recorded for this user.</p>
                           ) : (
                             <div className="space-y-2 max-h-64 overflow-y-auto">
                               {grants.map((grant) => (
-                                <div key={grant.id} className="flex items-center justify-between bg-slate-800/50 rounded-lg px-4 py-2.5 border border-white/[0.05]">
+                                <div key={grant.id} className="flex items-center justify-between bg-card rounded-lg px-4 py-2.5 border border-border">
                                   <div className="flex items-center gap-3">
                                     <div className={`h-7 w-7 rounded-full flex items-center justify-center ${
                                       grant.creditType === "purchased" ? "bg-emerald-500/10" : "bg-blue-500/10"
@@ -4211,7 +4211,7 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
                                     </div>
                                     <div>
                                       <div className="flex items-center gap-2">
-                                        <span className="text-sm font-medium text-white">+{grant.creditsAmount.toLocaleString()} credits</span>
+                                        <span className="text-sm font-medium text-foreground">+{grant.creditsAmount.toLocaleString()} credits</span>
                                         <Badge className={`text-[10px] px-1.5 ${
                                           grant.creditType === "purchased"
                                             ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
@@ -4229,16 +4229,16 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
                                           </Badge>
                                         )}
                                       </div>
-                                      <div className="text-xs text-slate-500 mt-0.5">
+                                      <div className="text-xs text-muted-foreground mt-0.5">
                                         {grant.grantReason || "No reason specified"}
-                                        {grant.notes && <span className="text-slate-600"> -- {grant.notes}</span>}
+                                        {grant.notes && <span className="text-muted-foreground"> -- {grant.notes}</span>}
                                       </div>
                                     </div>
                                   </div>
                                   <div className="text-right">
-                                    <div className="text-xs text-slate-400">{formatDateTime(grant.createdAt)}</div>
+                                    <div className="text-xs text-muted-foreground">{formatDateTime(grant.createdAt)}</div>
                                     {grant.grantedByEmail && (
-                                      <div className="text-[10px] text-slate-600">by {grant.grantedByEmail}</div>
+                                      <div className="text-[10px] text-muted-foreground">by {grant.grantedByEmail}</div>
                                     )}
                                   </div>
                                 </div>
@@ -4259,7 +4259,7 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-between items-center">
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-muted-foreground">
             Page {page} of {totalPages} ({total} users)
           </p>
           <div className="flex gap-2">
@@ -4268,7 +4268,7 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
               size="sm"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5 disabled:opacity-30"
+              className="bg-transparent border-border text-foreground hover:text-foreground hover:bg-muted disabled:opacity-30"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -4277,7 +4277,7 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
               size="sm"
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5 disabled:opacity-30"
+              className="bg-transparent border-border text-foreground hover:text-foreground hover:bg-muted disabled:opacity-30"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -4287,30 +4287,30 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
 
       {/* Grant Credits Dialog */}
       <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
-        <DialogContent className="bg-slate-900 border-white/[0.08] text-white">
+        <DialogContent className="bg-card border-border text-foreground">
           <DialogHeader>
-            <DialogTitle className="text-white">Grant AI Credits</DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogTitle className="text-foreground">Grant AI Credits</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
               Grant credits to {selectedUser?.userDisplayName || selectedUser?.userEmail}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-800/50 rounded-lg p-3 border border-white/[0.05]">
-                <p className="text-xs text-slate-400 mb-1">Current Monthly</p>
+              <div className="bg-card rounded-lg p-3 border border-border">
+                <p className="text-xs text-muted-foreground mb-1">Current Monthly</p>
                 <p className="text-lg font-medium text-blue-400">
                   {selectedUser?.monthlyBalance.toLocaleString()}
                 </p>
               </div>
-              <div className="bg-slate-800/50 rounded-lg p-3 border border-white/[0.05]">
-                <p className="text-xs text-slate-400 mb-1">Current Purchased</p>
+              <div className="bg-card rounded-lg p-3 border border-border">
+                <p className="text-xs text-muted-foreground mb-1">Current Purchased</p>
                 <p className="text-lg font-medium text-emerald-400">
                   {selectedUser?.purchasedBalance.toLocaleString()}
                 </p>
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="grant-amount" className="text-slate-300">Credits to Grant</Label>
+              <Label htmlFor="grant-amount" className="text-foreground">Credits to Grant</Label>
               <Input
                 id="grant-amount"
                 type="number"
@@ -4318,11 +4318,11 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
                 placeholder="100"
                 value={grantAmount}
                 onChange={(e) => setGrantAmount(e.target.value)}
-                className="bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500"
+                className="bg-card border-border text-foreground placeholder:text-muted-foreground"
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-slate-300">Credit Type</Label>
+              <Label className="text-foreground">Credit Type</Label>
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -4332,7 +4332,7 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
                     onChange={() => setGrantType("purchased")}
                     className="accent-emerald-500"
                   />
-                  <span className="text-sm text-slate-300">Purchased (never expires)</span>
+                  <span className="text-sm text-foreground">Purchased (never expires)</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -4342,34 +4342,34 @@ function AICreditsSection({ adminUserId }: { adminUserId: string }) {
                     onChange={() => setGrantType("monthly")}
                     className="accent-blue-500"
                   />
-                  <span className="text-sm text-slate-300">Monthly (resets each cycle)</span>
+                  <span className="text-sm text-foreground">Monthly (resets each cycle)</span>
                 </label>
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="grant-reason" className="text-slate-300">Reason</Label>
+              <Label htmlFor="grant-reason" className="text-foreground">Reason</Label>
               <Input
                 id="grant-reason"
                 placeholder="Promotional grant, support resolution, etc."
                 value={grantReason}
                 onChange={(e) => setGrantReason(e.target.value)}
-                className="bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500"
+                className="bg-card border-border text-foreground placeholder:text-muted-foreground"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="grant-notes" className="text-slate-300">Notes (optional)</Label>
+              <Label htmlFor="grant-notes" className="text-foreground">Notes (optional)</Label>
               <textarea
                 id="grant-notes"
                 placeholder="Internal notes about this grant..."
                 value={grantNotes}
                 onChange={(e) => setGrantNotes(e.target.value)}
                 rows={3}
-                className="w-full rounded-md bg-slate-800/50 border border-white/[0.08] text-white placeholder:text-slate-500 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 resize-none"
+                className="w-full rounded-md bg-card border border-border text-foreground placeholder:text-muted-foreground px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 resize-none"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSelectedUser(null)} className="bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5">
+            <Button variant="outline" onClick={() => setSelectedUser(null)} className="bg-transparent border-border text-foreground hover:text-foreground hover:bg-muted">
               Cancel
             </Button>
             <Button
@@ -4497,11 +4497,11 @@ function UserOverridesSection({ adminUserId }: { adminUserId: string }) {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold text-white">User Overrides</h2>
-          <p className="text-sm text-slate-400">Grant special permissions and trial extensions to users</p>
+          <h2 className="text-xl font-semibold text-foreground">User Overrides</h2>
+          <p className="text-sm text-muted-foreground">Grant special permissions and trial extensions to users</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={fetchOverrides} variant="outline" size="sm" className="bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5">
+          <Button onClick={fetchOverrides} variant="outline" size="sm" className="bg-transparent border-border text-foreground hover:text-foreground hover:bg-muted">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
@@ -4512,38 +4512,38 @@ function UserOverridesSection({ adminUserId }: { adminUserId: string }) {
         </div>
       </div>
 
-      <Card className="bg-slate-800/50 border-white/[0.08] overflow-hidden">
+      <Card className="bg-card border-border overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="border-white/[0.08] hover:bg-transparent">
-              <TableHead className="text-slate-400">User</TableHead>
-              <TableHead className="text-slate-400">Permissions</TableHead>
-              <TableHead className="text-slate-400">Limits</TableHead>
-              <TableHead className="text-slate-400">Reason</TableHead>
-              <TableHead className="text-slate-400">Expires</TableHead>
+            <TableRow className="border-border hover:bg-transparent">
+              <TableHead className="text-muted-foreground">User</TableHead>
+              <TableHead className="text-muted-foreground">Permissions</TableHead>
+              <TableHead className="text-muted-foreground">Limits</TableHead>
+              <TableHead className="text-muted-foreground">Reason</TableHead>
+              <TableHead className="text-muted-foreground">Expires</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow className="border-white/[0.08]">
+              <TableRow className="border-border">
                 <TableCell colSpan={6} className="text-center py-12">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-400" />
                 </TableCell>
               </TableRow>
             ) : overrides.length === 0 ? (
-              <TableRow className="border-white/[0.08]">
-                <TableCell colSpan={6} className="text-center py-12 text-slate-500">
-                  <Wand2 className="h-12 w-12 text-slate-700 mx-auto mb-4" />
+              <TableRow className="border-border">
+                <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                  <Wand2 className="h-12 w-12 text-foreground mx-auto mb-4" />
                   <p>No active overrides</p>
                 </TableCell>
               </TableRow>
             ) : (
               overrides.map((override) => (
-                <TableRow key={override.id} className="border-white/[0.08] hover:bg-white/[0.02]">
+                <TableRow key={override.id} className="border-border hover:bg-muted">
                   <TableCell>
-                    <div className="font-medium text-white">{override.userEmail || override.userId}</div>
-                    <div className="text-xs text-slate-500 font-mono">{override.userId.slice(0, 12)}...</div>
+                    <div className="font-medium text-foreground">{override.userEmail || override.userId}</div>
+                    <div className="text-xs text-muted-foreground font-mono">{override.userId.slice(0, 12)}...</div>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
@@ -4559,7 +4559,7 @@ function UserOverridesSection({ adminUserId }: { adminUserId: string }) {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="text-sm text-slate-300">
+                    <div className="text-sm text-foreground">
                       {override.subdomainLimitOverride && (
                         <div>Subdomains: {override.subdomainLimitOverride}</div>
                       )}
@@ -4568,16 +4568,16 @@ function UserOverridesSection({ adminUserId }: { adminUserId: string }) {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="text-sm text-slate-400 max-w-[150px] truncate">
+                  <TableCell className="text-sm text-muted-foreground max-w-[150px] truncate">
                     {override.grantReason || "-"}
                   </TableCell>
                   <TableCell className="text-sm">
                     {override.expiresAt ? (
-                      <span className={new Date(override.expiresAt) < new Date() ? "text-red-400" : "text-slate-300"}>
+                      <span className={new Date(override.expiresAt) < new Date() ? "text-red-400" : "text-foreground"}>
                         {new Date(override.expiresAt).toLocaleDateString()}
                       </span>
                     ) : (
-                      <span className="text-slate-500">Never</span>
+                      <span className="text-muted-foreground">Never</span>
                     )}
                   </TableCell>
                   <TableCell>

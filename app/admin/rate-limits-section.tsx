@@ -215,11 +215,11 @@ export function RateLimitsSection() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+          <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
             <Gauge className="h-5 w-5 text-orange-400" />
             Rate Limiting
           </h2>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-muted-foreground">
             Configure global, per-tenant, and per-endpoint request limits.
           </p>
         </div>
@@ -228,7 +228,7 @@ export function RateLimitsSection() {
             <Plus className="h-4 w-4 mr-2" />
             New Rule
           </Button>
-          <Button onClick={fetchConfig} variant="outline" size="sm" className="bg-transparent border-white/10 text-slate-300 hover:text-white hover:bg-white/5">
+          <Button onClick={fetchConfig} variant="outline" size="sm" className="bg-transparent border-border text-foreground hover:text-foreground hover:bg-muted">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
@@ -236,18 +236,18 @@ export function RateLimitsSection() {
       </div>
 
       {/* Master mode */}
-      <Card className="bg-slate-800/50 border-white/[0.08]">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-white">
+          <CardTitle className="flex items-center gap-2 text-foreground">
             <ShieldAlert className="h-5 w-5 text-amber-400" />
             Enforcement Mode
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-slate-400 mb-4">
-            Master switch applied to every rule. <strong className="text-slate-200">Observe</strong> counts
-            overages without blocking (safe — cannot lock anyone out). <strong className="text-slate-200">Enforce</strong> returns
-            429s when limits are exceeded. <strong className="text-slate-200">Off</strong> disables rate limiting entirely.
+          <p className="text-sm text-muted-foreground mb-4">
+            Master switch applied to every rule. <strong className="text-foreground">Observe</strong> counts
+            overages without blocking (safe — cannot lock anyone out). <strong className="text-foreground">Enforce</strong> returns
+            429s when limits are exceeded. <strong className="text-foreground">Off</strong> disables rate limiting entirely.
           </p>
           <div className="flex gap-2">
             {(["observe", "enforce", "off"] as MasterMode[]).map((m) => {
@@ -267,42 +267,42 @@ export function RateLimitsSection() {
                   className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-all border ${
                     active
                       ? `bg-gradient-to-r ${tone} text-white border-transparent`
-                      : "bg-transparent border-white/10 text-slate-300 hover:bg-white/5"
+                      : "bg-transparent border-border text-foreground hover:bg-muted"
                   }`}
                 >
                   {m}
                 </button>
               )
             })}
-            {savingMode && <Loader2 className="h-4 w-4 animate-spin text-slate-400 self-center" />}
+            {savingMode && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground self-center" />}
           </div>
         </CardContent>
       </Card>
 
       {/* Rules table */}
-      <Card className="bg-slate-800/50 border-white/[0.08] overflow-hidden">
+      <Card className="bg-card border-border overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="border-white/[0.08] hover:bg-transparent">
-              <TableHead className="text-slate-400">Scope</TableHead>
-              <TableHead className="text-slate-400">Target</TableHead>
-              <TableHead className="text-slate-400">Limit</TableHead>
-              <TableHead className="text-slate-400">Mode</TableHead>
-              <TableHead className="text-slate-400">Status</TableHead>
-              <TableHead className="text-slate-400 w-24">Actions</TableHead>
+            <TableRow className="border-border hover:bg-transparent">
+              <TableHead className="text-muted-foreground">Scope</TableHead>
+              <TableHead className="text-muted-foreground">Target</TableHead>
+              <TableHead className="text-muted-foreground">Limit</TableHead>
+              <TableHead className="text-muted-foreground">Mode</TableHead>
+              <TableHead className="text-muted-foreground">Status</TableHead>
+              <TableHead className="text-muted-foreground w-24">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow className="border-white/[0.08]">
+              <TableRow className="border-border">
                 <TableCell colSpan={6} className="text-center py-12">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-400" />
                 </TableCell>
               </TableRow>
             ) : rules.length === 0 ? (
-              <TableRow className="border-white/[0.08]">
-                <TableCell colSpan={6} className="text-center py-12 text-slate-500">
-                  <Gauge className="h-12 w-12 text-slate-700 mx-auto mb-4" />
+              <TableRow className="border-border">
+                <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                  <Gauge className="h-12 w-12 text-foreground mx-auto mb-4" />
                   <p>No custom rules. Hardcoded presets apply as the safety floor.</p>
                 </TableCell>
               </TableRow>
@@ -311,15 +311,15 @@ export function RateLimitsSection() {
                 const meta = SCOPE_META[rule.scope]
                 const Icon = meta.Icon
                 return (
-                  <TableRow key={rule.id} className="border-white/[0.08] hover:bg-white/[0.02]">
+                  <TableRow key={rule.id} className="border-border hover:bg-muted">
                     <TableCell>
                       <span className={`flex items-center gap-2 text-sm ${meta.color}`}>
                         <Icon className="h-4 w-4" />
                         {meta.label}
                       </span>
                     </TableCell>
-                    <TableCell className="font-mono text-sm text-white">{rule.target}</TableCell>
-                    <TableCell className="text-sm text-slate-300">
+                    <TableCell className="font-mono text-sm text-foreground">{rule.target}</TableCell>
+                    <TableCell className="text-sm text-foreground">
                       {rule.maxRequests} / {formatWindow(rule.windowMs)}
                     </TableCell>
                     <TableCell>
@@ -328,12 +328,12 @@ export function RateLimitsSection() {
                           {rule.mode}
                         </Badge>
                       ) : (
-                        <span className="text-slate-600 text-xs">inherit</span>
+                        <span className="text-muted-foreground text-xs">inherit</span>
                       )}
                     </TableCell>
                     <TableCell>
                       <button onClick={() => handleToggleEnabled(rule)}>
-                        <Badge className={rule.enabled ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 cursor-pointer" : "bg-slate-500/10 text-slate-400 border-slate-500/20 cursor-pointer"}>
+                        <Badge className={rule.enabled ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 cursor-pointer" : "bg-slate-500/10 text-muted-foreground border-slate-500/20 cursor-pointer"}>
                           {rule.enabled ? "Enabled" : "Disabled"}
                         </Badge>
                       </button>
@@ -358,12 +358,12 @@ export function RateLimitsSection() {
       </Card>
 
       {/* Presets reference */}
-      <Card className="bg-slate-800/50 border-white/[0.08]">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-white text-base">Endpoint Presets (defaults)</CardTitle>
+          <CardTitle className="text-foreground text-base">Endpoint Presets (defaults)</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-slate-400 mb-3">
+          <p className="text-sm text-muted-foreground mb-3">
             These hardcoded presets apply when no rule overrides them. Click to create an override.
           </p>
           <div className="flex flex-wrap gap-2">
@@ -372,7 +372,7 @@ export function RateLimitsSection() {
                 key={p.name}
                 type="button"
                 onClick={() => openCreate("endpoint", p.name, p)}
-                className="px-3 py-1.5 rounded-lg bg-slate-900/50 border border-white/[0.08] text-xs text-slate-300 hover:border-orange-500/40 hover:text-white transition-colors"
+                className="px-3 py-1.5 rounded-lg bg-muted/50 border border-border text-xs text-foreground hover:border-orange-500/40 hover:text-foreground transition-colors"
               >
                 <span className="font-mono text-orange-400">{p.name}</span>{" "}
                 {p.maxRequests}/{formatWindow(p.windowMs)}
@@ -384,20 +384,20 @@ export function RateLimitsSection() {
 
       {/* Create/Edit dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="bg-slate-900 border-white/[0.08]">
+        <DialogContent className="bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-white">New Rate-Limit Rule</DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogTitle className="text-foreground">New Rate-Limit Rule</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
               Rules override the hardcoded presets. Most-specific wins: tenant &gt; endpoint &gt; global.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label className="text-slate-300">Scope</Label>
+              <Label className="text-foreground">Scope</Label>
               <select
                 value={form.scope}
                 onChange={(e) => setForm((f) => ({ ...f, scope: e.target.value as Scope }))}
-                className="w-full bg-slate-800/50 border border-white/[0.08] text-white text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none"
+                className="w-full bg-card border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none"
               >
                 <option value="global">Global (all requests)</option>
                 <option value="tenant">Tenant (by subdomain)</option>
@@ -407,47 +407,47 @@ export function RateLimitsSection() {
 
             {form.scope !== "global" && (
               <div className="space-y-2">
-                <Label className="text-slate-300">
+                <Label className="text-foreground">
                   {form.scope === "tenant" ? "Subdomain" : "Endpoint (preset name or /path)"}
                 </Label>
                 <Input
                   value={form.target}
                   onChange={(e) => setForm((f) => ({ ...f, target: e.target.value }))}
                   placeholder={form.scope === "tenant" ? "dzidzor" : "checkout or /api/cms/checkout"}
-                  className="bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50 font-mono"
+                  className="bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500/50 font-mono"
                 />
               </div>
             )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-slate-300">Max requests</Label>
+                <Label className="text-foreground">Max requests</Label>
                 <Input
                   type="number"
                   min={1}
                   value={form.maxRequests}
                   onChange={(e) => setForm((f) => ({ ...f, maxRequests: Number(e.target.value) }))}
-                  className="bg-slate-800/50 border-white/[0.08] text-white focus:border-blue-500/50"
+                  className="bg-card border-border text-foreground focus:border-blue-500/50"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-slate-300">Window (seconds)</Label>
+                <Label className="text-foreground">Window (seconds)</Label>
                 <Input
                   type="number"
                   min={1}
                   value={form.window}
                   onChange={(e) => setForm((f) => ({ ...f, window: Number(e.target.value) }))}
-                  className="bg-slate-800/50 border-white/[0.08] text-white focus:border-blue-500/50"
+                  className="bg-card border-border text-foreground focus:border-blue-500/50"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-slate-300">Mode override (optional)</Label>
+              <Label className="text-foreground">Mode override (optional)</Label>
               <select
                 value={form.mode || ""}
                 onChange={(e) => setForm((f) => ({ ...f, mode: (e.target.value || null) as RuleMode }))}
-                className="w-full bg-slate-800/50 border border-white/[0.08] text-white text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none"
+                className="w-full bg-card border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none"
               >
                 <option value="">Inherit master mode</option>
                 <option value="observe">Observe (count, never block)</option>
@@ -456,12 +456,12 @@ export function RateLimitsSection() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-slate-300">Note (optional)</Label>
+              <Label className="text-foreground">Note (optional)</Label>
               <Input
                 value={form.note}
                 onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
                 placeholder="Why this rule exists…"
-                className="bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-blue-500/50"
+                className="bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500/50"
               />
             </div>
 
@@ -472,7 +472,7 @@ export function RateLimitsSection() {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDialog(false)} className="bg-transparent border-white/10 text-slate-300">
+            <Button variant="outline" onClick={() => setShowDialog(false)} className="bg-transparent border-border text-foreground">
               Cancel
             </Button>
             <Button
