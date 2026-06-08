@@ -5,37 +5,71 @@
  * a persistent, collapsible, scrolling rail on the right edge with a live
  * header.
  *
- * Data note: there is no per-tenant activity-feed source wired yet, so the
- * feed below is a clearly-structured PLACEHOLDER (it surfaces the user's real
- * sites where it can, but the event rows are illustrative, not live). This is
- * called out in the rail header so it is never presented as live data.
+ * Data: REAL — the signed-in user's recent audit-log entries
+ * (/api/dashboard/activity). No fabricated rows; empty accounts show an honest
+ * empty state.
  */
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import {
   PanelRightClose,
   PanelRightOpen,
-  Megaphone,
-  Globe,
-  UserPlus,
-  Send,
-  Rocket,
+  Activity,
 } from "lucide-react"
 
 interface CanvasActivityRailProps {
   subdomains: any[]
 }
 
-const PLACEHOLDER_ACTIVITY = [
-  { who: "You", text: "signed in to the workspace", icon: UserPlus, time: "just now" },
-  { who: "System", text: "synced subdomain list", icon: Globe, time: "1m ago" },
-  { who: "System", text: "checked deployment status", icon: Rocket, time: "5m ago" },
-  { who: "System", text: "refreshed credit balance", icon: Send, time: "12m ago" },
-  { who: "System", text: "loaded announcements", icon: Megaphone, time: "30m ago" },
-]
+interface ActivityLog {
+  id: string
+  action: string
+  targetType: string | null
+  targetId: string | null
+  userEmail: string | null
+  createdAt: string
+}
+
+function relTime(iso: string): string {
+  const diff = Math.max(0, Date.now() - new Date(iso).getTime())
+  const s = Math.floor(diff / 1000)
+  if (s < 60) return "just now"
+  const m = Math.floor(s / 60)
+  if (m < 60) return `${m}m ago`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h ago`
+  const d = Math.floor(h / 24)
+  if (d < 7) return `${d}d ago`
+  return new Date(iso).toLocaleDateString()
+}
+
+function phrase(log: ActivityLog): string {
+  const verb = log.action.replace(/[._]/g, " ").trim()
+  const tgt = log.targetId ? ` · ${log.targetType ?? "item"}` : ""
+  return `${verb}${tgt}`
+}
 
 export function CanvasActivityRail({ subdomains }: CanvasActivityRailProps) {
   const [collapsed, setCollapsed] = useState(false)
+  const [logs, setLogs] = useState<ActivityLog[] | null>(null)
+
+  const load = useCallback(() => {
+    fetch("/api/dashboard/activity", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setLogs(Array.isArray(d?.logs) ? d.logs : []))
+      .catch(() => setLogs([]))
+  }, [])
+
+  useEffect(() => {
+    load()
+    const onRefresh = () => load()
+    window.addEventListener("nw:data-refresh", onRefresh)
+    window.addEventListener("nw:team-refresh", onRefresh)
+    return () => {
+      window.removeEventListener("nw:data-refresh", onRefresh)
+      window.removeEventListener("nw:team-refresh", onRefresh)
+    }
+  }, [load])
 
   if (collapsed) {
     return (
@@ -71,21 +105,27 @@ export function CanvasActivityRail({ subdomains }: CanvasActivityRailProps) {
             {siteCount} site{siteCount === 1 ? "" : "s"}
           </span>
         </div>
-        {PLACEHOLDER_ACTIVITY.map((a, i) => {
-          const Icon = a.icon
-          return (
-            <div className="tnt__act-row" key={i}>
-              <div className="tnt__act-icon"><Icon /></div>
+        {logs === null ? (
+          <div className="tnt__act-row"><div className="tnt__act-body muted">Loading activity…</div></div>
+        ) : logs.length === 0 ? (
+          <div className="tnt__act-row">
+            <div className="tnt__act-icon"><Activity /></div>
+            <div className="tnt__act-body">
+              No recent activity
+              <div className="tnt__act-time">Account actions (team, roles, settings) will appear here</div>
+            </div>
+          </div>
+        ) : (
+          logs.map((a) => (
+            <div className="tnt__act-row" key={a.id}>
+              <div className="tnt__act-icon"><Activity /></div>
               <div className="tnt__act-body">
-                <strong>{a.who}</strong> {a.text}
-                <div className="tnt__act-time">{a.time}</div>
+                <strong>{a.userEmail ?? "You"}</strong> {phrase(a)}
+                <div className="tnt__act-time">{relTime(a.createdAt)}</div>
               </div>
             </div>
-          )
-        })}
-        <div style={{ padding: "10px 14px", fontSize: 10.5 }} className="muted">
-          Live event feed lands in Phase 2 (Team / Communications). The rows above are placeholders.
-        </div>
+          ))
+        )}
       </div>
     </aside>
   )

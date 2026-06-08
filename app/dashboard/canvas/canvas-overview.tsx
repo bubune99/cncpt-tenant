@@ -20,7 +20,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   Plus, ExternalLink, Calendar, ArrowRight, ChevronRight, Sparkles, Zap,
-  Info, X, TrendingUp, ShoppingBag, Users, Percent, AlarmClock, MessageSquare,
+  Info, X, TrendingUp, ShoppingBag, Users, MessageSquare, Package,
 } from "lucide-react"
 import { rootDomain, protocol } from "@/lib/utils"
 
@@ -38,13 +38,31 @@ interface CreditBalance {
   lifetimeUsed: number
 }
 
-// Placeholder KPI strip — see DATA WIRING note above.
-const DEMO_KPIS = [
-  { l: "Revenue · 7d", v: "$12,840", d: "+18%", up: true, bars: [4, 6, 5, 7, 8, 7, 9], icon: TrendingUp },
-  { l: "Orders · 7d", v: "164", d: "+12%", up: true, bars: [3, 4, 4, 6, 5, 7, 7], icon: ShoppingBag },
-  { l: "Visitors · 7d", v: "8,341", d: "−3%", up: false, bars: [6, 7, 5, 6, 5, 4, 5], icon: Users },
-  { l: "Conversion", v: "1.96%", d: "+0.3pt", up: true, bars: [2, 3, 3, 4, 4, 5, 6], icon: Percent },
-]
+interface AccountMetrics {
+  sites: number
+  revenue: number
+  orders: number
+  products: number
+  customers: number
+}
+
+function relTime(iso: string): string {
+  const diff = Math.max(0, Date.now() - new Date(iso).getTime())
+  const s = Math.floor(diff / 1000)
+  if (s < 60) return "just now"
+  const m = Math.floor(s / 60)
+  if (m < 60) return `${m}m ago`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h ago`
+  const d = Math.floor(h / 24)
+  if (d < 7) return `${d}d ago`
+  return new Date(iso).toLocaleDateString()
+}
+
+function actionPhrase(action: string, targetType: string | null, targetId: string | null): string {
+  const verb = action.replace(/[._]/g, " ").trim()
+  return targetId ? `${verb} · ${targetType ?? "item"}` : verb
+}
 
 function firstName(user: any): string | null {
   const name = user?.displayName ?? user?.name
@@ -60,8 +78,30 @@ export function CanvasOverview({ user, subdomains, selectedSubdomain }: CanvasOv
   const [supportStats, setSupportStats] = useState<{ open: number; total: number } | null>(null)
   const [supportReady, setSupportReady] = useState(false)
   const [bannerDismissed, setBannerDismissed] = useState(false)
+  const [metrics, setMetrics] = useState<AccountMetrics | null>(null)
+  const [activity, setActivity] = useState<{ id: string; action: string; targetType: string | null; targetId: string | null; userEmail: string | null; createdAt: string }[] | null>(null)
 
   useEffect(() => {
+    fetch("/api/dashboard/activity")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setActivity(Array.isArray(d?.logs) ? d.logs : []))
+      .catch(() => setActivity([]))
+
+    fetch("/api/dashboard/metrics")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data && typeof data.orders === "number") {
+          setMetrics({
+            sites: Number(data.sites) || 0,
+            revenue: Number(data.revenue) || 0,
+            orders: Number(data.orders) || 0,
+            products: Number(data.products) || 0,
+            customers: Number(data.customers) || 0,
+          })
+        }
+      })
+      .catch(() => {})
+
     fetch("/api/credits/balance")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -131,28 +171,23 @@ export function CanvasOverview({ user, subdomains, selectedSubdomain }: CanvasOv
         </div>
       ) : null}
 
-      {/* KPI strip (demo) */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 6 }}>
-        {DEMO_KPIS.map((k) => {
+      {/* KPI strip — REAL, aggregated across the account's sites (/api/dashboard/metrics) */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
+        {([
+          { l: "Revenue", icon: TrendingUp, v: metrics ? `$${metrics.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : null, sub: "paid orders, all sites" },
+          { l: "Orders", icon: ShoppingBag, v: metrics ? metrics.orders.toLocaleString() : null, sub: "paid, all sites" },
+          { l: "Products", icon: Package, v: metrics ? metrics.products.toLocaleString() : null, sub: "across all sites" },
+          { l: "Customers", icon: Users, v: metrics ? metrics.customers.toLocaleString() : null, sub: "across all sites" },
+        ] as const).map((k) => {
           const Icon = k.icon
           return (
             <div className="tnt__stat" key={k.l}>
               <div className="tnt__stat-label"><Icon /> {k.l}</div>
-              <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-end" }}>
-                <div className="tnt__stat-value">{k.v}</div>
-                <div className="tnt__bars" style={{ width: 64 }}>
-                  {k.bars.map((h, i) => <span key={i} style={{ height: h * 3 + "px" }} />)}
-                </div>
-              </div>
-              <div className={"tnt__stat-delta " + (k.up ? "tnt__stat-delta--up" : "tnt__stat-delta--down")}>
-                {k.d} vs prev. 7d
-              </div>
+              <div className="tnt__stat-value">{k.v ?? "—"}</div>
+              <div className="muted" style={{ fontSize: 10.5, marginTop: 2 }}>{k.sub}</div>
             </div>
           )
         })}
-      </div>
-      <div className="muted" style={{ fontSize: 10.5, marginBottom: 16 }}>
-        KPI figures above are demo data — per-site analytics wiring lands with the Analytics redesign (Phase 2).
       </div>
 
       {/* Sites + activity */}
@@ -212,23 +247,29 @@ export function CanvasOverview({ user, subdomains, selectedSubdomain }: CanvasOv
           </div>
         </div>
 
-        {/* Team activity — placeholder */}
+        {/* Account activity — REAL (user's recent audit entries) */}
         <div className="card">
           <div className="card__head">
-            <h3 className="card__title">Team activity</h3>
-            <span className="muted" style={{ fontSize: 11 }}>Phase 2</span>
+            <h3 className="card__title">Account activity</h3>
           </div>
           <div>
-            <div className="tnt__act-row">
-              <div className="avatar avatar--xs avatar--orange">{(firstName(user)?.[0] || "U").toUpperCase()}</div>
-              <div className="tnt__act-body">
-                <strong>{firstName(user) || "You"}</strong> signed in to the workspace
-                <div className="tnt__act-time">just now</div>
+            {activity === null ? (
+              <div style={{ padding: "12px 16px" }} className="muted"><span style={{ fontSize: 11.5 }}>Loading…</span></div>
+            ) : activity.length === 0 ? (
+              <div style={{ padding: "12px 16px" }} className="muted">
+                <span style={{ fontSize: 11.5 }}>No recent activity yet — team, role, and account changes will show here.</span>
               </div>
-            </div>
-            <div style={{ padding: "12px 16px" }} className="muted">
-              <span style={{ fontSize: 11.5 }}>A full team activity log arrives with the Team redesign.</span>
-            </div>
+            ) : (
+              activity.slice(0, 5).map((a) => (
+                <div className="tnt__act-row" key={a.id}>
+                  <div className="avatar avatar--xs avatar--orange">{((a.userEmail || firstName(user) || "U")[0]).toUpperCase()}</div>
+                  <div className="tnt__act-body">
+                    <strong>{a.userEmail || firstName(user) || "You"}</strong> {actionPhrase(a.action, a.targetType, a.targetId)}
+                    <div className="tnt__act-time">{relTime(a.createdAt)}</div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>

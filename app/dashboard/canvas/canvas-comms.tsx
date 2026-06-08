@@ -11,16 +11,19 @@
  *    (/api/dashboard/support/[id]/messages). The "AI suggested reply" block is
  *    a labeled placeholder (no AI-reply endpoint wired) — never presented as a
  *    real generated draft.
- *  - Announcements / Campaigns / Team messages / Feedback board: new features
- *    with no backing source yet → the designed UI is shown with a clear
- *    "Phase 2 — preview" banner and illustrative (labeled) sample rows.
+ *  - Email campaigns: REAL. Aggregated across the account's sites
+ *    (/api/dashboard/campaigns → EmailCampaign). Empty state when none.
+ *  - Feedback board: REAL. Aggregated across sites (/api/dashboard/feedback →
+ *    Feedback), grouped by status. Empty state when none.
+ *  - Announcements / Team messages: no backing source yet → honest "coming
+ *    soon" empty state (no fabricated rows).
  */
 
 import { useEffect, useState } from "react"
 import {
-  MessageSquare, Filter, Plus, Inbox, UserX, User, Hourglass, CheckCircle,
+  MessageSquare, Plus, Inbox, UserX, User, Hourglass, CheckCircle,
   Sparkles, Send, Megaphone, MessagesSquare, Lightbulb, AlarmClock, Loader2,
-  ChevronUp, Mail,
+  Mail,
 } from "lucide-react"
 
 type Tab = "tickets" | "announce" | "campaigns" | "team-chat" | "feedback"
@@ -54,10 +57,10 @@ export function CanvasComms({ initialTab = "tickets" }: { initialTab?: Tab }) {
         })}
       </div>
       {tab === "tickets" ? <SupportInbox /> : null}
-      {tab === "announce" ? <PreviewPanel kind="announce" /> : null}
-      {tab === "campaigns" ? <PreviewPanel kind="campaigns" /> : null}
-      {tab === "team-chat" ? <PreviewPanel kind="team-chat" /> : null}
-      {tab === "feedback" ? <PreviewPanel kind="feedback" /> : null}
+      {tab === "campaigns" ? <CampaignsPanel /> : null}
+      {tab === "feedback" ? <FeedbackPanel /> : null}
+      {tab === "announce" ? <ComingSoonPanel kind="announce" /> : null}
+      {tab === "team-chat" ? <ComingSoonPanel kind="team-chat" /> : null}
     </>
   )
 }
@@ -250,16 +253,133 @@ function SupportInbox() {
   )
 }
 
-/* ─── Preview panels for the not-yet-backed comms features ─── */
-function PreviewPanel({ kind }: { kind: "announce" | "campaigns" | "team-chat" | "feedback" }) {
+/* ─── Email campaigns — REAL (account-level, /api/dashboard/campaigns) ─── */
+interface Campaign {
+  id: string; name: string; subject: string; status: string
+  sentAt: string | null; recipientCount: number; sentCount: number; createdAt: string; site?: string
+}
+
+function CampaignsPanel() {
+  const [rows, setRows] = useState<Campaign[] | null>(null)
+  useEffect(() => {
+    fetch("/api/dashboard/campaigns")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setRows(Array.isArray(d?.campaigns) ? d.campaigns : []))
+      .catch(() => setRows([]))
+  }, [])
+
+  return (
+    <div className="dirH__page" style={{ padding: "20px 24px", overflow: "auto" }}>
+      <div className="tnt__page-h">
+        <div>
+          <h1>Email campaigns</h1>
+          <div className="sub">Newsletters and automated flows across your sites.</div>
+        </div>
+      </div>
+      <div className="card">
+        <div className="card__head"><h3 className="card__title">Campaigns</h3></div>
+        {rows === null ? (
+          <div style={{ padding: 18 }} className="muted"><Loader2 className="tnt-spin" style={{ width: 14, height: 14 }} /> Loading…</div>
+        ) : rows.length === 0 ? (
+          <div style={{ padding: "28px 18px", textAlign: "center" }} className="muted">
+            <Mail style={{ width: 22, height: 22, opacity: 0.5 }} />
+            <div style={{ fontSize: 12.5, marginTop: 8 }}>No campaigns yet. Create one from a site&apos;s email tools and it&apos;ll show here.</div>
+          </div>
+        ) : (
+          <table className="tnt__matrix">
+            <thead><tr><th>Campaign</th><th>Site</th><th>Status</th><th>Sent</th><th>Recipients</th></tr></thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id}>
+                  <td><strong style={{ fontSize: 12.5 }}>{r.name}</strong><div className="muted" style={{ fontSize: 11 }}>{r.subject}</div></td>
+                  <td className="mono" style={{ fontSize: 11 }}>{r.site ?? "—"}</td>
+                  <td><span className={"pill " + (r.status === "SENT" ? "pill--green" : r.status === "DRAFT" ? "pill--slate" : "pill--blue")} style={{ fontSize: 10.5 }}>{r.status.toLowerCase()}</span></td>
+                  <td className="mono">{r.sentCount.toLocaleString()}</td>
+                  <td className="mono">{r.recipientCount.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* ─── Feedback board — REAL (account-level, /api/dashboard/feedback) ─── */
+interface FeedbackItem {
+  id: string; type: string; subject: string | null; message: string; status: string; createdAt: string; site?: string
+}
+const FEEDBACK_COLUMNS: { key: string; label: string; tone: string }[] = [
+  { key: "NEW", label: "New", tone: "idle" },
+  { key: "IN_PROGRESS", label: "In progress", tone: "warn" },
+  { key: "RESOLVED", label: "Resolved", tone: "ok" },
+  { key: "CLOSED", label: "Closed", tone: "idle" },
+]
+
+function FeedbackPanel() {
+  const [items, setItems] = useState<FeedbackItem[] | null>(null)
+  useEffect(() => {
+    fetch("/api/dashboard/feedback")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setItems(Array.isArray(d?.feedback) ? d.feedback : []))
+      .catch(() => setItems([]))
+  }, [])
+
+  return (
+    <div className="dirH__page" style={{ padding: "20px 24px", overflow: "auto" }}>
+      <div className="tnt__page-h">
+        <div>
+          <h1>Feedback board</h1>
+          <div className="sub">Customer feedback submitted across your sites.</div>
+        </div>
+      </div>
+      {items === null ? (
+        <div className="card" style={{ padding: 18 }}><span className="muted"><Loader2 className="tnt-spin" style={{ width: 14, height: 14 }} /> Loading…</span></div>
+      ) : items.length === 0 ? (
+        <div className="card" style={{ padding: "28px 18px", textAlign: "center" }}>
+          <Lightbulb style={{ width: 22, height: 22, opacity: 0.5 }} />
+          <div className="muted" style={{ fontSize: 12.5, marginTop: 8 }}>No feedback yet. Submissions from your sites&apos; feedback widget will appear here.</div>
+        </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+          {FEEDBACK_COLUMNS.map((c) => {
+            const colItems = items.filter((it) => it.status === c.key)
+            return (
+              <div key={c.key} className="card" style={{ background: "var(--br-surface)" }}>
+                <div className="card__head">
+                  <div className="row" style={{ gap: 6 }}>
+                    <span className={"tnt__dot tnt__dot--" + c.tone} />
+                    <strong style={{ fontSize: 12.5 }}>{c.label}</strong>
+                    <span className="muted mono" style={{ fontSize: 11 }}>{colItems.length}</span>
+                  </div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: 10 }}>
+                  {colItems.map((it) => (
+                    <div key={it.id} className="card" style={{ padding: 12 }}>
+                      <span className="pill pill--slate" style={{ fontSize: 9.5 }}>{it.type.toLowerCase()}</span>
+                      <div style={{ fontSize: 12.5, fontWeight: 500, lineHeight: 1.4, marginTop: 6 }}>{it.subject || it.message.slice(0, 80)}</div>
+                      {it.site ? <div className="muted mono" style={{ fontSize: 10, marginTop: 4 }}>{it.site}</div> : null}
+                    </div>
+                  ))}
+                  {colItems.length === 0 ? <div className="muted" style={{ fontSize: 11, padding: "4px 2px" }}>—</div> : null}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ─── Not-yet-backed comms features — honest empty state, no fake rows ─── */
+function ComingSoonPanel({ kind }: { kind: "announce" | "team-chat" }) {
   const meta = {
     announce: { h: "Announcements", sub: "Push banners, top-bars, and modals to your customers across your sites.", icon: Megaphone },
-    campaigns: { h: "Email campaigns", sub: "Newsletters, transactional emails, and automated flows to your customer list.", icon: Send },
     "team-chat": { h: "Team messages", sub: "In-app channels and DMs for your team.", icon: MessagesSquare },
-    feedback: { h: "Feedback board", sub: "Feature requests and ideas from your customers, with voting.", icon: Lightbulb },
   }[kind]
   const Icon = meta.icon
-
   return (
     <div className="dirH__page" style={{ padding: "20px 24px", overflow: "auto" }}>
       <div className="tnt__page-h">
@@ -267,118 +387,12 @@ function PreviewPanel({ kind }: { kind: "announce" | "campaigns" | "team-chat" |
           <h1>{meta.h}</h1>
           <div className="sub">{meta.sub}</div>
         </div>
-        <span className="pill pill--blue" style={{ fontSize: 11 }}>Phase 2 · preview</span>
+        <span className="pill pill--blue" style={{ fontSize: 11 }}>Coming soon</span>
       </div>
-      <div className="tnt__banner tnt__banner--info" style={{ marginBottom: 16 }}>
-        <Sparkles />
-        <div className="tnt__banner-row">
-          <span><b>Preview of an upcoming feature</b><span className="sub"> — {meta.h} isn't wired to a live data source yet. The layout below shows the designed surface; rows are illustrative samples, not live data.</span></span>
-        </div>
-      </div>
-
-      {kind === "feedback" ? <FeedbackPreview /> : null}
-      {kind === "announce" ? <AnnouncePreview /> : null}
-      {kind === "campaigns" ? <CampaignsPreview /> : null}
-      {kind === "team-chat" ? <TeamChatPreview /> : null}
-    </div>
-  )
-}
-
-function FeedbackPreview() {
-  const cols = [
-    { col: "Under review", tone: "idle", items: [{ t: "Faster mobile checkout", v: 36 }, { t: "Multi-language storefront", v: 19 }] },
-    { col: "Planned", tone: "idle", items: [{ t: "Save for later on product page", v: 48 }] },
-    { col: "In progress", tone: "warn", items: [{ t: "Gift wrap at checkout", v: 22 }] },
-    { col: "Shipped", tone: "ok", items: [{ t: "Apple Pay express checkout", v: 12 }] },
-  ]
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
-      {cols.map((c) => (
-        <div key={c.col} className="card" style={{ background: "var(--br-surface)" }}>
-          <div className="card__head" style={{ background: "#fff" }}>
-            <div className="row" style={{ gap: 6 }}>
-              <span className={"tnt__dot tnt__dot--" + c.tone} />
-              <strong style={{ fontSize: 12.5 }}>{c.col}</strong>
-              <span className="muted mono" style={{ fontSize: 11 }}>{c.items.length}</span>
-            </div>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: 10 }}>
-            {c.items.map((it) => (
-              <div key={it.t} className="card" style={{ background: "#fff", padding: 12, display: "flex", gap: 6, alignItems: "flex-start" }}>
-                <div className="col" style={{ alignItems: "center", padding: "4px 6px", borderRadius: 6, background: "var(--br-surface)", border: "1px solid var(--br-border)" }}>
-                  <ChevronUp style={{ width: 11, height: 11 }} />
-                  <strong style={{ fontSize: 11 }}>{it.v}</strong>
-                </div>
-                <span style={{ fontSize: 12.5, fontWeight: 500, lineHeight: 1.4 }}>{it.t}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function AnnouncePreview() {
-  return (
-    <div className="card">
-      <div className="card__head"><h3 className="card__title">Live preview</h3></div>
-      <div style={{ padding: 14, background: "var(--br-surface)" }}>
-        <div style={{ background: "#fff", borderRadius: 8, overflow: "hidden", border: "1px solid var(--br-border)" }}>
-          <div style={{ background: "linear-gradient(135deg, #0F172A, #3B82F6)", color: "#fff", padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontSize: 12, fontWeight: 600 }}>
-            <Sparkles style={{ width: 12, height: 12 }} /> Summer Sale — 25% off through Sunday
-            <span style={{ background: "#fff", color: "#0F172A", padding: "2px 9px", borderRadius: 9999, fontSize: 11, fontWeight: 700 }}>SUMMER25</span>
-          </div>
-          <div style={{ padding: 18 }}><div style={{ fontSize: 18, fontWeight: 700 }}>Your Storefront</div><div className="muted" style={{ fontSize: 11.5 }}>Banner auto-applies the code at checkout for all visitors.</div></div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function CampaignsPreview() {
-  const rows = [
-    { t: "Spring restock newsletter", s: "Sent", sent: "8,420", opens: "37%" },
-    { t: "Loyalty: early access drop", s: "Sent", sent: "1,240", opens: "66%" },
-    { t: "Abandoned cart (auto)", s: "Active", sent: "—", opens: "—" },
-  ]
-  return (
-    <div className="card">
-      <div className="card__head"><h3 className="card__title">Campaigns</h3></div>
-      <table className="tnt__matrix">
-        <thead><tr><th>Campaign</th><th>Status</th><th>Sent to</th><th>Open rate</th></tr></thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.t}>
-              <td><strong style={{ fontSize: 12.5 }}>{r.t}</strong></td>
-              <td><span className={"pill " + (r.s === "Sent" ? "pill--green" : "pill--blue")} style={{ fontSize: 10.5 }}>{r.s}</span></td>
-              <td className="mono">{r.sent}</td>
-              <td>{r.opens}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
-function TeamChatPreview() {
-  return (
-    <div className="card">
-      <div className="card__head"><h3 className="card__title">#general</h3><span className="muted" style={{ fontSize: 11 }}>preview</span></div>
-      <div style={{ padding: "18px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
-        {[
-          { who: "Teammate", text: "Pushed the new hero variant — want a look before we publish?" },
-          { who: "You", text: "Yes! Pulling it up now." },
-        ].map((m, i) => (
-          <div key={i} className="row" style={{ alignItems: "flex-start", gap: 10 }}>
-            <div className="avatar avatar--purple">{m.who.slice(0, 2).toUpperCase()}</div>
-            <div className="col" style={{ gap: 2 }}>
-              <strong style={{ fontSize: 12.5 }}>{m.who}</strong>
-              <span style={{ fontSize: 13, lineHeight: 1.5 }}>{m.text}</span>
-            </div>
-          </div>
-        ))}
+      <div className="card" style={{ padding: "40px 24px", textAlign: "center" }}>
+        <Icon style={{ width: 26, height: 26, opacity: 0.5 }} />
+        <div style={{ fontSize: 13, fontWeight: 600, marginTop: 10 }}>{meta.h} isn&apos;t available yet</div>
+        <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>This feature is on the roadmap. There&apos;s no data to show here yet.</div>
       </div>
     </div>
   )

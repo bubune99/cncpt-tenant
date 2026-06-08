@@ -100,6 +100,115 @@ type SuperAdminInfo = {
 
 type AdminSection = "overview" | "clients" | "tiers" | "subdomains" | "users" | "teams" | "analytics" | "activity" | "feedback" | "settings" | "ai-credits" | "overrides" | "rate-limits" | "billing"
 
+// ---------------------------------------------------------------------------
+// Live activity rail — real platform activity (no mock).
+// ---------------------------------------------------------------------------
+interface RailLog {
+  id: string
+  actorEmail: string | null
+  action: string
+  targetType: string | null
+  targetId: string | null
+  details?: Record<string, unknown>
+  createdAt: string
+}
+
+function relativeTime(iso: string): string {
+  const then = new Date(iso).getTime()
+  const diff = Math.max(0, Date.now() - then)
+  const s = Math.floor(diff / 1000)
+  if (s < 60) return `${s}s ago`
+  const m = Math.floor(s / 60)
+  if (m < 60) return `${m}m ago`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h ago`
+  const d = Math.floor(h / 24)
+  if (d < 7) return `${d}d ago`
+  return new Date(iso).toLocaleDateString()
+}
+
+function actionColor(action: string): string {
+  const a = action.toLowerCase()
+  if (/(delete|suspend|disable|revoke|remove|fail|orphan|ban)/.test(a)) return "#dc2626"
+  if (/(create|signup|join|enable|restore|add|grant|topup|top_up|approve)/.test(a)) return "#10b981"
+  if (/(tier|plan|billing|credit|subscription)/.test(a)) return "#1d4ed8"
+  if (/(flag|request|warn|review)/.test(a)) return "#a16207"
+  return "#475569"
+}
+
+function actionActionable(action: string): boolean {
+  return /(request|flag|orphan|dispute|review_needed)/.test(action.toLowerCase())
+}
+
+/** Humanize "tenant.tier_change" + target into a short readable phrase. */
+function actionText(log: RailLog): string {
+  const verb = log.action.replace(/[._]/g, " ").trim()
+  const tgt = log.targetId ? ` · ${log.targetType ?? "target"} ${log.targetId}` : log.targetType ? ` · ${log.targetType}` : ""
+  return `${verb}${tgt}`
+}
+
+function AdminActivityRail() {
+  const [logs, setLogs] = useState<RailLog[] | null>(null)
+  const [err, setErr] = useState(false)
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch("/api/super-admin/activity-log?limit=14", { cache: "no-store" })
+      if (!res.ok) throw new Error(String(res.status))
+      const data = await res.json()
+      setLogs(Array.isArray(data.logs) ? data.logs : [])
+    } catch {
+      setErr(true)
+      setLogs([])
+    }
+  }, [])
+
+  useEffect(() => {
+    load()
+    const onRefresh = () => load()
+    window.addEventListener("nw:data-refresh", onRefresh)
+    return () => window.removeEventListener("nw:data-refresh", onRefresh)
+  }, [load])
+
+  return (
+    <aside className="ca-rrail">
+      <div className="ca-rrail__head">
+        <span className="ca-live-dot" aria-hidden />
+        <h3>Live activity</h3>
+      </div>
+      <div className="ca-rrail__tabs">
+        <button type="button" className="is-on">Activity</button>
+      </div>
+      <div className="ca-rrail__body">
+        {logs === null ? (
+          <div className="ca-act-row" style={{ opacity: 0.6 }}>
+            <div className="ca-act-body"><span className="ca-act-who">Loading activity…</span></div>
+          </div>
+        ) : logs.length === 0 ? (
+          <div className="ca-act-row">
+            <div className="ca-act-body">
+              <span className="ca-act-who">No activity yet</span>
+              <div className="ca-act-time">{err ? "Activity log unavailable" : "Platform events will appear here"}</div>
+            </div>
+          </div>
+        ) : (
+          logs.map((ev) => (
+            <div key={ev.id} className={`ca-act-row${actionActionable(ev.action) ? " is-actionable" : ""}`}>
+              <div className="ca-act-icon" style={{ color: actionColor(ev.action) }}>
+                <Activity style={{ width: 11, height: 11 }} aria-hidden />
+              </div>
+              <div className="ca-act-body">
+                <span className="ca-act-who">{ev.actorEmail ?? "system"}</span>{" "}{actionText(ev)}
+                <div className="ca-act-time">{relativeTime(ev.createdAt)}</div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </aside>
+  )
+}
+
 function AdminSidebar({
   activeSection,
   onSectionChange,
@@ -4944,44 +5053,8 @@ export function AdminDashboard({
           </div>
         </main>
 
-        {/* Right activity rail — static, no live data for now */}
-        <aside className="ca-rrail">
-          <div className="ca-rrail__head">
-            <span className="ca-live-dot" aria-hidden />
-            <h3>Live activity</h3>
-          </div>
-          <div className="ca-rrail__tabs">
-            <button type="button" className="is-on">Activity</button>
-            <button type="button">Queue <span className="ca-muted" style={{ marginLeft: 4 }}>5</span></button>
-            <button type="button">Mentions <span className="ca-muted" style={{ marginLeft: 4 }}>2</span></button>
-          </div>
-          <div className="ca-rrail__body">
-            {[
-              { who: "system",  text: "new signup · daydream.io",        time: "1m ago",  color: "#10b981" },
-              { who: "Felix K.",text: "tier changed Starter → Growth",    time: "2m ago",  color: "#1d4ed8" },
-              { who: "Aisha B.",text: "credits topped up +5,000",         time: "8m ago",  color: "#9333ea" },
-              { who: "Jonas B.",text: "requested access · flag",          time: "14m ago", color: "#a16207", actionable: true },
-              { who: "Diego R.",text: "CSAT 1 feedback · billing",        time: "1h ago",  color: "#dc2626" },
-              { who: "system",  text: "subdomain craftshop orphaned",     time: "2h ago",  color: "#dc2626", actionable: true },
-              { who: "Tomás S.",text: "API key revoked",                  time: "3h ago",  color: "#475569" },
-              { who: "Owen R.", text: "suspended · policy violation",     time: "5h ago",  color: "#dc2626" },
-              { who: "Priya S.",text: "joined · daydream tenant",         time: "1d ago",  color: "#10b981" },
-            ].map((ev, i) => (
-              <div
-                key={i}
-                className={`ca-act-row${ev.actionable ? " is-actionable" : ""}`}
-              >
-                <div className="ca-act-icon" style={{ color: ev.color }}>
-                  <Activity style={{ width: 11, height: 11 }} aria-hidden />
-                </div>
-                <div className="ca-act-body">
-                  <span className="ca-act-who">{ev.who}</span>{" "}{ev.text}
-                  <div className="ca-act-time">{ev.time}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </aside>
+        {/* Right activity rail — real platform activity log */}
+        <AdminActivityRail />
       </div>
 
       {/* Toast notifications */}
