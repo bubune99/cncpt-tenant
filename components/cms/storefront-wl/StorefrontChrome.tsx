@@ -12,6 +12,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { NotifDrawer } from '@/components/cms/account/NotifDrawer';
 
+interface NavLink {
+  readonly href: string;
+  readonly label: string;
+  readonly openInNewTab?: boolean;
+}
+
 interface StorefrontChromeProps {
   readonly siteName: string;
   readonly siteGlyph: string;
@@ -21,14 +27,19 @@ interface StorefrontChromeProps {
   readonly userInitial?: string;
   readonly userName?: string;
   readonly isLoggedIn?: boolean;
+  /** CMS-configured nav links (falls back to defaults when omitted). */
+  readonly navLinks?: ReadonlyArray<NavLink>;
+  readonly showSearch?: boolean;
+  readonly showCart?: boolean;
+  readonly showAccount?: boolean;
 }
 
-const NAV_LINKS = [
+const DEFAULT_NAV_LINKS: ReadonlyArray<NavLink> = [
   { href: '/shop',       label: 'Shop' },
   { href: '/posts',      label: 'Journal' },
   { href: '/categories', label: 'About' },
   { href: '/account',    label: 'Account' },
-] as const;
+];
 
 export function StorefrontChrome({
   siteName,
@@ -39,9 +50,15 @@ export function StorefrontChrome({
   userInitial = '',
   userName = '',
   isLoggedIn = false,
+  navLinks,
+  showSearch = true,
+  showCart = true,
+  showAccount = true,
 }: StorefrontChromeProps) {
   const pathname = usePathname();
   const [notifOpen, setNotifOpen] = useState(false);
+
+  const links = navLinks && navLinks.length > 0 ? navLinks : DEFAULT_NAV_LINKS;
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + '/');
@@ -109,10 +126,12 @@ export function StorefrontChrome({
 
         {/* Nav */}
         <nav style={{ display: 'flex', gap: 22, alignItems: 'center' }}>
-          {NAV_LINKS.map((link) => (
+          {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}
+              target={link.openInNewTab ? '_blank' : undefined}
+              rel={link.openInNewTab ? 'noopener noreferrer' : undefined}
               style={{
                 color: isActive(link.href) ? 'var(--wl-accent)' : 'var(--wl-text)',
                 textDecoration: 'none',
@@ -132,28 +151,30 @@ export function StorefrontChrome({
         {/* Right side */}
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 16 }}>
           {/* Search pill */}
-          <div
-            style={{
-              width: 220,
-              height: 32,
-              border: '1px solid var(--wl-rule)',
-              borderRadius: 999,
-              padding: '0 12px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              fontSize: 13,
-              color: 'var(--wl-text-faint)',
-              background: 'var(--wl-surface)',
-              cursor: 'text',
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="7" />
-              <path d="m21 21-4.3-4.3" />
-            </svg>
-            <span>Search</span>
-          </div>
+          {showSearch && (
+            <div
+              style={{
+                width: 220,
+                height: 32,
+                border: '1px solid var(--wl-rule)',
+                borderRadius: 999,
+                padding: '0 12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                fontSize: 13,
+                color: 'var(--wl-text-faint)',
+                background: 'var(--wl-surface)',
+                cursor: 'text',
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              <span>Search</span>
+            </div>
+          )}
 
           {/* Bell */}
           <button
@@ -201,6 +222,7 @@ export function StorefrontChrome({
           </button>
 
           {/* Bag */}
+          {showCart && (
           <Link
             href="/cart"
             aria-label="Shopping bag"
@@ -240,9 +262,10 @@ export function StorefrontChrome({
               </span>
             )}
           </Link>
+          )}
 
           {/* Account */}
-          {isLoggedIn ? (
+          {showAccount && (isLoggedIn ? (
             <Link
               href="/account"
               style={{
@@ -296,7 +319,7 @@ export function StorefrontChrome({
             >
               Sign in
             </Link>
-          )}
+          ))}
         </div>
       </header>
 

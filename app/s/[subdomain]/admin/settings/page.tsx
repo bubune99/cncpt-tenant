@@ -69,6 +69,9 @@ function buildGroups(buildPath: (p: string) => string): readonly SettingGroup[] 
       title: 'Storefront',
       items: [
         { name: 'Identity',        desc: 'Store name, logo, & contact info',          status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#general') },
+        { name: 'Header & nav',    desc: 'Logo, navigation links, & search/cart',     status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/site-settings/header') },
+        { name: 'Footer',          desc: 'Link columns, social, & copyright',          status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/site-settings/footer') },
+        { name: 'Announcement bar', desc: 'Banner message shown above the header',     status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/site-settings/announcement') },
         { name: 'Domain & DNS',    desc: 'Custom domain & SSL certificate',            status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#domain') },
         { name: 'Theme & palette', desc: 'Branding colours & visual identity',         status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#branding') },
       ],
@@ -198,6 +201,7 @@ export default function SettingsPage() {
   // Stats from loaded settings
   const storeName = settings?.general?.storeName ?? '—';
   const totalGroups = groups.length;
+  const totalModules = groups.reduce((n, g) => n + g.items.length, 0);
   const attentionCount = groups.flatMap(g => g.items).filter(i => i.status !== 'OK').length;
 
   return (
@@ -210,7 +214,7 @@ export default function SettingsPage() {
           <h1>The <span className="display-i accent">machinery.</span></h1>
           <div className="sub">
             {storeName !== '—' && <span>{storeName} · </span>}
-            {totalGroups * 3} modules across {totalGroups} groups
+            {totalModules} modules across {totalGroups} groups
             {attentionCount > 0 && ` · ${attentionCount} need${attentionCount === 1 ? 's' : ''} attention`}
           </div>
         </div>

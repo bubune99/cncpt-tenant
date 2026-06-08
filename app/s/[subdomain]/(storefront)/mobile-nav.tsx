@@ -12,10 +12,11 @@ import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 
 interface MobileNavProps {
-  readonly links: ReadonlyArray<{ href: string; label: string }>;
+  readonly links: ReadonlyArray<{ href: string; label: string; openInNewTab?: boolean }>;
+  readonly siteName?: string;
 }
 
-export function MobileNav({ links }: MobileNavProps) {
+export function MobileNav({ links, siteName = 'Home' }: MobileNavProps) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
@@ -49,7 +50,7 @@ export function MobileNav({ links }: MobileNavProps) {
             textDecoration: 'none',
           }}
         >
-          Home
+          {siteName}
         </Link>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

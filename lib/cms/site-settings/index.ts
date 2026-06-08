@@ -5,10 +5,17 @@
  * including header, footer, and announcement bar configurations.
  */
 
-import { prisma } from '../db';
+import { prisma, getCurrentTenant } from '../db';
 import { cache } from 'react';
 
-const DEFAULT_SITE_SETTINGS_ID = 'default';
+/**
+ * Resolve the tenant id for a SiteSettings operation. Prefer the explicit
+ * argument (storefront passes it directly); otherwise fall back to the current
+ * tenant context established by withTenantAuth/runWithTenant (admin API routes).
+ */
+function resolveTenantId(tenantId?: number | null): number | null {
+  return tenantId ?? getCurrentTenant();
+}
 
 export interface SiteSettingsData {
   id: string;
@@ -33,12 +40,20 @@ export interface SiteSettingsData {
 }
 
 /**
- * Get site settings (cached per request)
+ * Get site settings for a tenant (cached per request).
+ *
+ * Pass `tenantId` explicitly from server components (e.g. the storefront
+ * layout). Inside an admin API route wrapped by withTenantAuth, the tenant is
+ * resolved automatically from the request context, so the argument is optional.
+ * Returns null when no tenant can be resolved or no row exists yet.
  */
-export const getSiteSettings = cache(async (): Promise<SiteSettingsData | null> => {
+export const getSiteSettings = cache(async (tenantId?: number | null): Promise<SiteSettingsData | null> => {
   try {
+    const tid = resolveTenantId(tenantId);
+    if (tid == null) return null;
+
     const settings = await prisma.siteSettings.findUnique({
-      where: { id: DEFAULT_SITE_SETTINGS_ID },
+      where: { tenantId: tid },
     });
 
     if (!settings) {
@@ -73,16 +88,21 @@ export const getSiteSettings = cache(async (): Promise<SiteSettingsData | null> 
 });
 
 /**
- * Get or create default site settings
+ * Get or create site settings for the current/given tenant.
  */
-export async function getOrCreateSiteSettings(): Promise<SiteSettingsData> {
-  let settings = await getSiteSettings();
+export async function getOrCreateSiteSettings(tenantId?: number | null): Promise<SiteSettingsData> {
+  const tid = resolveTenantId(tenantId);
+  if (tid == null) {
+    throw new Error('getOrCreateSiteSettings: no tenant in context');
+  }
+
+  let settings = await getSiteSettings(tid);
 
   if (!settings) {
-    // Create default settings
+    // Create the tenant's settings row
     const created = await prisma.siteSettings.create({
       data: {
-        id: DEFAULT_SITE_SETTINGS_ID,
+        tenantId: tid,
         showAnnouncementBar: false,
       },
     });
@@ -117,8 +137,14 @@ export async function getOrCreateSiteSettings(): Promise<SiteSettingsData> {
  * Update site settings
  */
 export async function updateSiteSettings(
-  data: Partial<Omit<SiteSettingsData, 'id'>>
+  data: Partial<Omit<SiteSettingsData, 'id'>>,
+  tenantId?: number | null
 ): Promise<SiteSettingsData> {
+  const tid = resolveTenantId(tenantId);
+  if (tid == null) {
+    throw new Error('updateSiteSettings: no tenant in context');
+  }
+
   // Convert data to Prisma-compatible format
   const prismaData = {
     ...(data.header !== undefined && { header: data.header as object }),
@@ -142,9 +168,9 @@ export async function updateSiteSettings(
   };
 
   const updated = await prisma.siteSettings.upsert({
-    where: { id: DEFAULT_SITE_SETTINGS_ID },
+    where: { tenantId: tid },
     create: {
-      id: DEFAULT_SITE_SETTINGS_ID,
+      tenantId: tid,
       ...prismaData,
     },
     update: prismaData,
