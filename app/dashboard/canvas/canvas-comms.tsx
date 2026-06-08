@@ -8,18 +8,20 @@
  *  - Support inbox: REAL. Channels rail is built from the live ticket stats
  *    (/api/dashboard/support → stats), the ticket list is the real tickets,
  *    and the conversation pane loads real messages
- *    (/api/dashboard/support/[id]/messages). The "AI suggested reply" block is
- *    a labeled placeholder (no AI-reply endpoint wired) — never presented as a
- *    real generated draft.
+ *    (/api/dashboard/support/[id]/messages). "AI suggested reply" is REAL —
+ *    generated from the ticket thread via /api/dashboard/support/[id]/
+ *    suggest-reply (editable draft, never auto-sent).
  *  - Email campaigns: REAL. Aggregated across the account's sites
  *    (/api/dashboard/campaigns → EmailCampaign). Empty state when none.
  *  - Feedback board: REAL. Aggregated across sites (/api/dashboard/feedback →
  *    Feedback), grouped by status. Empty state when none.
- *  - Announcements / Team messages: no backing source yet → honest "coming
- *    soon" empty state (no fabricated rows).
+ *  - Announcements: REAL. Per-site storefront banner editor
+ *    (/api/dashboard/announcements → SiteSettings.announcementBar).
+ *  - Team messages: REAL. In-app #general team chat
+ *    (/api/dashboard/team-messages, membership-gated, polled).
  */
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import {
   MessageSquare, Plus, Inbox, UserX, User, Hourglass, CheckCircle,
   Sparkles, Send, Megaphone, MessagesSquare, Lightbulb, AlarmClock, Loader2,
@@ -59,8 +61,8 @@ export function CanvasComms({ initialTab = "tickets" }: { initialTab?: Tab }) {
       {tab === "tickets" ? <SupportInbox /> : null}
       {tab === "campaigns" ? <CampaignsPanel /> : null}
       {tab === "feedback" ? <FeedbackPanel /> : null}
-      {tab === "announce" ? <ComingSoonPanel kind="announce" /> : null}
-      {tab === "team-chat" ? <ComingSoonPanel kind="team-chat" /> : null}
+      {tab === "announce" ? <AnnouncementsPanel /> : null}
+      {tab === "team-chat" ? <TeamChatPanel /> : null}
     </>
   )
 }
@@ -73,6 +75,26 @@ function SupportInbox() {
   const [selId, setSelId] = useState<string | null>(null)
   const [messages, setMessages] = useState<any[]>([])
   const [msgLoading, setMsgLoading] = useState(false)
+  const [aiDraft, setAiDraft] = useState("")
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState<string | null>(null)
+
+  const generateReply = useCallback(async () => {
+    if (!selId) return
+    setAiLoading(true); setAiError(null)
+    try {
+      const res = await fetch(`/api/dashboard/support/${selId}/suggest-reply`, { method: "POST" })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || "Failed")
+      setAiDraft(data.draft || "")
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : "Failed to generate")
+    } finally {
+      setAiLoading(false)
+    }
+  }, [selId])
+
+  useEffect(() => { setAiDraft(""); setAiError(null) }, [selId])
 
   useEffect(() => {
     let active = true
@@ -223,28 +245,36 @@ function SupportInbox() {
                 ))
               )}
 
-              {/* AI suggested reply — labeled placeholder */}
+              {/* AI suggested reply — REAL, generated from the ticket thread */}
               <div className="card" style={{ borderColor: "#bfdbfe", background: "linear-gradient(135deg, rgba(59,130,246,0.04), rgba(6,182,212,0.04))" }}>
                 <div className="card__head" style={{ borderColor: "#bfdbfe" }}>
                   <div className="row" style={{ gap: 8 }}>
                     <div style={{ width: 20, height: 20, borderRadius: 5, background: "linear-gradient(135deg, #3b82f6, #06b6d4)", color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center" }}><Sparkles style={{ width: 11, height: 11 }} /></div>
                     <strong style={{ fontSize: 12.5, color: "#1d4ed8" }}>Suggested reply</strong>
-                    <span className="pill" style={{ fontSize: 9.5 }}>preview</span>
                   </div>
+                  <button className="btn btn--secondary btn--xs" onClick={generateReply} disabled={aiLoading || messages.length === 0}>
+                    {aiLoading ? <><Loader2 className="tnt-spin" style={{ width: 11, height: 11 }} /> Drafting…</> : <><Sparkles style={{ width: 11, height: 11 }} /> {aiDraft ? "Regenerate" : "Generate"}</>}
+                  </button>
                 </div>
-                <div className="card__body muted" style={{ fontSize: 12, lineHeight: 1.55 }}>
-                  AI-drafted replies arrive in a follow-up. Use the "Ask CNCPT" dock for help drafting a response in the meantime — no AI-reply endpoint is wired here yet, so this card is a preview, not a generated draft.
+                <div className="card__body" style={{ fontSize: 12, lineHeight: 1.55 }}>
+                  {aiError ? (
+                    <span style={{ color: "#b91c1c" }}>{aiError}</span>
+                  ) : aiDraft ? (
+                    <textarea className="tnt__textarea" style={{ width: "100%", minHeight: 90, fontSize: 12.5, lineHeight: 1.5 }} value={aiDraft} onChange={(e) => setAiDraft(e.target.value)} />
+                  ) : (
+                    <span className="muted">Generate a draft reply from this conversation, then edit it before sending.</span>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Composer */}
-            <div style={{ padding: "12px 18px 18px", borderTop: "1px solid var(--br-border)", background: "#fff" }}>
+            <div style={{ padding: "12px 18px 18px", borderTop: "1px solid var(--br-border)", background: "var(--br-background)" }}>
               <div className="tnt__input" style={{ padding: "10px 12px", alignItems: "center" }}>
-                <span style={{ flex: 1, color: "var(--br-text-secondary)", fontSize: 12.5 }}>Reply to {sel.customerName}…</span>
-                <button className="btn btn--primary btn--xs">Send reply <Send style={{ width: 11, height: 11 }} /></button>
+                <span style={{ flex: 1, color: "var(--br-text-secondary)", fontSize: 12.5 }}>{aiDraft ? "Edit the suggested reply above" : `Reply to ${sel.customerName}…`}</span>
+                <button className="btn btn--primary btn--xs" disabled>Send reply <Send style={{ width: 11, height: 11 }} /></button>
               </div>
-              <span className="muted" style={{ fontSize: 10.5, marginTop: 6, display: "block" }}>Full reply composer is part of the existing Support area; this inbox is read-first in Phase 2.</span>
+              <span className="muted" style={{ fontSize: 10.5, marginTop: 6, display: "block" }}>Sending replies from here is handled by the existing Support area; this inbox drafts and reads.</span>
             </div>
           </>
         )}
@@ -373,27 +403,259 @@ function FeedbackPanel() {
   )
 }
 
-/* ─── Not-yet-backed comms features — honest empty state, no fake rows ─── */
-function ComingSoonPanel({ kind }: { kind: "announce" | "team-chat" }) {
-  const meta = {
-    announce: { h: "Announcements", sub: "Push banners, top-bars, and modals to your customers across your sites.", icon: Megaphone },
-    "team-chat": { h: "Team messages", sub: "In-app channels and DMs for your team.", icon: MessagesSquare },
-  }[kind]
-  const Icon = meta.icon
+/* ─── Announcements — REAL (per-site storefront banner, /api/dashboard/announcements) ─── */
+interface SiteAnnouncement { subdomain: string; enabled: boolean; announcementBar: Record<string, any> }
+interface AnnDraft { message: string; link: string; backgroundColor: string; textColor: string; enabled: boolean }
+
+function annDraftFromSite(s: SiteAnnouncement): AnnDraft {
+  const a = s.announcementBar || {}
+  return {
+    message: (a.message ?? a.text ?? "") as string,
+    link: (a.link ?? a.href ?? "") as string,
+    backgroundColor: (a.backgroundColor ?? "#0f172a") as string,
+    textColor: (a.textColor ?? "#ffffff") as string,
+    enabled: !!s.enabled,
+  }
+}
+
+function AnnouncementsPanel() {
+  const [sites, setSites] = useState<SiteAnnouncement[] | null>(null)
+  const [active, setActive] = useState<string | null>(null)
+  const [draft, setDraft] = useState<AnnDraft | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    fetch("/api/dashboard/announcements")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const list: SiteAnnouncement[] = Array.isArray(d?.announcements) ? d.announcements : []
+        setSites(list)
+        if (list.length > 0) { setActive(list[0].subdomain); setDraft(annDraftFromSite(list[0])) }
+      })
+      .catch(() => setSites([]))
+  }, [])
+
+  const selectSite = (sub: string) => {
+    const s = sites?.find((x) => x.subdomain === sub)
+    setActive(sub); setSaved(false)
+    if (s) setDraft(annDraftFromSite(s))
+  }
+
+  const save = async () => {
+    if (!active || !draft) return
+    setSaving(true); setSaved(false)
+    try {
+      const res = await fetch("/api/dashboard/announcements", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subdomain: active,
+          enabled: draft.enabled,
+          announcementBar: { message: draft.message, link: draft.link, backgroundColor: draft.backgroundColor, textColor: draft.textColor },
+        }),
+      })
+      if (res.ok) {
+        const updated = await res.json()
+        setSites((prev) => (prev || []).map((s) => s.subdomain === active ? { subdomain: active, enabled: updated.enabled, announcementBar: updated.announcementBar } : s))
+        setSaved(true)
+      }
+    } finally { setSaving(false) }
+  }
+
   return (
     <div className="dirH__page" style={{ padding: "20px 24px", overflow: "auto" }}>
       <div className="tnt__page-h">
         <div>
-          <h1>{meta.h}</h1>
-          <div className="sub">{meta.sub}</div>
+          <h1>Announcements</h1>
+          <div className="sub">Show a banner across the top of a site&apos;s storefront.</div>
         </div>
-        <span className="pill pill--blue" style={{ fontSize: 11 }}>Coming soon</span>
       </div>
-      <div className="card" style={{ padding: "40px 24px", textAlign: "center" }}>
-        <Icon style={{ width: 26, height: 26, opacity: 0.5 }} />
-        <div style={{ fontSize: 13, fontWeight: 600, marginTop: 10 }}>{meta.h} isn&apos;t available yet</div>
-        <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>This feature is on the roadmap. There&apos;s no data to show here yet.</div>
+      {sites === null ? (
+        <div className="card" style={{ padding: 18 }}><span className="muted"><Loader2 className="tnt-spin" style={{ width: 14, height: 14 }} /> Loading…</span></div>
+      ) : sites.length === 0 ? (
+        <div className="card" style={{ padding: "28px 18px", textAlign: "center" }}>
+          <Megaphone style={{ width: 22, height: 22, opacity: 0.5 }} />
+          <div className="muted" style={{ fontSize: 12.5, marginTop: 8 }}>Create a site first, then add an announcement banner to it.</div>
+        </div>
+      ) : draft ? (
+        <>
+          {sites.length > 1 ? (
+            <div className="tnt__tabs" style={{ marginBottom: 12 }}>
+              {sites.map((s) => (
+                <button key={s.subdomain} className={"tnt__tab" + (s.subdomain === active ? " is-on" : "")} onClick={() => selectSite(s.subdomain)}>
+                  {s.subdomain}{s.enabled ? <span className="pill pill--green" style={{ fontSize: 9, marginLeft: 6 }}>live</span> : null}
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          {/* Live preview */}
+          <div className="card" style={{ marginBottom: 12 }}>
+            <div className="card__head"><h3 className="card__title">Preview</h3>
+              <label className="row" style={{ gap: 6, fontSize: 12 }}>
+                <input type="checkbox" checked={draft.enabled} onChange={(e) => { setDraft({ ...draft, enabled: e.target.checked }); setSaved(false) }} /> Show on storefront
+              </label>
+            </div>
+            <div style={{ padding: 14, background: "var(--br-surface)" }}>
+              {draft.message ? (
+                <div style={{ background: draft.backgroundColor, color: draft.textColor, padding: "10px 14px", borderRadius: 8, textAlign: "center", fontSize: 12.5, fontWeight: 600, opacity: draft.enabled ? 1 : 0.5 }}>
+                  {draft.message}{draft.link ? <span style={{ marginLeft: 8, textDecoration: "underline" }}>Learn more</span> : null}
+                </div>
+              ) : <span className="muted" style={{ fontSize: 12 }}>Add a message below to preview the banner.</span>}
+            </div>
+          </div>
+
+          {/* Editor */}
+          <div className="card">
+            <div className="card__body" style={{ display: "flex", flexDirection: "column", gap: 12, padding: 16 }}>
+              <label className="col" style={{ gap: 4 }}>
+                <span className="muted" style={{ fontSize: 11 }}>Message</span>
+                <input className="tnt__field" value={draft.message} onChange={(e) => { setDraft({ ...draft, message: e.target.value }); setSaved(false) }} placeholder="Summer sale — 25% off through Sunday" />
+              </label>
+              <label className="col" style={{ gap: 4 }}>
+                <span className="muted" style={{ fontSize: 11 }}>Link (optional)</span>
+                <input className="tnt__field" value={draft.link} onChange={(e) => { setDraft({ ...draft, link: e.target.value }); setSaved(false) }} placeholder="/shop/sale" />
+              </label>
+              <div className="row" style={{ gap: 16 }}>
+                <label className="row" style={{ gap: 6, fontSize: 12 }}>
+                  <span className="muted" style={{ fontSize: 11 }}>Background</span>
+                  <input type="color" value={draft.backgroundColor} onChange={(e) => { setDraft({ ...draft, backgroundColor: e.target.value }); setSaved(false) }} />
+                </label>
+                <label className="row" style={{ gap: 6, fontSize: 12 }}>
+                  <span className="muted" style={{ fontSize: 11 }}>Text</span>
+                  <input type="color" value={draft.textColor} onChange={(e) => { setDraft({ ...draft, textColor: e.target.value }); setSaved(false) }} />
+                </label>
+              </div>
+              <div className="row" style={{ gap: 10 }}>
+                <button className="btn btn--primary btn--sm" onClick={save} disabled={saving}>
+                  {saving ? <><Loader2 className="tnt-spin" style={{ width: 12, height: 12 }} /> Saving…</> : "Save announcement"}
+                </button>
+                {saved ? <span className="pill pill--green" style={{ fontSize: 11 }}>Saved</span> : null}
+              </div>
+            </div>
+          </div>
+        </>
+      ) : null}
+    </div>
+  )
+}
+
+/* ─── Team messages — REAL (in-app team chat, /api/dashboard/team-messages) ─── */
+function chatRelTime(iso: string): string {
+  const diff = Math.max(0, Date.now() - new Date(iso).getTime())
+  const m = Math.floor(diff / 60000)
+  if (m < 1) return "now"
+  if (m < 60) return `${m}m`
+  const h = Math.floor(m / 60); if (h < 24) return `${h}h`
+  return new Date(iso).toLocaleDateString()
+}
+
+function TeamChatPanel() {
+  const [teams, setTeams] = useState<any[] | null>(null)
+  const [teamId, setTeamId] = useState<string | null>(null)
+  const [msgs, setMsgs] = useState<any[]>([])
+  const [me, setMe] = useState<string>("")
+  const [text, setText] = useState("")
+  const [sending, setSending] = useState(false)
+
+  useEffect(() => {
+    fetch("/api/teams")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const ts = Array.isArray(d?.teams) ? d.teams : []
+        setTeams(ts)
+        if (ts.length > 0) setTeamId(ts[0].id)
+      })
+      .catch(() => setTeams([]))
+  }, [])
+
+  useEffect(() => {
+    if (!teamId) return
+    let active = true
+    const load = () => fetch(`/api/dashboard/team-messages?teamId=${teamId}&channel=general`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (active && d) { setMsgs(Array.isArray(d.messages) ? d.messages : []); setMe(d.me || "") } })
+      .catch(() => {})
+    load()
+    const iv = setInterval(load, 5000)
+    return () => { active = false; clearInterval(iv) }
+  }, [teamId])
+
+  const send = async () => {
+    const body = text.trim()
+    if (!body || !teamId) return
+    setSending(true)
+    try {
+      const res = await fetch("/api/dashboard/team-messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamId, channel: "general", body }),
+      })
+      if (res.ok) {
+        const d = await res.json()
+        if (d.message) setMsgs((prev) => [...prev, d.message])
+        setText("")
+      }
+    } finally { setSending(false) }
+  }
+
+  return (
+    <div className="dirH__page" style={{ padding: "20px 24px", overflow: "auto", display: "flex", flexDirection: "column", height: "100%" }}>
+      <div className="tnt__page-h">
+        <div>
+          <h1>Team messages</h1>
+          <div className="sub">#general — a shared channel for your team.</div>
+        </div>
+        {teams && teams.length > 1 ? (
+          <select className="tnt__field" style={{ width: "auto" }} value={teamId ?? ""} onChange={(e) => setTeamId(e.target.value)}>
+            {teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
+        ) : null}
       </div>
+
+      {teams === null ? (
+        <div className="card" style={{ padding: 18 }}><span className="muted"><Loader2 className="tnt-spin" style={{ width: 14, height: 14 }} /> Loading…</span></div>
+      ) : teams.length === 0 ? (
+        <div className="card" style={{ padding: "28px 18px", textAlign: "center" }}>
+          <MessagesSquare style={{ width: 22, height: 22, opacity: 0.5 }} />
+          <div className="muted" style={{ fontSize: 12.5, marginTop: 8 }}>Create a team (Team → Members) to start messaging.</div>
+        </div>
+      ) : (
+        <div className="card" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 360 }}>
+          <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+            {msgs.length === 0 ? (
+              <div className="muted" style={{ fontSize: 12, textAlign: "center", padding: 24 }}>No messages yet — say hello 👋</div>
+            ) : msgs.map((m) => (
+              <div key={m.id} className="row" style={{ alignItems: "flex-start", gap: 10, justifyContent: m.user_id === me ? "flex-end" : "flex-start" }}>
+                {m.user_id !== me ? <div className="avatar avatar--sm avatar--purple">{String(m.user_name || "?").slice(0, 2).toUpperCase()}</div> : null}
+                <div className="col" style={{ gap: 2, maxWidth: "70%", alignItems: m.user_id === me ? "flex-end" : "flex-start" }}>
+                  <div className="row" style={{ gap: 6 }}>
+                    <strong style={{ fontSize: 11.5 }}>{m.user_id === me ? "You" : (m.user_name || "Member")}</strong>
+                    <span className="muted" style={{ fontSize: 10 }}>{chatRelTime(m.created_at)}</span>
+                  </div>
+                  <div style={{ fontSize: 13, lineHeight: 1.5, background: m.user_id === me ? "var(--br-primary)" : "var(--br-surface)", color: m.user_id === me ? "#fff" : "var(--br-text)", padding: "7px 11px", borderRadius: 10, border: m.user_id === me ? "none" : "1px solid var(--br-border)", whiteSpace: "pre-wrap" }}>{m.body}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ padding: 12, borderTop: "1px solid var(--br-border)" }}>
+            <div className="tnt__input" style={{ padding: "8px 10px", alignItems: "center", gap: 8 }}>
+              <input
+                className="tnt__field"
+                style={{ flex: 1, border: "none", background: "transparent" }}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send() } }}
+                placeholder="Message #general…"
+              />
+              <button className="btn btn--primary btn--xs" onClick={send} disabled={sending || !text.trim()}>
+                {sending ? <Loader2 className="tnt-spin" style={{ width: 11, height: 11 }} /> : <Send style={{ width: 11, height: 11 }} />}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
