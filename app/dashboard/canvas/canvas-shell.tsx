@@ -23,6 +23,7 @@ import { CanvasOverview } from "./canvas-overview"
 import { CanvasSites } from "./canvas-sites"
 import { CanvasSubdomainDetail } from "./canvas-subdomain-detail"
 import { CanvasTeam } from "./canvas-team"
+import { CanvasComms } from "./canvas-comms"
 import { CommandPalette } from "./command-palette"
 import "./canvas.css"
 
@@ -39,6 +40,7 @@ const SECTION_LABEL: Record<string, string> = {
   overview: "Overview",
   sites: "Subdomains",
   team: "Team",
+  comms: "Communications",
   analytics: "Analytics",
   branding: "Branding",
   domains: "Custom domains",
@@ -114,6 +116,9 @@ export function CanvasShell({
     }
     if (activeSection === "team") {
       return <CanvasTeam user={user} />
+    }
+    if (activeSection === "comms") {
+      return <CanvasComms />
     }
     // Existing shadcn sections, hosted inside the canvas shell.
     return (
