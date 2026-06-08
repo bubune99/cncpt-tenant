@@ -58,6 +58,7 @@ export function CanvasOverview({ user, subdomains, selectedSubdomain }: CanvasOv
   const router = useRouter()
   const [balance, setBalance] = useState<CreditBalance | null>(null)
   const [supportStats, setSupportStats] = useState<{ open: number; total: number } | null>(null)
+  const [supportReady, setSupportReady] = useState(false)
   const [bannerDismissed, setBannerDismissed] = useState(false)
 
   useEffect(() => {
@@ -78,13 +79,16 @@ export function CanvasOverview({ user, subdomains, selectedSubdomain }: CanvasOv
       })
       .catch(() => {})
 
-    // Real support stats for the support widget.
+    // Real support stats for the support widget. Marked ready in finally so the
+    // widget can leave its loading state even when the endpoint is unavailable
+    // (e.g. support tables not provisioned in this environment → 500).
     fetch("/api/dashboard/support")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data?.stats) setSupportStats({ open: Number(data.stats.open) || 0, total: Number(data.stats.total) || 0 })
       })
       .catch(() => {})
+      .finally(() => setSupportReady(true))
   }, [])
 
   const name = firstName(user)
@@ -252,7 +256,9 @@ export function CanvasOverview({ user, subdomains, selectedSubdomain }: CanvasOv
               ) : (
                 <>
                   <span style={{ fontSize: 12.5, fontWeight: 500 }}>Support inbox</span>
-                  <span className="muted" style={{ fontSize: 11 }}>Loading ticket counts…</span>
+                  <span className="muted" style={{ fontSize: 11 }}>
+                    {supportReady ? "Open the Communications inbox to manage tickets." : "Loading ticket counts…"}
+                  </span>
                 </>
               )}
             </div>
