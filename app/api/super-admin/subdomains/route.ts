@@ -198,20 +198,23 @@ export async function GET(request: NextRequest) {
 
     let whereClause = ""
     if (search) {
-      whereClause = `WHERE subdomain ILIKE '%${search.replace(/'/g, "''")}%'`
+      whereClause = `WHERE s.subdomain ILIKE '%${search.replace(/'/g, "''")}%'`
     }
 
     const subdomainsResult = await sql`
       SELECT s.id, s.subdomain, s.user_id, s.created_at,
+             s.disabled, s.disabled_reason, s.subscription_tier_id, s.subscription_status,
+             t.name AS tier_name, t.display_name AS tier_display_name,
              (SELECT COUNT(*) FROM team_subdomains WHERE subdomain = s.subdomain) as team_share_count
       FROM subdomains s
+      LEFT JOIN subscription_tiers t ON t.id = s.subscription_tier_id
       ${sql.unsafe(whereClause)}
       ORDER BY s.created_at DESC
       LIMIT ${limit} OFFSET ${offset}
     `
 
     const countResult = await sql`
-      SELECT COUNT(*) as total FROM subdomains ${sql.unsafe(whereClause)}
+      SELECT COUNT(*) as total FROM subdomains s ${sql.unsafe(whereClause)}
     `
 
     // Enrich with user info
@@ -240,6 +243,12 @@ export async function GET(request: NextRequest) {
       owner: userMap.get(s.user_id as string) || null,
       createdAt: s.created_at,
       teamShareCount: parseInt(s.team_share_count as string) || 0,
+      disabled: Boolean(s.disabled),
+      disabledReason: (s.disabled_reason as string | null) ?? null,
+      tierId: (s.subscription_tier_id as string | null) ?? null,
+      tierName: (s.tier_name as string | null) ?? null,
+      tierDisplayName: (s.tier_display_name as string | null) ?? null,
+      subscriptionStatus: (s.subscription_status as string | null) ?? null,
     }))
 
     return NextResponse.json({

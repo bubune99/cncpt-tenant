@@ -4125,6 +4125,16 @@ model Subdomain {
   // JSON: Record<featureKey, boolean> e.g. { "commerce": true, "commerce.reviews": false }
   featureConfig Json? @map("feature_config")
 
+  // Platform-owner lifecycle + billing (additive 2026-06)
+  // Soft-disable (suspend) — reversible. disabled=true blocks the tenant.
+  disabled       Boolean   @default(false)
+  disabledAt     DateTime? @map("disabled_at")
+  disabledReason String?   @map("disabled_reason") @db.Text
+  // Per-tenant plan assignment → drives quotas + rate-limit effective limits.
+  subscriptionTierId String?           @map("subscription_tier_id") @db.Uuid
+  subscriptionTier   SubscriptionTier? @relation("TenantTier", fields: [subscriptionTierId], references: [id], onDelete: SetNull)
+  subscriptionStatus String?           @map("subscription_status") @db.VarChar(32)
+
   // Relations to tenant tables (legacy)
   tenantPosts    TenantPost[]
   tenantPages    TenantPage[]
@@ -4228,7 +4238,8 @@ model SubscriptionTier {
   updatedAt            DateTime @default(now()) @map("updated_at")
 
   // Relations
-  teams Team[]
+  teams           Team[]
+  tenantsAssigned Subdomain[] @relation("TenantTier")
 
   @@index([isActive], map: "idx_tiers_active")
   @@index([sortOrder], map: "idx_tiers_sort")
