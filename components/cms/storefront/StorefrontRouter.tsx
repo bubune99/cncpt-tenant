@@ -17,6 +17,12 @@ export interface StorefrontRouterProps {
   path?: string[]
   siteId?: string
   tenantId?: number  // Tenant ID for filtering content
+  /**
+   * When true, the home view renders its content only (no built-in header/
+   * footer) so it can be wrapped by the shared storefront chrome. Used by the
+   * converged homepage route under the (storefront) layout.
+   */
+  embedded?: boolean
 }
 
 // Get site settings (filtered by tenant)
@@ -177,14 +183,15 @@ async function getPage(slug: string, tenantId?: number) {
 }
 
 // Home page component
-async function HomePage({ subdomain, tenantId }: { subdomain: string; tenantId?: number }) {
+async function HomePage({ subdomain, tenantId, embedded = false }: { subdomain: string; tenantId?: number; embedded?: boolean }) {
   const settings = await getSiteSettings(subdomain, tenantId)
   const posts = await getPosts(tenantId, 6)
   const pages = await getPages(tenantId)
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
+    <div className={embedded ? undefined : 'min-h-screen bg-background'}>
+      {/* Header — omitted when embedded (the shared storefront chrome supplies it) */}
+      {!embedded && (
       <header className="border-b bg-background/95 backdrop-blur sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="font-bold text-xl">
@@ -206,6 +213,7 @@ async function HomePage({ subdomain, tenantId }: { subdomain: string; tenantId?:
           </nav>
         </div>
       </header>
+      )}
 
       {/* Hero */}
       <section className="py-20 text-center">
@@ -257,12 +265,14 @@ async function HomePage({ subdomain, tenantId }: { subdomain: string; tenantId?:
         </section>
       )}
 
-      {/* Footer */}
+      {/* Footer — omitted when embedded (the shared storefront chrome supplies it) */}
+      {!embedded && (
       <footer className="border-t py-8 mt-16">
         <div className="container mx-auto px-4 text-center text-muted-foreground">
           © {new Date().getFullYear()} {settings.siteName}. All rights reserved.
         </div>
       </footer>
+      )}
     </div>
   )
 }
@@ -451,9 +461,9 @@ async function CMSPage({ subdomain, slug, tenantId }: { subdomain: string; slug:
  * Main StorefrontRouter component
  * Routes to appropriate page based on path
  */
-export async function StorefrontRouter({ subdomain, path = [], tenantId }: StorefrontRouterProps) {
+export async function StorefrontRouter({ subdomain, path = [], tenantId, embedded = false }: StorefrontRouterProps) {
   if (path.length === 0) {
-    return <HomePage subdomain={subdomain} tenantId={tenantId} />
+    return <HomePage subdomain={subdomain} tenantId={tenantId} embedded={embedded} />
   }
 
   const [firstSegment, ...rest] = path
