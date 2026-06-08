@@ -22,6 +22,7 @@ import { CanvasActivityRail } from "./canvas-activity-rail"
 import { CanvasOverview } from "./canvas-overview"
 import { CanvasSites } from "./canvas-sites"
 import { CanvasSubdomainDetail } from "./canvas-subdomain-detail"
+import { CanvasTeam } from "./canvas-team"
 import { CommandPalette } from "./command-palette"
 import "./canvas.css"
 
@@ -37,6 +38,7 @@ interface CanvasShellProps {
 const SECTION_LABEL: Record<string, string> = {
   overview: "Overview",
   sites: "Subdomains",
+  team: "Team",
   analytics: "Analytics",
   branding: "Branding",
   domains: "Custom domains",
@@ -109,6 +111,9 @@ export function CanvasShell({
           onManage={(s) => { setSelectedSubdomain(s); setDetailSubdomain(s) }}
         />
       )
+    }
+    if (activeSection === "team") {
+      return <CanvasTeam user={user} />
     }
     // Existing shadcn sections, hosted inside the canvas shell.
     return (

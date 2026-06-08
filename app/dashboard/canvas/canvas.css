@@ -67,6 +67,8 @@
 .tnt-canvas *::after { box-sizing: border-box; }
 .tnt-canvas button { font-family: inherit; cursor: pointer; }
 .tnt-canvas input, .tnt-canvas textarea { font-family: inherit; }
+.tnt-canvas .tnt-spin { animation: tnt-spin 0.8s linear infinite; }
+@keyframes tnt-spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
 
 /* ---------- generic atoms ---------- */
 .tnt-canvas .row { display: flex; align-items: center; gap: 8px; }

@@ -70,9 +70,9 @@ export const NAV: NavEntry[] = [
   { id: "visibility", label: "Visibility", icon: ShieldCheck, section: "visibility" },
 
   { heading: "Team" },
-  { id: "members", label: "Members", icon: Users, route: "/dashboard/teams" },
-  { id: "roles", label: "Roles & Permissions", icon: ShieldCheck, route: "/dashboard/teams", phase2: true },
-  { id: "activity", label: "Activity log", icon: History, route: "/dashboard/teams", phase2: true },
+  { id: "members", label: "Members", icon: Users, section: "team" },
+  { id: "roles", label: "Roles & Permissions", icon: ShieldCheck, section: "team" },
+  { id: "activity", label: "Activity log", icon: History, section: "team" },
 
   { heading: "Communications" },
   { id: "tickets", label: "Support inbox", icon: MessageSquare, route: "/dashboard/support" },
@@ -97,6 +97,7 @@ export function activeNavId(section: string): string {
   const sectionToNav: Record<string, string> = {
     overview: "overview",
     sites: "subdomains",
+    team: "members",
     analytics: "analytics",
     branding: "branding",
     domains: "domains",
