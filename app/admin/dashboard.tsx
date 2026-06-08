@@ -69,6 +69,7 @@ import {
   Plus,
   Bell,
   Gauge,
+  DollarSign,
 } from "lucide-react"
 import "@/app/admin/cncpt-admin.css"
 import { deleteSubdomainAction } from "@/app/actions"
@@ -78,6 +79,7 @@ import { useUser } from "@stackframe/stack"
 import { TiersPageContent } from "./tiers/page"
 import { ClientsPageContent } from "./clients/page"
 import { RateLimitsSection } from "./rate-limits-section"
+import { BillingSection } from "./billing-section"
 import type { SubscriptionTier, ClientStats } from "@/types/admin"
 
 type Tenant = {
@@ -96,7 +98,7 @@ type SuperAdminInfo = {
   permissions: string[]
 }
 
-type AdminSection = "overview" | "clients" | "tiers" | "subdomains" | "users" | "teams" | "analytics" | "activity" | "feedback" | "settings" | "ai-credits" | "overrides" | "rate-limits"
+type AdminSection = "overview" | "clients" | "tiers" | "subdomains" | "users" | "teams" | "analytics" | "activity" | "feedback" | "settings" | "ai-credits" | "overrides" | "rate-limits" | "billing"
 
 function AdminSidebar({
   activeSection,
@@ -443,7 +445,15 @@ type EnhancedSubdomain = {
   } | null
   createdAt: string
   teamShareCount: number
+  disabled?: boolean
+  disabledReason?: string | null
+  tierId?: string | null
+  tierName?: string | null
+  tierDisplayName?: string | null
+  subscriptionStatus?: string | null
 }
+
+type TierOption = { id: string; name: string; displayName: string; priceMonthly: number }
 
 function SubdomainsSection({
   tenants,
@@ -476,6 +486,114 @@ function SubdomainsSection({
   const [assignFoundUser, setAssignFoundUser] = useState<{ id: string; email: string; displayName: string | null } | null>(null)
   const [creating, setCreating] = useState(false)
   const [searchingAssignUser, setSearchingAssignUser] = useState(false)
+
+  // Tier assignment + lifecycle state
+  const [tierOptions, setTierOptions] = useState<TierOption[]>([])
+  const [tierSaving, setTierSaving] = useState<number | null>(null)
+  const [suspendTarget, setSuspendTarget] = useState<EnhancedSubdomain | null>(null)
+  const [suspendReason, setSuspendReason] = useState("")
+  const [suspendUnassign, setSuspendUnassign] = useState(false)
+  const [lifecycleBusy, setLifecycleBusy] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<EnhancedSubdomain | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState("")
+
+  // Load active tier options for the assignment dropdown.
+  useEffect(() => {
+    fetch("/api/admin/tiers")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.tiers) {
+          setTierOptions(
+            (data.tiers as Array<{ id: string; name: string; displayName?: string; display_name?: string; isActive?: boolean; is_active?: boolean; priceMonthly?: number; price_monthly?: number }>)
+              .filter((t) => t.isActive ?? t.is_active ?? true)
+              .map((t) => ({
+                id: t.id,
+                name: t.name,
+                displayName: t.displayName ?? t.display_name ?? t.name,
+                priceMonthly: Number(t.priceMonthly ?? t.price_monthly ?? 0),
+              })),
+          )
+        }
+      })
+      .catch(console.error)
+  }, [])
+
+  const handleAssignTier = async (sub: EnhancedSubdomain, tierId: string | null) => {
+    setTierSaving(sub.id)
+    try {
+      const res = await fetch(`/api/super-admin/subdomains/${sub.subdomain}/tier`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tierId }),
+      })
+      if (res.ok) fetchSubdomains()
+    } catch (e) {
+      console.error("Failed to assign tier:", e)
+    } finally {
+      setTierSaving(null)
+    }
+  }
+
+  const handleSuspend = async () => {
+    if (!suspendTarget) return
+    setLifecycleBusy(true)
+    try {
+      const res = await fetch(`/api/super-admin/subdomains/${suspendTarget.subdomain}/lifecycle`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "suspend", reason: suspendReason || null, unassignOwner: suspendUnassign }),
+      })
+      if (res.ok) {
+        setSuspendTarget(null)
+        setSuspendReason("")
+        setSuspendUnassign(false)
+        fetchSubdomains()
+      }
+    } catch (e) {
+      console.error("Failed to suspend:", e)
+    } finally {
+      setLifecycleBusy(false)
+    }
+  }
+
+  const handleUnsuspend = async (sub: EnhancedSubdomain) => {
+    setLifecycleBusy(true)
+    try {
+      const res = await fetch(`/api/super-admin/subdomains/${sub.subdomain}/lifecycle`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "unsuspend" }),
+      })
+      if (res.ok) fetchSubdomains()
+    } catch (e) {
+      console.error("Failed to unsuspend:", e)
+    } finally {
+      setLifecycleBusy(false)
+    }
+  }
+
+  const handleHardDelete = async () => {
+    if (!deleteTarget || deleteConfirm !== deleteTarget.subdomain) return
+    setLifecycleBusy(true)
+    try {
+      const res = await fetch(
+        `/api/super-admin/subdomains/${deleteTarget.subdomain}/lifecycle?confirm=${encodeURIComponent(deleteConfirm)}`,
+        { method: "DELETE" },
+      )
+      if (res.ok) {
+        setDeleteTarget(null)
+        setDeleteConfirm("")
+        fetchSubdomains()
+      } else {
+        const data = await res.json().catch(() => ({}))
+        alert(data.error || "Failed to delete tenant")
+      }
+    } catch (e) {
+      console.error("Failed to delete:", e)
+    } finally {
+      setLifecycleBusy(false)
+    }
+  }
 
   const fetchSubdomains = useCallback(async () => {
     setLoading(true)
@@ -685,21 +803,22 @@ function SubdomainsSection({
             <TableRow className="border-white/[0.08] hover:bg-transparent">
               <TableHead className="text-slate-400">Subdomain</TableHead>
               <TableHead className="text-slate-400">Owner</TableHead>
-              <TableHead className="text-slate-400">Created</TableHead>
+              <TableHead className="text-slate-400">Plan</TableHead>
+              <TableHead className="text-slate-400">Status</TableHead>
               <TableHead className="text-slate-400">Teams</TableHead>
-              <TableHead className="w-24 text-slate-400">Actions</TableHead>
+              <TableHead className="w-44 text-slate-400">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow className="border-white/[0.08]">
-                <TableCell colSpan={5} className="text-center py-12">
+                <TableCell colSpan={6} className="text-center py-12">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-400" />
                 </TableCell>
               </TableRow>
             ) : subdomains.length === 0 ? (
               <TableRow className="border-white/[0.08]">
-                <TableCell colSpan={5} className="text-center py-12 text-slate-500">
+                <TableCell colSpan={6} className="text-center py-12 text-slate-500">
                   <Globe className="h-12 w-12 text-slate-700 mx-auto mb-4" />
                   <p>No subdomains found</p>
                 </TableCell>
@@ -736,8 +855,30 @@ function SubdomainsSection({
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell className="text-sm text-slate-400">
-                    {new Date(sub.createdAt).toLocaleDateString()}
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={sub.tierId || ""}
+                        disabled={tierSaving === sub.id}
+                        onChange={(e) => handleAssignTier(sub, e.target.value || null)}
+                        className="bg-slate-900/50 border border-white/[0.08] text-white text-xs rounded-md px-2 py-1 focus:border-blue-500/50 outline-none"
+                      >
+                        <option value="">Unassigned</option>
+                        {tierOptions.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.displayName}{t.priceMonthly ? ` ($${t.priceMonthly})` : ""}
+                          </option>
+                        ))}
+                      </select>
+                      {tierSaving === sub.id && <Loader2 className="h-3 w-3 animate-spin text-slate-400" />}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {sub.disabled ? (
+                      <Badge className="bg-red-500/10 text-red-400 border-red-500/20">Suspended</Badge>
+                    ) : (
+                      <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">Active</Badge>
+                    )}
                   </TableCell>
                   <TableCell>
                     {sub.teamShareCount > 0 ? (
@@ -757,10 +898,41 @@ function SubdomainsSection({
                           setNewOwnerId("")
                           setFoundUser(null)
                         }}
-                        className="text-orange-400 hover:text-orange-300 hover:bg-blue-500/10"
+                        className="text-orange-400 hover:text-orange-300 hover:bg-blue-500/10 px-2"
+                        title="Reassign owner"
                       >
-                        <ArrowRight className="h-4 w-4 mr-1" />
-                        Assign
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                      {sub.disabled ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={lifecycleBusy}
+                          onClick={() => handleUnsuspend(sub)}
+                          className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 px-2"
+                          title="Re-enable tenant"
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => { setSuspendTarget(sub); setSuspendReason(""); setSuspendUnassign(false) }}
+                          className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 px-2"
+                          title="Suspend (soft-disable)"
+                        >
+                          <Shield className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => { setDeleteTarget(sub); setDeleteConfirm("") }}
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10 px-2"
+                        title="Hard delete (destructive)"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>
@@ -971,6 +1143,92 @@ function SubdomainsSection({
             <Button onClick={handleCreateSubdomain} disabled={creating || !newSubdomain}>
               {creating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Globe className="h-4 w-4 mr-2" />}
               Create Subdomain
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Suspend (soft-disable) Dialog */}
+      <Dialog open={!!suspendTarget} onOpenChange={() => { setSuspendTarget(null); setSuspendReason(""); setSuspendUnassign(false) }}>
+        <DialogContent className="bg-slate-900 border-white/[0.08]">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Shield className="h-5 w-5 text-amber-400" />
+              Suspend Tenant
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Soft-disable <strong>{suspendTarget?.subdomain}</strong>. This is reversible — it sets
+              the tenant to maintenance mode and marks it disabled. You can re-enable anytime.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label className="text-slate-400 text-sm">Reason (optional)</Label>
+              <textarea
+                value={suspendReason}
+                onChange={(e) => setSuspendReason(e.target.value)}
+                rows={3}
+                className="w-full mt-1.5 bg-slate-800/50 border border-white/[0.08] text-white text-sm rounded-lg px-3 py-2 focus:border-blue-500/50 outline-none resize-none placeholder:text-slate-500"
+                placeholder="Why is this tenant being suspended?"
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-slate-300">
+              <input type="checkbox" checked={suspendUnassign} onChange={(e) => setSuspendUnassign(e.target.checked)} />
+              Also unassign the owner
+            </label>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setSuspendTarget(null); setSuspendReason("") }} className="bg-transparent border-white/10 text-slate-300">
+              Cancel
+            </Button>
+            <Button onClick={handleSuspend} disabled={lifecycleBusy} className="bg-amber-600 hover:bg-amber-500 text-white">
+              {lifecycleBusy ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Shield className="h-4 w-4 mr-2" />}
+              Suspend Tenant
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Hard-delete Dialog — gated, type-the-name to confirm */}
+      <Dialog open={!!deleteTarget} onOpenChange={() => { setDeleteTarget(null); setDeleteConfirm("") }}>
+        <DialogContent className="bg-slate-900 border-white/[0.08]">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-red-400" />
+              Hard-Delete Tenant
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Permanently delete <strong>{deleteTarget?.subdomain}</strong> and cascade its CMS data.
+              This is irreversible. Prefer Suspend unless you are certain.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-sm text-red-300">
+              This deletes the subdomain row and all tenant-scoped content (FK cascade). It cannot be undone.
+            </div>
+            <div>
+              <Label className="text-slate-400 text-sm">
+                Type <span className="text-red-400 font-mono">{deleteTarget?.subdomain}</span> to confirm
+              </Label>
+              <Input
+                value={deleteConfirm}
+                onChange={(e) => setDeleteConfirm(e.target.value)}
+                className="mt-1.5 bg-slate-800/50 border-white/[0.08] text-white placeholder:text-slate-500 focus:border-red-500/50 font-mono"
+                placeholder="Type subdomain to confirm…"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDeleteTarget(null); setDeleteConfirm("") }} className="bg-transparent border-white/10 text-slate-300">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleHardDelete}
+              disabled={lifecycleBusy || deleteConfirm !== deleteTarget?.subdomain}
+              className="bg-red-600 hover:bg-red-500 text-white disabled:opacity-50"
+            >
+              {lifecycleBusy ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+              Delete Permanently
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -4533,6 +4791,8 @@ export function AdminDashboard({
         return <SettingsSection />
       case "rate-limits":
         return <RateLimitsSection />
+      case "billing":
+        return <BillingSection />
       default:
         return <OverviewSection />
     }
@@ -4553,6 +4813,7 @@ export function AdminDashboard({
     feedback: "Feedback",
     settings: "Platform Settings",
     "rate-limits": "Rate Limiting",
+    billing: "Billing & Usage",
   }
 
   const crumbs = ["CNCPT Admin", sectionLabel[activeSection] ?? activeSection]
@@ -4591,6 +4852,7 @@ export function AdminDashboard({
               { separator: "Feedback" },
               { id: "feedback" as AdminSection, label: "Feedback",             Icon: MessageSquare },
               { separator: "Insights" },
+              { id: "billing" as AdminSection,   label: "Billing & Usage",     Icon: DollarSign },
               { id: "analytics" as AdminSection, label: "Analytics",           Icon: BarChart3 },
               { id: "activity" as AdminSection,  label: "Activity Log",        Icon: History },
               { separator: "Settings" },
