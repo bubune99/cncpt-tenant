@@ -332,10 +332,13 @@ type OverviewData = {
   topUsers: Array<{ userId: string; email: string; displayName: string | null; subdomainCount: number }>
 }
 
+interface PlatformHealth { api: string; db: string; auth: string }
+
 function OverviewSection() {
   const [data, setData] = useState<OverviewData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [health, setHealth] = useState<PlatformHealth | null>(null)
 
   const fetchOverviewData = useCallback(async () => {
     try {
@@ -354,6 +357,10 @@ function OverviewSection() {
 
   useEffect(() => {
     fetchOverviewData()
+    fetch("/api/super-admin/health")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((h) => { if (h && h.api) setHealth(h) })
+      .catch(() => {})
   }, [fetchOverviewData])
 
   if (loading) {
@@ -520,21 +527,23 @@ function OverviewSection() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-emerald-400">●</div>
-              <p className="text-sm text-muted-foreground">API Status</p>
-              <p className="text-xs text-emerald-400">Operational</p>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-emerald-400">●</div>
-              <p className="text-sm text-muted-foreground">Database</p>
-              <p className="text-xs text-emerald-400">Connected</p>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-emerald-400">●</div>
-              <p className="text-sm text-muted-foreground">Auth Service</p>
-              <p className="text-xs text-emerald-400">Active</p>
-            </div>
+            {([
+              { label: "API Status", value: health?.api, okWord: "operational", okLabel: "Operational" },
+              { label: "Database", value: health?.db, okWord: "connected", okLabel: "Connected" },
+              { label: "Auth Service", value: health?.auth, okWord: "active", okLabel: "Active" },
+            ] as const).map((h) => {
+              const pending = !health
+              const ok = h.value === h.okWord
+              const color = pending ? "text-muted-foreground" : ok ? "text-emerald-400" : "text-red-500"
+              const text = pending ? "Checking…" : ok ? h.okLabel : (h.value === "down" ? "Down" : (h.value ?? "Unknown"))
+              return (
+                <div className="text-center" key={h.label}>
+                  <div className={"text-2xl font-bold " + color}>●</div>
+                  <p className="text-sm text-muted-foreground">{h.label}</p>
+                  <p className={"text-xs " + color}>{text}</p>
+                </div>
+              )
+            })}
           </div>
         </CardContent>
       </Card>
