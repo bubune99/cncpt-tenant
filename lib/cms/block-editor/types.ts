@@ -14,6 +14,8 @@ export const KNOWN_TAGS = [
   "blockquote", "figure", "figcaption",
   "form", "input", "textarea", "label",
   "video", "svg",
+  "iframe", "select", "option",
+  "pre", "code", "table", "details", "summary",
 ] as const
 
 export type KnownTag = typeof KNOWN_TAGS[number]
@@ -247,6 +249,9 @@ export const CONTAINER_TAGS: string[] = [
   "figure",
   "form",
   "blockquote",
+  "select",
+  "details",
+  "table",
 ]
 
 /** Tags that are always leaves (no nesting) */
@@ -255,6 +260,7 @@ export const LEAF_TAGS: string[] = [
   "p", "span", "a", "img", "button",
   "hr", "input", "textarea", "label",
   "video", "svg", "figcaption",
+  "iframe", "option",
 ]
 
 /**

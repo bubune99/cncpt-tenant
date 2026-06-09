@@ -181,6 +181,38 @@ const TAG_INFO: Record<BlockTag, Omit<TagInfo, "tag" | "type" | "canHaveChildren
     description: "Figure caption",
     commonClasses: ["text-sm", "text-slate-500", "mt-2", "text-center"],
   },
+  iframe: {
+    description: "Embedded external content (video, map, widget)",
+    commonClasses: ["w-full", "aspect-video", "rounded-lg", "border-0"],
+  },
+  select: {
+    description: "Dropdown select input",
+    commonClasses: ["w-full", "px-3", "py-2", "rounded-md", "border", "bg-white"],
+  },
+  option: {
+    description: "Option within a select dropdown",
+    commonClasses: [],
+  },
+  pre: {
+    description: "Preformatted text block (code, ASCII)",
+    commonClasses: ["p-4", "rounded-lg", "bg-slate-900", "text-slate-100", "overflow-x-auto", "font-mono", "text-sm"],
+  },
+  code: {
+    description: "Inline code span",
+    commonClasses: ["px-1.5", "py-0.5", "rounded", "bg-slate-100", "font-mono", "text-sm"],
+  },
+  table: {
+    description: "Data table",
+    commonClasses: ["w-full", "border-collapse", "text-sm"],
+  },
+  details: {
+    description: "Disclosure/accordion container",
+    commonClasses: ["border", "rounded-lg", "p-4"],
+  },
+  summary: {
+    description: "Clickable summary for a details disclosure",
+    commonClasses: ["font-medium", "cursor-pointer"],
+  },
 }
 
 // ============================================================

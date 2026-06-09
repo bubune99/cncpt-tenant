@@ -77,27 +77,6 @@ import { generateId, rehydrateParentIds } from "./tree-utils"
 // Constants
 // ============================================================
 
-/**
- * Apply @block metadata from a JSX comment onto a Block.
- * Used for round-tripping editor metadata without data-* attribute pollution.
- */
-function applyBlockMeta(block: Block, meta: Record<string, unknown>): void {
-  if (meta.id) block.id = meta.id as string
-  if (meta.hidden) block.hidden = true
-  if (meta.locked) block.locked = true
-  if (meta.label) block.label = meta.label as string
-  if (meta.component) block.componentName = meta.component as string
-  if (meta.framework) block.frameworkRequirement = meta.framework as ExportFramework
-  if (meta.animation) block.animation = meta.animation as BlockAnimation
-  if (meta.background) block.background = meta.background as BlockBackground
-  if (meta.commerce) block.commerce = meta.commerce as CommerceBinding
-  if (meta.responsive) block.responsive = meta.responsive as BlockResponsive
-  if (meta.partialId) block.partialId = meta.partialId as string
-  if (meta.partialOverrides) block.partialOverrides = meta.partialOverrides as Block["partialOverrides"]
-  if (meta.bindings) block.bindings = meta.bindings as Record<string, string>
-  if (meta.interaction) block.interaction = meta.interaction as BlockInteraction
-}
-
 const ALL_TAGS_SET = new Set<string>([...CONTAINER_TAGS, ...LEAF_TAGS])
 
 const INLINE_HTML_TAGS = new Set([
@@ -359,25 +338,9 @@ function nodeToBlocks(node: Node, errors: string[]): Block[] {
 
 function jsxFragmentToBlocks(fragment: JSXFragment, errors: string[]): Block[] {
   const blocks: Block[] = []
-  let pendingMeta: Record<string, unknown> | null = null
   for (const child of fragment.children) {
-    if (child.type === "JSXExpressionContainer") {
-      const result = processExpressionContainer(child as JSXExpressionContainer, errors)
-      if (result.blockMeta) {
-        pendingMeta = result.blockMeta
-        continue
-      }
-      if (result.blocks.length > 0) blocks.push(...result.blocks)
-      continue
-    }
     const childBlocks = jsxChildToBlocks(child, errors)
-    for (const b of childBlocks) {
-      if (pendingMeta) {
-        applyBlockMeta(b, pendingMeta)
-        pendingMeta = null
-      }
-      blocks.push(b)
-    }
+    blocks.push(...childBlocks)
   }
   return blocks
 }
@@ -422,7 +385,6 @@ function jsxElementToBlock(element: JSXElement, errors: string[]): Block | null 
   // Process children
   const childBlocks: Block[] = []
   let textContent = ""
-  let pendingMeta: Record<string, unknown> | null = null
 
   for (const child of element.children) {
     if (child.type === "JSXText") {
@@ -441,28 +403,12 @@ function jsxElementToBlock(element: JSXElement, errors: string[]): Block | null 
         textContent += (textContent ? " " : "") + inlineHTML
       } else {
         const block = jsxElementToBlock(childElement, errors)
-        if (block) {
-          // Apply pending @block metadata from preceding comment
-          if (pendingMeta) {
-            applyBlockMeta(block, pendingMeta)
-            pendingMeta = null
-          }
-          childBlocks.push(block)
-        }
+        if (block) childBlocks.push(block)
       }
     } else if (child.type === "JSXExpressionContainer") {
       const result = processExpressionContainer(child as JSXExpressionContainer, errors)
-      if (result.blockMeta) {
-        pendingMeta = result.blockMeta
-      }
       if (result.blocks.length > 0) {
-        for (const b of result.blocks) {
-          if (pendingMeta) {
-            applyBlockMeta(b, pendingMeta)
-            pendingMeta = null
-          }
-          childBlocks.push(b)
-        }
+        childBlocks.push(...result.blocks)
       }
       if (result.text) {
         textContent += (textContent ? " " : "") + result.text
@@ -893,8 +839,6 @@ function camelToKebab(str: string): string {
 interface ExpressionResult {
   blocks: Block[]
   text: string
-  /** @block metadata extracted from a JSX comment */
-  blockMeta?: Record<string, unknown> | null
 }
 
 /**
@@ -909,17 +853,8 @@ function processExpressionContainer(
 
   // Empty expression: {}
   if (expr.type === "JSXEmptyExpression") {
+    // Check if it's a comment
     // JSXEmptyExpression with inner comments is how Babel represents {/* comment */}
-    // Check for @block metadata comment
-    const emptyExpr = expr as { innerComments?: Array<{ value: string; type: string }> }
-    if (emptyExpr.innerComments?.length) {
-      for (const comment of emptyExpr.innerComments) {
-        const match = comment.value.match(/^\s*@block\s+(\{[\s\S]*\})\s*$/)
-        if (match) {
-          try { result.blockMeta = JSON.parse(match[1]) } catch { /* ignore */ }
-        }
-      }
-    }
     return result
   }
 

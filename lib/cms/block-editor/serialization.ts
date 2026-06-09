@@ -49,50 +49,6 @@ export function serializeBlocksToJSX(blocks: Block[], options?: SerializeOptions
   return output
 }
 
-/**
- * Build a compact @block metadata comment for editor round-trip.
- * All editor-internal data (id, flags, animation, background, commerce, etc.)
- * goes into this comment so the JSX stays clean.
- */
-function buildBlockMetaComment(block: Block, pad: string): string {
-  const meta: Record<string, unknown> = { id: block.id }
-
-  if (block.hidden) meta.hidden = true
-  if (block.locked) meta.locked = true
-  if (block.label) meta.label = block.label
-  if (block.componentName) meta.component = block.componentName
-  if (block.frameworkRequirement) meta.framework = block.frameworkRequirement
-
-  // Animation
-  const anim = block.animation
-  if (anim?.type) meta.animation = anim
-
-  // Background
-  if (block.background) meta.background = block.background
-
-  // Commerce binding
-  if (block.commerce) meta.commerce = block.commerce
-
-  // Responsive visibility
-  if (block.responsive) meta.responsive = block.responsive
-
-  // Partial reference data
-  if (block.partialId) meta.partialId = block.partialId
-  if (block.partialOverrides && Object.keys(block.partialOverrides).length > 0) {
-    meta.partialOverrides = block.partialOverrides
-  }
-
-  // Data bindings
-  if (block.bindings && Object.keys(block.bindings).length > 0) {
-    meta.bindings = block.bindings
-  }
-
-  // Interaction (overlay content)
-  if (block.interaction) meta.interaction = block.interaction
-
-  return `${pad}{/* @block ${JSON.stringify(meta)} */}\n`
-}
-
 function serializeBlockForEditor(block: Block, indent: number): string {
   const pad = "  ".repeat(indent)
   const isSelfClosing = SELF_CLOSING_TAGS.includes(block.tag)
@@ -103,13 +59,17 @@ function serializeBlockForEditor(block: Block, indent: number): string {
   // Interactive animations use wrapper components, not motion tags
   const tagName = useMotionTag ? `motion.${block.tag}` : block.tag
 
-  // Build attributes array — only real HTML/JSX attributes, no editor metadata
+  // Build attributes array
   const attrs: string[] = []
+
+  // data-block-id for round-trip identity
+  attrs.push(`data-block-id="${block.id}"`)
 
   // className (always output, even if empty)
   attrs.push(`className="${block.className}"`)
 
   // Regular HTML attributes
+  // Boolean HTML attributes rendered without a value in JSX
   const jsxBooleanAttrs = new Set([
     "controls", "autoplay", "muted", "loop", "playsinline",
     "disabled", "checked", "readonly", "required", "multiple",
@@ -119,9 +79,11 @@ function serializeBlockForEditor(block: Block, indent: number): string {
     for (const [key, val] of Object.entries(block.attrs)) {
       if (val === undefined || val === null) continue
       if (val === "" && jsxBooleanAttrs.has(key)) {
+        // Boolean attribute: render as bare attribute (JSX treats as true)
         attrs.push(key)
       } else if (val !== "") {
         if (isExpression(val)) {
+          // Expression value: emit as key={expression} (preserves round-trip)
           attrs.push(`${key}={${unwrapExpression(val)}}`)
         } else if (val.includes('"') || val.includes("'") || val.includes("{") || val.includes("}")) {
           attrs.push(`${key}={\`${val.replace(/`/g, "\\`")}\`}`)
@@ -132,8 +94,18 @@ function serializeBlockForEditor(block: Block, indent: number): string {
     }
   }
 
-  // Animation as motion props (only for simple presets on motion.* tags)
-  if (anim?.type && !isInteractiveAnimation(anim.type) && anim.type !== "custom") {
+  // Editor metadata as data attributes
+  if (block.hidden) attrs.push(`data-editor-hidden="true"`)
+  if (block.locked) attrs.push(`data-editor-locked="true"`)
+  // Label emitted as JSX comment before the element, not as data attribute
+
+  // Animation as motion props (instead of data-animation JSON)
+  // Interactive presets serialize as data-animation JSON (they use wrapper components, not motion props)
+  if (anim?.type && isInteractiveAnimation(anim.type)) {
+    const animData: Record<string, unknown> = { type: anim.type }
+    if (anim.interactiveConfig) animData.interactiveConfig = anim.interactiveConfig
+    attrs.push(`data-animation={${JSON.stringify(JSON.stringify(animData))}}`)
+  } else if (anim?.type && anim.type !== "custom") {
     const preset = ANIMATION_PRESETS[anim.type]
     if (preset) {
       if (anim.trigger === "inView") {
@@ -160,21 +132,56 @@ function serializeBlockForEditor(block: Block, indent: number): string {
     if (c.transition) attrs.push(`transition={${JSON.stringify(c.transition)}}`)
   }
 
+  // Background as JSON data attribute (kept — no cleaner representation)
+  if (block.background) {
+    attrs.push(`data-background={${JSON.stringify(JSON.stringify(block.background))}}`)
+  }
+
+  // Commerce binding as JSON data attribute
+  if (block.commerce) {
+    attrs.push(`data-commerce={${JSON.stringify(JSON.stringify(block.commerce))}}`)
+  }
+
+  // Responsive visibility as JSON data attribute
+  if (block.responsive) {
+    attrs.push(`data-responsive={${JSON.stringify(JSON.stringify(block.responsive))}}`)
+  }
+
+  // Component name for Hydrogen blocks
+  if (block.componentName) attrs.push(`data-component="${block.componentName}"`)
+  if (block.frameworkRequirement) attrs.push(`data-framework="${block.frameworkRequirement}"`)
+
+  // Partial reference data
+  if (block.partialId) attrs.push(`data-partial-id="${block.partialId}"`)
+  if (block.partialOverrides && Object.keys(block.partialOverrides).length > 0) {
+    attrs.push(`data-partial-overrides={${JSON.stringify(JSON.stringify(block.partialOverrides))}}`)
+  }
+
+  // Data bindings (expression → field mappings)
+  if (block.bindings && Object.keys(block.bindings).length > 0) {
+    attrs.push(`data-bindings={${JSON.stringify(JSON.stringify(block.bindings))}}`)
+  }
+
+  // Interaction (overlay content)
+  if (block.interaction) {
+    attrs.push(`data-interaction={${JSON.stringify(JSON.stringify(block.interaction))}}`)
+  }
+
   const attrStr = attrs.length > 0 ? " " + attrs.join(" ") : ""
 
-  // Metadata comment (id, flags, background, commerce, etc.) — keeps JSX clean
-  const metaComment = buildBlockMetaComment(block, pad)
+  // Label comment emitted before the element
+  const labelComment = block.label ? `${pad}{/* ${block.label} */}\n` : ""
 
   // Partial reference blocks emit as self-closing PartialRef
   if (block.partialId && block.componentName === "PartialReference") {
-    return `${metaComment}${pad}<PartialRef${attrStr} />`
+    return `${labelComment}${pad}<PartialRef${attrStr} />`
   }
 
-  if (isSelfClosing) return `${metaComment}${pad}<${tagName}${attrStr} />`
+  if (isSelfClosing) return `${labelComment}${pad}<${tagName}${attrStr} />`
 
   if (block.children && block.children.length > 0) {
     const childrenJSX = block.children.map((child) => serializeBlockForEditor(child, indent + 1)).join("\n")
-    return `${metaComment}${pad}<${tagName}${attrStr}>\n${childrenJSX}\n${pad}</${tagName}>`
+    return `${labelComment}${pad}<${tagName}${attrStr}>\n${childrenJSX}\n${pad}</${tagName}>`
   }
 
   if (block.textContent) {
@@ -183,13 +190,13 @@ function serializeBlockForEditor(block: Block, indent: number): string {
       ? `{${unwrapExpression(block.textContent)}}`
       : block.textContent
     if (block.textContent.includes("\n") || block.textContent.length > 60) {
-      return `${metaComment}${pad}<${tagName}${attrStr}>\n${pad}  ${textOut}\n${pad}</${tagName}>`
+      return `${labelComment}${pad}<${tagName}${attrStr}>\n${pad}  ${textOut}\n${pad}</${tagName}>`
     }
-    return `${metaComment}${pad}<${tagName}${attrStr}>${textOut}</${tagName}>`
+    return `${labelComment}${pad}<${tagName}${attrStr}>${textOut}</${tagName}>`
   }
 
-  if (isContainerTag(block.tag)) return `${metaComment}${pad}<${tagName}${attrStr}></${tagName}>`
-  return `${metaComment}${pad}<${tagName}${attrStr} />`
+  if (isContainerTag(block.tag)) return `${labelComment}${pad}<${tagName}${attrStr}></${tagName}>`
+  return `${labelComment}${pad}<${tagName}${attrStr} />`
 }
 
 // ============================================================
@@ -363,26 +370,12 @@ interface ParseFrame {
   attrs: string
   children: Block[]
   textContent: string
-  /** Metadata from a preceding @block comment */
-  meta?: Record<string, unknown> | null
-}
-
-/**
- * Parse a @block metadata comment JSON into typed fields.
- * Returns null if the comment is not a @block comment.
- */
-function parseBlockMetaComment(comment: string): Record<string, unknown> | null {
-  const match = comment.match(/^\s*\/\*\s*@block\s+(\{[\s\S]*\})\s*\*\/\s*$/)
-  if (!match) return null
-  try { return JSON.parse(match[1]) } catch { return null }
 }
 
 function parseTokens(tokens: Token[]): { blocks: Block[]; errors: string[] } {
   const errors: string[] = []
   const root: Block[] = []
   const stack: ParseFrame[] = []
-  // Pending @block metadata comment to apply to the next element
-  let pendingMeta: Record<string, unknown> | null = null
 
   const INLINE_HTML_TAGS = ["strong", "em", "b", "i", "u", "code", "small", "mark", "sub", "sup", "br"]
 
@@ -418,8 +411,7 @@ function parseTokens(tokens: Token[]): { blocks: Block[]; errors: string[] } {
           continue
         }
 
-        stack.push({ tag: token.tag!, attrs: token.attrs || "", children: [], textContent: "", meta: pendingMeta })
-        pendingMeta = null
+        stack.push({ tag: token.tag!, attrs: token.attrs || "", children: [], textContent: "" })
         break
       }
 
@@ -453,9 +445,7 @@ function parseTokens(tokens: Token[]): { blocks: Block[]; errors: string[] } {
           attrs: token.attrs || "",
           children: [],
           textContent: "",
-          meta: pendingMeta,
         })
-        pendingMeta = null
 
         if (stack.length > 0) {
           stack[stack.length - 1].children.push(block)
@@ -467,18 +457,10 @@ function parseTokens(tokens: Token[]): { blocks: Block[]; errors: string[] } {
 
       case "text":
       case "expression": {
-        const text = token.content || ""
-        // Check for @block metadata comment
-        if (text.startsWith("/*")) {
-          const meta = parseBlockMetaComment(text)
-          if (meta) {
-            pendingMeta = meta
-            break
-          }
-          // Regular JSX comment — skip
-          break
-        }
         if (stack.length > 0) {
+          const text = token.content || ""
+          // Skip JSX comments like {/* Navbar */}
+          if (text.startsWith("/*")) break
           const current = stack[stack.length - 1]
           current.textContent += (current.textContent ? " " : "") + text.trim()
         }
@@ -505,23 +487,20 @@ function parseTokens(tokens: Token[]): { blocks: Block[]; errors: string[] } {
 function frameToBlockFromEditor(frame: ParseFrame): Block {
   const resolvedTag = resolveDottedTag(frame.tag)
   const isMotion = frame.tag.startsWith("motion.")
-  const meta = frame.meta
 
   const parsedAttrs = parseAttributesEnhanced(frame.attrs)
 
-  // --- Extract metadata: prefer @block comment, fall back to data-* attributes ---
-  const blockId = (meta?.id as string) || parsedAttrs["data-block-id"] || generateId()
+  // Extract special attributes
+  const blockId = parsedAttrs["data-block-id"] || generateId()
   const className = parsedAttrs["className"] || parsedAttrs["class"] || ""
-  const hidden = (meta?.hidden as boolean) || parsedAttrs["data-editor-hidden"] === "true"
-  const locked = (meta?.locked as boolean) || parsedAttrs["data-editor-locked"] === "true"
-  const label = (meta?.label as string) || parsedAttrs["data-editor-label"]
-  const componentName = (meta?.component as string) || parsedAttrs["data-component"]
-  const frameworkRequirement = (meta?.framework as ExportFramework) || parsedAttrs["data-framework"] as ExportFramework | undefined
+  const hidden = parsedAttrs["data-editor-hidden"] === "true"
+  const locked = parsedAttrs["data-editor-locked"] === "true"
+  const label = parsedAttrs["data-editor-label"]
+  const componentName = parsedAttrs["data-component"]
+  const frameworkRequirement = parsedAttrs["data-framework"] as ExportFramework | undefined
 
   let animation: BlockAnimation | undefined
-  if (meta?.animation) {
-    animation = meta.animation as BlockAnimation
-  } else if (parsedAttrs["data-animation"]) {
+  if (parsedAttrs["data-animation"]) {
     try { animation = JSON.parse(parsedAttrs["data-animation"]) } catch { /* ignore */ }
   }
   if (isMotion && !animation) {
@@ -529,52 +508,40 @@ function frameToBlockFromEditor(frame: ParseFrame): Block {
   }
 
   let background: BlockBackground | undefined
-  if (meta?.background) {
-    background = meta.background as BlockBackground
-  } else if (parsedAttrs["data-background"]) {
+  if (parsedAttrs["data-background"]) {
     try { background = JSON.parse(parsedAttrs["data-background"]) } catch { /* ignore */ }
   }
 
   let commerce: CommerceBinding | undefined
-  if (meta?.commerce) {
-    commerce = meta.commerce as CommerceBinding
-  } else if (parsedAttrs["data-commerce"]) {
+  if (parsedAttrs["data-commerce"]) {
     try { commerce = JSON.parse(parsedAttrs["data-commerce"]) } catch { /* ignore */ }
   }
 
   let responsive: BlockResponsive | undefined
-  if (meta?.responsive) {
-    responsive = meta.responsive as BlockResponsive
-  } else if (parsedAttrs["data-responsive"]) {
+  if (parsedAttrs["data-responsive"]) {
     try { responsive = JSON.parse(parsedAttrs["data-responsive"]) } catch { /* ignore */ }
   }
 
   // Data bindings
   let parsedBindings: Record<string, string> | undefined
-  if (meta?.bindings) {
-    parsedBindings = meta.bindings as Record<string, string>
-  } else if (parsedAttrs["data-bindings"]) {
+  if (parsedAttrs["data-bindings"]) {
     try { parsedBindings = JSON.parse(parsedAttrs["data-bindings"]) } catch { /* ignore */ }
   }
 
   // Partial reference fields
-  const partialId = (meta?.partialId as string) || parsedAttrs["data-partial-id"]
+  const partialId = parsedAttrs["data-partial-id"]
   let partialOverrides: Record<string, Partial<Pick<Block, 'textContent' | 'className' | 'attrs'>>> | undefined
-  if (meta?.partialOverrides) {
-    partialOverrides = meta.partialOverrides as typeof partialOverrides
-  } else if (parsedAttrs["data-partial-overrides"]) {
+  if (parsedAttrs["data-partial-overrides"]) {
     try { partialOverrides = JSON.parse(parsedAttrs["data-partial-overrides"]) } catch { /* ignore */ }
   }
 
   // Interaction (overlay content preserved from import)
   let interaction: BlockInteraction | undefined
-  if (meta?.interaction) {
-    interaction = meta.interaction as BlockInteraction
-  } else if (parsedAttrs["data-interaction"]) {
-    // Legacy: editor round-trip via data-interaction JSON
+  // Editor round-trip: data-interaction JSON
+  if (parsedAttrs["data-interaction"]) {
     try { interaction = JSON.parse(parsedAttrs["data-interaction"]) } catch { /* ignore */ }
   }
-  // Import path: data-interaction-* individual attrs (from preprocessor)
+  // Import path: data-interaction-* individual attrs
   if (!interaction && parsedAttrs["data-interaction-type"]) {
     const iType = parsedAttrs["data-interaction-type"] as InteractionType
     const contentJSX = parsedAttrs["data-interaction-content"]
@@ -1374,21 +1341,17 @@ function blockToHydrogenComponent(block: Block, indent: number): string {
  * Falls back to the regex parser if AST parsing fails entirely.
  */
 export function importFromReact(code: string): { blocks: Block[]; errors: string[] } {
-  // Preprocess: extract overlay content, map shadcn components, normalize icons, etc.
-  const { preprocessForImport } = require("./preprocess") as { preprocessForImport: (c: string) => { code: string } }
-  const { code: preprocessed } = preprocessForImport(code)
-
   // Primary path: AST parser
   let result: { blocks: Block[]; errors: string[] } | null = null
   try {
-    const astResult = importFromReactAST(preprocessed)
+    const astResult = importFromReactAST(code)
     if (astResult.blocks.length > 0) result = astResult
   } catch {
     // AST parser failed — fall through to regex
   }
 
   // Fallback: regex-based parser (handles malformed/partial JSX)
-  if (!result) result = importFromReactRegex(preprocessed)
+  if (!result) result = importFromReactRegex(code)
 
   // Post-process: clean up any remaining raw JSX expressions in textContent
   cleanupRawExpressions(result.blocks)
@@ -1928,7 +1891,7 @@ Each block is an HTML element with Tailwind CSS classes:
           "id": "hero-heading",
           "tag": "h1",
           "className": "text-5xl font-bold tracking-tight text-white",
-          "textContent": "Welcome to My Site"
+          "textContent": "Welcome to Project Dzidzor"
         }
       ],
       "animation": {
