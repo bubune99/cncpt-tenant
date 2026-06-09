@@ -19,9 +19,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/cms/ui/select"
-import { Trash2, ImageIcon, ExternalLink } from "lucide-react"
+import { Trash2, ImageIcon, ExternalLink, FolderOpen } from "lucide-react"
 import type { BlockBackground } from "@/lib/cms/block-editor/types"
 import { cn } from "@/lib/cms/utils"
+import { ImagePickerModal } from "./image-picker-modal"
 
 const OVERLAY_PRESETS = [
   { label: "None", value: "" },
@@ -169,19 +170,27 @@ export function BackgroundModal({
           
           {/* Settings */}
           <div className="flex flex-col gap-4">
-            {/* Image URL */}
+            {/* Image Source */}
             <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">Image URL</Label>
-              <Input
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://... or /images/..."
-                className="h-9 text-sm"
+              <Label className="text-xs font-medium text-muted-foreground">Image</Label>
+              <ImagePickerModal
+                currentUrl={url}
+                onSelect={(selectedUrl) => setUrl(selectedUrl)}
+                trigger={
+                  <Button variant="outline" size="sm" className="w-full gap-2 text-xs h-9">
+                    <FolderOpen size={14} />
+                    {url ? "Change Image" : "Choose from Library"}
+                  </Button>
+                }
               />
-              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                <ExternalLink size={10} />
-                Use Unsplash, upload to /public, or paste any URL
-              </p>
+              <div className="flex gap-1.5">
+                <Input
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="https://... or /images/..."
+                  className="h-8 text-xs flex-1"
+                />
+              </div>
             </div>
             
             {/* Size & Position */}

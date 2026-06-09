@@ -25,7 +25,7 @@ import {
   SheetTitle,
   SheetDescription,
   SheetTrigger,
-} from "@/components/ui/sheet"
+} from "@/components/cms/ui/sheet"
 import {
   Dialog,
   DialogContent,
@@ -33,13 +33,18 @@ import {
   DialogTitle,
   DialogDescription,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/components/cms/ui/dialog"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/cms/ui/popover"
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   TooltipProvider,
-} from "@/components/ui/tooltip"
+} from "@/components/cms/ui/tooltip"
 
 interface InteractionPreviewProps {
   interaction: BlockInteraction
@@ -95,11 +100,13 @@ export function InteractionPreview({
 
     case "popover":
     case "dropdown":
-      // Fallback to a simple positioned dropdown since popover component is not available
       return (
-        <div className="relative inline-block">
-          <PopoverFallback trigger={trigger} content={overlayContent} config={config} />
-        </div>
+        <Popover>
+          <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+          <PopoverContent align={(config?.align as "start" | "center" | "end") || "center"}>
+            {overlayContent}
+          </PopoverContent>
+        </Popover>
       )
 
     case "tooltip":
@@ -133,42 +140,4 @@ export function InteractionPreview({
       // Fallback: just render the trigger
       return <>{trigger}</>
   }
-}
-
-/**
- * Simple popover fallback using click-to-toggle state,
- * since @/components/ui/popover is not available in the tenant.
- */
-function PopoverFallback({
-  trigger,
-  content,
-  config,
-}: {
-  trigger: ReactNode
-  content: ReactNode
-  config?: Record<string, string>
-}) {
-  const [open, setOpen] = useState(false)
-  const align = (config?.align as string) || "center"
-
-  return (
-    <div className="relative inline-block">
-      <div onClick={() => setOpen(!open)} role="button" tabIndex={0} style={{ cursor: "pointer" }}>
-        {trigger}
-      </div>
-      {open && (
-        <div
-          className="absolute z-50 mt-2 rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-none animate-in fade-in-0 zoom-in-95"
-          style={{
-            left: align === "start" ? 0 : align === "end" ? "auto" : "50%",
-            right: align === "end" ? 0 : "auto",
-            transform: align === "center" ? "translateX(-50%)" : undefined,
-            minWidth: "12rem",
-          }}
-        >
-          {content}
-        </div>
-      )}
-    </div>
-  )
 }

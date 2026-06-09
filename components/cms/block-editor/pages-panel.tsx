@@ -182,27 +182,23 @@ function PageCard({
       className={cn(
         "group relative rounded-lg border p-3 transition-all cursor-pointer",
         "hover:border-primary/50 hover:bg-accent/50",
-        isActive 
-          ? "border-primary bg-primary/5" 
+        isActive
+          ? "border-primary bg-primary/5"
           : "border-border bg-background"
       )}
       onClick={onSelect}
     >
       {/* Thumbnail preview */}
-      {page.thumbnail ? (
-        <div className="mb-2 rounded-md overflow-hidden border border-border/50 bg-muted/30">
+      {page.thumbnail && (
+        <div className="mb-2 rounded overflow-hidden border border-border/50 bg-white">
           <img
             src={page.thumbnail}
-            alt={`Preview of ${page.title}`}
-            className="w-full h-24 object-cover object-top"
+            alt={`${page.title} preview`}
+            className="w-full h-auto object-cover"
+            style={{ maxHeight: "80px" }}
           />
         </div>
-      ) : (
-        <div className="mb-2 rounded-md overflow-hidden border border-border/50 bg-gradient-to-br from-muted/30 to-muted/10 h-16 flex items-center justify-center">
-          <FileText size={16} className="text-muted-foreground/30" />
-        </div>
       )}
-
       <div className="flex flex-col gap-1.5">
         <div className="flex items-start justify-between gap-2">
           <span className="text-xs font-medium text-foreground line-clamp-1 flex-1">

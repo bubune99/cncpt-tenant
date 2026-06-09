@@ -21,6 +21,7 @@ import {
   getAISchemaDocumentation,
   type ExportOptions,
 } from "@/lib/cms/block-editor/serialization"
+import { preprocessForImport, validateImport } from "@/lib/cms/block-editor/preprocess"
 import type { ExportFramework } from "@/lib/cms/block-editor/types"
 import { PAGE_TEMPLATES } from "@/lib/cms/block-editor/page-templates"
 import { rehydrateParentIds } from "@/lib/cms/block-editor/tree-utils"
@@ -53,7 +54,7 @@ export function ImportExportDialog({ children }: { children: React.ReactNode }) 
   const [copied, setCopied] = useState(false)
   const [open, setOpen] = useState(false)
   const [exportFramework, setExportFramework] = useState<ExportFramework>("react")
-  const [normalizeOnImport, setNormalizeOnImport] = useState(true)
+  const [shouldNormalize, setShouldNormalize] = useState(false)
 
   const jsonExport = exportToJSON(state.blocks)
   const frameworkExport = exportToFramework(state.blocks, {
@@ -78,25 +79,31 @@ export function ImportExportDialog({ children }: { children: React.ReactNode }) 
     const result = importFromJSON(importText)
     if (result.errors.length > 0) setErrors(result.errors)
     if (result.blocks.length > 0) {
-      const blocks = normalizeOnImport ? normalizeBlocks(result.blocks) : result.blocks
+      const blocks = shouldNormalize ? normalizeBlocks(result.blocks) : result.blocks
       setBlocks(blocks)
       setErrors([])
       setImportText("")
       setOpen(false)
     }
-  }, [importText, setBlocks, normalizeOnImport])
+  }, [importText, setBlocks, shouldNormalize])
 
   const handleImportReact = useCallback(() => {
-    const result = importFromReact(importText)
+    // Preprocess v0/React code before parsing
+    const preprocessed = preprocessForImport(importText)
+    const result = importFromReact(preprocessed.code)
     if (result.errors.length > 0) setErrors(result.errors)
     if (result.blocks.length > 0) {
-      const blocks = normalizeOnImport ? normalizeBlocks(result.blocks) : result.blocks
+      const blocks = shouldNormalize ? normalizeBlocks(result.blocks) : result.blocks
+      // Validate import quality
+      const validation = validateImport(blocks, preprocessed)
+      if (validation.quality < 80 && validation.warnings.length > 0) {
+        setErrors(prev => [...(result.errors.length > 0 ? result.errors : []), `Import quality: ${validation.quality}/100 — ${validation.warnings.slice(0, 3).join("; ")}`])
+      }
       setBlocks(blocks)
-      setErrors([])
       setImportText("")
       setOpen(false)
     }
-  }, [importText, setBlocks, normalizeOnImport])
+  }, [importText, setBlocks, shouldNormalize])
 
   const handleUseTemplate = useCallback(
     (templateId: string, append: boolean) => {
@@ -196,15 +203,9 @@ export function ImportExportDialog({ children }: { children: React.ReactNode }) 
             <Textarea value={jsonExport} readOnly className="flex-1 min-h-[200px] max-h-[300px] font-mono text-xs bg-input text-foreground resize-none" />
 
             <div className="border-t pt-4" style={{ borderColor: "var(--border)" }}>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                  <Upload size={14} /> Import JSON
-                </h3>
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="normalize-json" className="text-[10px] text-muted-foreground">Normalize to primitives</Label>
-                  <Switch id="normalize-json" checked={normalizeOnImport} onCheckedChange={setNormalizeOnImport} />
-                </div>
-              </div>
+              <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
+                <Upload size={14} /> Import JSON
+              </h3>
               <Textarea
                 value={importText}
                 onChange={(e) => { setImportText(e.target.value); setErrors([]) }}
@@ -217,9 +218,21 @@ export function ImportExportDialog({ children }: { children: React.ReactNode }) 
                   <div>{errors.map((e, i) => <div key={i}>{e}</div>)}</div>
                 </div>
               )}
-              <Button onClick={handleImportJSON} disabled={!importText.trim()} className="mt-2" size="sm">
-                <Download size={14} className="mr-1.5" /> Load JSON
-              </Button>
+              <div className="flex items-center justify-between mt-2">
+                <Button onClick={handleImportJSON} disabled={!importText.trim()} size="sm">
+                  <Download size={14} className="mr-1.5" /> Load JSON
+                </Button>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="normalize-json"
+                    checked={shouldNormalize}
+                    onCheckedChange={setShouldNormalize}
+                  />
+                  <Label htmlFor="normalize-json" className="text-xs text-muted-foreground cursor-pointer">
+                    Auto-label blocks
+                  </Label>
+                </div>
+              </div>
             </div>
           </TabsContent>
 
@@ -295,15 +308,9 @@ export function ImportExportDialog({ children }: { children: React.ReactNode }) 
             <Textarea value={frameworkExport} readOnly className="flex-1 min-h-[200px] max-h-[300px] font-mono text-xs bg-input text-foreground resize-none" />
 
             <div className="border-t pt-4" style={{ borderColor: "var(--border)" }}>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                  <Upload size={14} /> Import React / JSX
-                </h3>
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="normalize-react" className="text-[10px] text-muted-foreground">Normalize to primitives</Label>
-                  <Switch id="normalize-react" checked={normalizeOnImport} onCheckedChange={setNormalizeOnImport} />
-                </div>
-              </div>
+              <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
+                <Upload size={14} /> Import React / JSX
+              </h3>
               <p className="text-xs text-muted-foreground mb-2">
                 Paste any React/JSX or HTML with Tailwind. Supports motion.div, deeply nested elements, and rich text with inline tags.
               </p>
@@ -319,9 +326,21 @@ export function ImportExportDialog({ children }: { children: React.ReactNode }) 
                   <div>{errors.map((e, i) => <div key={i}>{e}</div>)}</div>
                 </div>
               )}
-              <Button onClick={handleImportReact} disabled={!importText.trim()} className="mt-2" size="sm">
-                <Download size={14} className="mr-1.5" /> Load React Code
-              </Button>
+              <div className="flex items-center justify-between mt-2">
+                <Button onClick={handleImportReact} disabled={!importText.trim()} size="sm">
+                  <Download size={14} className="mr-1.5" /> Load React Code
+                </Button>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="normalize-react"
+                    checked={shouldNormalize}
+                    onCheckedChange={setShouldNormalize}
+                  />
+                  <Label htmlFor="normalize-react" className="text-xs text-muted-foreground cursor-pointer">
+                    Auto-label blocks
+                  </Label>
+                </div>
+              </div>
             </div>
           </TabsContent>
 

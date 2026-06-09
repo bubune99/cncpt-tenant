@@ -5,6 +5,7 @@ import { BlockPalette } from "./block-palette"
 import { EditorCanvas } from "./editor-canvas"
 import { PropertiesPanel } from "./properties-panel"
 import { ImportExportDialog } from "./import-export-dialog"
+import { ScreenshotDialog } from "./screenshot-dialog"
 import { AIChatPanel } from "./ai-chat-panel"
 import { OutlinePanel } from "./outline-panel"
 import { TemplatesPanel } from "./templates-panel"
@@ -55,7 +56,6 @@ import {
   FolderTree,
   Camera,
   GitCompareArrows,
-  Store,
   Menu,
   X,
   PanelLeft,
@@ -64,12 +64,14 @@ import { useState, useCallback, useEffect, useRef } from "react"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { BlockRenderer } from "./block-renderer"
 import { InteractionPreview } from "./interaction-preview"
-import { ScreenshotDialog } from "./screenshot-dialog"
-import { DesignBrowserDialog } from "./design-browser-dialog"
 import type { Block } from "@/lib/cms/block-editor/types"
 import { cn } from "@/lib/cms/utils"
 import { toast } from "sonner"
-import { captureScreenshot, compareScreenshots, type DiffResult } from "@/lib/cms/block-editor/screenshot"
+import {
+  captureScreenshot,
+  compareScreenshots,
+  type DiffResult,
+} from "@/lib/cms/block-editor/screenshot"
 
 function PreviewRenderer({ blocks }: { blocks: Block[] }) {
   const renderBlock = (block: Block): React.ReactNode => {
@@ -118,15 +120,13 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
   const [mobilePanel, setMobilePanel] = useState<"none" | "left" | "right">("none")
   const isMobile = useIsMobile()
 
-  // Design browser state
-  const [designBrowserOpen, setDesignBrowserOpen] = useState(false)
-
   // Screenshot state
-  const [screenshotOpen, setScreenshotOpen] = useState(false)
+  const [screenshotDialogOpen, setScreenshotDialogOpen] = useState(false)
   const [screenshotData, setScreenshotData] = useState<string | null>(null)
-  const [diffResult, setDiffResult] = useState<DiffResult | null>(null)
+  const [screenshotBaseline, setScreenshotBaseline] = useState<string | null>(null)
+  const [screenshotDiff, setScreenshotDiff] = useState<DiffResult | null>(null)
   const [isCapturing, setIsCapturing] = useState(false)
-  const screenshotContainerRef = useRef<HTMLDivElement>(null)
+  const hiddenRenderRef = useRef<HTMLDivElement>(null)
 
   // Viewport width mapping
   const viewportWidth = viewport === "mobile" ? "375px" : viewport === "tablet" ? "768px" : "100%"
@@ -162,60 +162,63 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
   const handlePublish = useCallback(async () => {
     await publishPage()
     toast.success("Page published!", {
-      description: `View at /pages/${pageSlug}`,
+      description: `View at /${pageSlug}`,
       action: {
         label: "View",
-        onClick: () => window.open(`/pages/${pageSlug}`, "_blank"),
+        onClick: () => window.open(`/${pageSlug}`, "_blank"),
       },
     })
   }, [publishPage, pageSlug])
 
-  // Handle screenshot capture
-  const handleScreenshot = useCallback(async () => {
-    if (isCapturing || !screenshotContainerRef.current) return
+  // Screenshot capture handler
+  const handleCaptureScreenshot = useCallback(async () => {
+    const el = hiddenRenderRef.current
+    if (!el || state.blocks.length === 0) {
+      toast.error("No blocks to capture")
+      return
+    }
     setIsCapturing(true)
     try {
-      const dataUrl = await captureScreenshot(screenshotContainerRef.current)
+      const dataUrl = await captureScreenshot(el)
       setScreenshotData(dataUrl)
-      setDiffResult(null)
-      setScreenshotOpen(true)
-    } catch (err) {
-      console.error("Screenshot capture failed:", err)
+      setScreenshotDiff(null)
+      setScreenshotDialogOpen(true)
+    } catch {
       toast.error("Failed to capture screenshot")
     } finally {
       setIsCapturing(false)
     }
-  }, [isCapturing])
+  }, [state.blocks])
 
-  // Handle visual diff comparison
-  const handleCompare = useCallback(async () => {
-    const baseline = state.currentPage?.baseline
-    if (!baseline || isCapturing || !screenshotContainerRef.current) return
+  // Compare with baseline handler
+  const handleCompareWithBaseline = useCallback(async () => {
+    const el = hiddenRenderRef.current
+    if (!el || state.blocks.length === 0) {
+      toast.error("No blocks to capture")
+      return
+    }
+    if (!screenshotBaseline) {
+      toast.error("No baseline saved. Capture a screenshot first and save it as baseline.")
+      return
+    }
     setIsCapturing(true)
     try {
-      const currentDataUrl = await captureScreenshot(screenshotContainerRef.current)
-      const diff = await compareScreenshots(baseline, currentDataUrl)
-      setScreenshotData(currentDataUrl)
-      setDiffResult(diff)
-      setScreenshotOpen(true)
-    } catch (err) {
-      console.error("Visual diff failed:", err)
+      const dataUrl = await captureScreenshot(el)
+      const diff = await compareScreenshots(screenshotBaseline, dataUrl)
+      setScreenshotData(dataUrl)
+      setScreenshotDiff(diff)
+      setScreenshotDialogOpen(true)
+    } catch {
       toast.error("Failed to compare screenshots")
     } finally {
       setIsCapturing(false)
     }
-  }, [isCapturing, state.currentPage?.baseline])
+  }, [state.blocks, screenshotBaseline])
 
-  // Save current screenshot as baseline (stored in localStorage for now)
+  // Save baseline handler
   const handleSaveBaseline = useCallback((dataUrl: string) => {
-    if (!state.currentPage?.id) return
-    const key = `block-editor:baseline:${state.currentPage.id}`
-    try {
-      localStorage.setItem(key, dataUrl)
-    } catch {
-      // localStorage may be full for large data URLs
-    }
-  }, [state.currentPage?.id])
+    setScreenshotBaseline(dataUrl)
+  }, [])
 
   // Handle Ctrl+S
   useEffect(() => {
@@ -276,6 +279,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                 onClick={() => setMobilePanel(mobilePanel === "left" ? "none" : "left")}
                 className="md:hidden gap-1 px-2 h-9 w-9"
                 title="Toggle Panel"
+                aria-label="Toggle panel"
               >
                 {mobilePanel === "left" ? <X size={16} /> : <PanelLeft size={16} />}
               </Button>
@@ -288,6 +292,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                   onClick={() => setLeftPanel("palette")}
                   className="gap-1 px-2"
                   title="Block Palette"
+                  aria-label="Block Palette"
                 >
                   <LayoutGrid size={14} />
                 </Button>
@@ -297,6 +302,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                   onClick={() => setLeftPanel("outline")}
                   className="gap-1 px-2"
                   title="Outline"
+                  aria-label="Outline"
                 >
                   <Layers size={14} />
                 </Button>
@@ -306,6 +312,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                   onClick={() => setLeftPanel("templates")}
                   className="gap-1 px-2"
                   title="Templates"
+                  aria-label="Templates"
                 >
                   <LayoutTemplate size={14} />
                 </Button>
@@ -315,6 +322,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                   onClick={() => setLeftPanel("pages")}
                   className="gap-1 px-2"
                   title="Pages"
+                  aria-label="Pages"
                 >
                   <FileText size={14} />
                 </Button>
@@ -324,6 +332,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                   onClick={() => setLeftPanel("files")}
                   className="gap-1 px-2"
                   title="Files"
+                  aria-label="Files"
                 >
                   <FolderTree size={14} />
                 </Button>
@@ -340,6 +349,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                   }}
                   className="gap-1.5 px-2"
                   title={`Code View: ${codeViewMode === "hidden" ? "Click for Split View" : codeViewMode === "split" ? "Click for Full View" : "Click to Hide"}`}
+                  aria-label={`Code view: ${codeViewMode}`}
                 >
                   <Code2 size={14} />
                   {codeViewMode !== "hidden" && (
@@ -359,6 +369,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                 disabled={state.historyIndex <= 0}
                 className="gap-1 px-2"
                 title="Undo (Ctrl+Z)"
+                aria-label="Undo"
               >
                 <Undo2 size={14} />
               </Button>
@@ -369,6 +380,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                 disabled={state.historyIndex >= state.history.length - 1}
                 className="gap-1 px-2"
                 title="Redo (Ctrl+Y)"
+                aria-label="Redo"
               >
                 <Redo2 size={14} />
               </Button>
@@ -383,6 +395,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                     onClick={() => setViewport("desktop")}
                     className="h-7 px-2 rounded-r-none"
                     title="Desktop"
+                    aria-label="Desktop view"
                   >
                     <Monitor size={14} />
                   </Button>
@@ -392,6 +405,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                     onClick={() => setViewport("tablet")}
                     className="h-7 px-2 rounded-none border-x border-border"
                     title="Tablet (768px)"
+                    aria-label="Tablet view"
                   >
                     <Tablet size={14} />
                   </Button>
@@ -401,6 +415,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                     onClick={() => setViewport("mobile")}
                     className="h-7 px-2 rounded-l-none"
                     title="Mobile (375px)"
+                    aria-label="Mobile view"
                   >
                     <Smartphone size={14} />
                   </Button>
@@ -428,6 +443,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                     onClick={() => setViewport("desktop")}
                     className="h-7 px-2 rounded-r-none"
                     title="Desktop"
+                    aria-label="Desktop view"
                   >
                     <Monitor size={14} />
                   </Button>
@@ -437,6 +453,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                     onClick={() => setViewport("tablet")}
                     className="h-7 px-2 rounded-none border-x border-border"
                     title="Tablet (768px)"
+                    aria-label="Tablet view"
                   >
                     <Tablet size={14} />
                   </Button>
@@ -446,6 +463,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                     onClick={() => setViewport("mobile")}
                     className="h-7 px-2 rounded-l-none"
                     title="Mobile (375px)"
+                    aria-label="Mobile view"
                   >
                     <Smartphone size={14} />
                   </Button>
@@ -454,7 +472,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
             </>
           )}
         </div>
-        
+
         {/* Center section: Page title and save status */}
         <div className="flex items-center gap-2 md:gap-3 min-w-0 mx-1">
           {hidePageMeta && editorLabel ? (
@@ -502,6 +520,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                   state.hasUnsavedChanges && "text-amber-500"
                 )}
                 title="Save Draft (Ctrl+S)"
+                aria-label="Save draft"
               >
                 <Save size={14} />
                 <span className="hidden sm:inline">Save</span>
@@ -510,7 +529,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
               {/* Actions dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-1 px-2">
+                  <Button variant="ghost" size="sm" className="gap-1 px-2" aria-label="More actions">
                     <MoreVertical size={14} />
                   </Button>
                 </DropdownMenuTrigger>
@@ -543,21 +562,15 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                       Import / Export
                     </DropdownMenuItem>
                   </ImportExportDialog>
-                  <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setDesignBrowserOpen(true) }}>
-                    <Store size={14} className="mr-2" />
-                    Design Browser
-                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleScreenshot} disabled={isCapturing}>
+                  <DropdownMenuItem onClick={handleCaptureScreenshot} disabled={isCapturing}>
                     <Camera size={14} className="mr-2" />
                     {isCapturing ? "Capturing..." : "Capture Screenshot"}
                   </DropdownMenuItem>
-                  {state.currentPage?.baseline && (
-                    <DropdownMenuItem onClick={handleCompare} disabled={isCapturing}>
-                      <GitCompareArrows size={14} className="mr-2" />
-                      Compare with Baseline
-                    </DropdownMenuItem>
-                  )}
+                  <DropdownMenuItem onClick={handleCompareWithBaseline} disabled={isCapturing || !screenshotBaseline}>
+                    <GitCompareArrows size={14} className="mr-2" />
+                    Compare with Baseline
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={clearAll} className="text-destructive">
                     <Trash2 size={14} className="mr-2" />
@@ -586,6 +599,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                 }}
                 className="gap-1.5 px-2"
                 title={rightPanel === "ai" ? "Show Properties" : "AI Assistant"}
+                aria-label={rightPanel === "ai" ? "Show Properties" : "AI Assistant"}
               >
                 {rightPanel === "ai" ? (
                   <PanelRight size={14} />
@@ -621,7 +635,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                         Update Published Page
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => window.open(`/pages/${pageSlug}`, "_blank")}
+                        onClick={() => window.open(`/${pageSlug}`, "_blank")}
                       >
                         <ExternalLink size={14} className="mr-2" />
                         View Published Page
@@ -646,7 +660,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.open(`/pages/${pageSlug}`, "_blank")}
+              onClick={() => window.open(`/${pageSlug}`, "_blank")}
               className="gap-1.5"
             >
               <ExternalLink size={14} /> <span className="hidden sm:inline">Open Published</span>
@@ -663,7 +677,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-background border border-border text-xs text-muted-foreground">
               <Globe size={12} />
               <span className="font-mono">
-                yoursite.com/pages/{pageSlug || "untitled"}
+                yoursite.com/{pageSlug || "untitled"}
               </span>
             </div>
           </div>
@@ -816,7 +830,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
           )}
 
           {/* Desktop left panel */}
-          <div className="hidden md:flex">
+          <div className="hidden md:flex overflow-hidden">
             {leftPanel === "outline" ? (
               <OutlinePanel />
             ) : leftPanel === "templates" ? (
@@ -893,41 +907,26 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
         </div>
       )}
 
-      {/* Hidden render container for screenshot capture (off-screen) */}
-      {state.blocks.length > 0 && (
-        <div
-          ref={screenshotContainerRef}
-          aria-hidden
-          style={{
-            position: "fixed",
-            left: "-9999px",
-            top: 0,
-            width: "1280px",
-            background: "#ffffff",
-            zIndex: -1,
-            pointerEvents: "none",
-          }}
-        >
-          <PreviewRenderer blocks={state.blocks} />
-        </div>
-      )}
+      {/* Hidden render container for screenshot capture */}
+      <div
+        ref={hiddenRenderRef}
+        data-screenshot-target
+        className="fixed -left-[9999px] top-0 w-[1280px] bg-white"
+        style={{ pointerEvents: "none" }}
+      >
+        <PreviewRenderer blocks={state.blocks} />
+      </div>
 
       {/* Screenshot dialog */}
       <ScreenshotDialog
-        open={screenshotOpen}
-        onOpenChange={setScreenshotOpen}
+        open={screenshotDialogOpen}
+        onOpenChange={setScreenshotDialogOpen}
         screenshot={screenshotData}
         pageTitle={pageTitle}
         pageSlug={pageSlug}
-        diffResult={diffResult}
-        baseline={state.currentPage?.baseline}
+        diffResult={screenshotDiff}
+        baseline={screenshotBaseline}
         onSaveBaseline={handleSaveBaseline}
-      />
-
-      {/* Design browser dialog */}
-      <DesignBrowserDialog
-        open={designBrowserOpen}
-        onOpenChange={setDesignBrowserOpen}
       />
     </div>
   )

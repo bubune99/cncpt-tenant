@@ -69,7 +69,8 @@ const TAG_LABELS: Record<string, string> = {
 }
 
 // Icons for different block types
-function getBlockIcon(tag: string, size = 14) {
+function getBlockIcon(tag: string, size = 14, block?: Block) {
+  if (block?.componentName === "PartialReference") return <Layers size={size} />
   switch (tag) {
     case "h1":
       return <Heading1 size={size} />
@@ -102,6 +103,8 @@ function getBlockIcon(tag: string, size = 14) {
     case "input":
     case "textarea":
       return <FormInput size={size} />
+    case "video":
+      return <Play size={size} />
     case "div":
       return <LayoutGrid size={size} />
     default:
@@ -111,6 +114,9 @@ function getBlockIcon(tag: string, size = 14) {
 
 // Get display name for a block
 function getBlockDisplayName(block: Block): string {
+  if (block.componentName === "PartialReference") {
+    return "Partial: " + (block.label || block.partialId?.slice(0, 8) || "unknown")
+  }
   if (block.label) return block.label
   if (block.textContent) {
     const preview = block.textContent.slice(0, 20)
@@ -228,9 +234,9 @@ function OutlineRow({
           {/* Icon */}
           <span className={cn(
             "flex-shrink-0",
-            isSelected ? "text-primary" : "text-muted-foreground"
+            block.componentName === "PartialReference" ? "text-cyan-400" : isSelected ? "text-primary" : "text-muted-foreground"
           )}>
-            {getBlockIcon(block.tag)}
+            {getBlockIcon(block.tag, 14, block)}
           </span>
 
           {/* Name */}

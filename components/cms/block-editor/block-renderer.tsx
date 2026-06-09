@@ -5,6 +5,7 @@ import { isContainerTag, isInteractiveAnimation, isKnownTag } from "@/lib/cms/bl
 import { createElement } from "react"
 import { motion } from "framer-motion"
 import { getMotionWrapper } from "@/lib/cms/block-editor/motion-wrappers/registry"
+import { BlockErrorBoundary } from "@/components/cms/ui/error-boundary"
 import "@/components/cms/block-editor/motion-wrappers"
 
 interface BlockRendererProps {
@@ -55,6 +56,24 @@ const BOOLEAN_ATTRS = new Set([
   "disabled", "checked", "readonly", "required", "multiple",
   "hidden", "novalidate", "formnovalidate", "allowfullscreen",
 ])
+
+/** Allowed iframe src origins for security */
+const ALLOWED_IFRAME_ORIGINS = [
+  "https://www.youtube.com",
+  "https://youtube.com",
+  "https://www.youtube-nocookie.com",
+  "https://player.vimeo.com",
+  "https://vimeo.com",
+]
+
+function isAllowedIframeSrc(src: string): boolean {
+  try {
+    const url = new URL(src)
+    return ALLOWED_IFRAME_ORIGINS.some(origin => url.origin === origin)
+  } catch {
+    return false
+  }
+}
 
 /** Real HTML attributes that are valid on DOM elements */
 const VALID_HTML_ATTRS = new Set([
@@ -291,9 +310,25 @@ function buildFilteredAttrs(
     // Skip anything else (unknown component props that leaked through)
   }
 
-  // Images always need crossOrigin for canvas rendering
+  // Images: only set crossOrigin for same-origin or known CORS-enabled sources
+  // Setting crossOrigin="anonymous" on external images without CORS headers
+  // causes the browser to block them entirely
   if (resolvedTag === "img") {
-    htmlAttrs.crossOrigin = "anonymous"
+    const src = htmlAttrs.src as string | undefined
+    if (src) {
+      try {
+        const imgUrl = new URL(src, typeof window !== "undefined" ? window.location.origin : "http://localhost")
+        const isSameOrigin = typeof window !== "undefined" && imgUrl.origin === window.location.origin
+        const isCorsEnabled = imgUrl.hostname.includes("unsplash.com") ||
+          imgUrl.hostname.includes("amazonaws.com")
+        if (isSameOrigin || isCorsEnabled) {
+          htmlAttrs.crossOrigin = "anonymous"
+        }
+      } catch {
+        // relative URL or invalid — safe to set crossOrigin
+        htmlAttrs.crossOrigin = "anonymous"
+      }
+    }
     // If no src (expression was skipped), use a placeholder
     if (!htmlAttrs.src) {
       htmlAttrs.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect fill='%23f1f5f9' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='14' fill='%2394a3b8' text-anchor='middle' dominant-baseline='middle'%3EImage%3C/text%3E%3C/svg%3E"
@@ -324,6 +359,9 @@ function buildBlockContent(
 
   if (isSelfClosing) return null
 
+  // iframe: render children as null (iframes are non-self-closing but have no React children)
+  if (resolved === "iframe") return null
+
   if (isContainer) {
     return hasChildren && renderChildren
       ? renderChildren(block.children!)
@@ -340,6 +378,9 @@ function buildBlockContent(
   }
 
   // Leaf: expression text shows as-is (e.g. "{product.title}" renders as readable text)
+  // SECURITY: textContent is sanitized upstream by sanitizeBlocks() in
+  // block-page-renderer.tsx before reaching this renderer on public pages.
+  // In the editor, content is admin-authored and not user-generated.
   if (block.textContent && containsHtml(block.textContent)) {
     return createElement("span", { dangerouslySetInnerHTML: { __html: block.textContent } })
   }
@@ -354,7 +395,15 @@ function buildBlockContent(
  * Delegates to interactive motion wrappers for cursor/scroll/autonomous presets.
  * Custom component tags are resolved to the closest real HTML equivalent.
  */
-export function BlockRenderer({ block, renderChildren, isPreview = false }: BlockRendererProps) {
+export function BlockRenderer(props: BlockRendererProps) {
+  return (
+    <BlockErrorBoundary blockId={props.block.id}>
+      <BlockRendererInner {...props} />
+    </BlockErrorBoundary>
+  )
+}
+
+function BlockRendererInner({ block, renderChildren, isPreview = false }: BlockRendererProps) {
   if (block.hidden) return null
 
   const anim = block.animation
@@ -419,6 +468,15 @@ export function BlockRenderer({ block, renderChildren, isPreview = false }: Bloc
     return createElement(Tag, htmlAttrs)
   }
 
+  // iframe: render as empty element with security-checked src
+  if (resolvedTag === "iframe") {
+    const src = htmlAttrs.src as string | undefined
+    if (!src || !isAllowedIframeSrc(src)) {
+      return null // Block disallowed iframe sources
+    }
+    return createElement(Tag, htmlAttrs, null)
+  }
+
   // Container blocks
   if (isContainer) {
     const hasOverlay = block.background?.overlay
@@ -478,6 +536,8 @@ export function BlockRenderer({ block, renderChildren, isPreview = false }: Bloc
   }
 
   // Leaf blocks: render text content
+  // SECURITY: see sanitizeBlocks() note above — textContent is pre-sanitized
+  // on public pages and admin-only in the editor context.
   if (block.textContent && containsHtml(block.textContent)) {
     return createElement(Tag, {
       ...htmlAttrs,

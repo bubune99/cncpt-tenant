@@ -567,25 +567,16 @@ export function EditorProvider({ children, pageId, adapter, initialBlocks, mode 
         setCurrentPageId(saved.id)
         dispatch({ type: "MARK_SAVED", timestamp: now, page: saved })
 
-        // Auto-generate thumbnail in the background
-        if (currentState.blocks.length > 0 && typeof window !== "undefined") {
-          setTimeout(() => {
-            const screenshotContainer = document.querySelector("[aria-hidden][style*='left: -9999px']") as HTMLElement | null
-            if (screenshotContainer) {
-              import("./screenshot").then(({ captureAsThumbnail }) => {
-                captureAsThumbnail(screenshotContainer).then((thumbnail) => {
-                  const pageWithThumb: SavedPage = { ...saved, thumbnail }
-                  savePageToApi(pageWithThumb).then((updated) => {
-                    if (updated) {
-                      dispatch({ type: "SET_CURRENT_PAGE", page: { ...updated, thumbnail } })
-                    }
-                  })
-                }).catch(() => {
-                  // Thumbnail generation is non-critical
-                })
-              })
-            }
-          }, 100)
+        // Auto-capture thumbnail after successful save
+        try {
+          const el = document.querySelector("[data-screenshot-target]") as HTMLElement | null
+          if (el) {
+            const { captureAsThumbnail } = await import("./screenshot")
+            const thumbnail = await captureAsThumbnail(el)
+            dispatch({ type: "SET_CURRENT_PAGE", page: { ...saved, thumbnail } })
+          }
+        } catch {
+          // Thumbnail capture is best-effort, don't block save
         }
       } else {
         dispatch({ type: "SET_SAVE_STATUS", status: "error" })

@@ -37,17 +37,19 @@ import {
   Database,
   Link2,
   Component,
+  Video,
+  Film,
   Monitor,
   Tablet,
   Smartphone,
   Eye,
 } from "lucide-react"
-import { ExternalLink, MousePointerClick, PanelLeft, MessageSquare, ChevronDown, CircleHelp } from "lucide-react"
 import type { Block, BlockTag, BlockAnimation, BlockBackground, BlockResponsive, BlockInteraction, InteractionType, CommerceBinding, CommerceProvider } from "@/lib/cms/block-editor/types"
-import { usePartials, usePartial } from "@/lib/cms/api/domains/partials/hooks"
 import { COMMERCE_PROVIDERS } from "@/lib/cms/block-editor/block-templates"
 import { isContainerTag, CONTAINER_TAGS, LEAF_TAGS } from "@/lib/cms/block-editor/types"
 import { getSmartBlock, type EditorField } from "@/lib/cms/block-editor/smart-blocks/registry"
+import { usePartials, usePartial } from "@/lib/cms/api/domains/partials/hooks"
+import { ExternalLink, MousePointerClick, PanelLeft, MessageSquare, ChevronDown, CircleHelp } from "lucide-react"
 import { cn } from "@/lib/cms/utils"
 import { Switch } from "@/components/cms/ui/switch"
 import { isInteractiveAnimation } from "@/lib/cms/block-editor/types"
@@ -328,12 +330,13 @@ function AttrsEditor({ attrs, onChange }: { attrs: Record<string, string>; onCha
 
 const ANIM_TYPES = [
   { value: "none", label: "None", group: null },
-  { value: "fadeIn", label: "Fade In", group: null },
-  { value: "slideUp", label: "Slide Up", group: null },
-  { value: "slideDown", label: "Slide Down", group: null },
-  { value: "slideLeft", label: "Slide Left", group: null },
-  { value: "slideRight", label: "Slide Right", group: null },
-  { value: "scale", label: "Scale", group: null },
+  // Entrance
+  { value: "fadeIn", label: "Fade In", group: "Entrance" },
+  { value: "slideUp", label: "Slide Up", group: "Entrance" },
+  { value: "slideDown", label: "Slide Down", group: "Entrance" },
+  { value: "slideLeft", label: "Slide Left", group: "Entrance" },
+  { value: "slideRight", label: "Slide Right", group: "Entrance" },
+  { value: "scale", label: "Scale", group: "Entrance" },
   // Interactive - Cursor
   { value: "tilt3d", label: "3D Tilt", group: "Interactive" },
   { value: "mouseGlow", label: "Mouse Glow", group: "Interactive" },
@@ -1231,6 +1234,12 @@ export function PropertiesPanel() {
                   <ImagePickerModal
                     currentUrl={block.attrs?.src || ""}
                     onSelect={(url: string) => updateBlock(block.id, { attrs: { ...block.attrs, src: url } })}
+                    trigger={
+                      <Button variant="outline" size="sm" className="h-8 w-full gap-2 text-xs">
+                        <ImageIcon size={14} />
+                        {block.attrs?.src ? "Change Image" : "Choose Image"}
+                      </Button>
+                    }
                   />
 
                   {/* Alt Text */}
@@ -1276,6 +1285,178 @@ export function PropertiesPanel() {
                         ))}
                       </SelectContent>
                     </Select>
+                  </PropertyField>
+                </div>
+              </PropertySection>
+              <Separator />
+            </>
+          )}
+
+          {/* Video Controls (for video tags) */}
+          {block.tag === "video" && (
+            <>
+              <PropertySection title="Video" icon={Film} defaultOpen={true}>
+                <div className="flex flex-col gap-3">
+                  {/* Video Preview */}
+                  {block.attrs?.src && (
+                    <div className="relative h-32 rounded-md border border-border overflow-hidden bg-muted">
+                      <video
+                        src={block.attrs.src}
+                        className="w-full h-full object-contain"
+                        muted
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                        <Play size={24} className="text-white/80" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Video Source Picker */}
+                  <ImagePickerModal
+                    mode="video"
+                    currentUrl={block.attrs?.src || ""}
+                    onSelect={(url: string) => updateBlock(block.id, { attrs: { ...block.attrs, src: url } })}
+                    trigger={
+                      <Button variant="outline" size="sm" className="h-8 w-full gap-2 text-xs">
+                        <Play size={14} />
+                        {block.attrs?.src ? "Change Video" : "Choose Video"}
+                      </Button>
+                    }
+                  />
+
+                  {/* Poster Image */}
+                  <PropertyField label="Poster Image">
+                    <div className="flex gap-2">
+                      <Input
+                        value={block.attrs?.poster ?? ""}
+                        onChange={(e) => updateBlock(block.id, { attrs: { ...block.attrs, poster: e.target.value } })}
+                        placeholder="https://example.com/poster.jpg"
+                        className="h-8 bg-input text-foreground text-xs flex-1"
+                      />
+                      <ImagePickerModal
+                        mode="image"
+                        currentUrl={block.attrs?.poster || ""}
+                        onSelect={(url: string) => updateBlock(block.id, { attrs: { ...block.attrs, poster: url } })}
+                        trigger={
+                          <Button variant="outline" size="sm" className="h-8 px-2">
+                            <ImageIcon size={12} />
+                          </Button>
+                        }
+                      />
+                    </div>
+                  </PropertyField>
+
+                  {/* Video Controls Toggles */}
+                  <PropertyField label="Controls">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Show player controls</span>
+                      <Switch
+                        checked={block.attrs?.controls !== undefined}
+                        onCheckedChange={(checked) => {
+                          const newAttrs = { ...block.attrs }
+                          if (checked) {
+                            newAttrs.controls = ""
+                          } else {
+                            delete newAttrs.controls
+                          }
+                          updateBlock(block.id, { attrs: newAttrs })
+                        }}
+                      />
+                    </div>
+                  </PropertyField>
+
+                  <PropertyField label="Autoplay">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Auto-start playback (muted required)</span>
+                      <Switch
+                        checked={block.attrs?.autoplay !== undefined}
+                        onCheckedChange={(checked) => {
+                          const newAttrs = { ...block.attrs }
+                          if (checked) {
+                            newAttrs.autoplay = ""
+                            newAttrs.muted = "" // Autoplay requires muted
+                          } else {
+                            delete newAttrs.autoplay
+                          }
+                          updateBlock(block.id, { attrs: newAttrs })
+                        }}
+                      />
+                    </div>
+                  </PropertyField>
+
+                  <PropertyField label="Muted">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Start muted</span>
+                      <Switch
+                        checked={block.attrs?.muted !== undefined}
+                        onCheckedChange={(checked) => {
+                          const newAttrs = { ...block.attrs }
+                          if (checked) {
+                            newAttrs.muted = ""
+                          } else {
+                            delete newAttrs.muted
+                            delete newAttrs.autoplay // Can't autoplay without muted
+                          }
+                          updateBlock(block.id, { attrs: newAttrs })
+                        }}
+                      />
+                    </div>
+                  </PropertyField>
+
+                  <PropertyField label="Loop">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Repeat playback</span>
+                      <Switch
+                        checked={block.attrs?.loop !== undefined}
+                        onCheckedChange={(checked) => {
+                          const newAttrs = { ...block.attrs }
+                          if (checked) {
+                            newAttrs.loop = ""
+                          } else {
+                            delete newAttrs.loop
+                          }
+                          updateBlock(block.id, { attrs: newAttrs })
+                        }}
+                      />
+                    </div>
+                  </PropertyField>
+
+                  <PropertyField label="Inline">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Play inline on mobile</span>
+                      <Switch
+                        checked={block.attrs?.playsinline !== undefined}
+                        onCheckedChange={(checked) => {
+                          const newAttrs = { ...block.attrs }
+                          if (checked) {
+                            newAttrs.playsinline = ""
+                          } else {
+                            delete newAttrs.playsinline
+                          }
+                          updateBlock(block.id, { attrs: newAttrs })
+                        }}
+                      />
+                    </div>
+                  </PropertyField>
+
+                  {/* Object Fit */}
+                  <PropertyField label="Object Fit">
+                    <div className="flex gap-1">
+                      {["cover", "contain", "fill", "none"].map((fit) => (
+                        <button
+                          key={fit}
+                          onClick={() => replaceClassByPattern(/^object-(cover|contain|fill|none|scale-down)$/, `object-${fit}`)}
+                          className={cn(
+                            "flex-1 py-1.5 text-[10px] font-medium rounded-md border transition-colors capitalize",
+                            block.className.includes(`object-${fit}`)
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-border bg-accent/50 text-muted-foreground hover:bg-accent"
+                          )}
+                        >
+                          {fit}
+                        </button>
+                      ))}
+                    </div>
                   </PropertyField>
                 </div>
               </PropertySection>
@@ -1726,7 +1907,7 @@ function PartialReferenceSection({ block, updateBlock }: { block: Block; updateB
         )}
 
         {/* Per-block overrides editor */}
-        {currentPartial?.content && (
+        {currentPartial?.content != null && (
           <PartialOverridesEditor
             content={currentPartial.content}
             overrides={overrides}

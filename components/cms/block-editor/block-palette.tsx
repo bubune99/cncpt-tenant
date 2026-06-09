@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useRef, useCallback } from "react"
+import { useState, useMemo, useCallback } from "react"
 import {
   Type,
   AlignLeft,
@@ -46,15 +46,14 @@ import {
   PlusCircle,
   Zap,
   Store,
+  Layers,
 } from "lucide-react"
 import { BLOCK_TEMPLATES, BLOCK_CATEGORIES, COMMERCE_PROVIDERS } from "@/lib/cms/block-editor/block-templates"
-import type { Block, CommerceProvider } from "@/lib/cms/block-editor/types"
+import type { CommerceProvider } from "@/lib/cms/block-editor/types"
 import { useEditor } from "@/lib/cms/block-editor/editor-context"
-import { cn } from "@/lib/cms/utils"
 import { usePartials } from "@/lib/cms/api/domains/partials/hooks"
-import type { PartialDto } from "@/lib/cms/api/domains/partials/types"
 import { generateId } from "@/lib/cms/block-editor/tree-utils"
-import { Layers } from "lucide-react"
+import { cn } from "@/lib/cms/utils"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- lucide-react multi-version type conflict in pnpm
 const iconMap: Record<string, any> = {
@@ -96,7 +95,7 @@ export function BlockPalette({
   )
   const [search, setSearch] = useState("")
   const [isDragging, setIsDragging] = useState(false)
-  const dragGhostRef = useRef<HTMLDivElement>(null)
+
 
   const filteredTemplates = useMemo(() => {
     if (!search.trim()) return null
@@ -113,22 +112,25 @@ export function BlockPalette({
     e.dataTransfer.setData("application/palette-label", template.label)
     e.dataTransfer.effectAllowed = "copy"
     setIsDragging(true)
-    
-    // Create custom drag image
-    if (dragGhostRef.current) {
-      const Icon = iconMap[template.icon]
-      const ghost = dragGhostRef.current
-      ghost.innerHTML = `
-        <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground shadow-lg border border-primary/20">
-          <span class="text-xs font-medium">${template.label}</span>
-        </div>
-      `
-      ghost.style.position = "fixed"
-      ghost.style.top = "-1000px"
-      ghost.style.left = "-1000px"
-      document.body.appendChild(ghost)
-      e.dataTransfer.setDragImage(ghost, 50, 20)
-    }
+
+    // Create a fresh ghost element for the drag image
+    // SECURITY: Use createElement + textContent instead of innerHTML to avoid
+    // any risk if template labels were ever sourced from user input.
+    const ghost = document.createElement("div")
+    const inner = document.createElement("div")
+    inner.style.cssText = "display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;background:#0f172a;color:#fff;font-size:12px;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,0.15);white-space:nowrap;"
+    inner.textContent = template.label
+    ghost.appendChild(inner)
+    ghost.style.position = "fixed"
+    ghost.style.top = "-1000px"
+    ghost.style.left = "-1000px"
+    ghost.style.zIndex = "-1"
+    document.body.appendChild(ghost)
+    e.dataTransfer.setDragImage(ghost, 50, 20)
+    // Clean up ghost after browser captures it
+    requestAnimationFrame(() => {
+      document.body.removeChild(ghost)
+    })
   }, [])
 
   const handleDragEnd = useCallback(() => {
@@ -230,7 +232,6 @@ export function BlockPalette({
       isDragging && "opacity-60"
     )}>
       {/* Hidden drag ghost element */}
-      <div ref={dragGhostRef} aria-hidden="true" />
       
       {/* Header */}
       <div className="flex items-center gap-2 border-b border-border px-4 py-3">
@@ -252,6 +253,7 @@ export function BlockPalette({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search blocks..."
+            maxLength={100}
             className="h-8 w-full rounded-md border border-border bg-input pl-8 pr-8 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           />
           {search && (
@@ -341,6 +343,9 @@ export function BlockPalette({
 }
 
 /* ---- Partials Palette Section ---- */
+
+import type { Block } from "@/lib/cms/block-editor/types"
+import type { PartialDto } from "@/lib/cms/api/domains/partials/types"
 
 interface PartialsPaletteSectionProps {
   partials: PartialDto[]

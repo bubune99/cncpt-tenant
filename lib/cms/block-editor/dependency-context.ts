@@ -197,6 +197,7 @@ function extractFirstString(code: string): string {
  */
 function parseVariantsObject(body: string, out: VariantMap): void {
   // Find each top-level key: { ... } pair
+  // We iterate through looking for `identifier:` followed by `{`
   const keyRe = /(\w[\w-]*)\s*:\s*\{/g
   let km: RegExpExecArray | null
 
@@ -209,6 +210,7 @@ function parseVariantsObject(body: string, out: VariantMap): void {
     const values: VariantValueMap = {}
 
     // Parse value: "classes" pairs inside this variant group
+    // Handle both regular keys and quoted keys (e.g. "icon-sm": "...")
     const valuePairRe = /["']?([\w-]+)["']?\s*:\s*["'`]([^"'`]*?)["'`]/g
     let vm: RegExpExecArray | null
     while ((vm = valuePairRe.exec(innerBody)) !== null) {
@@ -231,6 +233,8 @@ function parseVariantsObject(body: string, out: VariantMap): void {
  *
  * Given a ComponentDep and a set of props (e.g. { variant: "destructive", size: "lg" }),
  * returns the full merged class string that the component would render.
+ *
+ * This is the core translation Kofi uses: component props → concrete classes.
  */
 export function resolveVariantClasses(
   dep: ComponentDep,
@@ -238,12 +242,14 @@ export function resolveVariantClasses(
 ): string {
   const parts: string[] = []
 
+  // Always include base classes
   if (dep.defaultClasses) {
     parts.push(dep.defaultClasses)
   }
 
   if (!dep.variants) return parts.join(" ")
 
+  // For each variant dimension, pick the value from props > defaultVariants > skip
   for (const [variantName, valueMap] of Object.entries(dep.variants)) {
     const value = props?.[variantName] ?? dep.defaultVariants?.[variantName]
     if (value && valueMap[value]) {
@@ -302,6 +308,8 @@ export function extractImportNames(sourceCode: string): ImportInfo[] {
 
 /** Extract the primary rendered tag from a component's source code */
 function extractPrimaryTag(content: string): string {
+  // Find the return statement's outermost JSX tag
+  // Match: return ( <tag or return <tag
   const returnMatch = content.match(/return\s*\(?[\s\n]*<(\w+)/)
   if (returnMatch) {
     const tag = returnMatch[1].toLowerCase()
@@ -313,8 +321,11 @@ function extractPrimaryTag(content: string): string {
     ])
     if (htmlTags.has(tag)) return tag
   }
+  // For components using Slot/Comp pattern (shadcn), look for the underlying element
   const compMatch = content.match(/<Comp[\s\S]*?/)
   if (compMatch) {
+    // shadcn Button pattern: renders as <button> via asChild/Slot
+    // Check if it's a button component by name or className
     if (content.includes("ButtonHTMLAttributes") || content.includes("button")) return "button"
     if (content.includes("AnchorHTMLAttributes") || content.includes("HTMLAnchorElement")) return "a"
     if (content.includes("InputHTMLAttributes") || content.includes("HTMLInputElement")) return "input"
@@ -344,6 +355,11 @@ function extractNonVariantProps(content: string, variantNames: Set<string>): str
 /**
  * Build a SourceDeps manifest for a page from its imports and the project's component map.
  * Called during project import when full project context is available.
+ *
+ * For each component, extracts:
+ * - Primary HTML tag
+ * - CVA base classes + variant definitions + default variant values
+ * - Non-variant prop names
  */
 export function buildDependencyManifest(
   page: ProjectFile,
@@ -352,12 +368,14 @@ export function buildDependencyManifest(
   const deps: SourceDeps = { components: {} }
   const unresolved: string[] = []
 
+  // Get components this page uses
   const usedComponents = getPageComponents(page, componentMap)
 
   for (const name of usedComponents) {
     const compFile = componentMap.get(name)
     if (!compFile) continue
 
+    // Try CVA extraction first — it gives us structured variant data
     const cva = parseCvaCall(compFile.content)
 
     if (cva && (cva.baseClasses || Object.keys(cva.variants).length > 0)) {
@@ -372,6 +390,7 @@ export function buildDependencyManifest(
         props: extractNonVariantProps(compFile.content, variantNames),
       }
     } else {
+      // Fallback: extract classes heuristically (non-cva components)
       deps.components[name] = {
         file: compFile.path,
         renders: extractPrimaryTag(compFile.content),
@@ -437,6 +456,10 @@ function extractDefaultClassesFallback(content: string): string {
 
 /**
  * Format a SourceDeps manifest as a compact reference for Kofi's system prompt.
+ *
+ * For CVA components, outputs a variant lookup table so Kofi can directly
+ * resolve `<Button variant="destructive" size="lg">` → concrete classes
+ * without needing to guess or hallucinate styles.
  */
 export function formatDepsForPrompt(sourceDeps: SourceDeps): string {
   const lines: string[] = [
@@ -456,6 +479,7 @@ export function formatDepsForPrompt(sourceDeps: SourceDeps): string {
       lines.push(`- **Base classes**: \`${dep.defaultClasses}\``)
     }
 
+    // Render variant table
     if (dep.variants && Object.keys(dep.variants).length > 0) {
       lines.push("- **Variants** (prop → additional classes):")
 
@@ -468,6 +492,7 @@ export function formatDepsForPrompt(sourceDeps: SourceDeps): string {
       }
     }
 
+    // Show default resolution as a quick reference
     if (dep.variants && dep.defaultVariants && Object.keys(dep.defaultVariants).length > 0) {
       const resolved = resolveVariantClasses(dep)
       lines.push(`- **Default resolution** (no props): \`${resolved}\``)
@@ -477,9 +502,10 @@ export function formatDepsForPrompt(sourceDeps: SourceDeps): string {
       lines.push(`- **Other props**: ${dep.props.join(", ")}`)
     }
 
-    lines.push("")
+    lines.push("") // blank line between components
   }
 
+  // Usage instructions for Kofi
   lines.push("### How to use this table")
   lines.push("When the source code has `<ComponentName prop=\"value\">text</ComponentName>`, translate it to a block:")
   lines.push("1. Use the **Tag** as the block's `tag`")

@@ -14,7 +14,6 @@ import { Input } from "@/components/cms/ui/input"
 import { Label } from "@/components/cms/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/cms/ui/tabs"
 import { ScrollArea } from "@/components/cms/ui/scroll-area"
-import { Textarea } from "@/components/cms/ui/textarea"
 import {
   ImageIcon,
   Upload,
@@ -22,9 +21,10 @@ import {
   Check,
   Trash2,
   X,
-  Sparkles,
+  Video,
+  FolderOpen,
   Loader2,
-  AlertCircle,
+  Film,
 } from "lucide-react"
 import { cn } from "@/lib/cms/utils"
 import {
@@ -74,32 +74,30 @@ const STOCK_IMAGES = [
 
 const CATEGORIES = ["all", "nature", "architecture", "abstract", "technology", "textures", "business", "food", "travel"]
 
-// AI Image generation styles and sizes
-const AI_STYLES = [
-  { value: "", label: "Auto" },
-  { value: "photorealistic", label: "Photorealistic" },
-  { value: "illustration", label: "Illustration" },
-  { value: "3d-render", label: "3D Render" },
-  { value: "flat-design", label: "Flat Design" },
-  { value: "watercolor", label: "Watercolor" },
-  { value: "oil-painting", label: "Oil Painting" },
-  { value: "pixel-art", label: "Pixel Art" },
-  { value: "anime", label: "Anime" },
-  { value: "sketch", label: "Sketch" },
-  { value: "cinematic", label: "Cinematic" },
-]
-
-const AI_SIZES = [
-  { value: "square", label: "Square", dimensions: "1024x1024" },
-  { value: "landscape", label: "Landscape", dimensions: "1792x1024" },
-  { value: "portrait", label: "Portrait", dimensions: "1024x1792" },
-]
-
-interface GeneratedImageResult {
+/** Media item from the /api/media endpoint */
+interface MediaItem {
   id: string
   url: string
-  revisedPrompt?: string
+  filename: string
+  originalName: string
+  mimeType: string
+  size: number
+  width: number | null
+  height: number | null
+  title: string | null
+  alt: string | null
+  createdAt: string
 }
+
+function isVideoMime(mimeType: string): boolean {
+  return mimeType.startsWith("video/")
+}
+
+function isVideoUrl(url: string): boolean {
+  return /\.(mp4|webm|ogg|mov|avi|mkv)(\?|$)/i.test(url)
+}
+
+export type MediaPickerMode = "image" | "video" | "media"
 
 interface ImagePickerModalProps {
   open?: boolean
@@ -107,6 +105,8 @@ interface ImagePickerModalProps {
   trigger?: React.ReactNode
   onSelect: (url: string) => void
   currentUrl?: string
+  /** "image" = only images, "video" = only videos, "media" = both (default: "image") */
+  mode?: MediaPickerMode
 }
 
 export function ImagePickerModal({
@@ -115,6 +115,7 @@ export function ImagePickerModal({
   trigger,
   onSelect,
   currentUrl,
+  mode = "image",
 }: ImagePickerModalProps) {
   const [internalOpen, setInternalOpen] = useState(false)
   const isControlled = controlledOpen !== undefined
@@ -127,64 +128,106 @@ export function ImagePickerModal({
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([])
   const [isDragging, setIsDragging] = useState(false)
 
-  // AI Generate state
-  const [aiPrompt, setAiPrompt] = useState("")
-  const [aiStyle, setAiStyle] = useState("")
-  const [aiSize, setAiSize] = useState("square")
-  const [aiGenerating, setAiGenerating] = useState(false)
-  const [aiError, setAiError] = useState<string | null>(null)
-  const [aiResults, setAiResults] = useState<GeneratedImageResult[]>([])
-  const [aiAvailable, setAiAvailable] = useState<boolean | null>(null)
+  // Media library state
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([])
+  const [mediaLoading, setMediaLoading] = useState(false)
+  const [mediaError, setMediaError] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
 
-  // Check AI availability when modal opens
-  useEffect(() => {
-    if (open && aiAvailable === null) {
-      fetch("/api/cms/media/generate")
-        .then((res) => res.json())
-        .then((data) => setAiAvailable(data.available))
-        .catch(() => setAiAvailable(false))
+  const isVideoMode = mode === "video"
+  const isMediaMode = mode === "media"
+  const acceptTypes = isVideoMode ? "video/*" : isMediaMode ? "image/*,video/*" : "image/*"
+  const titleLabel = isVideoMode ? "Select Video" : isMediaMode ? "Select Media" : "Select Image"
+  const TitleIcon = isVideoMode ? Video : ImageIcon
+
+  // Fetch media from the API
+  const fetchMediaLibrary = useCallback(async () => {
+    setMediaLoading(true)
+    setMediaError(null)
+    try {
+      const typeParam = isVideoMode ? "video" : isMediaMode ? "" : "image"
+      const params = new URLSearchParams({ limit: "50", sortBy: "createdAt", sortOrder: "desc" })
+      if (typeParam) params.set("type", typeParam)
+      const res = await fetch(`/api/cms/media?${params}`)
+      if (!res.ok) {
+        const errBody = await res.text().catch(() => "")
+        throw new Error(`Failed to load media library (${res.status}): ${errBody.slice(0, 200)}`)
+      }
+      const data = await res.json()
+      setMediaItems(data.media || [])
+    } catch (err) {
+      setMediaError((err as Error).message)
+    } finally {
+      setMediaLoading(false)
     }
-  }, [open, aiAvailable])
+  }, [isVideoMode, isMediaMode])
 
-  // Load uploaded images when modal opens
+  // Load uploaded images and media library when modal opens
   const handleOpenChange = useCallback((newOpen: boolean) => {
     onOpenChange(newOpen)
     if (newOpen) {
       setUploadedImages(getUploadedImages())
       setSelectedUrl(currentUrl || "")
-      setAiError(null)
+      fetchMediaLibrary()
     }
-  }, [onOpenChange, currentUrl])
+  }, [onOpenChange, currentUrl, fetchMediaLibrary])
 
-  // Filter stock images by category
+  // Filter stock images by category (only for image mode)
   const filteredStockImages = useMemo(() => {
+    if (isVideoMode) return []
     if (category === "all") return STOCK_IMAGES
     return STOCK_IMAGES.filter((img) => img.category === category)
-  }, [category])
+  }, [category, isVideoMode])
 
-  // Handle file upload
-  const handleFileUpload = useCallback((files: FileList | null) => {
+  // Handle file upload — uploads to /api/media if possible, falls back to localStorage
+  const handleFileUpload = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return
 
-    Array.from(files).forEach((file) => {
-      if (!file.type.startsWith("image/")) return
+    for (const file of Array.from(files)) {
+      const isVideo = file.type.startsWith("video/")
+      const isImage = file.type.startsWith("image/")
+      if (!isVideo && !isImage) continue
+      if (isVideoMode && !isVideo) continue
+      if (mode === "image" && !isImage) continue
 
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const dataUrl = e.target?.result as string
-        const uploadedImage: UploadedImage = {
-          id: generateId(),
-          url: dataUrl,
-          name: file.name,
-          createdAt: new Date().toISOString(),
+      // Try uploading to the media API first
+      setUploading(true)
+      try {
+        const formData = new FormData()
+        formData.append("file", file)
+        const res = await fetch("/api/cms/media", { method: "POST", body: formData })
+        if (res.ok) {
+          const media = await res.json()
+          setSelectedUrl(media.url)
+          // Refresh library
+          fetchMediaLibrary()
+          setUploading(false)
+          continue
         }
-        saveUploadedImage(uploadedImage)
-        setUploadedImages(getUploadedImages())
-        setSelectedUrl(dataUrl)
+      } catch {
+        // API upload failed, fall back to local storage for images
       }
-      reader.readAsDataURL(file)
-    })
-  }, [])
+      setUploading(false)
+
+      // Fallback: localStorage for images (videos are too large for localStorage)
+      if (isImage) {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const dataUrl = e.target?.result as string
+          const uploadedImage: UploadedImage = {
+            id: generateId(),
+            url: dataUrl,
+            name: file.name,
+            createdAt: new Date().toISOString(),
+          }
+          saveUploadedImage(uploadedImage)
+          setUploadedImages(getUploadedImages())
+          setSelectedUrl(dataUrl)
+        }
+        reader.readAsDataURL(file)
+      }
+    }
+  }, [isVideoMode, mode, fetchMediaLibrary])
 
   // Handle drag and drop
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -198,43 +241,6 @@ export function ImagePickerModal({
     deleteUploadedImage(id)
     setUploadedImages(getUploadedImages())
   }, [])
-
-  // Handle AI image generation
-  const handleAiGenerate = useCallback(async () => {
-    if (!aiPrompt.trim()) return
-
-    setAiGenerating(true)
-    setAiError(null)
-
-    try {
-      const response = await fetch("/api/cms/media/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: aiPrompt.trim(),
-          style: aiStyle || undefined,
-          size: aiSize,
-          count: 1,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to generate image")
-      }
-
-      if (data.images && data.images.length > 0) {
-        setAiResults((prev) => [...data.images, ...prev])
-        // Auto-select the first generated image
-        setSelectedUrl(data.images[0].url)
-      }
-    } catch (err) {
-      setAiError(err instanceof Error ? err.message : "Failed to generate image")
-    } finally {
-      setAiGenerating(false)
-    }
-  }, [aiPrompt, aiStyle, aiSize])
 
   // Handle select
   const handleSelect = useCallback(() => {
@@ -250,48 +256,157 @@ export function ImagePickerModal({
       <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <ImageIcon size={18} />
-            Select Image
+            <TitleIcon size={18} />
+            {titleLabel}
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="gallery" className="flex-1 flex flex-col min-h-0">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="gallery">Gallery</TabsTrigger>
-            <TabsTrigger value="ai-generate" className="flex items-center gap-1.5">
-              <Sparkles size={13} />
-              AI Generate
+        <Tabs defaultValue="library" className="flex-1 flex flex-col min-h-0">
+          <TabsList className={cn("grid w-full", isVideoMode ? "grid-cols-3" : "grid-cols-4")}>
+            <TabsTrigger value="library">
+              <FolderOpen size={14} className="mr-1.5" />
+              Library
             </TabsTrigger>
+            {!isVideoMode && <TabsTrigger value="gallery">Gallery</TabsTrigger>}
             <TabsTrigger value="upload">Upload</TabsTrigger>
             <TabsTrigger value="url">URL</TabsTrigger>
           </TabsList>
 
-          {/* Gallery Tab */}
-          <TabsContent value="gallery" className="flex-1 flex flex-col min-h-0 mt-4">
-            {/* Category filter */}
-            <div className="flex gap-1 mb-3 flex-wrap">
-              {CATEGORIES.map((cat) => (
-                <Button
-                  key={cat}
-                  variant={category === cat ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={() => setCategory(cat)}
-                  className="h-7 text-xs capitalize"
-                >
-                  {cat}
+          {/* Media Library Tab */}
+          <TabsContent value="library" className="flex-1 flex flex-col min-h-0 mt-4" style={{ minHeight: '300px' }}>
+            {mediaLoading ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground mb-2" />
+                <p className="text-xs text-muted-foreground">Loading media library...</p>
+              </div>
+            ) : mediaError ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <p className="text-sm text-muted-foreground mb-2">{mediaError}</p>
+                <Button variant="outline" size="sm" onClick={fetchMediaLibrary}>
+                  Retry
                 </Button>
-              ))}
-            </div>
+              </div>
+            ) : mediaItems.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <FolderOpen className="w-10 h-10 text-muted-foreground/40 mb-3" />
+                <p className="text-sm text-muted-foreground mb-1">No media files yet</p>
+                <p className="text-xs text-muted-foreground/60">Upload files via the Upload tab or admin media library</p>
+              </div>
+            ) : (
+              <ScrollArea className="flex-1 h-[400px]">
+                <div className="grid grid-cols-4 gap-2 pr-4">
+                  {mediaItems.map((item) => {
+                    const itemIsVideo = isVideoMime(item.mimeType)
+                    return (
+                      <div key={item.id} className="relative group">
+                        <button
+                          onClick={() => setSelectedUrl(item.url)}
+                          className={cn(
+                            "aspect-video rounded-lg overflow-hidden border-2 transition-all w-full",
+                            selectedUrl === item.url
+                              ? "border-primary ring-2 ring-primary/20"
+                              : "border-transparent hover:border-primary/50"
+                          )}
+                        >
+                          {itemIsVideo ? (
+                            <div className="w-full h-full bg-muted flex flex-col items-center justify-center gap-1">
+                              <Film size={24} className="text-muted-foreground" />
+                              <span className="text-[9px] text-muted-foreground truncate max-w-full px-1">
+                                {item.originalName || item.filename}
+                              </span>
+                            </div>
+                          ) : (
+                            <img
+                              src={item.url}
+                              alt={item.alt || item.originalName}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          )}
+                          {selectedUrl === item.url && (
+                            <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                              <Check className="w-6 h-6 text-primary" />
+                            </div>
+                          )}
+                        </button>
+                        <span className="absolute bottom-1 left-1 right-1 text-[9px] text-white bg-black/50 px-1 rounded truncate">
+                          {item.title || item.originalName}
+                        </span>
+                        {itemIsVideo && (
+                          <span className="absolute top-1 left-1 text-[8px] font-medium text-white bg-black/60 px-1.5 py-0.5 rounded">
+                            VIDEO
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </ScrollArea>
+            )}
+          </TabsContent>
 
-            <ScrollArea className="flex-1">
-              <div className="grid grid-cols-4 gap-2 pr-4">
-                {/* Uploaded images first */}
-                {uploadedImages.map((img) => (
-                  <div key={img.id} className="relative group">
+          {/* Gallery Tab (images only) */}
+          {!isVideoMode && (
+            <TabsContent value="gallery" className="flex-1 flex flex-col min-h-0 mt-4">
+              {/* Category filter */}
+              <div className="flex gap-1 mb-3 flex-wrap">
+                {CATEGORIES.map((cat) => (
+                  <Button
+                    key={cat}
+                    variant={category === cat ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => setCategory(cat)}
+                    className="h-7 text-xs capitalize"
+                  >
+                    {cat}
+                  </Button>
+                ))}
+              </div>
+
+              <ScrollArea className="flex-1">
+                <div className="grid grid-cols-4 gap-2 pr-4">
+                  {/* Uploaded images first */}
+                  {uploadedImages.map((img) => (
+                    <div key={img.id} className="relative group">
+                      <button
+                        onClick={() => setSelectedUrl(img.url)}
+                        className={cn(
+                          "aspect-video rounded-lg overflow-hidden border-2 transition-all",
+                          selectedUrl === img.url
+                            ? "border-primary ring-2 ring-primary/20"
+                            : "border-transparent hover:border-primary/50"
+                        )}
+                      >
+                        <img
+                          src={img.url}
+                          alt={img.name}
+                          className="w-full h-full object-cover"
+                        />
+                        {selectedUrl === img.url && (
+                          <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                            <Check className="w-6 h-6 text-primary" />
+                          </div>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteUploaded(img.id)}
+                        className="absolute top-1 right-1 p-1 rounded bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X size={12} />
+                      </button>
+                      <span className="absolute bottom-1 left-1 right-1 text-[9px] text-white bg-black/50 px-1 rounded truncate">
+                        {img.name}
+                      </span>
+                    </div>
+                  ))}
+
+                  {/* Stock images */}
+                  {filteredStockImages.map((img, i) => (
                     <button
+                      key={img.url + i}
                       onClick={() => setSelectedUrl(img.url)}
                       className={cn(
-                        "aspect-video rounded-lg overflow-hidden border-2 transition-all",
+                        "aspect-video rounded-lg overflow-hidden border-2 transition-all relative",
                         selectedUrl === img.url
                           ? "border-primary ring-2 ring-primary/20"
                           : "border-transparent hover:border-primary/50"
@@ -299,8 +414,9 @@ export function ImagePickerModal({
                     >
                       <img
                         src={img.url}
-                        alt={img.name}
+                        alt={`Stock ${img.category}`}
                         className="w-full h-full object-cover"
+                        loading="lazy"
                       />
                       {selectedUrl === img.url && (
                         <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
@@ -308,219 +424,11 @@ export function ImagePickerModal({
                         </div>
                       )}
                     </button>
-                    <button
-                      onClick={() => handleDeleteUploaded(img.id)}
-                      className="absolute top-1 right-1 p-1 rounded bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X size={12} />
-                    </button>
-                    <span className="absolute bottom-1 left-1 right-1 text-[9px] text-white bg-black/50 px-1 rounded truncate">
-                      {img.name}
-                    </span>
-                  </div>
-                ))}
-
-                {/* Stock images */}
-                {filteredStockImages.map((img, i) => (
-                  <button
-                    key={img.url + i}
-                    onClick={() => setSelectedUrl(img.url)}
-                    className={cn(
-                      "aspect-video rounded-lg overflow-hidden border-2 transition-all relative",
-                      selectedUrl === img.url
-                        ? "border-primary ring-2 ring-primary/20"
-                        : "border-transparent hover:border-primary/50"
-                    )}
-                  >
-                    <img
-                      src={img.url}
-                      alt={`Stock ${img.category}`}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                    {selectedUrl === img.url && (
-                      <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                        <Check className="w-6 h-6 text-primary" />
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-
-          {/* AI Generate Tab */}
-          <TabsContent value="ai-generate" className="flex-1 flex flex-col min-h-0 mt-4">
-            {aiAvailable === false ? (
-              <div className="flex flex-col items-center justify-center flex-1 text-center p-8">
-                <AlertCircle className="w-10 h-10 text-muted-foreground mb-3" />
-                <p className="text-sm font-medium mb-1">AI Image Generation Unavailable</p>
-                <p className="text-xs text-muted-foreground">
-                  Configure an AI provider (OPENAI_API_KEY, GOOGLE_GENERATIVE_AI_API_KEY, or Vercel AI Gateway) to enable image generation.
-                </p>
-              </div>
-            ) : (
-              <>
-                {/* Prompt input */}
-                <div className="space-y-3 mb-4">
-                  <div>
-                    <Label htmlFor="ai-prompt" className="text-xs font-medium mb-1.5 block">
-                      Describe the image you want
-                    </Label>
-                    <Textarea
-                      id="ai-prompt"
-                      value={aiPrompt}
-                      onChange={(e) => setAiPrompt(e.target.value)}
-                      placeholder="A modern hero background with abstract geometric shapes in blue and purple gradients..."
-                      className="min-h-[80px] resize-none text-sm"
-                      maxLength={4000}
-                    />
-                    <span className="text-[10px] text-muted-foreground mt-1 block text-right">
-                      {aiPrompt.length}/4000
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    {/* Style selector */}
-                    <div>
-                      <Label className="text-xs font-medium mb-1.5 block">Style</Label>
-                      <div className="flex flex-wrap gap-1">
-                        {AI_STYLES.map((s) => (
-                          <Button
-                            key={s.value}
-                            type="button"
-                            variant={aiStyle === s.value ? "secondary" : "ghost"}
-                            size="sm"
-                            onClick={() => setAiStyle(s.value)}
-                            className="h-6 text-[11px] px-2"
-                          >
-                            {s.label}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Size selector */}
-                    <div>
-                      <Label className="text-xs font-medium mb-1.5 block">Size</Label>
-                      <div className="flex gap-1">
-                        {AI_SIZES.map((s) => (
-                          <Button
-                            key={s.value}
-                            type="button"
-                            variant={aiSize === s.value ? "secondary" : "ghost"}
-                            size="sm"
-                            onClick={() => setAiSize(s.value)}
-                            className="h-6 text-[11px] px-2"
-                          >
-                            {s.label}
-                            <span className="text-[9px] text-muted-foreground ml-1">
-                              {s.dimensions}
-                            </span>
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button
-                    onClick={handleAiGenerate}
-                    disabled={!aiPrompt.trim() || aiGenerating}
-                    className="w-full"
-                  >
-                    {aiGenerating ? (
-                      <>
-                        <Loader2 size={14} className="mr-2 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles size={14} className="mr-2" />
-                        Generate Image
-                      </>
-                    )}
-                  </Button>
+                  ))}
                 </div>
-
-                {/* Error message */}
-                {aiError && (
-                  <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 mb-3">
-                    <AlertCircle size={14} className="text-destructive mt-0.5 shrink-0" />
-                    <p className="text-xs text-destructive">{aiError}</p>
-                  </div>
-                )}
-
-                {/* Loading state */}
-                {aiGenerating && (
-                  <div className="flex flex-col items-center justify-center py-8">
-                    <div className="relative">
-                      <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
-                        <Sparkles className="w-8 h-8 text-primary animate-pulse" />
-                      </div>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-3">
-                      Creating your image with AI...
-                    </p>
-                    <p className="text-[10px] text-muted-foreground mt-1">
-                      This usually takes 10-30 seconds
-                    </p>
-                  </div>
-                )}
-
-                {/* Generated images */}
-                {aiResults.length > 0 && !aiGenerating && (
-                  <div>
-                    <Label className="text-xs text-muted-foreground mb-2 block">
-                      Generated Images ({aiResults.length})
-                    </Label>
-                    <ScrollArea className="flex-1">
-                      <div className="grid grid-cols-3 gap-2 pr-4">
-                        {aiResults.map((img) => (
-                          <div key={img.id} className="relative group">
-                            <button
-                              onClick={() => setSelectedUrl(img.url)}
-                              className={cn(
-                                "aspect-square rounded-lg overflow-hidden border-2 transition-all w-full",
-                                selectedUrl === img.url
-                                  ? "border-primary ring-2 ring-primary/20"
-                                  : "border-transparent hover:border-primary/50"
-                              )}
-                            >
-                              <img
-                                src={img.url}
-                                alt={img.revisedPrompt || "AI generated image"}
-                                className="w-full h-full object-cover"
-                              />
-                              {selectedUrl === img.url && (
-                                <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                                  <Check className="w-6 h-6 text-primary" />
-                                </div>
-                              )}
-                            </button>
-                            {img.revisedPrompt && (
-                              <span className="absolute bottom-1 left-1 right-1 text-[9px] text-white bg-black/60 px-1.5 py-0.5 rounded truncate block">
-                                {img.revisedPrompt.substring(0, 60)}...
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </div>
-                )}
-
-                {/* Empty state (no results yet, not loading) */}
-                {aiResults.length === 0 && !aiGenerating && !aiError && (
-                  <div className="flex flex-col items-center justify-center flex-1 text-center py-6">
-                    <Sparkles className="w-8 h-8 text-muted-foreground/50 mb-2" />
-                    <p className="text-xs text-muted-foreground">
-                      Describe what you want and click Generate to create an AI image
-                    </p>
-                  </div>
-                )}
-              </>
-            )}
-          </TabsContent>
+              </ScrollArea>
+            </TabsContent>
+          )}
 
           {/* Upload Tab */}
           <TabsContent value="upload" className="flex-1 mt-4">
@@ -538,33 +446,38 @@ export function ImagePickerModal({
                   : "border-border hover:border-primary/50"
               )}
             >
-              <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              {uploading ? (
+                <Loader2 className="w-12 h-12 mx-auto mb-4 text-primary animate-spin" />
+              ) : (
+                <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              )}
               <p className="text-sm font-medium mb-2">
-                Drag and drop images here
+                {uploading ? "Uploading..." : `Drag and drop ${isVideoMode ? "videos" : isMediaMode ? "files" : "images"} here`}
               </p>
               <p className="text-xs text-muted-foreground mb-4">
-                or click to browse
+                {isVideoMode ? "MP4, WebM, OGG supported (up to 50MB)" : isMediaMode ? "Images and videos supported" : "or click to browse"}
               </p>
               <input
                 type="file"
-                accept="image/*"
+                accept={acceptTypes}
                 multiple
                 onChange={(e) => handleFileUpload(e.target.files)}
                 className="hidden"
-                id="image-upload"
+                id="media-upload"
+                disabled={uploading}
               />
-              <Button asChild variant="outline" size="sm">
-                <label htmlFor="image-upload" className="cursor-pointer">
+              <Button asChild variant="outline" size="sm" disabled={uploading}>
+                <label htmlFor="media-upload" className="cursor-pointer">
                   Choose Files
                 </label>
               </Button>
             </div>
 
-            {/* Uploaded images preview */}
-            {uploadedImages.length > 0 && (
+            {/* Uploaded images preview (local) */}
+            {!isVideoMode && uploadedImages.length > 0 && (
               <div className="mt-4">
                 <Label className="text-xs text-muted-foreground mb-2 block">
-                  Your Uploads ({uploadedImages.length})
+                  Local Uploads ({uploadedImages.length})
                 </Label>
                 <div className="grid grid-cols-6 gap-2">
                   {uploadedImages.slice(0, 12).map((img) => (
@@ -601,13 +514,13 @@ export function ImagePickerModal({
           <TabsContent value="url" className="flex-1 mt-4">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="image-url">Image URL</Label>
+                <Label htmlFor="media-url">{isVideoMode ? "Video" : "Media"} URL</Label>
                 <div className="flex gap-2">
                   <Input
-                    id="image-url"
+                    id="media-url"
                     value={urlInput}
                     onChange={(e) => setUrlInput(e.target.value)}
-                    placeholder="https://example.com/image.jpg"
+                    placeholder={isVideoMode ? "https://example.com/video.mp4" : "https://example.com/image.jpg"}
                     className="flex-1"
                   />
                   <Button
@@ -631,14 +544,22 @@ export function ImagePickerModal({
                     Preview
                   </Label>
                   <div className="aspect-video rounded overflow-hidden bg-muted">
-                    <img
-                      src={selectedUrl}
-                      alt="Preview"
-                      className="w-full h-full object-contain"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = ""
-                      }}
-                    />
+                    {isVideoUrl(selectedUrl) || isVideoMode ? (
+                      <video
+                        src={selectedUrl}
+                        controls
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <img
+                        src={selectedUrl}
+                        alt="Preview"
+                        className="w-full h-full object-contain"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = ""
+                        }}
+                      />
+                    )}
                   </div>
                 </div>
               )}
@@ -650,7 +571,7 @@ export function ImagePickerModal({
           <div className="flex items-center gap-2 flex-1">
             {selectedUrl && (
               <span className="text-xs text-muted-foreground truncate flex-1">
-                Selected: {selectedUrl.substring(0, 50)}...
+                Selected: {selectedUrl.substring(0, 50)}{selectedUrl.length > 50 ? "..." : ""}
               </span>
             )}
           </div>
@@ -658,7 +579,7 @@ export function ImagePickerModal({
             Cancel
           </Button>
           <Button onClick={handleSelect} disabled={!selectedUrl}>
-            Select Image
+            {isVideoMode ? "Select Video" : "Select Media"}
           </Button>
         </DialogFooter>
       </DialogContent>

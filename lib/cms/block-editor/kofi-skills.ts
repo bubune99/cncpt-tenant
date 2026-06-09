@@ -131,18 +131,21 @@ export async function generateAndUploadImage(options: {
   const key = `uploads/kofi/${filename}`
 
   const { r2Client, R2_CONFIG } = await import('@/lib/cms/r2/client')
+  // cncpt's R2_CONFIG is a static object (no .resolve()); tenant scoping is
+  // handled in the client. Use it directly.
+  const r2Cfg = R2_CONFIG
   let publicUrl: string
   try {
     await r2Client.send(
       new PutObjectCommand({
-        Bucket: R2_CONFIG.bucketName,
+        Bucket: r2Cfg.bucketName,
         Key: key,
         Body: buffer,
         ContentType: mimeType,
       })
     )
-    publicUrl = R2_CONFIG.publicUrl
-      ? `${R2_CONFIG.publicUrl}/${key}`
+    publicUrl = r2Cfg.publicUrl
+      ? `${r2Cfg.publicUrl}/${key}`
       : `/${key}`
     console.log('[Kofi Image] Step 2 OK — uploaded to', publicUrl)
   } catch (uploadErr) {
@@ -161,7 +164,7 @@ export async function generateAndUploadImage(options: {
         size: buffer.length,
         url: publicUrl,
         key,
-        bucket: R2_CONFIG.bucketName,
+        bucket: r2Cfg.bucketName,
         provider: 'S3',
         title: `AI Generated: ${(options.prompt || '').slice(0, 100)}`,
         alt: (options.prompt || '').slice(0, 200),
@@ -362,7 +365,6 @@ interface SourceFile {
  */
 async function importMultipleFiles(files: SourceFile[]): Promise<ImportAnalysis & { fileResults: FileImportResult[] }> {
   const { importFromReactAST } = await import('./ast-parser')
-  const { preprocessForImport } = await import('./preprocess')
 
   const allBlocks: unknown[] = []
   const allErrors: string[] = []
@@ -370,8 +372,7 @@ async function importMultipleFiles(files: SourceFile[]): Promise<ImportAnalysis 
 
   for (const file of files) {
     try {
-      const { code: preprocessed } = preprocessForImport(file.content)
-      const { blocks, errors } = importFromReactAST(preprocessed)
+      const { blocks, errors } = importFromReactAST(file.content)
       const fileBlockCount = blocks.length
 
       if (fileBlockCount > 0) {
@@ -606,10 +607,8 @@ export interface ImportAnalysis {
  */
 export async function importAndAnalyzeCode(code: string): Promise<ImportAnalysis> {
   const { importFromReactAST } = await import('./ast-parser')
-  const { preprocessForImport } = await import('./preprocess')
 
-  const { code: preprocessed } = preprocessForImport(code)
-  const { blocks, errors } = importFromReactAST(preprocessed)
+  const { blocks, errors } = importFromReactAST(code)
 
   const repairItems: ImportRepairItem[] = []
   const customComponents = new Set<string>()

@@ -62,18 +62,18 @@ interface CanvasBlockProps {
 function isHorizontalLayout(className: string): boolean {
   if (!className) return false
   const classes = className.split(/\s+/)
-
+  
   // Check for flex without flex-col (default flex is row)
   const hasFlex = classes.some(c => c === "flex" || c === "inline-flex")
   const hasFlexCol = classes.some(c => c === "flex-col" || c === "flex-column")
   const hasFlexRow = classes.some(c => c === "flex-row")
-
+  
   if (hasFlex && (hasFlexRow || !hasFlexCol)) return true
-
+  
   // Check for grid with multiple columns
   const hasGridCols = classes.some(c => /^grid-cols-[2-9]|^grid-cols-1[0-2]/.test(c))
   if (hasGridCols) return true
-
+  
   return false
 }
 
@@ -374,7 +374,7 @@ export function CanvasBlock({ block, index, parentId, depth = 0, parentIsHorizon
 
           {/* Floating toolbar */}
           {(isSelected || isHovered) && !isEditing && (
-            <div
+            <div 
               className="absolute -top-8 left-1 z-20 flex items-center gap-0.5 rounded-md px-1 py-0.5 shadow-lg bg-card border border-border cursor-grab active:cursor-grabbing"
               onMouseDown={(e) => {
                 // Allow toolbar to initiate drag on the parent block

@@ -3,14 +3,14 @@
 import { useRef, useCallback, useState } from "react"
 import { useEditor } from "@/lib/cms/block-editor/editor-context"
 import { CanvasBlock, EmptyCanvasDropZone } from "./canvas-block"
-import { countBlocks } from "@/lib/cms/block-editor/tree-utils"
+import { countBlocks, generateId } from "@/lib/cms/block-editor/tree-utils"
 
 interface EditorCanvasProps {
   viewportWidth?: string
 }
 
 export function EditorCanvas({ viewportWidth = "100%" }: EditorCanvasProps) {
-  const { state, selectBlock, addBlockFromTemplate } = useEditor()
+  const { state, selectBlock, addBlockFromTemplate, addBlockRaw } = useEditor()
   const canvasRef = useRef<HTMLDivElement>(null)
   const [isOver, setIsOver] = useState(false)
 
@@ -44,12 +44,24 @@ export function EditorCanvas({ viewportWidth = "100%" }: EditorCanvasProps) {
         return
       }
 
+      const partialIdDrop = e.dataTransfer.getData("application/partial-id")
+      if (partialIdDrop) {
+        addBlockRaw({
+          id: generateId(),
+          tag: "div",
+          className: "",
+          componentName: "PartialReference",
+          partialId: partialIdDrop,
+        }, null)
+        return
+      }
+
       const paletteLabel = e.dataTransfer.getData("application/palette-label")
       if (paletteLabel) {
         addBlockFromTemplate(paletteLabel, null)
       }
     },
-    [addBlockFromTemplate]
+    [addBlockFromTemplate, addBlockRaw]
   )
 
   const blockCount = countBlocks(state.blocks)
