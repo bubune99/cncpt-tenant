@@ -88,8 +88,9 @@ type Tenant = {
 }
 
 type DeleteState = {
+  success?: boolean
   error?: string
-  success?: string
+  message?: string
 }
 
 type SuperAdminInfo = {
@@ -5105,7 +5106,7 @@ export function AdminDashboard({
             fontSize: 13,
           }}
         >
-          {state.success}
+          {state.message ?? "Done"}
         </div>
       )}
     </div>
