@@ -19,8 +19,8 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
-  Plus, ExternalLink, Calendar, ArrowRight, ChevronRight, Sparkles, Zap,
-  Info, X, TrendingUp, ShoppingBag, Users, MessageSquare, Package, Globe, Link2, FileEdit,
+  Plus, ExternalLink, ArrowRight, ChevronRight, Sparkles, Zap,
+  Info, X, MessageSquare, Globe, Link2, FileEdit,
 } from "lucide-react"
 import { rootDomain, protocol } from "@/lib/utils"
 

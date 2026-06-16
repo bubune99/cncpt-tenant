@@ -2927,7 +2927,9 @@ model BlogPost {
   updatedAt DateTime @updatedAt
 
   // Atlas redesign — G03: shop product links
-  shopProductIds String[] @default([])
+  // DB column is snake_case (shop_product_ids); without @map Prisma looks for a
+  // "shopProductIds" column that doesn't exist and every blogPost query 500s.
+  shopProductIds String[] @default([]) @map("shop_product_ids")
 
   // Relations
   author        User?              @relation(fields: [authorId], references: [id])

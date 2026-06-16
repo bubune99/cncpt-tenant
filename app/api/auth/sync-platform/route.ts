@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { syncUserToDb, recordSignIn } from "@/lib/auth-sync"
+import { syncUserToCms, recordSignIn } from "@/lib/auth-sync"
 
 export const dynamic = "force-dynamic"
 
@@ -29,15 +29,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Upsert user into platform users table
-    const user = await syncUserToDb({
+    // Upsert into the `users` table via the Prisma User model. (The `users`
+    // table is owned by the CMS User model — keyed on a cuid `id` + a separate
+    // `stack_auth_id`. The old raw-SQL path here wrote platform columns
+    // (avatar_url/status/tier_id) and used the Stack Auth id AS `users.id`,
+    // neither of which match this schema, so it 500'd on every login.)
+    const user = await syncUserToCms({
       id: stackAuthId,
       primaryEmail: email,
       displayName: name || null,
       profileImageUrl: avatar || null,
     })
 
-    // Record the sign-in (updates last_login_at, increments login_count)
+    // Record the sign-in (best-effort — already swallows its own errors).
     const ipAddress =
       request.headers.get("x-forwarded-for")?.split(",")[0] ||
       request.headers.get("x-real-ip") ||
@@ -58,20 +62,20 @@ export async function POST(request: NextRequest) {
         id: user.id,
         email: user.email,
         name: user.name,
-        status: user.status,
-        tier_id: user.tier_id,
+        // tier/status live in the platform billing layer which isn't part of
+        // this deployment's `users` schema — return sensible defaults.
+        status: "active",
+        tier_id: null,
       },
     })
   } catch (error) {
     console.error("[auth/sync-platform] Error:", error)
 
-    // Don't fail the login flow if platform sync fails
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Failed to sync user",
-      },
-      { status: 500 }
-    )
+    // Never fail the login flow if platform sync fails — return 200 with a
+    // soft error so the client can proceed (a 500 here blocks the dashboard).
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to sync user",
+    })
   }
 }

@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/cms/db'
 import { reserveStock, getAvailableStock } from '@/lib/cms/inventory'
-import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant'
+import { withTenantAuth } from '@/lib/cms/api/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,8 +23,16 @@ export async function GET(request: NextRequest) {
 
       const where: Record<string, unknown> = {}
 
-      if (status && status !== 'all') {
-        where.status = status
+      // OrderStatus is an uppercase enum (PENDING, PROCESSING, …). The dashboard
+      // sends lowercase values (e.g. ?status=pending), so normalize before
+      // filtering — passing the raw lowercase value makes Prisma throw
+      // "Invalid value for argument `status`" and 500 the request.
+      if (status && status.toLowerCase() !== 'all') {
+        const normalized = status.toUpperCase()
+        const ORDER_STATUSES = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED']
+        if (ORDER_STATUSES.includes(normalized)) {
+          where.status = normalized
+        }
       }
 
       if (search) {

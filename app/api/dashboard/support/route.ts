@@ -154,6 +154,19 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
+    // The support_tickets / support_messages tables aren't provisioned in every
+    // environment. Rather than 500 the dashboard, degrade to an empty inbox
+    // (the UI already handles the empty state) when the relation is missing.
+    const code = (error as { code?: string })?.code
+    const message = error instanceof Error ? error.message : String(error)
+    const relationMissing =
+      code === "42P01" || /relation .* does not exist/i.test(message)
+    if (relationMissing) {
+      return NextResponse.json({
+        tickets: [],
+        stats: { open: 0, inProgress: 0, resolved: 0, closed: 0, total: 0 },
+      })
+    }
     console.error("[support-api] GET error:", error)
     return NextResponse.json({ error: "Failed to fetch tickets" }, { status: 500 })
   }
