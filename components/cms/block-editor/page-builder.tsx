@@ -72,6 +72,12 @@ import {
   compareScreenshots,
   type DiffResult,
 } from "@/lib/cms/block-editor/screenshot"
+import { AIChatPanelV2 } from "./chat/ai-chat-panel-v2"
+
+// Redesigned, Atlas-skinned builder chat (components/cms/block-editor/chat).
+// Flip to `false` to fall back to the original Kofi panel.
+const USE_CHAT_V2 = true
+const ChatPanelSlot = USE_CHAT_V2 ? AIChatPanelV2 : AIChatPanel
 
 function PreviewRenderer({ blocks }: { blocks: Block[] }) {
   const renderBlock = (block: Block): React.ReactNode => {
@@ -824,7 +830,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                     <X size={16} />
                   </Button>
                 </div>
-                {rightPanel === "ai" ? <AIChatPanel /> : <PropertiesPanel />}
+                {rightPanel === "ai" ? <ChatPanelSlot /> : <PropertiesPanel />}
               </div>
             </div>
           )}
@@ -872,7 +878,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
 
           {/* Desktop right panel */}
           <div className="hidden md:flex">
-            {rightPanel === "ai" ? <AIChatPanel /> : <PropertiesPanel />}
+            {rightPanel === "ai" ? <ChatPanelSlot /> : <PropertiesPanel />}
           </div>
 
           {/* Mobile bottom toolbar - shows when a block is selected */}
