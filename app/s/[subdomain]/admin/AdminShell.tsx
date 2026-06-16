@@ -185,6 +185,24 @@ export function AdminShell({
     return `${basePath}${href}`;
   };
 
+  // The page builder / editor is a focused editing surface — hand it the whole
+  // screen (no admin topbar or sidebar competing with the canvas). It carries
+  // its own toolbar for save/publish/back, so nothing is lost.
+  const isBuilder = /\/admin\/pages\/[^/]+\/(builder|editor)(\/|$)/.test(normalizedPath);
+  if (isBuilder && (user || isDemo)) {
+    return (
+      <CMSConfigProvider config={config}>
+        <HelpProvider>
+          <WizardProvider>
+            <div className="atlas" style={{ height: '100vh', background: 'var(--canvas)', overflow: 'hidden' }}>
+              {children}
+            </div>
+          </WizardProvider>
+        </HelpProvider>
+      </CMSConfigProvider>
+    );
+  }
+
   return (
     <CMSConfigProvider config={config}>
       <HelpProvider>
