@@ -85,8 +85,8 @@ model Customer {
   tags      String[] // For segmentation
 
   // Atlas redesign — lifecycle stage
-  lifecycleStage     CustomerLifecycleStage @default(NEW)
-  lifecycleUpdatedAt DateTime?
+  lifecycleStage     CustomerLifecycleStage @default(NEW) @map("lifecycle_stage")
+  lifecycleUpdatedAt DateTime? @map("lifecycle_updated_at")
 
   // Multi-tenant scoping
   tenantId Int?       @map("tenant_id")
@@ -113,8 +113,8 @@ model Customer {
   lastOrderAt  DateTime?
 
   // Atlas redesign — loyalty/credit
-  storeCredit   Int @default(0) // in cents
-  loyaltyPoints Int @default(0)
+  storeCredit   Int @default(0) @map("store_credit") // in cents
+  loyaltyPoints Int @default(0) @map("loyalty_points")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1055,7 +1055,7 @@ model OrderItem {
   total        Int // quantity * price
 
   // Atlas redesign — configurable items + attachments
-  configOptions Json? // customer-selected config {key: value}
+  configOptions Json? @map("config_options") // customer-selected config {key: value}
   attachments   Json? // [{name, url, mimeType, size}]
 
   createdAt DateTime @default(now())
@@ -1074,18 +1074,18 @@ model OrderItem {
 // Atlas redesign — G01: per-line sub-fulfillment steps
 model OrderItemFulfillmentStep {
   id          String    @id @default(cuid())
-  orderItemId String
+  orderItemId String @map("order_item_id")
   orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
 
   name        String   // "Pick blank", "Confirm spec", "Embroider", "QC", "Pack"
   position    Int      @default(0)
   completed   Boolean  @default(false)
-  completedAt DateTime?
-  completedBy String?  // userId
+  completedAt DateTime? @map("completed_at")
+  completedBy String? @map("completed_by") // userId
   notes       String?  @db.Text
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([orderItemId])
   @@map("order_item_fulfillment_steps")
@@ -4873,14 +4873,14 @@ model MarketplaceTemplate {
 // G10 — Structured customer notes timeline
 model CustomerNote {
   id         String   @id @default(cuid())
-  customerId String
+  customerId String @map("customer_id")
   customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  authorId   String?  // admin userId
+  authorId   String? @map("author_id") // admin userId
   content    String   @db.Text
   pinned     Boolean  @default(false)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([customerId])
   @@index([createdAt])
@@ -4890,17 +4890,17 @@ model CustomerNote {
 // G06 — Product pricing tiers (qty-break / member pricing)
 model ProductPricingTier {
   id        String          @id @default(cuid())
-  productId String
+  productId String @map("product_id")
   product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
   label     String          // "B2B Wholesale", "Studio Members"
-  minQty    Int             // minimum quantity to qualify
-  maxQty    Int?
+  minQty    Int @map("min_qty") // minimum quantity to qualify
+  maxQty    Int? @map("max_qty")
   price     Int             // price in cents at this tier
   type      PricingTierType @default(QTY)
   enabled   Boolean         @default(true)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([productId])
   @@map("product_pricing_tiers")
@@ -4914,16 +4914,16 @@ enum PricingTierType {
 // G06 — Product sale schedule (timed sale price windows)
 model ProductSaleSchedule {
   id        String  @id @default(cuid())
-  productId String
+  productId String @map("product_id")
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  variantId String?
-  salePrice Int     // cents
-  startsAt  DateTime
-  endsAt    DateTime
+  variantId String? @map("variant_id")
+  salePrice Int @map("sale_price") // cents
+  startsAt  DateTime @map("starts_at")
+  endsAt    DateTime @map("ends_at")
   enabled   Boolean @default(true)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([productId])
   @@index([startsAt, endsAt])
@@ -4933,18 +4933,18 @@ model ProductSaleSchedule {
 // G02 — Analytics dashboards
 model AnalyticsDashboard {
   id       String     @id @default(cuid())
-  tenantId Int?
+  tenantId Int? @map("tenant_id")
   tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   name       String
   slug       String
-  isDefault  Boolean  @default(false)
+  isDefault  Boolean  @default(false) @map("is_default")
   layout     Json?    // grid layout (positions/sizes)
-  pinnedBy   String[] @default([]) // userIds who pinned
-  sharedWith String[] @default([]) // "public" or userIds
+  pinnedBy   String[] @default([]) @map("pinned_by") // userIds who pinned
+  sharedWith String[] @default([]) @map("shared_with") // "public" or userIds
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   widgets AnalyticsWidget[]
 
@@ -4956,18 +4956,18 @@ model AnalyticsDashboard {
 // G02 — Analytics widgets
 model AnalyticsWidget {
   id          String             @id @default(cuid())
-  dashboardId String
+  dashboardId String @map("dashboard_id")
   dashboard   AnalyticsDashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
 
   title      String
-  vizType    String  // "line", "bar", "donut", "kpi", "table", "funnel"
+  vizType    String @map("viz_type") // "line", "bar", "donut", "kpi", "table", "funnel"
   query      Json    // { metric, dimension, filters, comparison, groupBy, dateRange }
   config     Json?   // chart-specific: axes, colors, drillEnabled
   position   Json    // { x, y, w, h } grid slot
-  templateId String? // if created from template
+  templateId String? @map("template_id") // if created from template
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([dashboardId])
   @@map("analytics_widgets")
@@ -4976,19 +4976,19 @@ model AnalyticsWidget {
 // G02 — Analytics widget templates library
 model AnalyticsWidgetTemplate {
   id          String     @id @default(cuid())
-  tenantId    Int?
+  tenantId    Int? @map("tenant_id")
   tenant      Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   name        String
   description String?
-  vizType     String
+  vizType     String @map("viz_type")
   query       Json
   config      Json?
   thumbnail   String?
   category    String? // "Revenue", "Traffic", "Inventory"
-  isSystem    Boolean @default(false)
+  isSystem    Boolean @default(false) @map("is_system")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([tenantId])
   @@map("analytics_widget_templates")
@@ -4997,17 +4997,17 @@ model AnalyticsWidgetTemplate {
 // G03 — Blog series
 model BlogSeries {
   id           String     @id @default(cuid())
-  tenantId     Int?
+  tenantId     Int? @map("tenant_id")
   tenant       Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   title        String
   slug         String
   description  String?    @db.Text
-  coverImageId String?
-  postCount    Int        @default(0)
+  coverImageId String? @map("cover_image_id")
+  postCount    Int        @default(0) @map("post_count")
   position     Int        @default(0)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   posts BlogPostSeries[]
 
@@ -5018,8 +5018,8 @@ model BlogSeries {
 
 // G03 — Junction: post belongs to series
 model BlogPostSeries {
-  postId   String
-  seriesId String
+  postId   String @map("post_id")
+  seriesId String @map("series_id")
   position Int        @default(0) // chapter number in series
   post     BlogPost   @relation(fields: [postId], references: [id], onDelete: Cascade)
   series   BlogSeries @relation(fields: [seriesId], references: [id], onDelete: Cascade)
@@ -5030,8 +5030,8 @@ model BlogPostSeries {
 
 // G03 — Blog contributors (author/editor/photographer credits)
 model BlogContributor {
-  postId   String
-  userId   String
+  postId   String @map("post_id")
+  userId   String @map("user_id")
   role     String @default("author") // "author", "editor", "photographer"
   position Int    @default(0)
   post     BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
@@ -5043,8 +5043,8 @@ model BlogContributor {
 
 // G03 — Related post links
 model BlogPostRelated {
-  postId        String
-  relatedPostId String
+  postId        String @map("post_id")
+  relatedPostId String @map("related_post_id")
   position      Int      @default(0)
   post          BlogPost @relation("PostRelated", fields: [postId], references: [id], onDelete: Cascade)
   relatedPost   BlogPost @relation("RelatedPost", fields: [relatedPostId], references: [id], onDelete: Cascade)
@@ -5056,18 +5056,18 @@ model BlogPostRelated {
 // G04 — Multi-channel distribution
 model PostDistributionChannel {
   id          String               @id @default(cuid())
-  postId      String
+  postId      String @map("post_id")
   post        BlogPost             @relation(fields: [postId], references: [id], onDelete: Cascade)
   channel     DistributionChannel
   enabled     Boolean              @default(false)
   copy        String?              @db.Text // per-channel copy override
-  scheduledAt DateTime?
-  publishedAt DateTime?
+  scheduledAt DateTime? @map("scheduled_at")
+  publishedAt DateTime? @map("published_at")
   status      ChannelPublishStatus @default(DRAFT)
   metadata    Json?                // {tweetId, instagramMediaId, rssGuid, etc.}
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([postId, channel])
   @@index([postId])
@@ -5104,9 +5104,9 @@ model LoyaltyActivity {
   type        LoyaltyActivityType
   points      Int  // Positive = earned, negative = redeemed
   description String?
-  referenceId String? // orderId, etc.
+  referenceId String? @map("reference_id") // orderId, etc.
 
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
