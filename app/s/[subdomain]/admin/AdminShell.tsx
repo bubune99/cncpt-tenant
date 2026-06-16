@@ -296,6 +296,7 @@ export function AdminShell({
                         <Link
                           key={item.key}
                           href={sectionHref(item.href)}
+                          prefetch={false}
                           className={active ? 'active' : ''}
                           onClick={() => setMobileOpen(false)}
                           data-help-key={item.helpKey}

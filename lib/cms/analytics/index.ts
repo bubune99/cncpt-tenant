@@ -165,31 +165,50 @@ export async function getAnalyticsSummary(
   topReferrers: Array<{ referrer: string; count: number }>
   eventBreakdown: Array<{ event: string; count: number }>
 }> {
-  // Page views
-  const pageViews = await prisma.analyticsEvent.count({
-    where: {
-      eventName: 'page_view',
-      createdAt: { gte: startDate, lte: endDate },
-    },
-  })
-
-  // Unique visitors (by sessionId)
-  const uniqueVisitors = await prisma.analyticsEvent.groupBy({
-    by: ['sessionId'],
-    where: {
-      sessionId: { not: null },
-      createdAt: { gte: startDate, lte: endDate },
-    },
-  })
-
-  // Purchases and revenue
-  const purchases = await prisma.analyticsEvent.findMany({
-    where: {
-      eventName: 'purchase',
-      createdAt: { gte: startDate, lte: endDate },
-    },
-    select: { eventData: true },
-  })
+  // All six aggregations are independent — run them in parallel instead of
+  // sequentially so the endpoint pays one round-trip's latency, not six.
+  const range = { gte: startDate, lte: endDate }
+  const [pageViews, uniqueVisitors, purchases, topPagesRaw, topReferrersRaw, eventBreakdownRaw] =
+    await Promise.all([
+      // Page views
+      prisma.analyticsEvent.count({
+        where: { eventName: 'page_view', createdAt: range },
+      }),
+      // Unique visitors (by sessionId)
+      prisma.analyticsEvent.groupBy({
+        by: ['sessionId'],
+        where: { sessionId: { not: null }, createdAt: range },
+      }),
+      // Purchases and revenue
+      prisma.analyticsEvent.findMany({
+        where: { eventName: 'purchase', createdAt: range },
+        select: { eventData: true },
+      }),
+      // Top pages
+      prisma.analyticsEvent.groupBy({
+        by: ['pageUrl'],
+        where: { eventName: 'page_view', pageUrl: { not: null }, createdAt: range },
+        _count: { pageUrl: true },
+        orderBy: { _count: { pageUrl: 'desc' } },
+        take: 10,
+      }),
+      // Top referrers
+      prisma.analyticsEvent.groupBy({
+        by: ['referrer'],
+        where: { referrer: { not: null }, createdAt: range },
+        _count: { referrer: true },
+        orderBy: { _count: { referrer: 'desc' } },
+        take: 10,
+      }),
+      // Event breakdown
+      prisma.analyticsEvent.groupBy({
+        by: ['eventName'],
+        where: { createdAt: range },
+        _count: { eventName: true },
+        orderBy: { _count: { eventName: 'desc' } },
+        take: 20,
+      }),
+    ])
 
   const revenue = purchases.reduce((sum: number, p: (typeof purchases)[number]) => {
     const data = p.eventData as Record<string, unknown> | null
@@ -197,51 +216,15 @@ export async function getAnalyticsSummary(
     return sum + value
   }, 0)
 
-  // Top pages
-  const topPagesRaw = await prisma.analyticsEvent.groupBy({
-    by: ['pageUrl'],
-    where: {
-      eventName: 'page_view',
-      pageUrl: { not: null },
-      createdAt: { gte: startDate, lte: endDate },
-    },
-    _count: { pageUrl: true },
-    orderBy: { _count: { pageUrl: 'desc' } },
-    take: 10,
-  })
-
   const topPages = topPagesRaw.map((p: (typeof topPagesRaw)[number]) => ({
     url: p.pageUrl!,
     views: p._count.pageUrl,
   }))
 
-  // Top referrers
-  const topReferrersRaw = await prisma.analyticsEvent.groupBy({
-    by: ['referrer'],
-    where: {
-      referrer: { not: null },
-      createdAt: { gte: startDate, lte: endDate },
-    },
-    _count: { referrer: true },
-    orderBy: { _count: { referrer: 'desc' } },
-    take: 10,
-  })
-
   const topReferrers = topReferrersRaw.map((r: (typeof topReferrersRaw)[number]) => ({
     referrer: r.referrer!,
     count: r._count.referrer,
   }))
-
-  // Event breakdown
-  const eventBreakdownRaw = await prisma.analyticsEvent.groupBy({
-    by: ['eventName'],
-    where: {
-      createdAt: { gte: startDate, lte: endDate },
-    },
-    _count: { eventName: true },
-    orderBy: { _count: { eventName: 'desc' } },
-    take: 20,
-  })
 
   const eventBreakdown = eventBreakdownRaw.map((e: (typeof eventBreakdownRaw)[number]) => ({
     event: e.eventName,
