@@ -96,10 +96,13 @@
 .atlas .sidebar {
   width: 200px; padding: 50px 0 20px; border-right: 1px solid var(--rule);
   display: flex; flex-direction: column; flex-shrink: 0;
+  /* Match the viewport, not the (often much taller) page — stay static while
+     the main content scrolls; long nav scrolls inside .nav instead. */
+  position: sticky; top: 0; height: 100vh; align-self: flex-start;
 }
 .atlas .sidebar .meta { padding: 0 18px 14px; }
 .atlas .sidebar .meta .date { font-family: var(--font-display), "Spectral", serif; font-style: italic; font-size: 13px; color: var(--ink-soft); }
-.atlas .sidebar .nav { flex: 1; padding: 6px 0; }
+.atlas .sidebar .nav { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 0; }
 .atlas .sidebar .nav-h { padding: 0 18px 6px; }
 .atlas .sidebar a {
   display: grid; grid-template-columns: 22px 1fr auto; gap: 6px; align-items: baseline;
