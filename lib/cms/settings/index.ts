@@ -27,6 +27,8 @@ import {
   DEFAULT_SECURITY_SETTINGS,
   DEFAULT_CAPTCHA_SETTINGS,
 } from './types'
+import type { AgentSettings } from '../ai/governance/types'
+import { DEFAULT_AGENT_SETTINGS } from '../ai/governance/types'
 
 // Keys that should be encrypted in the database
 const SENSITIVE_KEYS: Record<SettingGroup, string[]> = {
@@ -42,6 +44,7 @@ const SENSITIVE_KEYS: Record<SettingGroup, string[]> = {
   seo: [],
   security: [],
   dashboard: [],
+  agent: [],
 }
 
 // Cache for settings
@@ -221,6 +224,11 @@ export async function getAiSettings(): Promise<AiSettings> {
   const settings = await getSettings('ai', DEFAULT_AI_SETTINGS)
   // Uses Vercel AI Gateway - no API key handling needed
   return settings
+}
+
+/** AI agent governance policy (what the chat agent is allowed to do). */
+export async function getAgentSettings(): Promise<AgentSettings> {
+  return getSettings('agent', DEFAULT_AGENT_SETTINGS)
 }
 
 export async function getSecuritySettings(): Promise<SecuritySettings> {

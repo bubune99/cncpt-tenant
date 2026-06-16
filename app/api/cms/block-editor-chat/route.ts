@@ -25,7 +25,9 @@ import { getLanguageModel } from '@/lib/cms/ai/providers';
 import { DEFAULT_CHAT_MODEL } from '@/lib/cms/ai/models';
 import { stackServerApp } from '@/lib/cms/stack';
 import { prisma } from '@/lib/cms/db';
-import { getAiSettings } from '@/lib/cms/settings';
+import { getAiSettings, getAgentSettings } from '@/lib/cms/settings';
+import { resolveAgentPolicy, guardTools } from '@/lib/cms/ai/governance';
+import { getUserPermissions } from '@/lib/cms/permissions';
 import { ChatSDKError } from '@/lib/cms/ai/errors';
 import { checkCredits, useCredits } from '@/lib/ai-credits';
 import { isSuperAdmin } from '@/lib/super-admin';
@@ -847,13 +849,27 @@ export async function POST(request: NextRequest) {
     const model = getLanguageModel(DEFAULT_CHAT_MODEL);
     const systemPrompt = buildKofiPrompt(pageState || [], selectedBlockId, !!sourceCode);
 
+    // Agent governance: filter/wrap building tools by the admin policy + this
+    // user's RBAC (audited, needsApproval per mode). Super-admins without a CMS
+    // user row bypass. Full kofiTools are still used above for message parsing.
+    let toolsForRun: typeof kofiTools = kofiTools;
+    if (dbUser) {
+      const agentPolicy = resolveAgentPolicy(await getAgentSettings());
+      const userPerms = agentPolicy.respectRbac ? await getUserPermissions(dbUser.id) : null;
+      toolsForRun = guardTools(kofiTools, {
+        userId: dbUser.id,
+        policy: agentPolicy,
+        userPerms,
+      }).tools as typeof kofiTools;
+    }
+
     const stream = createUIMessageStream({
       execute: async ({ writer: dataStream }) => {
         const result = streamText({
           model,
           system: systemPrompt,
           messages: modelMessages,
-          tools: kofiTools,
+          tools: toolsForRun,
           toolChoice: 'auto',
           stopWhen: stepCountIs(20),
           maxOutputTokens: aiSettings.blockEditorChat.maxTokensPerRequest,

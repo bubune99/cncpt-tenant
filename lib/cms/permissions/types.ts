@@ -71,6 +71,21 @@ export type AuditAction =
   | 'route.update'
   | 'route.delete'
   | 'shopify.sync'
+  // AI agent governance audit actions
+  | 'page.publish'
+  | 'product.create'
+  | 'product.update'
+  | 'product.delete'
+  | 'order.update'
+  | 'order.fulfill'
+  | 'order.refund'
+  | 'order.cancel'
+  | 'blog.create'
+  | 'blog.update'
+  | 'blog.delete'
+  | 'blog.publish'
+  | 'settings.update'
+  | 'site_settings.update'
 
 // Audit log entry
 export interface AuditLogEntry {

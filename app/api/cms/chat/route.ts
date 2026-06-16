@@ -20,7 +20,9 @@ import type { Prisma } from '@prisma/client';
 import { stackServerApp } from '@/lib/cms/stack';
 import { prisma } from '@/lib/cms/db';
 import { isAiAvailable } from '@/lib/cms/ai';
-import { getAiSettings } from '@/lib/cms/settings';
+import { getAiSettings, getAgentSettings } from '@/lib/cms/settings';
+import { resolveAgentPolicy, guardTools } from '@/lib/cms/ai/governance';
+import { getUserPermissions } from '@/lib/cms/permissions';
 import { myProvider } from '@/lib/cms/ai/providers';
 import { ChatSDKError } from '@/lib/cms/ai/errors';
 import { adminTools, walkthroughTools, helpManagementTools, entityTools, workflowTools } from '@/lib/cms/ai/tools';
@@ -665,6 +667,23 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('[Chat API] Total tools available:', Object.keys(allTools).length);
+
+    // Agent governance: enforce the admin policy + this user's RBAC. Tools the
+    // policy forbids or the user lacks permission for are removed before the
+    // model sees them; surviving mutations are RBAC-rechecked, audited, and
+    // tagged with needsApproval per the configured execution mode.
+    const agentSettings = await getAgentSettings();
+    const agentPolicy = resolveAgentPolicy(agentSettings);
+    const userPerms = agentPolicy.respectRbac ? await getUserPermissions(dbUser.id) : null;
+    const { tools: governedTools, removed: removedTools } = guardTools(allTools, {
+      userId: dbUser.id,
+      policy: agentPolicy,
+      userPerms,
+    });
+    allTools = governedTools as typeof allTools;
+    if (removedTools.length > 0) {
+      console.log(`[Chat API] Agent policy (${agentPolicy.executionMode}) removed ${removedTools.length} tool(s)`);
+    }
 
     // Build system prompt with context, tool counts, and entity context
     // Cast entityContext to the expected type (the schema validation ensures it's valid)
