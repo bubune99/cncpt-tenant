@@ -43,7 +43,7 @@ import { useChatStore, useChatPanel, useChatContext } from '@/lib/cms/ai/chat-st
 import { useAutoChatContext } from '@/hooks/use-chat-context';
 import { DataStreamProvider } from '../chatsdk/data-stream-provider';
 import { SidebarProvider } from '../chatsdk/ui/sidebar';
-import { Chat } from '../chatsdk/chat';
+import { AdminChatPanelV2 } from '@/components/cms/block-editor/chat/admin-chat-panel-v2';
 import { ConversationHistory } from './conversation-history';
 
 // Get icon for context type
@@ -458,23 +458,19 @@ Report the stats from step 1, the count from step 2, and the details from step 3
             <SidebarProvider className="min-h-0 flex-1 flex-col">
               <DataStreamProvider>
                 {conversationId && (
-                  <Chat
+                  <AdminChatPanelV2
                     key={chatKey}
-                    id={conversationId}
+                    conversationId={conversationId}
+                    api="/api/cms/chat"
                     initialMessages={loadedMessages}
                     initialChatModel="anthropic/claude-sonnet-4.5"
-                    initialVisibilityType="private"
-                    isReadonly={false}
-                    autoResume={loadedMessages.length > 0}
-                    apiEndpoint="/api/cms/chat"
+                    assistantName="CMS Assistant"
                     customBody={{
                       contextType: 'admin',
                       contextId: context.id,
                       adminContext: context,
                       conversationId,
                     }}
-                    customHeader={<></>}
-                    containerClassName="flex flex-1 min-h-0 flex-col bg-background overflow-hidden"
                   />
                 )}
               </DataStreamProvider>
