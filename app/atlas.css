@@ -75,10 +75,12 @@
   overflow: hidden;
   position: relative;
 }
-.atlas .chrome { display: flex; min-height: 100%; }
+/* App-shell: the chrome fills the viewport and never scrolls; only .main does,
+   so the sidebar is fixed and always visible. */
+.atlas .chrome { display: flex; flex: 1; min-height: 0; overflow: hidden; }
 
 .atlas .topbar {
-  height: 38px; display: flex; align-items: center; padding: 0 20px;
+  height: 38px; flex-shrink: 0; display: flex; align-items: center; padding: 0 20px;
   border-bottom: 1px solid var(--rule); background: var(--paper);
   position: sticky; top: 0; z-index: 20;
 }
@@ -104,9 +106,9 @@
 .atlas .sidebar {
   width: 200px; padding: 50px 0 20px; border-right: 1px solid var(--rule);
   display: flex; flex-direction: column; flex-shrink: 0;
-  /* Match the viewport, not the (often much taller) page — stay static while
-     the main content scrolls; long nav scrolls inside .nav instead. */
-  position: sticky; top: 0; height: 100vh; align-self: flex-start;
+  /* Fills the fixed-height chrome and never scrolls with the page — always
+     visible; long nav scrolls inside .nav instead. */
+  height: 100%;
 }
 .atlas .sidebar .meta { padding: 0 18px 14px; }
 .atlas .sidebar .meta .date { font-family: var(--font-display), "Spectral", serif; font-style: italic; font-size: 13px; color: var(--ink-soft); }
@@ -132,7 +134,7 @@
   font-family: var(--font-display), "Spectral", serif; font-size: 14px; margin-right: 8px; vertical-align: middle;
 }
 
-.atlas .main { flex: 1; min-width: 0; padding: 50px 32px 18px; }
+.atlas .main { flex: 1; min-width: 0; padding: 50px 32px 18px; height: 100%; overflow-y: auto; }
 .atlas .main-head {
   display: flex; align-items: flex-end; justify-content: space-between;
   padding-bottom: 12px; border-bottom: 1px solid var(--ink); margin-bottom: 16px;

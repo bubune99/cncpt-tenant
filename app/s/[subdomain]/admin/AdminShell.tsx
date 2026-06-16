@@ -194,7 +194,24 @@ export function AdminShell({
       <CMSConfigProvider config={config}>
         <HelpProvider>
           <WizardProvider>
-            <div className="atlas" style={{ height: '100vh', background: 'var(--canvas)', overflow: 'hidden' }}>
+            <div className="atlas" style={{ height: '100vh', background: 'var(--canvas)', overflow: 'hidden', position: 'relative' }}>
+              {/* Exit back to the CMS — the full-screen builder has no admin chrome */}
+              <Link
+                href={sectionHref('/admin/pages')}
+                title="Back to the CMS"
+                data-tour-id="builder-exit"
+                style={{
+                  position: 'fixed', top: 10, left: 12, zIndex: 60,
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  height: 30, padding: '0 11px 0 9px', borderRadius: 8,
+                  background: 'var(--paper)', border: '1px solid var(--rule)',
+                  color: 'var(--ink-soft)', fontSize: 12.5, textDecoration: 'none',
+                  boxShadow: '0 2px 8px rgba(0,0,0,.12)',
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></svg>
+                Exit
+              </Link>
               {children}
             </div>
           </WizardProvider>
@@ -208,7 +225,7 @@ export function AdminShell({
       <HelpProvider>
         <WizardProvider>
           {/* Atlas root — all atlas.css classes activate here */}
-          <div className="atlas" style={{ minHeight: '100vh', background: 'var(--canvas)' }}>
+          <div className="atlas" style={{ height: '100vh', overflow: 'hidden', background: 'var(--canvas)' }}>
 
             {/* Mobile backdrop */}
             {mobileOpen && (
@@ -233,7 +250,7 @@ export function AdminShell({
             {/* ── Outer page-frame ── */}
             <div
               className="page-frame"
-              style={{ width: '100%', minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative', border: 'none', borderRadius: 0 }}
+              style={{ width: '100%', height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative', border: 'none', borderRadius: 0 }}
               data-tour-id="admin-page-frame"
             >
               {/* ── Top bar (38px) ── */}
@@ -247,6 +264,17 @@ export function AdminShell({
                     </span>
                   )}
                 </div>
+                {/* Breadcrumb to the active section (dirH-style) */}
+                {(() => {
+                  const active = navItems.find(i => isActiveLink(i.href));
+                  if (!active || active.href === '/admin') return null;
+                  return (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginLeft: 10, fontSize: 12.5, color: 'var(--ink-soft)' }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+                      <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{active.name}</span>
+                    </span>
+                  );
+                })()}
                 <div className="right" data-tour-id="header-actions">
                   {/* Bell + unread pip */}
                   <button
@@ -378,8 +406,10 @@ export function AdminShell({
               <NotifDrawerAdmin open={drawerOpen} onClose={() => setDrawerOpen(false)} />
             </div>
 
-            {/* AI Chat (page editor only) */}
-            {showChat && normalizedPath.match(/\/admin\/pages\/[^/]+\/editor/) && <AdminChat />}
+            {/* CMS AI assistant — available across the whole admin (spotlight
+                tours, walkthroughs & guides come with it). The page builder
+                has its own in-canvas assistant, so it's excluded there. */}
+            {showChat && <AdminChat />}
           </div>
         </WizardProvider>
       </HelpProvider>
