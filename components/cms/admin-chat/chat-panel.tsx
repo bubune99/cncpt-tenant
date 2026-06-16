@@ -26,13 +26,6 @@ import {
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from '../ui/sheet';
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -41,8 +34,6 @@ import {
 import { cn } from '@/lib/cms/utils';
 import { useChatStore, useChatPanel, useChatContext } from '@/lib/cms/ai/chat-store';
 import { useAutoChatContext } from '@/hooks/use-chat-context';
-import { DataStreamProvider } from '../chatsdk/data-stream-provider';
-import { SidebarProvider } from '../chatsdk/ui/sidebar';
 import { AdminChatPanelV2 } from '@/components/cms/block-editor/chat/admin-chat-panel-v2';
 import { ConversationHistory } from './conversation-history';
 
@@ -340,31 +331,31 @@ Report the stats from step 1, the count from step 2, and the details from step 3
   }
 
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => setMode(open ? 'side' : 'collapsed')}>
-      <SheetContent
-        className={cn(
-          'flex h-full w-full flex-col p-0 overflow-hidden',
-          isFullScreen ? 'sm:max-w-full' : 'sm:max-w-2xl'
-        )}
-        side="right"
-      >
+    <aside
+      className={cn(
+        'flex h-full flex-col overflow-hidden bg-background border-l border-border shrink-0',
+        'transition-[width] duration-200',
+        isFullScreen ? 'w-[min(760px,55vw)]' : 'w-[400px]'
+      )}
+      data-tour-id="admin-ai-chat"
+    >
         {/* Header */}
         <div className="shrink-0 border-b bg-background p-4">
-          <SheetHeader className="mb-4">
+          <div className="mb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-primary/20">
                   <Sparkles className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <SheetTitle>
+                  <h2 className="text-sm font-semibold leading-none">
                     {viewMode === 'history' ? 'Conversation History' : 'AI Assistant'}
-                  </SheetTitle>
-                  <SheetDescription className="text-xs">
+                  </h2>
+                  <p className="text-xs text-muted-foreground mt-1">
                     {viewMode === 'history'
                       ? 'View and resume past conversations'
                       : 'Your AI-powered admin assistant'}
-                  </SheetDescription>
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
@@ -441,9 +432,21 @@ Report the stats from step 1, the count from step 2, and the details from step 3
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="sm" onClick={() => setMode('collapsed')}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Close chat</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             </div>
-          </SheetHeader>
+          </div>
           {viewMode === 'chat' && <ContextIndicator context={context} />}
         </div>
 
@@ -455,29 +458,24 @@ Report the stats from step 1, the count from step 2, and the details from step 3
               onClose={handleNewConversation}
             />
           ) : (
-            <SidebarProvider className="min-h-0 flex-1 flex-col">
-              <DataStreamProvider>
-                {conversationId && (
-                  <AdminChatPanelV2
-                    key={chatKey}
-                    conversationId={conversationId}
-                    api="/api/cms/chat"
-                    initialMessages={loadedMessages}
-                    initialChatModel="anthropic/claude-sonnet-4.5"
-                    assistantName="CMS Assistant"
-                    customBody={{
-                      contextType: 'admin',
-                      contextId: context.id,
-                      adminContext: context,
-                      conversationId,
-                    }}
-                  />
-                )}
-              </DataStreamProvider>
-            </SidebarProvider>
+            conversationId && (
+              <AdminChatPanelV2
+                key={chatKey}
+                conversationId={conversationId}
+                api="/api/cms/chat"
+                initialMessages={loadedMessages}
+                initialChatModel="anthropic/claude-sonnet-4.5"
+                assistantName="CMS Assistant"
+                customBody={{
+                  contextType: 'admin',
+                  contextId: context.id,
+                  adminContext: context,
+                  conversationId,
+                }}
+              />
+            )
           )}
         </div>
-      </SheetContent>
-    </Sheet>
+    </aside>
   );
 }

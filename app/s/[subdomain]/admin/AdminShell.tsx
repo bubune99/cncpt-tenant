@@ -19,7 +19,8 @@ import useSWR from 'swr';
 import { useAuth } from '@/hooks/use-auth';
 import { WizardProvider } from '@/contexts/WizardContext';
 import { CMSConfigProvider, type CMSConfig, type ModuleNavGroupData } from '@/contexts/CMSConfigContext';
-import { HelpProvider } from '@/components/cms/help-system';
+import { HelpProvider, WalkthroughProvider, useHelpOptional } from '@/components/cms/help-system';
+import { HelpCircle, Compass } from 'lucide-react';
 import { AdminChat } from '@/components/cms/admin-chat';
 import { NotifDrawerAdmin } from '@/components/cms/admin/NotifDrawerAdmin';
 
@@ -223,6 +224,7 @@ export function AdminShell({
   return (
     <CMSConfigProvider config={config}>
       <HelpProvider>
+        <WalkthroughProvider>
         <WizardProvider>
           {/* Atlas root — all atlas.css classes activate here */}
           <div className="atlas" style={{ height: '100vh', overflow: 'hidden', background: 'var(--canvas)' }}>
@@ -293,6 +295,9 @@ export function AdminShell({
                       <span className="bell-pip" aria-label={`${unreadCount} unread`}>{unreadCount}</span>
                     )}
                   </button>
+                  {/* Walkthroughs launcher + Help mode toggle (spotlight engine) */}
+                  <WalkthroughButton />
+                  <HelpModeToggle />
                   <div className="hdr-avatar" data-tour-id="header-user-name" title={displayName} aria-label={displayName}>{initials || displayName.slice(0, 2).toUpperCase()}</div>
                 </div>
               </div>
@@ -400,19 +405,95 @@ export function AdminShell({
                 <main className="main" data-tour-id="admin-main-content">
                   {children}
                 </main>
+
+                {/* CMS AI assistant — docked as a flex column beside the main
+                    content so opening it reflows the page (everything stays
+                    visible) instead of floating over it. The collapsed launcher
+                    + minimized strip are fixed-position, so they add no width
+                    here. The page builder has its own in-canvas assistant, so
+                    it's excluded there. */}
+                {showChat && <AdminChat />}
               </div>
 
               {/* ── Notification drawer ── */}
               <NotifDrawerAdmin open={drawerOpen} onClose={() => setDrawerOpen(false)} />
             </div>
-
-            {/* CMS AI assistant — available across the whole admin (spotlight
-                tours, walkthroughs & guides come with it). The page builder
-                has its own in-canvas assistant, so it's excluded there. */}
-            {showChat && <AdminChat />}
           </div>
         </WizardProvider>
+        </WalkthroughProvider>
       </HelpProvider>
     </CMSConfigProvider>
+  );
+}
+
+/**
+ * Help-mode toggle — enters/exits the interactive help overlay (also Ctrl+Q).
+ * The HelpProvider renders the overlay/message-bar when helpMode is active.
+ */
+function HelpModeToggle() {
+  const help = useHelpOptional();
+  const isActive = help?.helpMode?.isActive ?? false;
+  return (
+    <button
+      onClick={() => help?.toggleHelpMode()}
+      title={isActive ? 'Exit help mode (Ctrl+Q)' : 'Enter help mode (Ctrl+Q)'}
+      aria-label={isActive ? 'Exit help mode' : 'Enter help mode'}
+      aria-pressed={isActive}
+      data-tour-id="header-help"
+      style={{ background: isActive ? 'var(--accent)' : 'none', color: isActive ? 'var(--accent-fg, #fff)' : 'inherit', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 6, display: 'inline-flex', alignItems: 'center' }}
+    >
+      <HelpCircle size={15} strokeWidth={1.7} />
+    </button>
+  );
+}
+
+/**
+ * Walkthroughs launcher — lists the available guided tours and starts one
+ * (the WalkthroughProvider drives the spotlight engine for the running tour).
+ */
+function WalkthroughButton() {
+  const help = useHelpOptional();
+  const [open, setOpen] = useState(false);
+  if (!help) return null;
+  const tours = help.availableTours ?? [];
+  return (
+    <div style={{ position: 'relative' }} data-tour-id="header-tour-menu">
+      <button
+        onClick={() => setOpen(o => !o)}
+        title="Guided walkthroughs"
+        aria-label="Guided walkthroughs"
+        aria-expanded={open}
+        style={{ background: open ? 'var(--accent)' : 'none', color: open ? 'var(--accent-fg, #fff)' : 'inherit', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 6, display: 'inline-flex', alignItems: 'center' }}
+      >
+        <Compass size={15} strokeWidth={1.7} />
+      </button>
+      {open && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 60 }} onClick={() => setOpen(false)} aria-hidden="true" />
+          <div role="menu" style={{ position: 'absolute', right: 0, top: '100%', marginTop: 6, zIndex: 61, width: 240, background: 'var(--surface, #fff)', border: '1px solid var(--rule-soft, #e5e5e5)', borderRadius: 8, boxShadow: '0 8px 24px rgba(0,0,0,.14)', padding: 6 }}>
+            <div style={{ padding: '6px 8px', fontSize: 11, fontWeight: 600, color: 'var(--text-soft, #888)', textTransform: 'uppercase', letterSpacing: '.04em' }}>Walkthroughs</div>
+            {tours.length === 0 ? (
+              <div style={{ padding: '6px 8px', fontSize: 13, color: 'var(--text-soft, #888)' }}>No walkthroughs available yet</div>
+            ) : (
+              tours.map((t: { slug?: string; id?: string; title?: string; name?: string }) => {
+                const slug = t.slug || t.id || '';
+                return (
+                  <button
+                    key={slug}
+                    role="menuitem"
+                    onClick={() => { setOpen(false); help.startWalkthrough(slug); }}
+                    style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 8px', fontSize: 13, background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', color: 'inherit' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--canvas, #f5f5f5)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
+                  >
+                    {t.title || t.name || slug}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
