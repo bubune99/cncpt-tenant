@@ -97,6 +97,7 @@ function buildGroups(buildPath: (p: string) => string): readonly SettingGroup[] 
       title: 'Team & Access',
       items: [
         { name: 'Team members',    desc: 'Invites, roles, & active seats',             status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#team') },
+        { name: 'Roles & Permissions', desc: 'Define roles & granular permissions',    status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/roles') },
         { name: 'Auth & SSO',      desc: 'Login methods & single sign-on',             status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#auth') },
         { name: 'Features',        desc: 'Feature flags per module',                   status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#features') },
       ],
@@ -112,6 +113,8 @@ function buildGroups(buildPath: (p: string) => string): readonly SettingGroup[] 
     {
       title: 'System',
       items: [
+        { name: 'Modules',         desc: 'Enable or disable CMS modules',              status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/modules') },
+        { name: 'Audit Log',       desc: 'Track all admin & AI agent actions',         status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/audit-log') },
         { name: 'Appearance',      desc: 'Light / dark theme & density',               status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#appearance') },
         { name: 'Legal & privacy', desc: 'GDPR, CCPA, & cookie banner',                status: 'REVIEW', statusCls: 'pill-solid-accent', href: buildPath('/admin/settings#legal') },
         { name: 'Account',         desc: 'Export data & danger zone',                  status: 'OK',     statusCls: 'pill-solid-moss', href: buildPath('/admin/settings#account') },

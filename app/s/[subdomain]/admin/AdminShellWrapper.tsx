@@ -200,7 +200,9 @@ export function AdminShellWrapper({
     basePath: ``,
     siteUrl: '/',
     siteName: isDemo ? DEMO_CONFIG.siteName : subdomain,
-    hiddenItems: [] as string[],
+    // These admin/governance items live under Settings (see settings overview)
+    // rather than the top-level sidebar, to keep the nav short.
+    hiddenItems: ['Roles & Permissions', 'Audit Log', 'Modules'] as string[],
     showChat: true,
     isDemo,
     moduleNavGroups,

@@ -248,12 +248,6 @@ export function AdminShell({
                   )}
                 </div>
                 <div className="right" data-tour-id="header-actions">
-                  <span data-tour-id="header-cmd-k">
-                    <span className="kbd">⌘K</span>Jump · search · run
-                  </span>
-                  <span data-tour-id="header-cmd-n">
-                    <span className="kbd">⌘N</span>New
-                  </span>
                   {/* Bell + unread pip */}
                   <button
                     className={'bell' + (drawerOpen ? ' on' : '')}
@@ -271,7 +265,7 @@ export function AdminShell({
                       <span className="bell-pip" aria-label={`${unreadCount} unread`}>{unreadCount}</span>
                     )}
                   </button>
-                  <span style={{ color: 'var(--ink)' }} data-tour-id="header-user-name">{displayName}</span>
+                  <div className="hdr-avatar" data-tour-id="header-user-name" title={displayName} aria-label={displayName}>{initials || displayName.slice(0, 2).toUpperCase()}</div>
                 </div>
               </div>
 
