@@ -34,7 +34,12 @@ export function CodePanel({ className }: CodePanelProps) {
   const viewedFile = state.viewedFile
   const isViewingFile = viewedFile !== null
   const isReadOnly = viewedFile?.isReadOnly ?? false
-  const displayContent = isViewingFile ? viewedFile.content : source
+  // Hide data-block-id from the user-facing code view — it's editor identity
+  // metadata, not meaningful markup. The parser re-assigns ids automatically on
+  // apply, so edited clean code round-trips fine (ids are managed in the
+  // background).
+  const cleanPageSource = source.replace(/\s+data-block-id="[^"]*"/g, "")
+  const displayContent = isViewingFile ? viewedFile.content : cleanPageSource
   const filePath = isViewingFile
     ? viewedFile.path
     : `pages/${state.currentPage?.slug || "current"}.tsx`
@@ -137,9 +142,9 @@ export function CodePanel({ className }: CodePanelProps) {
     if (syncDirection === "visual") {
       isUpdatingFromVisualRef.current = true
       const currentContent = view.state.doc.toString()
-      if (currentContent !== source) {
+      if (currentContent !== cleanPageSource) {
         view.dispatch({
-          changes: { from: 0, to: currentContent.length, insert: source },
+          changes: { from: 0, to: currentContent.length, insert: cleanPageSource },
         })
         setErrors([])
         setIsLocalDirty(false)

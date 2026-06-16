@@ -20,7 +20,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   Plus, ExternalLink, Calendar, ArrowRight, ChevronRight, Sparkles, Zap,
-  Info, X, TrendingUp, ShoppingBag, Users, MessageSquare, Package,
+  Info, X, TrendingUp, ShoppingBag, Users, MessageSquare, Package, Globe, Link2, FileEdit,
 } from "lucide-react"
 import { rootDomain, protocol } from "@/lib/utils"
 
@@ -171,13 +171,13 @@ export function CanvasOverview({ user, subdomains, selectedSubdomain }: CanvasOv
         </div>
       ) : null}
 
-      {/* KPI strip — REAL, aggregated across the account's sites (/api/dashboard/metrics) */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
+      {/* KPI strip — SITE MANAGEMENT (not store commerce; this is the platform
+          overview). Derived from the account's sites. */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 16 }}>
         {([
-          { l: "Revenue", icon: TrendingUp, v: metrics ? `$${metrics.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : null, sub: "paid orders, all sites" },
-          { l: "Orders", icon: ShoppingBag, v: metrics ? metrics.orders.toLocaleString() : null, sub: "paid, all sites" },
-          { l: "Products", icon: Package, v: metrics ? metrics.products.toLocaleString() : null, sub: "across all sites" },
-          { l: "Customers", icon: Users, v: metrics ? metrics.customers.toLocaleString() : null, sub: "across all sites" },
+          { l: "Sites", icon: Globe, v: (metrics?.sites ?? subdomains.length).toLocaleString(), sub: "in your account" },
+          { l: "Custom domains", icon: Link2, v: subdomains.filter((s: any) => Boolean(s.custom_domain ?? s.customDomain ?? s.domain)).length.toLocaleString(), sub: "connected" },
+          { l: "Drafts", icon: FileEdit, v: subdomains.filter((s: any) => s.is_public === false || s.isPublic === false || s.published === false || s.status === "draft").length.toLocaleString(), sub: "not yet public" },
         ] as const).map((k) => {
           const Icon = k.icon
           return (
