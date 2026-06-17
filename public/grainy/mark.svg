@@ -1,0 +1,20 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Grainy mark">
+  
+  <rect x="6" y="6" width="108" height="108" rx="28" fill="#BE6E4B"></rect>
+  <rect x="6" y="6" width="108" height="108" rx="28" fill="url(#g)" fill-opacity="0.5"></rect>
+  
+  <g stroke="#FBF4EE" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M38 44 H62" fill="none"></path>
+    <path d="M74 60 V78" fill="none"></path>
+    <path d="M62 44 C70 44 74 48 74 56" fill="none"></path>
+  </g>
+  <rect x="22" y="34" width="20" height="20" rx="6" fill="#FBF4EE"></rect>
+  <rect x="62" y="34" width="22" height="20" rx="6" fill="#F0DBCF"></rect>
+  <circle cx="74" cy="86" r="11" fill="#FBF4EE"></circle>
+  <defs>
+    <radialGradient id="g" cx="0.3" cy="0.2" r="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.25"></stop>
+      <stop offset="1" stop-color="#5E3320" stop-opacity="0.18"></stop>
+    </radialGradient>
+  </defs>
+</svg>

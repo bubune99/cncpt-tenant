@@ -10,32 +10,35 @@
  * ========================================================================== */
 
 .atlas {
-  /* Atlas tokens alias the active brand preset (default = Marigold) */
-  --paper:      var(--wl-bg, #faf7ef);
-  --paper-2:    var(--wl-surface-2, #f5f1e6);
-  --paper-3:    var(--wl-surface-3, #ebe5d4);
-  --canvas:     var(--wl-canvas, #d9d3c2);
-  --ink:        var(--wl-text, #1a1410);
-  --ink-soft:   var(--wl-text-soft, rgba(26, 20, 16, 0.62));
-  --ink-faint:  var(--wl-text-faint, rgba(26, 20, 16, 0.40));
-  --rule:       var(--wl-rule, rgba(26, 20, 16, 0.18));
-  --rule-soft:  var(--wl-rule-soft, rgba(26, 20, 16, 0.10));
-  --accent:     var(--wl-accent, #8b2c1f);
-  --accent-fg:  var(--wl-accent-fg, #ffffff);
-  --accent-soft:var(--wl-accent-soft, rgba(139, 44, 31, 0.10));
-  --accent-2:   #c8443a;
-  --gold:       var(--wl-warning, #b58730);
-  --moss:       var(--wl-success, #4f5e3a);
-  --hot:        #c8443a;
+  /* Atlas tokens now source from the Grainy design system (grainy.css) — warm
+     sand surfaces, clay primary, soft radii, Hanken type. A tenant's
+     --wl-accent (globals.css) still wins for per-tenant brand if set; otherwise
+     the Grainy clay primary drives the accent. */
+  --paper:      var(--surface-raised);
+  --paper-2:    var(--surface);
+  --paper-3:    var(--surface-sunken);
+  --canvas:     var(--bg);
+  --ink:        var(--text);
+  --ink-soft:   var(--text-secondary);
+  --ink-faint:  var(--text-muted);
+  --rule:       var(--line-strong);
+  --rule-soft:  var(--line);
+  --accent:     var(--wl-accent, var(--primary));
+  --accent-fg:  var(--wl-accent-fg, var(--text-on-primary));
+  --accent-soft:var(--wl-accent-soft, color-mix(in srgb, var(--primary) 12%, transparent));
+  --accent-2:   var(--primary-hover);
+  --gold:       var(--ochre-500);
+  --moss:       var(--sage-500);
+  --hot:        var(--rust-500);
   /* Drag-to-fill / range-select highlight (spreadsheet + matrix cells) */
-  --range-fill:   var(--wl-accent-soft, rgba(139, 44, 31, 0.08));
-  --range-fill-2: rgba(139, 44, 31, 0.18);
-  --r:    4px;
-  --r-sm: 3px;
+  --range-fill:   color-mix(in srgb, var(--primary) 8%, transparent);
+  --range-fill-2: color-mix(in srgb, var(--primary) 18%, transparent);
+  --r:    10px;
+  --r-sm: 7px;
 
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--font-geist-sans), "Geist", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
 }
 
 .atlas *,
@@ -43,24 +46,24 @@
 .atlas *::after { box-sizing: border-box; }
 
 /* ── Type ──────────────────────────────────────────────────────────────── */
-.atlas .display   { font-family: var(--font-display), "Spectral", serif; font-weight: 500; letter-spacing: -0.02em; }
-.atlas .display-i { font-family: var(--font-display), "Spectral", serif; font-style: italic; font-weight: 400; }
-.atlas .mono      { font-family: var(--font-geist-mono), "Geist Mono", monospace; }
+.atlas .display   { font-family: var(--font-sans); font-weight: 700; letter-spacing: -0.02em; }
+.atlas .display-i { font-family: var(--font-sans); font-style: normal; font-weight: 700; letter-spacing: -0.02em; }
+.atlas .mono      { font-family: var(--font-mono); }
 .atlas .accent    { color: var(--accent); }
 .atlas .soft      { color: var(--ink-soft); }
 .atlas .eyebrow {
-  font-family: var(--font-geist-mono), "Geist Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent);
 }
 .atlas .eyebrow-ink {
-  font-family: var(--font-geist-mono), "Geist Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink);
 }
 .atlas .small-caps {
-  font-family: var(--font-geist-mono), "Geist Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
 }
-.atlas .fig { font-family: var(--font-display), "Spectral", serif; font-style: italic; color: var(--ink-soft); }
+.atlas .fig { font-family: var(--font-sans); font-style: italic; color: var(--ink-soft); }
 
 /* Italic-accent headline tweak toggles */
 .atlas.no-italic-headlines .main-head h1 .display-i { font-style: normal; color: inherit; }
@@ -80,19 +83,19 @@
 .atlas .chrome { display: flex; flex: 1; min-height: 0; overflow: hidden; }
 
 .atlas .topbar {
-  height: 38px; flex-shrink: 0; display: flex; align-items: center; padding: 0 20px;
+  height: 48px; flex-shrink: 0; display: flex; align-items: center; padding: 0 22px;
   border-bottom: 1px solid var(--rule); background: var(--paper);
   position: sticky; top: 0; z-index: 20;
 }
-.atlas .topbar .store { display: flex; align-items: center; gap: 10px; font-family: var(--font-display), "Spectral", serif; font-size: 17px; }
+.atlas .topbar .store { display: flex; align-items: center; gap: 10px; font-family: var(--font-sans); font-size: 17px; }
 .atlas .topbar .store-dot { width: 14px; height: 14px; background: var(--ink); }
 .atlas .topbar .right {
   margin-left: auto; display: flex; align-items: center; gap: 18px;
-  font-family: var(--font-geist-mono), "Geist Mono", monospace; font-size: 11px; color: var(--ink-soft);
+  font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft);
 }
 .atlas .kbd {
   background: var(--ink); color: var(--paper); padding: 1px 6px; letter-spacing: 0.04em;
-  margin-right: 4px; font-family: var(--font-geist-mono), "Geist Mono", monospace; font-size: 10px; border-radius: 2px;
+  margin-right: 4px; font-family: var(--font-mono); font-size: 10px; border-radius: 2px;
 }
 /* Header avatar — matches the cncpt-web (dirH) header; tinted with the tenant
    accent so it white-labels per brand. */
@@ -104,24 +107,24 @@
 }
 
 .atlas .sidebar {
-  width: 200px; padding: 50px 0 20px; border-right: 1px solid var(--rule);
+  width: 230px; padding: 28px 0 20px; border-right: 1px solid var(--rule);
   display: flex; flex-direction: column; flex-shrink: 0;
   /* Fills the fixed-height chrome and never scrolls with the page — always
      visible; long nav scrolls inside .nav instead. */
   height: 100%;
 }
 .atlas .sidebar .meta { padding: 0 18px 14px; }
-.atlas .sidebar .meta .date { font-family: var(--font-display), "Spectral", serif; font-style: italic; font-size: 13px; color: var(--ink-soft); }
+.atlas .sidebar .meta .date { font-family: var(--font-sans); font-style: italic; font-size: 13px; color: var(--ink-soft); }
 .atlas .sidebar .nav { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 0; }
 .atlas .sidebar .nav-h { padding: 0 18px 6px; }
 .atlas .sidebar a {
   display: grid; grid-template-columns: 22px 1fr auto; gap: 6px; align-items: baseline;
-  padding: 7px 18px; color: var(--ink); text-decoration: none; font-size: 14px;
+  padding: 9px 20px; color: var(--ink); text-decoration: none; font-size: 14.5px;
   border-left: 3px solid transparent;
 }
-.atlas .sidebar a .n { font-family: var(--font-geist-mono), "Geist Mono", monospace; font-size: 10px; color: var(--ink-faint); }
+.atlas .sidebar a .n { font-family: var(--font-mono); font-size: 10px; color: var(--ink-faint); }
 .atlas .sidebar a .badge {
-  font-family: var(--font-geist-mono), "Geist Mono", monospace; font-size: 10px;
+  font-family: var(--font-mono); font-size: 10px;
   background: var(--accent); color: var(--accent-fg); padding: 1px 6px; border-radius: var(--r-sm);
 }
 .atlas .sidebar a:hover { background: var(--paper-2); }
@@ -131,7 +134,7 @@
 .atlas .sidebar .acct .initials {
   width: 30px; height: 30px; background: var(--accent); color: var(--accent-fg);
   display: inline-flex; align-items: center; justify-content: center;
-  font-family: var(--font-display), "Spectral", serif; font-size: 14px; margin-right: 8px; vertical-align: middle;
+  font-family: var(--font-sans); font-size: 14px; margin-right: 8px; vertical-align: middle;
 }
 
 .atlas .main { flex: 1; min-width: 0; padding: 50px 32px 18px; height: 100%; overflow-y: auto; }
@@ -140,15 +143,15 @@
   padding-bottom: 12px; border-bottom: 1px solid var(--ink); margin-bottom: 16px;
 }
 .atlas .main-head h1 {
-  font-family: var(--font-display), "Spectral", serif; font-weight: 500; font-size: 48px;
+  font-family: var(--font-sans); font-weight: 500; font-size: 48px;
   letter-spacing: -0.025em; margin: 0 0 -2px; line-height: 1;
 }
-.atlas .main-head .sub { font-family: var(--font-display), "Spectral", serif; font-style: italic; color: var(--ink-soft); font-size: 15px; margin-top: 6px; }
+.atlas .main-head .sub { font-family: var(--font-sans); font-style: italic; color: var(--ink-soft); font-size: 15px; margin-top: 6px; }
 .atlas .main-head .actions { display: flex; gap: 8px; align-items: center; }
 
 /* ── Buttons ───────────────────────────────────────────────────────────── */
 .atlas .btn {
-  font-family: var(--font-geist-sans), "Geist", sans-serif; font-size: 12px; padding: 7px 14px;
+  font-family: var(--font-sans), "Geist", sans-serif; font-size: 12px; padding: 7px 14px;
   cursor: pointer; background: transparent; border: 1px solid var(--ink); color: var(--ink);
   display: inline-flex; align-items: center; gap: 6px; border-radius: var(--r-sm);
 }
@@ -163,7 +166,7 @@
 /* ── Filter tabs ───────────────────────────────────────────────────────── */
 .atlas .tabs { display: flex; gap: 22px; padding-bottom: 8px; border-bottom: 1px solid var(--rule); }
 .atlas .tabs .tab {
-  font-family: var(--font-geist-mono), "Geist Mono", monospace; font-size: 11px; letter-spacing: 0.08em;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em;
   padding: 4px 0; color: var(--ink-soft); border-bottom: 2px solid transparent; margin-bottom: -10px; cursor: pointer;
 }
 .atlas .tabs .tab.on { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
@@ -173,12 +176,12 @@
 /* ── Tables ────────────────────────────────────────────────────────────── */
 .atlas .tbl { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
 .atlas .tbl thead th {
-  text-align: left; font-family: var(--font-geist-mono), "Geist Mono", monospace; font-size: 10px; font-weight: 500;
+  text-align: left; font-family: var(--font-mono); font-size: 10px; font-weight: 500;
   letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft);
   padding: 10px 8px 8px; border-bottom: 1px solid var(--ink); background: var(--paper);
 }
 .atlas .tbl thead th.num, .atlas .tbl tbody td.num {
-  text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-geist-mono), "Geist Mono", monospace;
+  text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono);
 }
 .atlas .tbl thead th.sort::after { content: " ↓"; color: var(--accent); }
 .atlas .tbl tbody td { padding: 12px 8px; border-bottom: 1px solid var(--rule-soft); vertical-align: baseline; }
@@ -187,12 +190,12 @@
 .atlas .tbl tbody tr:hover { background: color-mix(in srgb, var(--paper-2) 50%, transparent); }
 .atlas .tbl tbody .name { font-size: 14px; font-weight: 500; }
 .atlas .tbl tbody .name-sm { font-size: 13px; }
-.atlas .tbl tbody .meta { font-family: var(--font-display), "Spectral", serif; font-style: italic; color: var(--ink-soft); font-size: 12px; }
+.atlas .tbl tbody .meta { font-family: var(--font-sans); font-style: italic; color: var(--ink-soft); font-size: 12px; }
 .atlas .tbl .check { width: 24px; }
 
 /* ── Status pills ──────────────────────────────────────────────────────── */
 .atlas .pill {
-  display: inline-block; font-family: var(--font-geist-mono), "Geist Mono", monospace; font-size: 9.5px;
+  display: inline-block; font-family: var(--font-mono); font-size: 9.5px;
   letter-spacing: 0.1em; padding: 2px 7px; line-height: 1.4; border-radius: var(--r-sm);
 }
 .atlas .pill-solid-ink    { background: var(--ink); color: var(--paper); }
@@ -207,7 +210,7 @@
 .atlas .action-bar {
   margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--ink);
   display: flex; align-items: center; gap: 18px;
-  font-family: var(--font-geist-mono), "Geist Mono", monospace; font-size: 11px; color: var(--ink-soft);
+  font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft);
 }
 .atlas .action-bar .kbd { background: var(--ink); color: var(--paper); padding: 1px 5px; margin-right: 4px; }
 .atlas .action-bar .selct { color: var(--ink); }
@@ -236,20 +239,20 @@
 .atlas .bell.on { background: var(--ink); color: var(--paper); }
 .atlas .bell-pip {
   position: absolute; top: -2px; right: -3px; background: var(--accent); color: var(--accent-fg);
-  font-family: var(--font-geist-mono), "Geist Mono", monospace; font-size: 8.5px; font-weight: 600;
+  font-family: var(--font-mono); font-size: 8.5px; font-weight: 600;
   min-width: 14px; height: 14px; padding: 0 3px; border-radius: 7px;
   display: inline-flex; align-items: center; justify-content: center;
   border: 1.5px solid var(--paper); line-height: 1;
 }
 .atlas .inbox-link {
   display: grid; grid-template-columns: 22px 1fr auto; gap: 6px; align-items: baseline;
-  padding: 7px 18px; color: var(--ink); text-decoration: none; font-size: 14px;
+  padding: 9px 20px; color: var(--ink); text-decoration: none; font-size: 14.5px;
   border-left: 3px solid transparent; margin-bottom: 4px;
 }
 .atlas .inbox-link:hover { background: var(--paper-2); }
-.atlas .inbox-link .n { color: var(--accent); font-family: var(--font-display), "Spectral", serif; font-size: 13px; }
+.atlas .inbox-link .n { color: var(--accent); font-family: var(--font-sans); font-size: 13px; }
 .atlas .inbox-link .badge {
-  font-family: var(--font-geist-mono), "Geist Mono", monospace; font-size: 10px;
+  font-family: var(--font-mono); font-size: 10px;
   background: var(--accent); color: var(--accent-fg); padding: 1px 6px; border-radius: 3px;
 }
 .atlas .inbox-link.active { background: var(--paper-2); border-left-color: var(--accent); }
@@ -268,7 +271,7 @@
   border-bottom: 1px solid var(--rule); background: var(--paper-2);
 }
 .atlas .adm-tab {
-  font-family: var(--font-geist-mono), "Geist Mono", monospace; font-size: 10px;
+  font-family: var(--font-mono); font-size: 10px;
   letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft);
   padding: 3px 0; border-bottom: 2px solid transparent; cursor: pointer;
 }
@@ -279,13 +282,13 @@
 .atlas .adm-notif.unread { background: linear-gradient(90deg, var(--accent-soft) 0%, transparent 100%); }
 .atlas .adm-notif.unread::before { content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; background: var(--accent); }
 .atlas .adm-cat {
-  font-family: var(--font-geist-mono), "Geist Mono", monospace; font-size: 9px;
+  font-family: var(--font-mono); font-size: 9px;
   letter-spacing: 0.14em; font-weight: 600; padding: 1px 6px; border-radius: 2px; line-height: 1.5;
 }
 .atlas .adm-cat.t-accent { background: var(--accent); color: var(--accent-fg); }
 .atlas .adm-cat.t-gold   { background: var(--gold); color: #fff; }
 .atlas .adm-cat.t-moss   { background: var(--moss); color: #fff; }
 .atlas .adm-cat.t-ink    { background: var(--ink); color: var(--paper); }
-.atlas .adm-notif-title { font-family: var(--font-display), "Spectral", serif; font-size: 15px; line-height: 1.25; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
-.atlas .adm-notif-body  { font-family: var(--font-display), "Spectral", serif; font-style: italic; font-size: 12.5px; line-height: 1.45; color: var(--ink-soft); margin-top: 3px; }
-.atlas .adm-notif-cta   { font-family: var(--font-geist-mono), "Geist Mono", monospace; font-size: 10.5px; color: var(--accent); text-decoration: none; letter-spacing: 0.02em; font-weight: 600; }
+.atlas .adm-notif-title { font-family: var(--font-sans); font-size: 15px; line-height: 1.25; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
+.atlas .adm-notif-body  { font-family: var(--font-sans); font-style: italic; font-size: 12.5px; line-height: 1.45; color: var(--ink-soft); margin-top: 3px; }
+.atlas .adm-notif-cta   { font-family: var(--font-mono); font-size: 10.5px; color: var(--accent); text-decoration: none; letter-spacing: 0.02em; font-weight: 600; }

@@ -73,6 +73,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      {/* Grainy design system fonts — Hanken Grotesk (sans) + Spline Sans Mono.
+          Loaded via Google Fonts so grainy.css's --font-sans/--font-mono resolve
+          by literal family name. */}
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link
+        href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..800;1,400..600&family=Spline+Sans+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet"
+      />
       <body
         className={`${inter.variable} ${spectral.variable} ${GeistSans.variable} ${GeistMono.variable} antialiased`}
       >

@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "./grainy.css";
 @import "./atlas.css";
 
 @custom-variant dark (&:is(.dark *));
@@ -177,25 +178,26 @@
  * ========================================================================== */
 
 :root {
-  /* Marigold defaults — also consumed by storefront/account opt-in surfaces */
-  --wl-canvas: #d9d3c2;
-  --wl-bg: #faf7ef;
-  --wl-surface: #ffffff;
-  --wl-surface-2: #f5f1e6;
-  --wl-surface-3: #ebe5d4;
-  --wl-text: #1a1410;
-  --wl-text-soft: rgba(26, 20, 16, 0.62);
-  --wl-text-faint: rgba(26, 20, 16, 0.40);
-  --wl-rule: rgba(26, 20, 16, 0.18);
-  --wl-rule-soft: rgba(26, 20, 16, 0.10);
-  --wl-accent: #8b2c1f;
-  --wl-accent-fg: #ffffff;
-  --wl-accent-soft: rgba(139, 44, 31, 0.10);
-  --wl-success: #4f5e3a;
-  --wl-warning: #b58730;
-  --wl-error: #b53d2f;
-  --wl-font-display: var(--font-display), "Spectral", Georgia, serif;
-  --wl-font-body: var(--font-geist-sans), "Geist", -apple-system, sans-serif;
+  /* Grainy defaults — warm sand + clay. Per-tenant ThemeInjector overrides these
+     for white-label brands; otherwise everything reads the Grainy palette. */
+  --wl-canvas: #ECE3D1;
+  --wl-bg: #F7F2E8;
+  --wl-surface: #FBF8F1;
+  --wl-surface-2: #F2ECDF;
+  --wl-surface-3: #E4DAC4;
+  --wl-text: #2A2419;
+  --wl-text-soft: #6B6051;
+  --wl-text-faint: #938672;
+  --wl-rule: #C2B093;
+  --wl-rule-soft: #D8CBB0;
+  --wl-accent: #BE6E4B;
+  --wl-accent-fg: #FBF4EE;
+  --wl-accent-soft: rgba(190, 110, 75, 0.12);
+  --wl-success: #7E8B61;
+  --wl-warning: #C49A45;
+  --wl-error: #B5503B;
+  --wl-font-display: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --wl-font-body: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
   --wl-font-mono: var(--font-geist-mono), "Geist Mono", monospace;
   /* Density (regular) */
   --wl-pad: 16px;

@@ -1,0 +1,317 @@
+/* =========================================================================
+   GRAINY DESIGN SYSTEM — ported into cncpt-tenant (CMS admin reskin)
+   Source: Claude Design 'Grainy' handoff (grainy-design-system).
+   foundations (colors_and_type.css) + components (components.css), with
+   the grain asset path rewritten to /grainy/*. Load AFTER the fonts.
+   White-label: set data-theme / data-finish / data-accent on a wrapper.
+   ========================================================================= */
+
+/* ============================================================================
+   GRAINY — Design System Foundations
+   colors_and_type.css
+   ----------------------------------------------------------------------------
+   A warm, matte, "built-from-sand-and-clay" token system for a process-mapping
+   canvas. Soft edges, hairline suggested boundaries, warm diffuse shadows,
+   and a real grain overlay for the matte finish.
+
+   Load order in any page:
+     <link rel="preconnect" href="https://fonts.googleapis.com">
+     <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..800;1,400..600&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+     <link rel="stylesheet" href="colors_and_type.css">
+   ========================================================================== */
+
+:root {
+  /* ── Raw sand neutrals (warm) ─────────────────────────────────────────── */
+  --sand-25:  #FBF8F1;   /* paper — highest surface */
+  --sand-50:  #F7F2E8;   /* raised surface / card */
+  --sand-75:  #F2ECDF;   /* default surface */
+  --sand-100: #EDE5D4;   /* page background */
+  --sand-200: #E4DAC4;   /* sunken / track */
+  --sand-300: #D8CBB0;   /* hairline border (default) */
+  --sand-400: #C4B49432; /* — placeholder, overwritten below */
+  --sand-400: #C2B093;   /* strong border / divider on color */
+  --sand-500: #A4906F;   /* muted icon / disabled text */
+  --sand-600: #7E6E54;   /* tertiary text */
+
+  /* ── Ink (warm near-black) ────────────────────────────────────────────── */
+  --ink-900: #2A2419;   /* primary text */
+  --ink-700: #4A4133;   /* strong secondary */
+  --ink-500: #6B6051;   /* secondary text */
+  --ink-300: #938672;   /* muted / captions */
+
+  /* ── Earth accents — muted, matte (node categories & UI accents) ──────── */
+  /* Clay / terracotta — PRIMARY brand + Process */
+  --clay-100: #F0DBCF;
+  --clay-300: #DBA88C;
+  --clay-500: #BE6E4B;   /* primary */
+  --clay-600: #A85C3C;
+  --clay-700: #8A4A30;
+  --clay-ink: #5E3320;
+
+  /* Sage — Document / data */
+  --sage-100: #E2E6D7;
+  --sage-300: #B3BE98;
+  --sage-500: #7E8B61;
+  --sage-700: #586041;
+  --sage-ink: #3C4429;
+
+  /* Ochre — Decision / attention */
+  --ochre-100: #F2E4C4;
+  --ochre-300: #DEC081;
+  --ochre-500: #C49A45;
+  --ochre-700: #8F6E2A;
+  --ochre-ink: #5E4818;
+
+  /* Dusty blue — Software / system */
+  --blue-100: #DCE3E9;
+  --blue-300: #A7BACB;
+  --blue-500: #6E87A1;
+  --blue-700: #4B6076;
+  --blue-ink: #2E3F4F;
+
+  /* Plum — People / stakeholder */
+  --plum-100: #E7DBE1;
+  --plum-300: #C2A2B2;
+  --plum-500: #946E83;
+  --plum-700: #6A4A5B;
+  --plum-ink: #47303B;
+
+  /* Rust — Start / End terminator, danger */
+  --rust-100: #F1D7CF;
+  --rust-300: #DD9F8E;
+  --rust-500: #B5503B;
+  --rust-700: #8A3624;
+  --rust-ink: #5C2316;
+
+  /* ── Semantic surfaces & lines ────────────────────────────────────────── */
+  --bg:            var(--sand-100);
+  --surface:       var(--sand-50);
+  --surface-raised:var(--sand-25);
+  --surface-sunken:var(--sand-200);
+  --canvas-bg:     #ECE3D1;     /* the process-mapping canvas field */
+  --canvas-dot:    #D3C5A8;     /* canvas dot-grid */
+
+  --line:          var(--sand-300);   /* default hairline */
+  --line-strong:   var(--sand-400);
+  --line-faint:    #E2D9C7;
+  --edge:          #8A7B5E;            /* connection edges on the canvas */
+
+  --text:          var(--ink-900);
+  --text-secondary:var(--ink-500);
+  --text-muted:    var(--ink-300);
+  --text-on-clay:  #FBF4EE;
+
+  --primary:       var(--clay-500);
+  --primary-hover: var(--clay-600);
+  --primary-press: var(--clay-700);
+  --text-on-primary: var(--text-on-clay);
+  --link:          var(--clay-700);
+
+  /* ── Type ─────────────────────────────────────────────────────────────── */
+  --font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  /* Type scale (1.20 minor third, base 16) */
+  --text-xs:   12px;
+  --text-sm:   13.5px;
+  --text-base: 16px;
+  --text-md:   18px;
+  --text-lg:   22px;
+  --text-xl:   28px;
+  --text-2xl:  36px;
+  --text-3xl:  48px;
+  --text-4xl:  62px;
+
+  --leading-tight: 1.08;
+  --leading-snug:  1.28;
+  --leading-normal:1.5;
+
+  --tracking-tight:  -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.06em;
+  --tracking-caps:   0.12em;   /* eyebrow / overline */
+
+  --weight-light: 300;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* ── Radii — soft edges ───────────────────────────────────────────────── */
+  --r-xs: 5px;
+  --r-sm: 8px;
+  --r-md: 12px;    /* default card / control */
+  --r-lg: 16px;
+  --r-xl: 22px;
+  --r-pill: 999px;
+
+  /* ── Spacing scale (4px base) ─────────────────────────────────────────── */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  /* ── Shadows — warm, diffuse, "resting in sand" ───────────────────────── */
+  /* Brown-tinted, layered, low opacity. Top inset light = molded-clay sheen. */
+  --shadow-xs:  0 1px 2px rgba(74, 54, 32, 0.07);
+  --shadow-sm:  0 1px 2px rgba(74, 54, 32, 0.06),
+                0 2px 6px rgba(74, 54, 32, 0.05);
+  --shadow-md:  0 1px 2px rgba(74, 54, 32, 0.05),
+                0 4px 12px rgba(74, 54, 32, 0.07),
+                0 10px 24px rgba(74, 54, 32, 0.05);
+  --shadow-lg:  0 2px 6px rgba(74, 54, 32, 0.06),
+                0 12px 28px rgba(74, 54, 32, 0.10),
+                0 28px 56px rgba(74, 54, 32, 0.08);
+  /* Clay sheen: subtle top inner highlight + bottom inner shade.
+     Layer this onto surfaces to make them look molded, not flat. */
+  --sheen-clay: inset 0 1px 0 rgba(255, 252, 245, 0.65),
+                inset 0 -1px 0 rgba(74, 54, 32, 0.06);
+  /* Pressed / sunken inset (e.g. canvas wells, active toggles) */
+  --inset-soft: inset 0 1px 3px rgba(74, 54, 32, 0.10),
+                inset 0 -1px 0 rgba(255, 252, 245, 0.4);
+
+  /* Focus ring — clay, soft */
+  --ring: 0 0 0 3px rgba(190, 110, 75, 0.28);
+
+  /* ── Grain overlay ────────────────────────────────────────────────────── */
+  --grain-url: url("/grainy/grain.png");
+  --grain-opacity: 0.5;
+  --grain-blend: multiply;
+}
+
+/* ============================================================================
+   DARK THEME — warm charcoal. Set data-theme="dark" on <html> or any wrapper.
+   Only semantic tokens, the ink scale, grain, and shadows are remapped, so the
+   raw sand and accent ramps still report true values in specimen cards.
+   ========================================================================== */
+[data-theme="dark"] {
+  /* Surfaces — warm, super-dark charcoal (never pure black, never cool) */
+  --bg:             #15120E;
+  --surface:        #1D1914;
+  --surface-raised: #26211A;
+  --surface-sunken: #110E0B;
+  --canvas-bg:      #1A1611;
+  --canvas-dot:     #322B22;
+
+  /* Lines — warm, low-contrast on dark */
+  --line:        #38312700;     /* placeholder, set on next line */
+  --line:        #3A3328;
+  --line-strong: #4C4536;
+  --line-faint:  #2A241C;
+
+  /* Text — warm off-white → muted sand */
+  --text:           #EEE6D5;
+  --text-secondary: #B6AA91;
+  --text-muted:     #897D68;
+  --text-on-clay:   #FBF4EE;
+  --edge:           #9D8F73;
+
+  /* Ink scale (some components reference these directly) — inverted & warmed */
+  --ink-900: #EFE7D6;
+  --ink-700: #D2C7AF;
+  --ink-500: #B6AA91;
+  --ink-300: #897D68;
+
+  /* Accents stay legible: nudge the mid tone a touch brighter for dark fields */
+  --primary:       var(--clay-500);
+  --primary-hover: var(--clay-300);
+  --primary-press: var(--clay-600);
+
+  /* Grain — switch to light speckle + screen blend so texture reads on dark */
+  --grain-url: url("/grainy/grain-light.png");
+  --grain-blend: screen;
+  --grain-opacity: 0.4;
+
+  /* Shadows — black-based on dark; sheen highlight carries the molded look */
+  --shadow-xs:  0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-sm:  0 1px 2px rgba(0, 0, 0, 0.35),
+                0 2px 6px rgba(0, 0, 0, 0.30);
+  --shadow-md:  0 1px 2px rgba(0, 0, 0, 0.35),
+                0 4px 12px rgba(0, 0, 0, 0.40),
+                0 10px 24px rgba(0, 0, 0, 0.34);
+  --shadow-lg:  0 2px 6px rgba(0, 0, 0, 0.40),
+                0 12px 28px rgba(0, 0, 0, 0.48),
+                0 28px 56px rgba(0, 0, 0, 0.40);
+  --sheen-clay: inset 0 1px 0 rgba(255, 248, 235, 0.06),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.30);
+  --inset-soft: inset 0 1px 3px rgba(0, 0, 0, 0.45),
+                inset 0 -1px 0 rgba(255, 248, 235, 0.04);
+  --ring: 0 0 0 3px rgba(219, 168, 140, 0.34);
+}
+
+/* ============================================================================
+   GRAIN — the matte finish
+   Add class="grain" to any positioned element, OR use the .grain-bg utility
+   on a full-page wrapper. Grain tiles, sits above bg, below content.
+   ========================================================================== */
+.grain::after,
+.grain-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--grain-url);
+  background-size: 320px 320px;
+  background-repeat: repeat;
+  opacity: var(--grain-opacity);
+  pointer-events: none;
+  mix-blend-mode: var(--grain-blend);
+  z-index: 0;
+}
+.grain-bg::before { position: fixed; z-index: 1; }
+.grain { position: relative; }
+.grain > * { position: relative; z-index: 1; }
+
+/* ============================================================================
+   WHITE-LABEL AXES — compose freely with data-theme (light/dark).
+   Put these attributes on <html> or any wrapper to scope a theme.
+
+     data-finish="matte"   → drop the grain texture (clean enterprise finish)
+     data-accent="slate"   → cool dusty-blue brand accent
+     data-accent="indigo"  → modern indigo brand accent
+     data-accent="sage"    → calm green brand accent
+     data-accent="graphite"→ neutral near-black brand accent (most minimal)
+     (no data-accent)      → clay / terracotta, the default brand
+
+   Accent overrides only BRAND touchpoints (primary buttons, links, focus ring,
+   selection, toggles, active tools, avatar). The canvas node CATEGORY colors are
+   functional semantics and intentionally stay fixed across brands.
+   ========================================================================== */
+
+/* ── Finish: matte (no grain) ────────────────────────────────────────────── */
+[data-finish="matte"] .grain::after,
+[data-finish="matte"].grain::after,
+[data-finish="matte"] .grain-bg::before,
+[data-finish="matte"].grain-bg::before { display: none; }
+
+/* ── Brand accent presets ────────────────────────────────────────────────── */
+[data-accent="slate"] {
+  --primary: var(--blue-500); --primary-hover: var(--blue-700); --primary-press: var(--blue-ink);
+  --link: var(--blue-700); --text-on-primary: #F4F7FA;
+  --ring: 0 0 0 3px color-mix(in srgb, var(--blue-500) 34%, transparent);
+}
+[data-accent="indigo"] {
+  --primary: #5E5FA6; --primary-hover: #4B4C8A; --primary-press: #3A3B6E;
+  --link: #4B4C8A; --text-on-primary: #F3F2FB;
+  --ring: 0 0 0 3px rgba(94, 95, 166, 0.34);
+}
+[data-accent="sage"] {
+  --primary: var(--sage-500); --primary-hover: var(--sage-700); --primary-press: var(--sage-ink);
+  --link: var(--sage-700); --text-on-primary: #F4F6EE;
+  --ring: 0 0 0 3px color-mix(in srgb, var(--sage-500) 34%, transparent);
+}
+[data-accent="graphite"] {
+  --primary: var(--ink-700); --primary-hover: var(--ink-900); --primary-press: #1C1810;
+  --link: var(--ink-900); --text-on-primary: #F6F1E7;
+  --ring: 0 0 0 3px rgba(74, 65, 51, 0.32);
+}
+/* On dark, graphite inverts to a light-neutral primary so it stays visible */
+[data-theme="dark"][data-accent="graphite"],
+[data-theme="dark"] [data-accent="graphite"] {
+  --primary: #C9BEA6; --primary-hover: #DBD2BD; --primary-press: #B6AA8F;
+  --link: #DBD2BD; --text-on-primary: #1C1810;
+}
+
