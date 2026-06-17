@@ -149,6 +149,7 @@
     "zustand": "^5.0.9"
   },
   "devDependencies": {
+    "@playwright/test": "^1.49.0",
     "@prisma/client": "^7.2.0",
     "@tailwindcss/postcss": "^4.1.9",
     "@types/adm-zip": "^0.5.7",
