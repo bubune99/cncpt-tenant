@@ -722,6 +722,20 @@ export function EmptyCanvasDropZone() {
         <ChevronRight size={32} className="rotate-90 opacity-40" />
         <p className="text-sm font-medium">Drag blocks here to start building</p>
         <p className="text-xs opacity-60">Or click a block in the palette</p>
+        <button
+          type="button"
+          onClick={() => {
+            // Hand off to the builder assistant, which runs a spotlight tour
+            // teaching the editor. The flag survives the chat panel mount race
+            // (the panel only mounts once the AI tab is open).
+            try { sessionStorage.setItem("builder:pending-teach", "1") } catch {}
+            window.dispatchEvent(new CustomEvent("builder:open-ai"))
+          }}
+          className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-background/60 px-3 py-1.5 text-xs font-medium text-foreground/70 transition-colors hover:text-primary hover:border-primary/40"
+        >
+          <Sparkles size={13} />
+          Show me how
+        </button>
       </div>
     </div>
   )

@@ -26,8 +26,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/cms/ui/alert-dialog';
-import { Loader2 } from 'lucide-react';
+import { Loader2, MoreHorizontal, PenLine, Copy, Trash2, ExternalLink, Layers } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/cms/ui/dropdown-menu';
 import { SystemPagesSection } from './_components/system-pages-section';
 
 // ─────────────────────────────────────────────
@@ -94,7 +101,7 @@ function PagesTable({ pages, buildPath, onDuplicate, onDeleteRequest }: PagesTab
             <th style={{ width: 80 }}>Type</th>
             <th className="sort" style={{ width: 80 }}>Edited</th>
             <th style={{ width: 100 }}>Status</th>
-            <th style={{ width: 120 }}>Actions</th>
+            <th style={{ width: 56, textAlign: 'right' }}>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -117,27 +124,50 @@ function PagesTable({ pages, buildPath, onDuplicate, onDeleteRequest }: PagesTab
               <td><span className="meta">{formatEdited(p.updatedAt)}</span></td>
               <td><span className={`pill ${statusPillClass(p.status)}`}>{statusLabel(p.status)}</span></td>
               <td>
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <Link href={buildPath(`/admin/pages/${p.id}`)} className="btn" style={{ fontSize: 10, padding: '2px 8px' }}>
-                    Edit
-                  </Link>
-                  <button
-                    className="btn"
-                    style={{ fontSize: 10, padding: '2px 8px' }}
-                    onClick={() => onDuplicate(p)}
-                    type="button"
-                  >
-                    Dup
-                  </button>
-                  <button
-                    className="btn"
-                    style={{ fontSize: 10, padding: '2px 8px', color: 'var(--accent)' }}
-                    onClick={() => onDeleteRequest(p)}
-                    type="button"
-                  >
-                    Del
-                  </button>
-                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="btn"
+                      aria-label={`Actions for ${p.title}`}
+                      style={{ padding: '2px 6px', display: 'inline-flex', alignItems: 'center' }}
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem asChild>
+                      <Link href={buildPath(`/admin/pages/${p.id}/builder`)}>
+                        <Layers className="mr-2 h-4 w-4" />
+                        Open in page builder
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href={buildPath(`/admin/pages/${p.id}`)}>
+                        <PenLine className="mr-2 h-4 w-4" />
+                        Edit settings
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <a href={`/${p.slug.replace(/^\//, '')}`} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        View live
+                      </a>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => onDuplicate(p)}>
+                      <Copy className="mr-2 h-4 w-4" />
+                      Duplicate
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onSelect={() => onDeleteRequest(p)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </td>
             </tr>
           ))}

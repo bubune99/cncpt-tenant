@@ -28,6 +28,8 @@ export interface CMSConfig {
   siteUrl?: string;
   /** Site name to display */
   siteName?: string;
+  /** Optional site logo URL — rendered in the admin topbar in place of the dot */
+  logoUrl?: string;
   /** User's role to display */
   userRole?: string;
   /** Whether to show the AI chat panel */

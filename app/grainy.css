@@ -188,7 +188,8 @@
    Only semantic tokens, the ink scale, grain, and shadows are remapped, so the
    raw sand and accent ramps still report true values in specimen cards.
    ========================================================================== */
-[data-theme="dark"] {
+[data-theme="dark"],
+.dark {
   /* Surfaces — warm, super-dark charcoal (never pure black, never cool) */
   --bg:             #15120E;
   --surface:        #1D1914;

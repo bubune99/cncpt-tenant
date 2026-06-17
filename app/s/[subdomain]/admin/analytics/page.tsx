@@ -361,7 +361,7 @@ export default function AnalyticsPage() {
 
         {/* Center: frame tabs */}
         <div className="at-action-bar-tabs" role="tablist" aria-label="Dashboard frames">
-          {(['view', 'edit', 'query', 'library'] as Frame[]).map((f, i) => (
+          {(['view', 'edit', 'query', 'library'] as Frame[]).map((f) => (
             <button
               key={f}
               role="tab"
@@ -369,8 +369,6 @@ export default function AnalyticsPage() {
               className={`at-tab${frame === f || (frame === 'configure' && f === 'edit') ? ' on' : ''}`}
               onClick={() => goTo(f)}
             >
-              <span className="at-kbd">F{i + 1}</span>
-              {' '}
               {f === 'view'    ? 'View'
               : f === 'edit'   ? 'Edit'
               : f === 'query'  ? 'Query'
@@ -395,20 +393,17 @@ export default function AnalyticsPage() {
           {frame === 'view' && (
             <>
               <button className="at-btn" onClick={() => goTo('edit')}>
-                <span className="at-kbd">E</span> Edit
-              </button>
-              <button className="at-btn">
-                <span className="at-kbd">⌘S</span> Share
+                Edit
               </button>
             </>
           )}
           {frame === 'edit' && (
             <>
               <button className="at-btn" onClick={() => setPaletteOpen((v) => !v)}>
-                <span className="at-kbd">F2</span> Add widget
+                Add widget
               </button>
               <button className="at-btn at-btn-accent" onClick={handleDoneEditing}>
-                <span className="at-kbd">⌘S</span> Done
+                Done
               </button>
             </>
           )}

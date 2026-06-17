@@ -60,7 +60,10 @@ import {
   Menu,
   X,
   PanelLeft,
+  ArrowLeft,
 } from "lucide-react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useState, useCallback, useEffect, useRef } from "react"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { BlockRenderer } from "./block-renderer"
@@ -132,6 +135,20 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
   // Mobile panel overlay: which panel is shown full-width on small screens
   const [mobilePanel, setMobilePanel] = useState<"none" | "left" | "right">("none")
   const isMobile = useIsMobile()
+
+  // Exit target: drop the trailing /[id]/builder (or /editor) and land on the
+  // pages list, preserving the /s/[subdomain] base. Rendered inline in the
+  // toolbar (no floating overlay competing with the canvas controls).
+  const pathname = usePathname()
+  const exitHref = (pathname || "/admin/pages").replace(/\/pages\/[^/]+\/(builder|editor).*$/, "/pages")
+
+  // Open the AI assistant when the empty-canvas "Show me how" support button
+  // asks for it (the panel then consumes the pending-teach flag on mount).
+  useEffect(() => {
+    const open = () => setRightPanel("ai")
+    window.addEventListener("builder:open-ai", open)
+    return () => window.removeEventListener("builder:open-ai", open)
+  }, [])
 
   // Screenshot state
   const [screenshotDialogOpen, setScreenshotDialogOpen] = useState(false)
@@ -283,6 +300,22 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
       >
         {/* Left section: Panel toggles, Undo/Redo, Viewport */}
         <div className="flex items-center gap-1 shrink-0">
+          {/* Exit — lives in the bar, leftmost, so it never floats over or
+              blocks the other toolbar controls. */}
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 px-2"
+            title="Back to the CMS"
+            data-tour-id="builder-exit"
+          >
+            <Link href={exitHref}>
+              <ArrowLeft size={14} />
+              <span className="hidden sm:inline">Exit</span>
+            </Link>
+          </Button>
+          <div className="w-px h-5 mx-0.5" style={{ backgroundColor: "var(--border)" }} />
           {!showPreview && (
             <>
               {/* Mobile: Left panel toggle button */}

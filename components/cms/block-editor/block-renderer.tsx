@@ -370,7 +370,7 @@ function buildBlockContent(
           "div",
           {
             className:
-              "flex items-center justify-center py-8 text-muted-foreground text-sm border border-dashed border-border/50 rounded-md bg-muted/30",
+              "flex items-center justify-center py-4 text-muted-foreground/45 text-xs border border-dashed border-border/35 rounded-md",
           },
           "Drop blocks here"
         )
@@ -488,7 +488,7 @@ function BlockRendererInner({ block, renderChildren, isPreview = false }: BlockR
           "div",
           {
             className:
-              "flex items-center justify-center py-8 text-muted-foreground text-sm border border-dashed border-border/50 rounded-md bg-muted/30",
+              "flex items-center justify-center py-4 text-muted-foreground/45 text-xs border border-dashed border-border/35 rounded-md",
           },
           "Drop blocks here"
         )

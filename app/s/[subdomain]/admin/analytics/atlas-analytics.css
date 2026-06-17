@@ -8,27 +8,29 @@
  */
 
 .atlas-analytics {
-  /* ─── Core tokens (Marigold preset) ─────────────────── */
-  --at-paper:        #efe7d8;
-  --at-paper-2:      #f5efe2;
-  --at-paper-3:      #e9e0cd;
-  --at-ink:          #1a1410;
-  --at-ink-soft:     rgba(26, 20, 16, .65);
-  --at-ink-faint:    rgba(26, 20, 16, .35);
-  --at-rule:         rgba(26, 20, 16, .20);
-  --at-rule-soft:    rgba(26, 20, 16, .12);
-  --at-accent:       #8b2c1f;
-  --at-accent-2:     #c8443a;
+  /* ─── Core tokens — mapped onto the shared Grainy tokens so the analytics
+     surface reads as part of the same admin (no more disconnected Marigold
+     palette). The page renders inside `.atlas`, so these inherit. ─────────── */
+  --at-paper:        var(--paper);
+  --at-paper-2:      var(--paper-2);
+  --at-paper-3:      var(--paper-3);
+  --at-ink:          var(--ink);
+  --at-ink-soft:     var(--ink-soft);
+  --at-ink-faint:    var(--ink-faint);
+  --at-rule:         var(--rule);
+  --at-rule-soft:    var(--rule-soft);
+  --at-accent:       var(--accent);
+  --at-accent-2:     var(--accent-2);
   --at-gold:         #b58730;
   --at-moss:         #4f5e3a;
   --at-indigo:       #2a4a73;
-  --at-r:            4px;
-  --at-r-sm:         3px;
+  --at-r:            var(--r-sm, 6px);
+  --at-r-sm:         var(--r-sm, 4px);
 
   /* ─── Layout ─────────────────────────────────────────── */
   background: var(--at-paper);
   color: var(--at-ink);
-  font-family: var(--font-geist, 'Geist', sans-serif);
+  font-family: var(--font-sans);
   min-height: 100%;
   display: flex;
   flex-direction: column;
@@ -36,20 +38,20 @@
 
 /* ─── Typography helpers ─────────────────────────────────── */
 .atlas-analytics .at-display {
-  font-family: var(--font-display, 'Spectral', serif);
-  font-weight: 500;
+  font-family: var(--font-sans);
+  font-weight: 600;
   letter-spacing: -0.02em;
 }
 .atlas-analytics .at-display-i {
-  font-family: var(--font-display, 'Spectral', serif);
-  font-style: italic;
-  font-weight: 400;
+  font-family: var(--font-sans);
+  font-style: normal;
+  font-weight: 600;
 }
 .atlas-analytics .at-mono {
-  font-family: var(--font-geist-mono, 'Geist Mono', monospace);
+  font-family: var(--font-mono);
 }
 .atlas-analytics .at-eyebrow {
-  font-family: var(--font-geist-mono, 'Geist Mono', monospace);
+  font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: .15em;
   text-transform: uppercase;

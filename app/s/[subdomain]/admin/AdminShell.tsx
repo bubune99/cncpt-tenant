@@ -12,15 +12,16 @@
  * help system are PRESERVED from the original AdminShell.tsx.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import useSWR from 'swr';
 import { useAuth } from '@/hooks/use-auth';
 import { WizardProvider } from '@/contexts/WizardContext';
 import { CMSConfigProvider, type CMSConfig, type ModuleNavGroupData } from '@/contexts/CMSConfigContext';
 import { HelpProvider, WalkthroughProvider, useHelpOptional } from '@/components/cms/help-system';
-import { HelpCircle, Compass } from 'lucide-react';
+import { HelpCircle, Compass, Moon, Sun } from 'lucide-react';
 import { AdminChat } from '@/components/cms/admin-chat';
 import { SpotlightHostClient } from '@/components/cms/spotlight/SpotlightHostClient';
 import { AgentNavRail } from '@/components/cms/admin/agent-nav-rail';
@@ -57,15 +58,6 @@ const DEFAULT_NAV: readonly NavItem[] = [
   { num: '08', name: 'Settings',  key: 'settings',  href: '/admin/settings',helpKey: 'admin.sidebar.settings',  tourId: 'nav-settings' },
 ] as const;
 
-// Nav items that live outside the numbered section list
-const EXTRA_NAV_ITEMS: ReadonlyArray<{ key: string; href: string }> = [
-  { key: 'media',    href: '/admin/media' },
-  { key: 'forms',    href: '/admin/forms' },
-  { key: 'users',    href: '/admin/users' },
-  { key: 'modules',  href: '/admin/modules' },
-  { key: 'shipping', href: '/admin/shipping' },
-] as const;
-
 // ─────────────────────────────────────────────
 // SWR fetcher
 // ─────────────────────────────────────────────
@@ -96,15 +88,6 @@ function sectionFromPath(path: string): string {
   return seg;
 }
 
-/** Format "Tuesday, 16 May · 09:14 EST" */
-function formatAdminDate(): string {
-  const d = new Date();
-  const day   = d.toLocaleDateString('en-US', { weekday: 'long' });
-  const month = d.toLocaleDateString('en-US', { day: 'numeric', month: 'long' });
-  const time  = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false, timeZoneName: 'short' });
-  return `${day}, ${month} · ${time}`;
-}
-
 // ─────────────────────────────────────────────
 // Main component
 // ─────────────────────────────────────────────
@@ -125,6 +108,7 @@ export function AdminShell({
     basePath = '',
     siteUrl = '/',
     siteName,
+    logoUrl,
     showChat = true,
     isDemo = false,
     moduleNavGroups,
@@ -192,29 +176,36 @@ export function AdminShell({
   // screen (no admin topbar or sidebar competing with the canvas). It carries
   // its own toolbar for save/publish/back, so nothing is lost.
   const isBuilder = /\/admin\/pages\/[^/]+\/(builder|editor)(\/|$)/.test(normalizedPath);
+  // The /builder route (PageBuilder) now carries its own docked toolbar Exit;
+  // the /editor route (PageSettingsEditorClient) has no toolbar, so it still
+  // needs the floating Exit below.
+  const isContentBuilder = /\/admin\/pages\/[^/]+\/builder(\/|$)/.test(normalizedPath);
   if (isBuilder && (user || isDemo)) {
     return (
       <CMSConfigProvider config={config}>
         <HelpProvider>
           <WizardProvider>
             <div className="atlas" style={{ height: '100vh', background: 'var(--canvas)', overflow: 'hidden', position: 'relative' }}>
-              {/* Exit back to the CMS — the full-screen builder has no admin chrome */}
-              <Link
-                href={sectionHref('/admin/pages')}
-                title="Back to the CMS"
-                data-tour-id="builder-exit"
-                style={{
-                  position: 'fixed', top: 10, left: 12, zIndex: 60,
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  height: 30, padding: '0 11px 0 9px', borderRadius: 8,
-                  background: 'var(--paper)', border: '1px solid var(--rule)',
-                  color: 'var(--ink-soft)', fontSize: 12.5, textDecoration: 'none',
-                  boxShadow: '0 2px 8px rgba(0,0,0,.12)',
-                }}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></svg>
-                Exit
-              </Link>
+              {/* /builder docks its Exit in the PageBuilder toolbar; /editor has
+                  no toolbar, so keep a floating Exit there only. */}
+              {!isContentBuilder && (
+                <Link
+                  href={sectionHref('/admin/pages')}
+                  title="Back to the CMS"
+                  data-tour-id="builder-exit"
+                  style={{
+                    position: 'fixed', top: 10, left: 12, zIndex: 60,
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    height: 30, padding: '0 11px 0 9px', borderRadius: 8,
+                    background: 'var(--paper)', border: '1px solid var(--rule)',
+                    color: 'var(--ink-soft)', fontSize: 12.5, textDecoration: 'none',
+                    boxShadow: '0 2px 8px rgba(0,0,0,.12)',
+                  }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></svg>
+                  Exit
+                </Link>
+              )}
               {children}
               {/* Spotlight host + nav rail so the builder assistant can teach
                   the editor UI (spotlight_steps / navigate_to_route). */}
@@ -264,7 +255,12 @@ export function AdminShell({
               {/* ── Top bar (38px) ── */}
               <div className="topbar" data-tour-id="admin-header">
                 <div className="store" data-tour-id="header-store-name">
-                  <span className="store-dot" />
+                  {logoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={logoUrl} alt="" className="store-logo" />
+                  ) : (
+                    <span className="store-dot" />
+                  )}
                   <span>{siteName ?? displayUser?.primaryEmail?.split('@')[0] ?? 'Studio'}</span>
                   {siteUrl && siteUrl !== '/' && (
                     <span className="mono" style={{ fontSize: 11, color: 'var(--ink-faint)', marginLeft: 4 }}>
@@ -284,6 +280,8 @@ export function AdminShell({
                   );
                 })()}
                 <div className="right" data-tour-id="header-actions">
+                  {/* Light / dark theme toggle */}
+                  <ThemeToggleAdmin />
                   {/* Bell + unread pip */}
                   <button
                     className={'bell' + (drawerOpen ? ' on' : '')}
@@ -319,12 +317,6 @@ export function AdminShell({
                     transform: mobileOpen ? 'none' : undefined,
                   }}
                 >
-                  {/* Date */}
-                  <div className="meta">
-                    <div className="eyebrow">Today</div>
-                    <div className="date">{formatAdminDate()}</div>
-                  </div>
-
                   {/* Quick — Inbox */}
                   <div className="nav-h eyebrow" style={{ color: 'var(--ink-faint)', padding: '0 18px 6px' }}>Quick</div>
                   <Link
@@ -353,7 +345,6 @@ export function AdminShell({
                           data-help-key={item.helpKey}
                           data-tour-id={item.tourId ?? `nav-${item.key}`}
                         >
-                          <span className="n">{item.num}</span>
                           <span className="label">{item.name}</span>
                           {item.badge && <span className="badge">{item.badge}</span>}
                         </Link>
@@ -373,7 +364,7 @@ export function AdminShell({
                         </div>
                       </div>
                     </div>
-                    <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 9, fontSize: 12 }}>
                       <Link
                         href={siteUrl}
                         className="fig"
@@ -384,6 +375,7 @@ export function AdminShell({
                       >
                         ↗ Visit site
                       </Link>
+                      <span aria-hidden="true" style={{ color: 'var(--ink-faint)' }}>·</span>
                       {isDemo ? (
                         <Link
                           href="/pricing"
@@ -434,6 +426,29 @@ export function AdminShell({
         </WalkthroughProvider>
       </HelpProvider>
     </CMSConfigProvider>
+  );
+}
+
+/**
+ * Light / dark theme toggle — flips next-themes between light and dark. The
+ * grainy.css dark token block keys off the `.dark` class next-themes sets, so
+ * the whole `.atlas` chrome reskins to warm charcoal. Guarded with a mounted
+ * flag to avoid a hydration mismatch on the icon.
+ */
+function ThemeToggleAdmin() {
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const isDark = resolvedTheme === 'dark';
+  return (
+    <button
+      onClick={() => setTheme(isDark ? 'light' : 'dark')}
+      title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 6, display: 'inline-flex', alignItems: 'center', color: 'inherit' }}
+    >
+      {mounted && isDark ? <Sun size={15} strokeWidth={1.7} /> : <Moon size={15} strokeWidth={1.7} />}
+    </button>
   );
 }
 

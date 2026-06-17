@@ -79,6 +79,21 @@ export function AIChatPanelV2({ accent }: { accent?: string }) {
     return () => window.removeEventListener('builder:apply-annotations', handler)
   }, [sendMessage, status])
 
+  // "Show me how" — the empty canvas sets a pending-teach flag then opens this
+  // panel. On mount we consume the flag once and ask for a guided tour, which
+  // the spotlight interceptor renders as an interactive teach-the-builder walk.
+  useEffect(() => {
+    let pending = false
+    try { pending = sessionStorage.getItem('builder:pending-teach') === '1' } catch {}
+    if (!pending) return
+    try { sessionStorage.removeItem('builder:pending-teach') } catch {}
+    const t = setTimeout(() => {
+      sendMessage({ text: 'Give me a quick guided tour of the page builder — show me how to add a block from the palette, edit its properties, and publish the page. Use spotlight steps to point at the real controls.' })
+    }, 150)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // ---- local UI state ----
   const [input, setInput] = useState('')
   const [slashOpen, setSlashOpen] = useState(false)

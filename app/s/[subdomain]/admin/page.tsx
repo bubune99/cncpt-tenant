@@ -116,25 +116,24 @@ export default function AdminDashboard() {
 
   const isLoading = isDemo ? accessLoading : (authLoading || accessLoading);
 
-  const fetchDashboardData = useCallback(async () => {
+  const fetchDashboardData = useCallback(() => {
     setLoadingStats(true);
-    try {
-      const [statsRes, analyticsRes, ordersRes] = await Promise.all([
-        fetch('/api/cms/admin/stats-simple'),
-        fetch('/api/cms/analytics?range=14d'),
-        fetch('/api/cms/orders?limit=5&status=pending'),
-      ]);
 
-      if (statsRes.ok) {
-        const data = await statsRes.json() as { stats: DashboardStats };
-        setStats(data.stats);
-      } else {
-        setStats({ totalUsers: 0, totalProducts: 0, totalOrders: 0, totalBlogPosts: 0 });
-      }
+    // Core counts are the fast call — they alone gate the first paint, so the
+    // dashboard appears as soon as they return instead of waiting on the much
+    // slower analytics aggregation. Analytics + recent orders fill in
+    // progressively (the render is null-safe for both).
+    fetch('/api/cms/admin/stats-simple')
+      .then((res) => (res.ok ? res.json() as Promise<{ stats: DashboardStats }> : null))
+      .then((data) => setStats(data?.stats ?? { totalUsers: 0, totalProducts: 0, totalOrders: 0, totalBlogPosts: 0 }))
+      .catch(() => setStats({ totalUsers: 0, totalProducts: 0, totalOrders: 0, totalBlogPosts: 0 }))
+      .finally(() => setLoadingStats(false));
 
-      if (analyticsRes.ok) {
-        const data = await analyticsRes.json() as AnalyticsSummary & { error?: string };
-        if (!data.error) {
+    // Analytics — does NOT block the page; revenue/visitors stay at 0 until it lands.
+    fetch('/api/cms/analytics?range=14d')
+      .then((res) => (res.ok ? res.json() as Promise<AnalyticsSummary & { error?: string }> : null))
+      .then((data) => {
+        if (data && !data.error) {
           setAnalytics({
             revenue: data.revenue ?? 0,
             purchases: data.purchases ?? 0,
@@ -142,17 +141,14 @@ export default function AdminDashboard() {
             pageViews: data.pageViews ?? 0,
           });
         }
-      }
+      })
+      .catch(() => {});
 
-      if (ordersRes.ok) {
-        const data = await ordersRes.json() as { orders?: readonly RecentOrder[] };
-        setRecentOrders(data.orders ?? []);
-      }
-    } catch {
-      setStats({ totalUsers: 0, totalProducts: 0, totalOrders: 0, totalBlogPosts: 0 });
-    } finally {
-      setLoadingStats(false);
-    }
+    // Recent order queue — also non-blocking.
+    fetch('/api/cms/orders?limit=5&status=pending')
+      .then((res) => (res.ok ? res.json() as Promise<{ orders?: readonly RecentOrder[] }> : null))
+      .then((data) => setRecentOrders(data?.orders ?? []))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {

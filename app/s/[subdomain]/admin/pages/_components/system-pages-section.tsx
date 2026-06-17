@@ -29,9 +29,6 @@ import { Button } from '@/components/cms/ui/button'
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/cms/ui/card'
 import { Badge } from '@/components/cms/ui/badge'
 import {
@@ -46,11 +43,11 @@ import {
 } from '@/components/cms/ui/alert-dialog'
 import {
   AlertTriangle,
+  ChevronDown,
   Construction,
   Loader2,
   Pencil,
   Plus,
-  RefreshCw,
   RotateCcw,
   ServerCrash,
   ShieldAlert,
@@ -103,6 +100,7 @@ export function SystemPagesSection({ onChange }: SystemPagesSectionProps) {
   const [busyKey, setBusyKey] = useState<SystemPageKey | null>(null)
   const [resetTarget, setResetTarget] = useState<SystemPageItem | null>(null)
   const [isResetting, setIsResetting] = useState(false)
+  const [expanded, setExpanded] = useState(false)
 
   const fetchItems = async () => {
     setIsLoading(true)
@@ -182,42 +180,32 @@ export function SystemPagesSection({ onChange }: SystemPagesSectionProps) {
 
   return (
     <Card
-      className="mb-8 border-amber-500/30 bg-gradient-to-r from-amber-50/40 to-transparent dark:from-amber-950/20"
+      className="mb-4 border-amber-500/20"
       data-help-key="admin.pages.system"
       data-tour-id="system-pages-section"
     >
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-amber-500/10">
-              <AlertTriangle className="h-5 w-5 text-amber-600" />
-            </div>
-            <div>
-              <CardTitle>System pages</CardTitle>
-              <CardDescription>
-                Customize your 404 and other built-in pages with the visual
-                editor. {stats.customized > 0 && (
-                  <span>
-                    {stats.customized} of {stats.total} customized.
-                  </span>
-                )}
-              </CardDescription>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={fetchItems}
-            disabled={isLoading}
-          >
-            <RefreshCw
-              className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`}
-            />
-            Refresh
-          </Button>
+      {/* Compact, collapsed-by-default header bar so it doesn't dominate the
+          page or push the real page list below the fold. */}
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left"
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+          <span className="text-sm font-medium">System pages</span>
+          <span className="text-xs text-muted-foreground truncate">
+            404 &amp; built-in pages
+            {stats.customized > 0 && ` · ${stats.customized} customized`}
+          </span>
         </div>
-      </CardHeader>
-      <CardContent>
+        <ChevronDown
+          className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`}
+        />
+      </button>
+      {expanded && (
+      <CardContent className="pt-0">
         <div className="grid gap-3">
           {items.map((item) => {
             const Icon = ICONS[item.key]
@@ -316,6 +304,7 @@ export function SystemPagesSection({ onChange }: SystemPagesSectionProps) {
           )}
         </div>
       </CardContent>
+      )}
 
       <AlertDialog
         open={Boolean(resetTarget)}

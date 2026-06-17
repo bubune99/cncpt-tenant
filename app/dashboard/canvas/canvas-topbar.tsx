@@ -8,8 +8,9 @@
 
 import { Fragment } from "react"
 import { useRouter } from "next/navigation"
-import { ChevronRight, Bell, LifeBuoy, Moon, Sun } from "lucide-react"
+import { ChevronRight, LifeBuoy, Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
+import { CanvasNotifications } from "./canvas-notifications"
 
 interface CanvasTopbarProps {
   crumbs: string[]
@@ -41,9 +42,7 @@ export function CanvasTopbar({ crumbs, right, userInitials }: CanvasTopbarProps)
           >
             {theme === "dark" ? <Sun style={{ width: 13, height: 13 }} /> : <Moon style={{ width: 13, height: 13 }} />}
           </button>
-          <button className="iconbtn iconbtn--sm iconbtn--ghost" aria-label="Notifications">
-            <Bell style={{ width: 13, height: 13 }} />
-          </button>
+          <CanvasNotifications />
           <button
             className="iconbtn iconbtn--sm iconbtn--ghost"
             onClick={() => router.push("/dashboard/support")}

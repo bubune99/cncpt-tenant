@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -50,6 +51,7 @@ import {
   Globe,
   StickyNote,
   UserCircle,
+  LifeBuoy,
 } from "lucide-react"
 import { formatDistanceToNow, format } from "date-fns"
 
@@ -116,6 +118,7 @@ const priorityColors: Record<string, string> = {
 }
 
 export default function SupportPage() {
+  const router = useRouter()
   // State
   const [tickets, setTickets] = useState<SupportTicket[]>([])
   const [stats, setStats] = useState<Stats>({ open: 0, inProgress: 0, resolved: 0, closed: 0, total: 0 })
@@ -305,7 +308,21 @@ export default function SupportPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)]">
+    <div className="flex flex-col h-screen">
+      {/* Back-to-dashboard header */}
+      <header className="flex items-center gap-3 border-b bg-card px-4 h-14 shrink-0">
+        <Button variant="ghost" size="sm" onClick={() => router.push("/dashboard")} className="gap-1.5">
+          <ArrowLeft className="h-4 w-4" />
+          Dashboard
+        </Button>
+        <div className="h-5 w-px bg-border" />
+        <div className="flex items-center gap-2">
+          <LifeBuoy className="h-4 w-4 text-muted-foreground" />
+          <h1 className="text-sm font-semibold">Support</h1>
+        </div>
+      </header>
+
+      <div className="flex flex-1 min-h-0">
       {/* Ticket List Sidebar */}
       <div className="w-80 border-r bg-muted/30 flex flex-col">
         {/* Header */}
@@ -677,6 +694,8 @@ export default function SupportPage() {
             </div>
           </div>
         )}
+      </div>
+
       </div>
 
       {/* Customer History Sheet */}
