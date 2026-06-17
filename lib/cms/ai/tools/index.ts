@@ -488,3 +488,12 @@ export const adminTools = {
 export const workflowTools = {
   taskComplete,
 };
+
+/**
+ * Spotlight / navigation / scan tools (ported from dzidzor) — let the assistant
+ * visually drive the UI: highlight elements, navigate between screens, and
+ * discover real selectors before planning a tour. Client-executed via the
+ * spotlight interceptor (components/cms/spotlight).
+ */
+export { spotlightTools } from './spotlight-tools';
+export { scanPageTool } from './scan-page';

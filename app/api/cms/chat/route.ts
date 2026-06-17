@@ -25,7 +25,7 @@ import { resolveAgentPolicy, guardTools } from '@/lib/cms/ai/governance';
 import { getUserPermissions } from '@/lib/cms/permissions';
 import { myProvider } from '@/lib/cms/ai/providers';
 import { ChatSDKError } from '@/lib/cms/ai/errors';
-import { adminTools, walkthroughTools, helpManagementTools, entityTools, workflowTools } from '@/lib/cms/ai/tools';
+import { adminTools, walkthroughTools, helpManagementTools, entityTools, workflowTools, spotlightTools, scanPageTool } from '@/lib/cms/ai/tools';
 import { getMcpTools } from '@/lib/cms/mcp';
 import { getAllVmcpTools } from '@/lib/cms/vmcp';
 import type { ChatContext } from '@/lib/cms/ai/chat-store';
@@ -171,6 +171,28 @@ function buildSystemPrompt(
   }
 
   const basePrompt = `You are an intelligent AI assistant for the admin panel of a headless CMS with e-commerce capabilities. You help administrators manage their store, products, orders, content, and more.
+
+## VISUAL FIRST — Spotlight Tours
+
+When the user asks "show me X", "where is Y", "how do I Z", "tour me", "walk me through", or any similar request to be shown something in the UI:
+- DO NOT describe the answer in prose.
+- INSTEAD call \`spotlight_steps\` with concrete CSS selectors targeting the real elements.
+- For multi-screen flows, alternate \`spotlight_steps\` and \`navigate_to_route\` so the user is guided through every screen. The spotlight overlay + tooltip persist across route changes.
+- The admin sidebar always exists; PREFER the stable data-tour-id selectors:
+  - \`[data-tour-id="nav-admin-dashboard"]\`, \`[data-tour-id="nav-pages"]\`, \`[data-tour-id="nav-orders"]\`, \`[data-tour-id="nav-products"]\`, \`[data-tour-id="nav-customers"]\`, \`[data-tour-id="nav-blog"]\`, \`[data-tour-id="nav-admin-analytics"]\`, \`[data-tour-id="nav-settings"]\`
+  - Also valid: \`a[href="/admin/products"]\`, \`a[href="/admin/orders"]\`, etc.
+  - Header: \`[data-tour-id="header-notifications"]\`, \`[data-tour-id="header-help"]\`, \`[data-tour-id="header-tour-menu"]\`
+  - Form inputs (per page): \`input[name="title"]\`, \`textarea[name="content"]\`, \`button[type="submit"]\`
+
+Example — "show me where products are":
+\`spotlight_steps({ steps: [{ target: '[data-tour-id=\"nav-products\"]', caption: 'This is your Products section — manage your catalog here.' }], title: 'Products' })\`
+
+Example — "how do I create a page" (multi-screen):
+  1. \`spotlight_steps({ steps: [{ target: '[data-tour-id=\"nav-pages\"]', caption: 'Open Pages.' }], title: 'Create a page' })\`
+  2. \`navigate_to_route({ path: '/admin/pages', reason: 'Going to Pages' })\`
+  3. \`spotlight_steps({ steps: [{ target: 'a[href=\"/admin/pages/new\"]', caption: 'Click New to start a page.' }] })\`
+
+After firing the tool, write a SHORT one-sentence acknowledgement — the spotlight tooltip already shows each caption.
 
 ## Your Capabilities
 
@@ -640,7 +662,13 @@ export async function POST(request: NextRequest) {
 
     // Get all tools: admin + walkthrough + help management + entity + workflow + VMCP + MCP
     console.log('[Chat API] Step 10: Loading tools...');
-    let allTools = { ...adminTools, ...walkthroughTools, ...helpManagementTools, ...entityTools, ...workflowTools };
+    // NOTE: scanPageTool is ported + exported but not registered yet — its
+    // client round-trip (run scan in browser -> feed result back) needs
+    // onToolCall/addToolResult wiring. spotlight_steps + navigate_to_route work
+    // today via the spotlight interceptor; the prompt's data-tour-id selectors
+    // cover the common cases without a live scan.
+    let allTools = { ...adminTools, ...walkthroughTools, ...helpManagementTools, ...entityTools, ...workflowTools, ...spotlightTools };
+    void scanPageTool;
     const builtInToolCount = Object.keys(allTools).length;
     console.log('[Chat API] Built-in tools loaded:', builtInToolCount);
     let vmcpToolCount = 0;

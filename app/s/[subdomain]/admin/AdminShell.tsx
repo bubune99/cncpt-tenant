@@ -22,6 +22,8 @@ import { CMSConfigProvider, type CMSConfig, type ModuleNavGroupData } from '@/co
 import { HelpProvider, WalkthroughProvider, useHelpOptional } from '@/components/cms/help-system';
 import { HelpCircle, Compass } from 'lucide-react';
 import { AdminChat } from '@/components/cms/admin-chat';
+import { SpotlightHostClient } from '@/components/cms/spotlight/SpotlightHostClient';
+import { AgentNavRail } from '@/components/cms/admin/agent-nav-rail';
 import { NotifDrawerAdmin } from '@/components/cms/admin/NotifDrawerAdmin';
 
 // ─────────────────────────────────────────────
@@ -413,6 +415,11 @@ export function AdminShell({
                     here. The page builder has its own in-canvas assistant, so
                     it's excluded there. */}
                 {showChat && <AdminChat />}
+                {/* Assistant nav/fill execution layer: the rail navigates from
+                    the correct router context; the host renders spotlight
+                    overlays the chat's spotlight_steps tool produces. */}
+                <AgentNavRail />
+                <SpotlightHostClient />
               </div>
 
               {/* ── Notification drawer ── */}

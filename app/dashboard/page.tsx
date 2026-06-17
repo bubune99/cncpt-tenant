@@ -6,6 +6,8 @@ import { getUserSubdomains } from "@/app/actions"
 import { useUser } from "@stackframe/stack"
 import { HelpProvider } from "@/components/help-system"
 import { DashboardChat } from "@/components/dashboard-chat"
+import { SpotlightHostClient } from "@/components/cms/spotlight/SpotlightHostClient"
+import { AgentNavRail } from "@/components/cms/admin/agent-nav-rail"
 import { CanvasShell } from "./canvas/canvas-shell"
 
 export const dynamic = "force-dynamic"
@@ -171,6 +173,9 @@ export default function DashboardPage() {
           setSelectedSubdomain={setSelectedSubdomain}
         />
         <DashboardChat />
+        {/* Assistant nav/fill execution layer for the dashboard chat. */}
+        <AgentNavRail />
+        <SpotlightHostClient />
       </div>
     </HelpProvider>
   )

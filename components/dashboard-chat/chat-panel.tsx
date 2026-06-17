@@ -9,6 +9,8 @@
 
 import { useEffect, useRef, useState, useMemo, useCallback } from "react"
 import { useChat, type UIMessage } from "@ai-sdk/react"
+import { useSpotlightToolInterceptor } from "@/components/cms/spotlight/use-spotlight-tool-interceptor"
+import type { ChatMessage } from "@/lib/cms/chatsdk/types"
 import { DefaultChatTransport } from "ai"
 import { motion } from "framer-motion"
 import {
@@ -209,6 +211,10 @@ export function ChatPanel({ className }: ChatPanelProps) {
       console.error("[dashboard-chat] Error:", error)
     },
   })
+
+  // Execute spotlight/navigation tool results in the browser (SpotlightHost +
+  // AgentNavRail are mounted in the dashboard shell).
+  useSpotlightToolInterceptor(messages as unknown as ChatMessage[])
 
   const isLoading = status === "streaming" || status === "submitted"
 

@@ -17,6 +17,7 @@ import { nanoid } from "nanoid"
 import { stackServerApp } from "@/stack"
 import { getLanguageModel, DEFAULT_CHAT_MODEL } from "@/lib/ai/core"
 import { createDashboardTools } from "@/lib/ai/tools/dashboard"
+import { spotlightTools } from "@/lib/cms/ai/tools/spotlight-tools"
 import { buildDashboardSystemPrompt } from "@/lib/ai/prompts/dashboard-system-prompt"
 import { checkCredits, useCredits } from "@/lib/ai-credits"
 import type { DashboardChatContext } from "@/lib/ai/core/types"
@@ -151,7 +152,7 @@ export async function POST(request: Request) {
     // Build system prompt with context
     const systemPrompt = buildDashboardSystemPrompt(
       context as DashboardChatContext | undefined
-    )
+    ) + `\n\n## VISUAL FIRST — Spotlight\n\nWhen the user asks to be shown around, where something is, or how to do something, DO NOT answer in prose — call \`spotlight_steps\` with concrete CSS selectors to highlight the real elements, and \`navigate_to_route\` to move between screens (the overlay persists across navigation). Prefer stable selectors like \`[data-tour-id="..."]\` or \`a[href="/dashboard/..."]\`. After firing, write a short one-sentence acknowledgement.`
 
     // Convert messages to AI SDK format
     const aiMessages = messages.map((m) => ({
@@ -159,8 +160,9 @@ export async function POST(request: Request) {
       content: getMessageContent(m),
     }))
 
-    // Create tools with user context (userId captured in closure)
-    const tools = createDashboardTools(user.id)
+    // Create tools with user context (userId captured in closure) + the
+    // spotlight/navigation tools so the dashboard assistant can drive the UI.
+    const tools = { ...createDashboardTools(user.id), ...spotlightTools }
 
     // Track whether credits should be deducted
     let creditsDeducted = false

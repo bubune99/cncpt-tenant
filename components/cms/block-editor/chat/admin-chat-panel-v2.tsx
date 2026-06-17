@@ -26,6 +26,7 @@ import { generateUUID } from '@/lib/cms/utils'
 import { ChatPanel } from './panel'
 import { mapAdminMessages } from './map-admin-messages'
 import { estimateContext } from './map-messages'
+import { useSpotlightToolInterceptor } from '@/components/cms/spotlight/use-spotlight-tool-interceptor'
 import type { ChatMessageVM, ChatPanelModel, SlashCommand } from './types'
 
 const SLASH: SlashCommand[] = [
@@ -105,6 +106,12 @@ export function AdminChatPanelV2({
       }
     },
   })
+
+  // Execute client-side spotlight/navigation tool results in the browser:
+  // spotlight_steps -> spotlight store/overlay, navigate_to_route + legacy
+  // navigateTo -> AgentNavRail. (SpotlightHost + AgentNavRail are mounted in
+  // the admin/dashboard shell.)
+  useSpotlightToolInterceptor(messages)
 
   const [input, setInput] = useState('')
   const [slashOpen, setSlashOpen] = useState(false)
