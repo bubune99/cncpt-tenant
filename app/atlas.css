@@ -297,3 +297,15 @@
 .atlas .adm-notif-title { font-family: var(--font-sans); font-size: 15px; line-height: 1.25; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
 .atlas .adm-notif-body  { font-family: var(--font-sans); font-style: italic; font-size: 12.5px; line-height: 1.45; color: var(--ink-soft); margin-top: 3px; }
 .atlas .adm-notif-cta   { font-family: var(--font-mono); font-size: 10.5px; color: var(--accent); text-decoration: none; letter-spacing: 0.02em; font-weight: 600; }
+
+/* ── Grainy Phase 3 — page builder warm dotted canvas field ─────────────────
+   The block-editor canvas (editor-canvas.tsx `[data-canvas]`) sits inside the
+   full-screen `.atlas` builder. Give the area the signature Grainy warm dotted
+   field so the page being edited reads as floating on a sand canvas. Scoped to
+   .atlas [data-canvas] so it only applies in the builder, never the storefront. */
+.atlas [data-canvas="true"] {
+  background-color: var(--canvas-bg);
+  background-image: radial-gradient(var(--canvas-dot) 1px, transparent 1px);
+  background-size: 22px 22px;
+  background-position: -1px -1px;
+}
