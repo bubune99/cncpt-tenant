@@ -119,11 +119,14 @@
 .atlas .sidebar .nav { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 0; }
 .atlas .sidebar .nav-h { padding: 0 18px 6px; }
 .atlas .sidebar a {
-  display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center;
+  display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center;
   padding: 9px 20px; color: var(--ink); text-decoration: none; font-size: 14.5px;
   border-left: 3px solid transparent;
 }
 .atlas .sidebar a .n { font-family: var(--font-mono); font-size: 10px; color: var(--ink-faint); }
+.atlas .sidebar a .nav-ico { color: var(--ink-soft); flex-shrink: 0; transition: color .14s ease; }
+.atlas .sidebar a:hover .nav-ico { color: var(--ink); }
+.atlas .sidebar a.active .nav-ico { color: var(--accent); }
 .atlas .sidebar a .badge {
   font-family: var(--font-mono); font-size: 10px;
   background: var(--accent); color: var(--accent-fg); padding: 1px 6px; border-radius: var(--r-sm);
@@ -299,6 +302,81 @@
 .atlas .adm-notif-title { font-family: var(--font-sans); font-size: 15px; line-height: 1.25; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
 .atlas .adm-notif-body  { font-family: var(--font-sans); font-style: italic; font-size: 12.5px; line-height: 1.45; color: var(--ink-soft); margin-top: 3px; }
 .atlas .adm-notif-cta   { font-family: var(--font-mono); font-size: 10.5px; color: var(--accent); text-decoration: none; letter-spacing: 0.02em; font-weight: 600; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   MergedShell — Atlas Grainy chrome (collapse toggle · centered ⌘K search ·
+   New button · icon+count collapsible sidebar). Layered on top of the base
+   .topbar / .sidebar above; the design handoff is "Atlas Grainy.html".
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* Collapse toggle — sinks the sidebar to an icon rail */
+.atlas .topbar .collapse-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; margin-left: -6px; margin-right: 6px; flex-shrink: 0;
+  background: none; border: none; cursor: pointer; color: var(--ink-soft);
+  border-radius: var(--r-sm); transition: background .14s ease, color .14s ease;
+}
+.atlas .topbar .collapse-btn:hover { background: var(--paper-2); color: var(--ink); }
+
+/* Store URL chip beside the brand name */
+.atlas .topbar .store-chip {
+  margin-left: 6px; padding: 2px 9px; font-size: 10.5px; line-height: 1.5;
+  color: var(--ink-soft); background: var(--paper-2);
+  border: 1px solid var(--rule-soft); border-radius: var(--r-pill);
+  white-space: nowrap;
+}
+
+/* Centered command search */
+.atlas .topbar .topsearch {
+  flex: 1; display: flex; align-items: center; gap: 8px;
+  max-width: 480px; margin: 0 auto; min-width: 0;
+  padding: 6px 12px; color: var(--ink-faint);
+  background: var(--paper-2); border: 1px solid var(--rule-soft);
+  border-radius: var(--r-pill); box-shadow: var(--inset-soft);
+  transition: border-color .15s ease;
+}
+.atlas .topbar .topsearch:focus-within { border-color: var(--accent); }
+.atlas .topbar .topsearch input {
+  flex: 1; min-width: 0; border: none; background: transparent; outline: none;
+  font-family: var(--font-sans); font-size: 13px; color: var(--ink);
+}
+.atlas .topbar .topsearch input::placeholder { color: var(--ink-faint); }
+.atlas .topbar .topsearch .kbd {
+  flex-shrink: 0; background: var(--paper-3); color: var(--ink-soft);
+  border: 1px solid var(--rule-soft); padding: 1px 6px; border-radius: 4px;
+  font-size: 10px; letter-spacing: 0.02em; margin: 0;
+}
+
+/* Context-aware New button in the topbar action cluster */
+.atlas .topbar .btn-new { padding: 7px 13px; text-decoration: none; }
+.atlas .topbar .btn-new .btn-new-label { font-weight: 600; }
+
+/* ── Collapsed sidebar — icon rail ──────────────────────────────────────── */
+.atlas .sidebar {
+  transition: width .18s cubic-bezier(.2,.7,.3,1);
+}
+.atlas .sidebar.collapsed { width: 64px; }
+.atlas .sidebar.collapsed .nav-h,
+.atlas .sidebar.collapsed .label,
+.atlas .sidebar.collapsed .nav .badge,
+.atlas .sidebar.collapsed .acct-h,
+.atlas .sidebar.collapsed .acct-detail { display: none; }
+.atlas .sidebar.collapsed a,
+.atlas .sidebar.collapsed .inbox-link {
+  grid-template-columns: 1fr; justify-items: center; padding: 10px 0; gap: 0;
+  position: relative;
+}
+.atlas .sidebar.collapsed .nav-ico { color: var(--ink-soft); }
+.atlas .sidebar.collapsed a.active .nav-ico { color: var(--accent); }
+.atlas .sidebar.collapsed .inbox-link .n { font-size: 16px; }
+.atlas .sidebar.collapsed .acct { padding: 14px 0 0; text-align: center; }
+.atlas .sidebar.collapsed .acct-id { justify-content: center; }
+.atlas .sidebar.collapsed .acct .initials { margin-right: 0; }
+/* Inbox unread → tiny accent dot in the corner when collapsed */
+.atlas .sidebar.collapsed .inbox-link .badge {
+  position: absolute; top: 4px; right: 12px;
+  min-width: 0; width: 7px; height: 7px; padding: 0; font-size: 0; border-radius: 50%;
+}
 
 /* ── Grainy Phase 3 — page builder warm dotted canvas field ─────────────────
    The block-editor canvas (editor-canvas.tsx `[data-canvas]`) sits inside the

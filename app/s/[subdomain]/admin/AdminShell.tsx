@@ -21,7 +21,20 @@ import { useAuth } from '@/hooks/use-auth';
 import { WizardProvider } from '@/contexts/WizardContext';
 import { CMSConfigProvider, type CMSConfig, type ModuleNavGroupData } from '@/contexts/CMSConfigContext';
 import { HelpProvider, WalkthroughProvider, useHelpOptional } from '@/components/cms/help-system';
-import { HelpCircle, Compass, Moon, Sun } from 'lucide-react';
+import {
+  HelpCircle, Compass, Moon, Sun, Search, Plus, PanelLeft,
+  LayoutDashboard, FileText, ShoppingBag, Package, Users, BookOpen,
+  BarChart3, Settings, Layers, Image as ImageIcon, Megaphone, Workflow,
+  Tag, MessageSquare, Calendar, Boxes, Circle,
+} from 'lucide-react';
+
+/** Structural type for a lucide icon — tolerant of the lib's per-version typing. */
+type NavIcon = React.ComponentType<{
+  size?: number | string;
+  strokeWidth?: number | string;
+  className?: string;
+  'aria-hidden'?: boolean | 'true' | 'false';
+}>;
 import { AdminChat } from '@/components/cms/admin-chat';
 import { SpotlightHostClient } from '@/components/cms/spotlight/SpotlightHostClient';
 import { AgentNavRail } from '@/components/cms/admin/agent-nav-rail';
@@ -57,6 +70,60 @@ const DEFAULT_NAV: readonly NavItem[] = [
   { num: '07', name: 'Analytics', key: 'analytics', href: '/admin/analytics',helpKey:'admin.sidebar.analytics',  tourId: 'nav-admin-analytics' },
   { num: '08', name: 'Settings',  key: 'settings',  href: '/admin/settings',helpKey: 'admin.sidebar.settings',  tourId: 'nav-settings' },
 ] as const;
+
+// ─────────────────────────────────────────────
+// Per-section lucide icon — MergedShell shows an icon beside each nav label
+// (and the icon alone when the sidebar is collapsed). Keyed by nav `key`;
+// falls back to a soft dot for module-driven items we don't recognise.
+// ─────────────────────────────────────────────
+
+const NAV_ICONS: Readonly<Record<string, NavIcon>> = {
+  dashboard: LayoutDashboard,
+  pages: FileText,
+  orders: ShoppingBag,
+  products: Package,
+  customers: Users,
+  journal: BookOpen,
+  blog: BookOpen,
+  analytics: BarChart3,
+  settings: Settings,
+  collections: Layers,
+  inventory: Boxes,
+  media: ImageIcon,
+  discounts: Tag,
+  reviews: MessageSquare,
+  forms: FileText,
+  'email-marketing': Megaphone,
+  workflows: Workflow,
+  'order-workflows': Workflow,
+  events: Calendar,
+  partials: Layers,
+};
+
+function navIconFor(key: string): NavIcon {
+  return NAV_ICONS[key] ?? Circle;
+}
+
+// The topbar "New" button is context-aware: it routes to the create surface of
+// the section you're in. Sections without a create route fall through to Pages.
+const NEW_HREF: Readonly<Record<string, string>> = {
+  dashboard: '/admin/pages/new',
+  pages: '/admin/pages/new',
+  orders: '/admin/orders/new',
+  products: '/admin/products/new',
+  journal: '/admin/blog/new',
+  blog: '/admin/blog/new',
+  discounts: '/admin/discounts/create',
+  forms: '/admin/forms/new',
+  'email-marketing': '/admin/email-marketing/new',
+  workflows: '/admin/workflows/new',
+  events: '/admin/events/new',
+  partials: '/admin/partials/new',
+};
+
+function newHrefFor(section: string): string {
+  return NEW_HREF[section] ?? '/admin/pages/new';
+}
 
 // ─────────────────────────────────────────────
 // SWR fetcher
@@ -103,6 +170,18 @@ export function AdminShell({
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  // Collapsed sidebar (MergedShell). Persisted so the choice survives reloads.
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem('admin:sidebar-collapsed') === '1');
+    } catch { /* ignore */ }
+  }, []);
+  const toggleCollapsed = () => setCollapsed(c => {
+    const next = !c;
+    try { localStorage.setItem('admin:sidebar-collapsed', next ? '1' : '0'); } catch { /* ignore */ }
+    return next;
+  });
 
   const {
     basePath = '',
@@ -252,8 +331,19 @@ export function AdminShell({
               style={{ width: '100%', height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative', border: 'none', borderRadius: 0 }}
               data-tour-id="admin-page-frame"
             >
-              {/* ── Top bar (38px) ── */}
+              {/* ── Top bar (MergedShell) ── */}
               <div className="topbar" data-tour-id="admin-header">
+                {/* Collapse toggle — sinks the sidebar to an icon rail */}
+                <button
+                  className="collapse-btn"
+                  onClick={toggleCollapsed}
+                  title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                  aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                  aria-pressed={collapsed}
+                  data-tour-id="admin-collapse-toggle"
+                >
+                  <PanelLeft size={17} strokeWidth={1.8} />
+                </button>
                 <div className="store" data-tour-id="header-store-name">
                   {logoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -263,23 +353,32 @@ export function AdminShell({
                   )}
                   <span>{siteName ?? displayUser?.primaryEmail?.split('@')[0] ?? 'Studio'}</span>
                   {siteUrl && siteUrl !== '/' && (
-                    <span className="mono" style={{ fontSize: 11, color: 'var(--ink-faint)', marginLeft: 4 }}>
-                      · {siteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+                    <span className="store-chip mono">
+                      {siteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}
                     </span>
                   )}
                 </div>
-                {/* Breadcrumb to the active section (dirH-style) */}
-                {(() => {
-                  const active = navItems.find(i => isActiveLink(i.href));
-                  if (!active || active.href === '/admin') return null;
-                  return (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginLeft: 10, fontSize: 12.5, color: 'var(--ink-soft)' }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
-                      <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{active.name}</span>
-                    </span>
-                  );
-                })()}
+                {/* Centered command search (⌘K) */}
+                <div className="topsearch" data-tour-id="admin-search">
+                  <Search size={15} strokeWidth={1.8} />
+                  <input
+                    type="text"
+                    placeholder="Search orders, products, customers…"
+                    aria-label="Search"
+                    readOnly
+                  />
+                  <span className="kbd">⌘K</span>
+                </div>
                 <div className="right" data-tour-id="header-actions">
+                  {/* Context-aware create */}
+                  <Link
+                    href={sectionHref(newHrefFor(activeSection))}
+                    className="btn btn-accent btn-new"
+                    data-tour-id="header-new"
+                  >
+                    <Plus size={15} strokeWidth={2} />
+                    <span className="btn-new-label">New</span>
+                  </Link>
                   {/* Light / dark theme toggle */}
                   <ThemeToggleAdmin />
                   {/* Bell + unread pip */}
@@ -309,9 +408,9 @@ export function AdminShell({
               {/* ── Two-column layout ── */}
               <div className="chrome" style={{ flex: 1 }}>
 
-                {/* ── Sidebar ── */}
+                {/* ── Sidebar (MergedShell — icon + label + count, collapsible) ── */}
                 <aside
-                  className="sidebar"
+                  className={'sidebar' + (collapsed ? ' collapsed' : '')}
                   data-tour-id="admin-sidebar"
                   style={{
                     transform: mobileOpen ? 'none' : undefined,
@@ -324,17 +423,19 @@ export function AdminShell({
                     className={'inbox-link' + (activeSection === 'notifications' ? ' active' : '')}
                     onClick={() => setMobileOpen(false)}
                     data-tour-id="nav-inbox"
+                    title={collapsed ? 'Inbox' : undefined}
                   >
                     <span className="n">✦</span>
                     <span className="label">Inbox</span>
                     {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
                   </Link>
 
-                  {/* Numbered sections */}
+                  {/* Workspace sections */}
                   <nav className="nav" aria-label="Main navigation">
-                    <div className="nav-h eyebrow" style={{ color: 'var(--ink-faint)' }}>Sections</div>
+                    <div className="nav-h eyebrow" style={{ color: 'var(--ink-faint)' }}>Workspace</div>
                     {navItems.map(item => {
                       const active = isActiveLink(item.href);
+                      const NavIcon = navIconFor(item.key);
                       return (
                         <Link
                           key={item.key}
@@ -344,7 +445,9 @@ export function AdminShell({
                           onClick={() => setMobileOpen(false)}
                           data-help-key={item.helpKey}
                           data-tour-id={item.tourId ?? `nav-${item.key}`}
+                          title={collapsed ? item.name : undefined}
                         >
+                          <NavIcon className="nav-ico" size={17} strokeWidth={1.8} aria-hidden="true" />
                           <span className="label">{item.name}</span>
                           {item.badge && <span className="badge">{item.badge}</span>}
                         </Link>
@@ -354,17 +457,17 @@ export function AdminShell({
 
                   {/* Account */}
                   <div className="acct" data-tour-id="header-user-menu">
-                    <div className="eyebrow" style={{ color: 'var(--ink-faint)', marginBottom: 8 }}>Account</div>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <span className="initials">{initials || 'AU'}</span>
-                      <div>
+                    <div className="eyebrow acct-h" style={{ color: 'var(--ink-faint)', marginBottom: 8 }}>Account</div>
+                    <div className="acct-id" style={{ display: 'flex', alignItems: 'center' }}>
+                      <span className="initials" title={collapsed ? displayName : undefined}>{initials || 'AU'}</span>
+                      <div className="acct-detail">
                         <div style={{ fontSize: 13, lineHeight: 1.1 }}>{displayName}</div>
                         <div className="fig" style={{ fontSize: 11 }}>
                           {isDemo ? 'demo viewer' : 'admin'}
                         </div>
                       </div>
                     </div>
-                    <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 9, fontSize: 12 }}>
+                    <div className="acct-detail" style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 9, fontSize: 12 }}>
                       <Link
                         href={siteUrl}
                         className="fig"
