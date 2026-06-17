@@ -280,3 +280,35 @@
   --sidebar-border: var(--wl-rule);
   --sidebar-ring: var(--wl-accent);
 }
+
+/*
+ * Admin chrome + ALL editors use the Grainy SURFACE palette, regardless of the
+ * tenant's storefront brand preset. The .atlas-classed admin already maps its
+ * own --paper/--ink to Grainy, but the editors (page builder, product/blog
+ * editors, modals) use shadcn semantic tokens, which otherwise follow
+ * [data-brand] -> --wl -> the marigold/boreal/etc. preset (not Grainy). Scope
+ * these shadcn surface tokens to .atlas so the editors become Grainy too, while
+ * the public storefront (also under [data-brand], but never .atlas) keeps its
+ * preset surfaces. The brand ACCENT (--primary/--accent/--ring) still follows
+ * the tenant from [data-brand], so per-brand color is preserved. This block is
+ * after [data-brand] in source + .atlas nests inside it, so it wins for editors.
+ */
+.atlas {
+  --background: var(--surface-raised);
+  --foreground: var(--text);
+  --card: var(--surface-raised);
+  --card-foreground: var(--text);
+  --popover: var(--surface-raised);
+  --popover-foreground: var(--text);
+  --secondary: var(--surface);
+  --secondary-foreground: var(--text);
+  --muted: var(--surface);
+  --muted-foreground: var(--text-secondary);
+  --border: var(--line-strong);
+  --input: var(--line-strong);
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--text);
+  --sidebar-accent: var(--surface-sunken);
+  --sidebar-accent-foreground: var(--text);
+  --sidebar-border: var(--line-strong);
+}
