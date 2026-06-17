@@ -36,6 +36,7 @@ import {
   Eye,
   Code2,
   Sparkles,
+  MessageSquarePlus,
   PanelRight,
   Layers,
   LayoutGrid,
@@ -73,6 +74,7 @@ import {
   type DiffResult,
 } from "@/lib/cms/block-editor/screenshot"
 import { AIChatPanelV2 } from "./chat/ai-chat-panel-v2"
+import { AnnotationPanel } from "./annotation-panel"
 
 // Redesigned, Atlas-skinned builder chat (components/cms/block-editor/chat).
 // Flip to `false` to fall back to the original Kofi panel.
@@ -116,7 +118,12 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
     unpublishPage,
   } = editor
   const [showPreview, setShowPreview] = useState(false)
-  const [rightPanel, setRightPanel] = useState<"properties" | "ai">("properties")
+  const [rightPanel, setRightPanel] = useState<"properties" | "ai" | "annotations">("properties")
+  // Hand the open annotations to the builder AI chat to address as a batch.
+  const applyNotes = useCallback(() => {
+    setRightPanel("ai")
+    setTimeout(() => window.dispatchEvent(new CustomEvent("builder:apply-annotations")), 80)
+  }, [])
   const [leftPanel, setLeftPanel] = useState<"palette" | "outline" | "templates" | "pages" | "files">("palette")
   const [codeViewMode, setCodeViewMode] = useState<"hidden" | "split" | "full">("hidden")
   const [viewport, setViewport] = useState<"desktop" | "tablet" | "mobile">("desktop")
@@ -297,6 +304,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                   size="sm"
                   onClick={() => setLeftPanel("palette")}
                   className="gap-1 px-2"
+                  data-tour-id="builder-palette"
                   title="Block Palette"
                   aria-label="Block Palette"
                 >
@@ -604,6 +612,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                   }
                 }}
                 className="gap-1.5 px-2"
+                data-tour-id="builder-chat"
                 title={rightPanel === "ai" ? "Show Properties" : "AI Assistant"}
                 aria-label={rightPanel === "ai" ? "Show Properties" : "AI Assistant"}
               >
@@ -612,6 +621,23 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                 ) : (
                   <Sparkles size={14} />
                 )}
+              </Button>
+
+              {/* Annotate mode — leave notes on blocks for the AI */}
+              <Button
+                variant={rightPanel === "annotations" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => {
+                  const on = rightPanel !== "annotations"
+                  setRightPanel(on ? "annotations" : "properties")
+                  editor.setAnnotateMode(on)
+                }}
+                className="gap-1.5 px-2"
+                data-tour-id="builder-annotate"
+                title="Annotate — leave notes on blocks for the AI"
+                aria-label="Annotate mode"
+              >
+                <MessageSquarePlus size={14} />
               </Button>
 
               {/* Preview button */}
@@ -820,6 +846,15 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                       <Sparkles size={14} />
                       <span className="text-xs">AI</span>
                     </Button>
+                    <Button
+                      variant={rightPanel === "annotations" ? "secondary" : "ghost"}
+                      size="sm"
+                      onClick={() => { setRightPanel("annotations"); editor.setAnnotateMode(true) }}
+                      className="h-8 px-2 gap-1"
+                    >
+                      <MessageSquarePlus size={14} />
+                      <span className="text-xs">Notes</span>
+                    </Button>
                   </div>
                   <Button
                     variant="ghost"
@@ -830,7 +865,7 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                     <X size={16} />
                   </Button>
                 </div>
-                {rightPanel === "ai" ? <ChatPanelSlot /> : <PropertiesPanel />}
+                {rightPanel === "ai" ? <ChatPanelSlot /> : rightPanel === "annotations" ? <AnnotationPanel onApplyNotes={applyNotes} /> : <PropertiesPanel />}
               </div>
             </div>
           )}
@@ -877,8 +912,14 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
           )}
 
           {/* Desktop right panel */}
-          <div className="hidden md:flex">
-            {rightPanel === "ai" ? <ChatPanelSlot /> : <PropertiesPanel />}
+          <div className="hidden md:flex" data-tour-id="builder-properties">
+            {rightPanel === "ai" ? (
+              <ChatPanelSlot />
+            ) : rightPanel === "annotations" ? (
+              <div className="w-80 border-l border-border bg-card"><AnnotationPanel onApplyNotes={applyNotes} /></div>
+            ) : (
+              <PropertiesPanel />
+            )}
           </div>
 
           {/* Mobile bottom toolbar - shows when a block is selected */}

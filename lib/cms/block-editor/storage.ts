@@ -5,7 +5,7 @@
  * Custom templates and uploaded images remain in localStorage (admin convenience).
  */
 
-import type { Block, PageLayout, PageDocument } from "./types"
+import type { Block, PageLayout, PageDocument, AnnotationPin } from "./types"
 import { formatSlug as slugify } from "../slug"
 
 /* ------------------------------------------------------------------ */
@@ -29,6 +29,8 @@ export interface SavedPage {
   sourceCode?: string | null
   /** Component dependency manifest — resolved imports for AI context */
   sourceDeps?: Record<string, unknown> | null
+  /** Builder annotations — notes pinned to blocks (annotate mode). */
+  annotations?: AnnotationPin[]
 }
 
 export interface CustomTemplate {
@@ -73,16 +75,17 @@ function safeJsonParse<T>(json: string | null, fallback: T): T {
 /* ------------------------------------------------------------------ */
 
 /** Wrap blocks into the PageDocument format stored in Page.content */
-function toPageDocument(blocks: Block[], layout?: PageLayout): PageDocument {
+function toPageDocument(blocks: Block[], layout?: PageLayout, annotations?: AnnotationPin[]): PageDocument {
   return {
     version: "2.0",
     blocks,
     layout,
+    ...(annotations && annotations.length > 0 ? { annotations } : {}),
   }
 }
 
-/** Extract blocks & layout from Page.content JSON */
-function fromPageContent(content: unknown): { blocks: Block[]; layout?: PageLayout } {
+/** Extract blocks, layout & annotations from Page.content JSON */
+function fromPageContent(content: unknown): { blocks: Block[]; layout?: PageLayout; annotations?: AnnotationPin[] } {
   if (!content || typeof content !== "object") return { blocks: [] }
 
   const doc = content as Record<string, unknown>
@@ -92,6 +95,7 @@ function fromPageContent(content: unknown): { blocks: Block[]; layout?: PageLayo
     return {
       blocks: doc.blocks as Block[],
       layout: doc.layout as PageLayout | undefined,
+      annotations: Array.isArray(doc.annotations) ? (doc.annotations as AnnotationPin[]) : undefined,
     }
   }
 
@@ -101,13 +105,14 @@ function fromPageContent(content: unknown): { blocks: Block[]; layout?: PageLayo
 
 /** Map API response to SavedPage */
 function apiResponseToSavedPage(data: Record<string, unknown>): SavedPage {
-  const { blocks, layout } = fromPageContent(data.content)
+  const { blocks, layout, annotations } = fromPageContent(data.content)
   return {
     id: data.id as string,
     slug: (data.slug as string) || "",
     title: (data.title as string) || "Untitled",
     blocks,
     layout,
+    annotations,
     status: (data.status as string) === "published" ? "published" : "draft",
     createdAt: (data.createdAt as string) || new Date().toISOString(),
     updatedAt: (data.updatedAt as string) || new Date().toISOString(),
@@ -159,7 +164,7 @@ export async function getPageBySlug(slug: string): Promise<SavedPage | null> {
 
 export async function savePage(page: SavedPage): Promise<SavedPage | null> {
   try {
-    const content = toPageDocument(page.blocks, page.layout)
+    const content = toPageDocument(page.blocks, page.layout, page.annotations)
     const isNew = !page.id || page.id.includes("-") // localStorage-style IDs contain dashes
 
     // Check if page exists in the database

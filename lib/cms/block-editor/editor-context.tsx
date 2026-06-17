@@ -10,7 +10,7 @@ import {
   useMemo,
   type ReactNode,
 } from "react"
-import type { Block, BlockTag, DragState, PageLayout } from "./types"
+import type { Block, BlockTag, DragState, PageLayout, AnnotationPin } from "./types"
 import type { BlockSpotlight } from "./workflow-types"
 import { isContainerTag } from "./types"
 import { BLOCK_TEMPLATES } from "./block-templates"
@@ -83,6 +83,9 @@ interface EditorState {
   viewedFile: ViewedFile | null
   // AI spotlight state (Kofi)
   activeSpotlights: BlockSpotlight[]
+  // Builder annotations (annotate mode) — notes pinned to blocks
+  annotations: AnnotationPin[]
+  annotateMode: boolean
 }
 
 type EditorAction =
@@ -105,6 +108,11 @@ type EditorAction =
   | { type: "SET_VIEWED_FILE"; file: ViewedFile | null }
   | { type: "SET_SPOTLIGHTS"; spotlights: BlockSpotlight[] }
   | { type: "CLEAR_SPOTLIGHTS" }
+  | { type: "SET_ANNOTATIONS"; annotations: AnnotationPin[] }
+  | { type: "ADD_ANNOTATION"; annotation: AnnotationPin }
+  | { type: "UPDATE_ANNOTATION"; id: string; updates: Partial<AnnotationPin> }
+  | { type: "REMOVE_ANNOTATION"; id: string }
+  | { type: "SET_ANNOTATE_MODE"; on: boolean }
 
 function pushHistory(state: EditorState, blocks: Block[]): EditorState {
   const newHistory = state.history.slice(0, state.historyIndex + 1)
@@ -171,6 +179,7 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
         ...state,
         blocks: action.page.blocks,
         currentPage: action.page,
+        annotations: action.page.annotations ?? [],
         selectedBlockId: null,
         hoveredBlockId: null,
         history: [action.page.blocks],
@@ -203,6 +212,22 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
       return { ...state, activeSpotlights: action.spotlights }
     case "CLEAR_SPOTLIGHTS":
       return { ...state, activeSpotlights: [] }
+    case "SET_ANNOTATIONS":
+      return { ...state, annotations: action.annotations }
+    case "ADD_ANNOTATION":
+      return { ...state, annotations: [...state.annotations, action.annotation], hasUnsavedChanges: true }
+    case "UPDATE_ANNOTATION":
+      return {
+        ...state,
+        annotations: state.annotations.map((a) =>
+          a.id === action.id ? { ...a, ...action.updates, updatedAt: new Date().toISOString() } : a
+        ),
+        hasUnsavedChanges: true,
+      }
+    case "REMOVE_ANNOTATION":
+      return { ...state, annotations: state.annotations.filter((a) => a.id !== action.id), hasUnsavedChanges: true }
+    case "SET_ANNOTATE_MODE":
+      return { ...state, annotateMode: action.on }
     default:
       return state
   }
@@ -281,6 +306,20 @@ interface EditorContextValue {
   clearSpotlights: () => void
   /** Scroll to and highlight a specific block */
   scrollToBlock: (blockId: string) => void
+
+  // Builder annotations (annotate mode)
+  /** Toggle annotate mode (click-a-block-to-note) */
+  setAnnotateMode: (on: boolean) => void
+  /** Add a note pinned to a block */
+  addAnnotation: (blockId: string, text: string, color?: AnnotationPin["color"]) => void
+  /** Update an annotation's fields */
+  updateAnnotation: (id: string, updates: Partial<AnnotationPin>) => void
+  /** Remove an annotation */
+  removeAnnotation: (id: string) => void
+  /** Toggle an annotation's resolved flag */
+  toggleAnnotationResolved: (id: string) => void
+  /** All annotations on a given block */
+  getAnnotationsForBlock: (blockId: string) => AnnotationPin[]
 }
 
 export type { EditorContextValue }
@@ -303,6 +342,8 @@ const initialState: EditorState = {
   jsxSyncDirection: null,
   viewedFile: null,
   activeSpotlights: [],
+  annotations: [],
+  annotateMode: false,
 }
 
 /* ------------------------------------------------------------------ */
@@ -559,6 +600,7 @@ export function EditorProvider({ children, pageId, adapter, initialBlocks, mode 
       const pageToSave: SavedPage = {
         ...page,
         blocks: currentState.blocks,
+        annotations: currentState.annotations,
         updatedAt: now,
       }
 
@@ -741,6 +783,41 @@ export function EditorProvider({ children, pageId, adapter, initialBlocks, mode 
     }
   }, [])
 
+  /* ── Builder annotations (annotate mode) ── */
+  const setAnnotateMode = useCallback((on: boolean) => {
+    dispatch({ type: "SET_ANNOTATE_MODE", on })
+  }, [])
+
+  const addAnnotation = useCallback((blockId: string, text: string, color?: AnnotationPin["color"]) => {
+    const annotation: AnnotationPin = {
+      id: generateId(),
+      blockId,
+      text,
+      color,
+      resolved: false,
+      createdAt: new Date().toISOString(),
+    }
+    dispatch({ type: "ADD_ANNOTATION", annotation })
+  }, [])
+
+  const updateAnnotation = useCallback((id: string, updates: Partial<AnnotationPin>) => {
+    dispatch({ type: "UPDATE_ANNOTATION", id, updates })
+  }, [])
+
+  const removeAnnotation = useCallback((id: string) => {
+    dispatch({ type: "REMOVE_ANNOTATION", id })
+  }, [])
+
+  const toggleAnnotationResolved = useCallback((id: string) => {
+    const a = stateRef.current.annotations.find((x) => x.id === id)
+    dispatch({ type: "UPDATE_ANNOTATION", id, updates: { resolved: !a?.resolved } })
+  }, [])
+
+  const getAnnotationsForBlock = useCallback(
+    (blockId: string) => stateRef.current.annotations.filter((a) => a.blockId === blockId),
+    []
+  )
+
   // Load content on mount (adapter or page)
   useEffect(() => {
     if (adapter) {
@@ -829,6 +906,13 @@ export function EditorProvider({ children, pageId, adapter, initialBlocks, mode 
         setSpotlights,
         clearSpotlights,
         scrollToBlock,
+        // Builder annotations (annotate mode)
+        setAnnotateMode,
+        addAnnotation,
+        updateAnnotation,
+        removeAnnotation,
+        toggleAnnotationResolved,
+        getAnnotationsForBlock,
       }}
     >
       {children}

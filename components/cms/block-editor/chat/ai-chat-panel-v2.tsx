@@ -11,7 +11,7 @@
  * USE_CHAT_V2 flag in page-builder so the working panel stays as fallback.
  */
 
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport, type UIMessage } from 'ai'
 import { useEditor } from '@/lib/cms/block-editor/editor-context'
@@ -19,6 +19,7 @@ import { stripParentIds } from '@/lib/cms/block-editor/tree-utils'
 import { ChatPanel } from './panel'
 import { mapMessages, estimateContext } from './map-messages'
 import { useApplyToolOutputs } from './use-apply-tool-outputs'
+import { useSpotlightToolInterceptor } from '@/components/cms/spotlight/use-spotlight-tool-interceptor'
 import type { ChatMessageVM, ChatPanelModel, SelectionChip, SlashCommand } from './types'
 
 const SLASH: SlashCommand[] = [
@@ -30,8 +31,9 @@ const SLASH: SlashCommand[] = [
 ]
 
 const SUGGESTIONS = [
+  'Teach me the editor',
+  'How do I add a block?',
   'Add a testimonials band under the hero',
-  'Make the hero CTA larger + a secondary link',
   'Create a 3-column feature grid',
 ]
 
@@ -52,6 +54,9 @@ export function AIChatPanelV2({ accent }: { accent?: string }) {
             selectedBlockId: editorRef.current.state.selectedBlockId,
             sourceCode: editorRef.current.state.currentPage?.sourceCode || undefined,
             sourceDeps: editorRef.current.state.currentPage?.sourceDeps || undefined,
+            // Builder annotations — the notes the user pinned to blocks, so the
+            // assistant can address them as a batch ("apply my notes").
+            annotations: editorRef.current.state.annotations,
           },
         }),
       }),
@@ -60,6 +65,19 @@ export function AIChatPanelV2({ accent }: { accent?: string }) {
 
   const { messages, sendMessage, status, setMessages, stop } = useChat({ transport })
   useApplyToolOutputs(messages as UIMessage[], status, editor)
+  // Execute DOM spotlight/navigation tool results (teach-the-builder tours).
+  useSpotlightToolInterceptor(messages as unknown as Parameters<typeof useSpotlightToolInterceptor>[0])
+
+  // "Apply my notes" — the AnnotationPanel dispatches this so the assistant
+  // addresses each open annotation as a batch.
+  useEffect(() => {
+    const handler = () => {
+      if (status === 'streaming' || status === 'submitted') return
+      sendMessage({ text: 'Apply my annotations: go through each open note, edit the block it is pinned to so the note is addressed, then briefly summarize what you changed.' })
+    }
+    window.addEventListener('builder:apply-annotations', handler)
+    return () => window.removeEventListener('builder:apply-annotations', handler)
+  }, [sendMessage, status])
 
   // ---- local UI state ----
   const [input, setInput] = useState('')

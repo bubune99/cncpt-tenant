@@ -216,6 +216,10 @@ export function AdminShell({
                 Exit
               </Link>
               {children}
+              {/* Spotlight host + nav rail so the builder assistant can teach
+                  the editor UI (spotlight_steps / navigate_to_route). */}
+              <SpotlightHostClient />
+              <AgentNavRail />
             </div>
           </WizardProvider>
         </HelpProvider>

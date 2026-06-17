@@ -133,6 +133,28 @@ export interface Block {
   interaction?: BlockInteraction
 }
 
+/** Annotation colors — map to the Grainy earth-accent palette. */
+export type AnnotationColor = "clay" | "sage" | "ochre" | "blue" | "plum"
+
+/**
+ * A note pinned to a block in the builder. Users leave annotations in
+ * "annotate mode" to have an async, spatial conversation with the AI assistant
+ * (which reads all open annotations as a batch and addresses each on its block).
+ * Persisted with the page in `PageDocument.annotations`.
+ */
+export interface AnnotationPin {
+  id: string
+  /** The block this note is pinned to (Block.id). */
+  blockId: string
+  /** The user's note / instruction. */
+  text: string
+  color?: AnnotationColor
+  /** Marked resolved once addressed (by the user or the AI). */
+  resolved?: boolean
+  createdAt: string
+  updatedAt?: string
+}
+
 /** Types of interactive overlay behaviors */
 export type InteractionType = "sheet" | "dialog" | "popover" | "dropdown" | "tooltip" | "collapsible" | "alert-dialog"
 
@@ -300,4 +322,6 @@ export interface PageDocument {
   globalHeader?: Block[]
   /** Global footer blocks (shared across pages) */
   globalFooter?: Block[]
+  /** Builder annotations — notes pinned to blocks (annotate mode). */
+  annotations?: AnnotationPin[]
 }

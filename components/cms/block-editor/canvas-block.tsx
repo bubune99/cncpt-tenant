@@ -25,6 +25,7 @@ import {
   Smartphone,
   Sparkles,
   MousePointerClick,
+  MessageSquarePlus,
 } from "lucide-react"
 import { cn } from "@/lib/cms/utils"
 import { toast } from "sonner"
@@ -89,6 +90,8 @@ export function CanvasBlock({ block, index, parentId, depth = 0, parentIsHorizon
     addBlockRaw,
     setDragState,
     updateBlock,
+    addAnnotation,
+    getAnnotationsForBlock,
   } = useEditor()
 
   const blockRef = useRef<HTMLDivElement>(null)
@@ -97,6 +100,11 @@ export function CanvasBlock({ block, index, parentId, depth = 0, parentIsHorizon
   const [isDragging, setIsDragging] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState("")
+  // Annotate mode — small note composer pinned to this block
+  const [composing, setComposing] = useState(false)
+  const [noteText, setNoteText] = useState("")
+  const annotateMode = state.annotateMode
+  const blockAnnotations = getAnnotationsForBlock(block.id)
 
   // AI spotlight state (Kofi)
   const { getSpotlightForBlock } = useBlockSpotlight()
@@ -351,6 +359,12 @@ export function CanvasBlock({ block, index, parentId, depth = 0, parentIsHorizon
           )}
           onClick={(e) => {
             e.stopPropagation()
+            if (annotateMode) {
+              selectBlock(block.id)
+              setNoteText("")
+              setComposing(true)
+              return
+            }
             if (!isEditing) selectBlock(block.id)
           }}
           onDoubleClick={(e) => {
@@ -451,6 +465,73 @@ export function CanvasBlock({ block, index, parentId, depth = 0, parentIsHorizon
             <div className="absolute -top-8 left-1 z-20 flex items-center gap-1 rounded-md px-2 py-1 shadow-lg bg-primary/90 text-primary-foreground text-xs">
               <span>Editing text</span>
               <span className="opacity-60">- Enter to save, Esc to cancel</span>
+            </div>
+          )}
+
+          {/* Annotation pin badge — shows when this block has notes, or in
+              annotate mode as an affordance. Click to open the note composer. */}
+          {(blockAnnotations.length > 0 || annotateMode) && !isEditing && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                selectBlock(block.id)
+                setNoteText("")
+                setComposing(true)
+              }}
+              title={blockAnnotations.length > 0 ? `${blockAnnotations.length} note(s)` : "Add a note"}
+              className={cn(
+                "absolute -top-2 -right-2 z-30 flex h-5 min-w-5 items-center justify-center gap-0.5 rounded-full px-1 text-[10px] font-semibold shadow-md",
+                blockAnnotations.some((a) => !a.resolved)
+                  ? "bg-[#BE6E4B] text-[#FBF4EE]"
+                  : "bg-[#E4DAC4] text-[#5E3320] border border-[#C2B093]"
+              )}
+            >
+              <MessageSquarePlus size={11} />
+              {blockAnnotations.length > 0 && <span>{blockAnnotations.length}</span>}
+            </button>
+          )}
+
+          {/* Note composer popover (annotate mode) */}
+          {composing && (
+            <div
+              className="absolute -top-1 right-0 z-40 w-60 translate-y-[-100%] rounded-lg border border-[#C2B093] bg-[#FBF8F1] p-2 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {blockAnnotations.length > 0 && (
+                <div className="mb-2 max-h-28 space-y-1 overflow-y-auto">
+                  {blockAnnotations.map((a) => (
+                    <div key={a.id} className={cn("rounded px-2 py-1 text-[11px] leading-snug", a.resolved ? "bg-[#E2E6D7] text-[#3C4429] line-through" : "bg-[#F0DBCF] text-[#5E3320]")}>
+                      {a.text}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <textarea
+                autoFocus
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                placeholder="Leave a note for the AI… e.g. make this full-width"
+                rows={2}
+                className="w-full resize-none rounded border border-[#D8CBB0] bg-white p-1.5 text-[12px] text-[#2A2419] outline-none focus:border-[#BE6E4B]"
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") { setComposing(false) }
+                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && noteText.trim()) {
+                    addAnnotation(block.id, noteText.trim()); setComposing(false)
+                  }
+                }}
+              />
+              <div className="mt-1.5 flex items-center justify-end gap-1.5">
+                <button type="button" className="rounded px-2 py-1 text-[11px] text-[#6B6051] hover:bg-[#F2ECDF]" onClick={() => setComposing(false)}>Cancel</button>
+                <button
+                  type="button"
+                  disabled={!noteText.trim()}
+                  className="rounded bg-[#BE6E4B] px-2.5 py-1 text-[11px] font-semibold text-[#FBF4EE] disabled:opacity-40"
+                  onClick={() => { if (noteText.trim()) { addAnnotation(block.id, noteText.trim()); setComposing(false) } }}
+                >
+                  Add note
+                </button>
+              </div>
             </div>
           )}
 

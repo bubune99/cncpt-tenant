@@ -28,6 +28,7 @@ import { prisma } from '@/lib/cms/db';
 import { getAiSettings, getAgentSettings } from '@/lib/cms/settings';
 import { resolveAgentPolicy, guardTools } from '@/lib/cms/ai/governance';
 import { getUserPermissions } from '@/lib/cms/permissions';
+import { spotlightTools } from '@/lib/cms/ai/tools/spotlight-tools';
 import { ChatSDKError } from '@/lib/cms/ai/errors';
 import { checkCredits, useCredits } from '@/lib/ai-credits';
 import { isSuperAdmin } from '@/lib/super-admin';
@@ -523,7 +524,7 @@ const importTools = {
 /*  All tools combined                                                  */
 /* ------------------------------------------------------------------ */
 
-const kofiTools = { ...buildingTools, ...teachingTools, ...agentTools, ...importTools };
+const kofiTools = { ...buildingTools, ...teachingTools, ...agentTools, ...importTools, ...spotlightTools };
 
 /* ------------------------------------------------------------------ */
 /*  Kofi system prompt                                                  */
@@ -546,6 +547,20 @@ function buildKofiPrompt(pageState: unknown[], selectedBlockId?: string | null, 
 2. **Use inline backticks** only for short identifiers: \`block-id\`, \`className\`, \`tag\`. These are fine in prose.
 3. **Multiple spotlights per answer.** If your explanation touches 3 parts of the page, make 3 spotlightBlock calls. This creates a navigable joyride the user can step through.
 4. **Spotlight BEFORE explaining.** Call spotlightBlock first, then provide your prose explanation.
+
+## Teaching the Builder UI (chrome spotlight — VISUAL FIRST)
+When the user asks how to USE the editor itself ("teach me the editor", "how do I add a block?", "where do I publish?", "show me around") — DO NOT just describe it in prose. Call \`spotlight_steps\` with the builder-chrome selectors below to visually highlight the REAL editor UI (these target the editor's own panels, NOT page blocks). Use \`navigate_to_route\` only if you genuinely need to change pages.
+Builder chrome selectors:
+- Block palette: \`[data-tour-id="builder-palette"]\`
+- The canvas (where the page renders): \`[data-tour-id="builder-canvas"]\`
+- AI assistant toggle: \`[data-tour-id="builder-chat"]\`
+- Properties / right panel: \`[data-tour-id="builder-properties"]\`
+- Annotate (leave notes) toggle: \`[data-tour-id="builder-annotate"]\`
+Example — "how do I add a block?": call \`spotlight_steps\` with steps highlighting \`[data-tour-id="builder-palette"]\` ("Open the palette and pick a block"), then \`[data-tour-id="builder-canvas"]\` ("Drag it onto the canvas"), then \`[data-tour-id="builder-properties"]\` ("Tweak its styles in Properties").
+Distinction: \`spotlight_steps\` (snake_case) highlights the EDITOR CHROME by CSS selector; \`spotlightBlock\` highlights an actual PAGE BLOCK by block id. Pick the right one for the question.
+
+## Annotations
+The user may leave **annotations** — notes pinned to specific blocks (provided in context with their blockId). When they ask to "apply my notes", go through EACH note and edit the block with the matching blockId (\`updateBlock\`) so the note is addressed, then summarize what you changed per block.
 
 ## Block System
 Each block maps directly to a JSX element. Block[] and JSX are two syntaxes for the same data — parse/serialize are exact inverses.
@@ -702,6 +717,7 @@ const requestSchema = z.object({
   ),
   pageState: z.array(z.any()).optional(),
   selectedBlockId: z.string().nullable().optional(),
+  annotations: z.array(z.any()).optional(),
   sourceCode: z.string().nullable().optional(),
   sourceDeps: z.any().nullable().optional(),
 });
@@ -801,7 +817,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { messages, pageState, selectedBlockId, sourceCode, sourceDeps } = parsed.data;
+    const { messages, pageState, selectedBlockId, sourceCode, sourceDeps, annotations } = parsed.data;
 
     // Convert UI messages to model messages, preserving tool call/result pairs
     // so multi-turn tool usage works correctly
@@ -818,6 +834,21 @@ export async function POST(request: NextRequest) {
         content: `Current page blocks (JSON):\n${pageJson}`,
       };
       modelMessages.splice(Math.min(1, modelMessages.length), 0, pageContext);
+    }
+
+    // Inject the user's pinned annotations (notes left on blocks in annotate
+    // mode) so the assistant can address them as a batch on "apply my notes".
+    if (Array.isArray(annotations) && annotations.length > 0) {
+      const open = annotations.filter((a: { resolved?: boolean }) => !a?.resolved);
+      if (open.length > 0) {
+        const annJson = JSON.stringify(
+          open.map((a: { id?: string; blockId?: string; text?: string }) => ({ id: a.id, blockId: a.blockId, text: a.text }))
+        );
+        modelMessages.splice(Math.min(2, modelMessages.length), 0, {
+          role: 'system' as const,
+          content: `The user left these annotations (notes pinned to specific blocks by id). When asked to "apply my notes", address EACH note by editing the block with the matching blockId (updateBlock), then summarize the changes per block:\n${annJson}`,
+        });
+      }
     }
 
     // Inject original source code as design reference (when available)
@@ -862,6 +893,9 @@ export async function POST(request: NextRequest) {
         userPerms,
       }).tools as typeof kofiTools;
     }
+    // Spotlight/teaching tools are read-only (DOM highlight + navigation), so
+    // they're always available regardless of RBAC gating.
+    toolsForRun = { ...toolsForRun, ...spotlightTools };
 
     const stream = createUIMessageStream({
       execute: async ({ writer: dataStream }) => {
