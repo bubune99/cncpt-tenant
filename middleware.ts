@@ -260,5 +260,10 @@ export const config = {
      * served from /public and don't need any rewriting.
      */
     "/((?!_next/|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|avif|woff|woff2|ttf|eot|otf|css|js|map|txt|xml)$).*)",
+    /*
+     * Exception to the .xml exclusion above: the tenant blog RSS feed is a
+     * real route handler that needs the subdomain rewrite.
+     */
+    "/blog/feed.xml",
   ],
 }

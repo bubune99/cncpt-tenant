@@ -129,6 +129,12 @@ const nextConfig = {
 
   async redirects() {
     return [
+      // Legacy blog paths → canonical /blog surface. Edge-level so they win
+      // over any cached page output; host-agnostic (the platform site has no
+      // /posts of its own).
+      { source: "/posts", destination: "/blog", permanent: true },
+      { source: "/posts/:slug", destination: "/blog/:slug", permanent: true },
+      { source: "/tags/:slug", destination: "/blog/tag/:slug", permanent: true },
     ];
   },
 }
