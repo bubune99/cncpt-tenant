@@ -1,0 +1,151 @@
+/*
+ * Settings hub — colocated Grainy styles.
+ *
+ * Ported from design-reference/cms-ui/grainy-settings.jsx (.set-nav / .set-card /
+ * .set-row / .set-fl). Every rule is scoped under the Grainy app roots so it can
+ * never leak outside the admin shell. Do NOT move these into app/grainy.css.
+ */
+
+:is(.gr-app, .grainy, .atlas) .set-hub {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+:is(.gr-app, .grainy, .atlas) .set-hub-head {
+  padding: 18px 26px 14px;
+  flex: none;
+  border-bottom: 1px solid var(--line);
+}
+
+:is(.gr-app, .grainy, .atlas) .set-hub-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+:is(.gr-app, .grainy, .atlas) .set-rail {
+  width: 232px;
+  flex: none;
+  border-right: 1px solid var(--line);
+  padding: 14px 12px;
+  min-height: 0;
+}
+
+:is(.gr-app, .grainy, .atlas) .set-panel {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 20px 26px 28px;
+}
+
+:is(.gr-app, .grainy, .atlas) .set-panel-inner {
+  max-width: 760px;
+}
+
+/* rail item */
+:is(.gr-app, .grainy, .atlas) .set-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 11px;
+  border-radius: var(--r-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.14s, color 0.14s;
+}
+:is(.gr-app, .grainy, .atlas) .set-nav:hover {
+  background: rgba(74, 54, 32, 0.06);
+  color: var(--text);
+}
+:is(.gr-app, .grainy, .atlas) .set-nav.on {
+  background: color-mix(in srgb, var(--clay-100) 60%, var(--surface-raised));
+  color: var(--clay-ink);
+}
+:is([data-theme='dark'], .dark) :is(.gr-app, .grainy, .atlas) .set-nav.on {
+  background: color-mix(in srgb, var(--clay-500) 20%, var(--surface-raised));
+  color: var(--clay-300);
+}
+:is(.gr-app, .grainy, .atlas) .set-nav .set-nav-ext {
+  margin-left: auto;
+  opacity: 0.5;
+  flex: none;
+}
+
+/* card */
+:is(.gr-app, .grainy, .atlas) .set-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-xs), var(--sheen-clay);
+  margin-bottom: 18px;
+}
+:is(.gr-app, .grainy, .atlas) .set-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+:is(.gr-app, .grainy, .atlas) .set-card-title {
+  font-weight: 600;
+  font-size: 14.5px;
+}
+:is(.gr-app, .grainy, .atlas) .set-card-desc {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+:is(.gr-app, .grainy, .atlas) .set-card-body {
+  padding: 16px;
+}
+
+/* row */
+:is(.gr-app, .grainy, .atlas) .set-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--line-faint);
+}
+:is(.gr-app, .grainy, .atlas) .set-row:last-child {
+  border-bottom: none;
+}
+
+/* field label */
+:is(.gr-app, .grainy, .atlas) .set-fl {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+/* field grid */
+:is(.gr-app, .grainy, .atlas) .set-grid {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+:is(.gr-app, .grainy, .atlas) .set-field-full {
+  flex: 1 1 100%;
+}
+:is(.gr-app, .grainy, .atlas) .set-field-half {
+  flex: 1 1 200px;
+}
+:is(.gr-app, .grainy, .atlas) .set-field-suffix {
+  position: absolute;
+  right: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: var(--font-mono);
+}

@@ -1,174 +1,20 @@
-import { prisma } from '@/lib/cms/db';
-import { notFound } from "next/navigation";
-import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
-import { Calendar, Clock, ArrowLeft } from "lucide-react";
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/cms/ui/card';
-import { Badge } from '@/components/cms/ui/badge';
-import type { Metadata } from "next";
-import { getTenantContext } from '../../../lib/tenant-context';
+import { permanentRedirect } from 'next/navigation';
 
 interface PageProps {
   params: Promise<{ subdomain: string; slug: string }>;
 }
 
-async function getCategory(slug: string, tenantId: number) {
-  // Use findFirst due to compound unique constraint (tenantId, slug)
-  const category = await prisma.blogCategory.findFirst({
-    where: { slug, tenantId },
-    include: {
-      posts: {
-        where: {
-          post: {
-            status: "PUBLISHED",
-            visibility: "PUBLIC",
-          },
-        },
-        include: {
-          post: {
-            include: {
-              author: {
-                select: { name: true },
-              },
-              featuredImage: {
-                select: { url: true, alt: true },
-              },
-              categories: {
-                include: {
-                  category: {
-                    select: { id: true, name: true, slug: true },
-                  },
-                },
-              },
-            },
-          },
-        },
-        orderBy: {
-          post: {
-            publishedAt: "desc",
-          },
-        },
-      },
-    },
-  });
-
-  return category;
-}
-
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { subdomain, slug } = await params;
-  const tenantContext = await getTenantContext(subdomain);
-  if (!tenantContext) {
-    return { title: 'Site Not Found' };
-  }
-  const category = await getCategory(slug, tenantContext.id);
-
-  if (!category) {
-    return {
-      title: "Category Not Found",
-    };
-  }
-
-  return {
-    title: category.metaTitle || `${category.name} - Blog`,
-    description: category.metaDescription || category.description,
-  };
-}
-
-export default async function CategoryPage({ params }: PageProps) {
-  const { subdomain, slug } = await params;
-  const tenantContext = await getTenantContext(subdomain);
-
-  if (!tenantContext) {
-    notFound();
-  }
-
-  const category = await getCategory(slug, tenantContext.id);
-
-  if (!category) {
-    notFound();
-  }
-
-  const posts = category.posts.map((p: (typeof category.posts)[number]) => p.post);
-
-  return (
-    <div className="container mx-auto px-4 py-6 sm:py-8 lg:py-12">
-      {/* Back Link */}
-      <Link
-        href="/categories"
-        className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 sm:mb-8 py-1"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        All Categories
-      </Link>
-
-      {/* Header */}
-      <header className="max-w-4xl mx-auto mb-8 sm:mb-12">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-4">{category.name}</h1>
-        {category.description && (
-          <p className="text-base sm:text-lg lg:text-xl text-muted-foreground">{category.description}</p>
-        )}
-        <Badge variant="secondary" className="mt-3 sm:mt-4">
-          {posts.length} posts
-        </Badge>
-      </header>
-
-      {/* Posts Grid */}
-      {posts.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-          {posts.map((post: (typeof posts)[number]) => (
-            <Link key={post.id} href={`/posts/${post.slug}`}>
-              <Card className="h-full hover:shadow-lg transition-shadow overflow-hidden group">
-                {post.featuredImage ? (
-                  <img
-                    src={post.featuredImage.url}
-                    alt={post.featuredImage.alt || post.title}
-                    className="w-full h-40 sm:h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="w-full h-40 sm:h-48 bg-gradient-to-br from-muted to-muted/50" />
-                )}
-                <CardHeader className="pb-2 p-3 sm:p-6 sm:pb-2">
-                  <h3 className="text-base sm:text-xl font-semibold line-clamp-2 group-hover:text-primary transition-colors">
-                    {post.title}
-                  </h3>
-                </CardHeader>
-                <CardContent className="px-3 sm:px-6">
-                  {post.excerpt && (
-                    <p className="text-sm text-muted-foreground line-clamp-2 sm:line-clamp-3">
-                      {post.excerpt}
-                    </p>
-                  )}
-                </CardContent>
-                <CardFooter className="text-xs sm:text-sm text-muted-foreground px-3 sm:px-6 pb-3 sm:pb-6">
-                  <div className="flex items-center gap-3 sm:gap-4">
-                    {post.publishedAt && (
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {formatDistanceToNow(new Date(post.publishedAt), {
-                          addSuffix: true,
-                        })}
-                      </span>
-                    )}
-                    {post.readingTime && (
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {post.readingTime} min
-                      </span>
-                    )}
-                  </div>
-                </CardFooter>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-8 sm:py-12 bg-muted/30 rounded-lg">
-          <p className="text-muted-foreground text-sm sm:text-base">
-            No posts in this category yet.
-          </p>
-        </div>
-      )}
-    </div>
-  );
+/**
+ * Legacy blog category archive. This route historically RENDERED blog-category
+ * post listings, so it redirects to the canonical /blog/category/[slug], which
+ * preserves that user-visible behavior while removing the duplicate.
+ *
+ * Note: the tenant sitemap emits /categories/[slug] intending *product*
+ * categories (a pre-existing inconsistency — no product-category page renders
+ * at this path today). If a product-category page is built later it can reclaim
+ * this path; this redirect only preserves the current blog behavior.
+ */
+export default async function LegacyCategoryArchive({ params }: PageProps) {
+  const { slug } = await params;
+  permanentRedirect(`/blog/category/${slug}`);
 }

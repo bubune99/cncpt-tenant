@@ -59,7 +59,7 @@ export default async function CategoriesPage({ params }: CategoriesPageProps) {
         {categories.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {categories.map((category: (typeof categories)[number]) => (
-              <Link key={category.id} href={`/categories/${category.slug}`}>
+              <Link key={category.id} href={`/blog/category/${category.slug}`}>
                 <Card className="h-full hover:shadow-lg transition-shadow group">
                   {category.image ? (
                     <img

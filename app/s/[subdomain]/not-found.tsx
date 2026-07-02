@@ -7,10 +7,16 @@ import { BlockPageRenderer } from '@/components/cms/page-wrapper/block-page-rend
 import {
   registerCommerceFetchers,
   registerDashboardFetchers,
+  registerFormFetchers,
   resolveSmartBlockData,
   serializeSmartBlockData,
 } from '@/lib/cms/block-editor/smart-blocks';
 import type { Block } from '@/lib/cms/block-editor/types';
+// Side-effect: register smart-block DEFINITIONS in the server registry so
+// resolveSmartBlockData can emit their data requirements.
+import '@/components/cms/smart-blocks/commerce';
+import '@/components/cms/smart-blocks/dashboard';
+import '@/components/cms/smart-blocks/forms';
 
 /**
  * Not Found page for subdomain routes.
@@ -97,7 +103,8 @@ async function loadCustomNotFound(): Promise<CustomNotFoundResult | null> {
 
     registerCommerceFetchers()
     registerDashboardFetchers()
-    const dataMap = await resolveSmartBlockData(blocks)
+    registerFormFetchers()
+    const dataMap = await runWithTenant(tenantData.id, () => resolveSmartBlockData(blocks))
     const smartBlockData = serializeSmartBlockData(dataMap)
 
     return {

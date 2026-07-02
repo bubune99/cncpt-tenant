@@ -37,6 +37,7 @@ import {
   setCurrentPageId,
 } from "./storage"
 import { serializeBlocksToJSX, parseJSXToBlocks } from "./serialization"
+import { toast } from "sonner"
 
 function toPascalCase(str: string): string {
   return str
@@ -75,6 +76,9 @@ interface EditorState {
   hasUnsavedChanges: boolean
   saveStatus: "idle" | "saving" | "saved" | "error"
   lastSavedAt: string | null
+  // Concurrent-edit conflict — set when a save is rejected with 409 because the
+  // page was changed elsewhere. Non-null shows a blocking notice bar.
+  conflict: { remoteUpdatedAt: string | null } | null
   // Loading state
   isLoading: boolean
   // Code editor sync
@@ -100,6 +104,7 @@ type EditorAction =
   | { type: "CLEAR_ALL" }
   | { type: "SET_CURRENT_PAGE"; page: SavedPage | null }
   | { type: "SET_SAVE_STATUS"; status: EditorState["saveStatus"] }
+  | { type: "SET_CONFLICT"; conflict: EditorState["conflict"] }
   | { type: "MARK_SAVED"; timestamp: string; page: SavedPage }
   | { type: "LOAD_PAGE"; page: SavedPage }
   | { type: "SET_LOADING"; loading: boolean }
@@ -166,6 +171,8 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
       return { ...state, currentPage: action.page }
     case "SET_SAVE_STATUS":
       return { ...state, saveStatus: action.status }
+    case "SET_CONFLICT":
+      return { ...state, conflict: action.conflict }
     case "MARK_SAVED":
       return {
         ...state,
@@ -173,6 +180,7 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
         hasUnsavedChanges: false,
         saveStatus: "saved",
         lastSavedAt: action.timestamp,
+        conflict: null,
       }
     case "LOAD_PAGE":
       return {
@@ -187,6 +195,7 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
         hasUnsavedChanges: false,
         saveStatus: "idle",
         lastSavedAt: action.page.updatedAt,
+        conflict: null,
         isLoading: false,
         jsxSyncDirection: null,
       }
@@ -270,8 +279,13 @@ interface EditorContextValue {
   redo: () => void
 
   // Page management
-  /** Save current page (creates new if none exists) */
-  saveCurrentPage: () => Promise<void>
+  /** Save current page (creates new if none exists). Returns true on success.
+   *  Pass `{ force: true }` to overwrite a remote row despite a conflict. */
+  saveCurrentPage: (opts?: { force?: boolean }) => Promise<boolean>
+  /** Reload the current page from the server, discarding local changes. */
+  reloadCurrentPage: () => Promise<void>
+  /** Dismiss the concurrent-edit conflict notice. */
+  dismissConflict: () => void
   /** Load a page by ID */
   loadPage: (id: string) => Promise<void>
   /** Create a new blank page */
@@ -338,6 +352,7 @@ const initialState: EditorState = {
   hasUnsavedChanges: false,
   saveStatus: "idle",
   lastSavedAt: null,
+  conflict: null,
   isLoading: false,
   jsxSyncDirection: null,
   viewedFile: null,
@@ -567,7 +582,7 @@ export function EditorProvider({ children, pageId, adapter, initialBlocks, mode 
 
   /* ---- Page Management (API-backed) ---- */
 
-  const saveCurrentPage = useCallback(async () => {
+  const saveCurrentPage = useCallback(async (opts?: { force?: boolean }): Promise<boolean> => {
     const currentState = stateRef.current
     dispatch({ type: "SET_SAVE_STATUS", status: "saving" })
 
@@ -588,7 +603,8 @@ export function EditorProvider({ children, pageId, adapter, initialBlocks, mode 
           updatedAt: now,
         }
         dispatch({ type: "MARK_SAVED", timestamp: now, page: syntheticPage })
-        return
+        toast.dismiss("autosave-failed")
+        return true
       }
 
       // Default page-based save
@@ -597,6 +613,10 @@ export function EditorProvider({ children, pageId, adapter, initialBlocks, mode 
         page = createNewPage()
       }
 
+      // Capture the loaded updatedAt BEFORE we stamp a fresh one — this is what
+      // the server compares against for conflict detection.
+      const lastKnownUpdatedAt = page.updatedAt
+
       const pageToSave: SavedPage = {
         ...page,
         blocks: currentState.blocks,
@@ -604,10 +624,22 @@ export function EditorProvider({ children, pageId, adapter, initialBlocks, mode 
         updatedAt: now,
       }
 
-      const saved = await savePageToApi(pageToSave)
-      if (saved) {
+      const result = await savePageToApi(pageToSave, {
+        lastKnownUpdatedAt,
+        force: opts?.force,
+      })
+
+      if (result.status === "conflict") {
+        dispatch({ type: "SET_CONFLICT", conflict: { remoteUpdatedAt: result.remoteUpdatedAt } })
+        dispatch({ type: "SET_SAVE_STATUS", status: "error" })
+        return false
+      }
+
+      if (result.status === "ok") {
+        const saved = result.page
         setCurrentPageId(saved.id)
         dispatch({ type: "MARK_SAVED", timestamp: now, page: saved })
+        toast.dismiss("autosave-failed")
 
         // Auto-capture thumbnail after successful save
         try {
@@ -620,11 +652,14 @@ export function EditorProvider({ children, pageId, adapter, initialBlocks, mode 
         } catch {
           // Thumbnail capture is best-effort, don't block save
         }
-      } else {
-        dispatch({ type: "SET_SAVE_STATUS", status: "error" })
+        return true
       }
+
+      dispatch({ type: "SET_SAVE_STATUS", status: "error" })
+      return false
     } catch {
       dispatch({ type: "SET_SAVE_STATUS", status: "error" })
+      return false
     }
   }, [adapter])
 
@@ -637,6 +672,21 @@ export function EditorProvider({ children, pageId, adapter, initialBlocks, mode 
     } else {
       dispatch({ type: "SET_LOADING", loading: false })
     }
+  }, [])
+
+  // Reload the current page from the server, discarding unsaved local changes.
+  // Used to resolve a concurrent-edit conflict by taking the remote version.
+  const reloadCurrentPage = useCallback(async () => {
+    const id = stateRef.current.currentPage?.id
+    dispatch({ type: "SET_CONFLICT", conflict: null })
+    if (id) {
+      await loadPage(id)
+      toast.success("Reloaded the latest version of this page")
+    }
+  }, [loadPage])
+
+  const dismissConflict = useCallback(() => {
+    dispatch({ type: "SET_CONFLICT", conflict: null })
   }, [])
 
   const newPage = useCallback((title = "Untitled Page") => {
@@ -679,15 +729,17 @@ export function EditorProvider({ children, pageId, adapter, initialBlocks, mode 
         publishedAt: page.publishedAt || now,
       }
 
-      const saved = await savePageToApi(publishedPage)
-      if (saved) {
-        setCurrentPageId(saved.id)
-        dispatch({ type: "MARK_SAVED", timestamp: now, page: saved })
+      const result = await savePageToApi(publishedPage)
+      if (result.status === "ok") {
+        setCurrentPageId(result.page.id)
+        dispatch({ type: "MARK_SAVED", timestamp: now, page: result.page })
       } else {
         dispatch({ type: "SET_SAVE_STATUS", status: "error" })
+        toast.error("Failed to publish page")
       }
     } catch {
       dispatch({ type: "SET_SAVE_STATUS", status: "error" })
+      toast.error("Failed to publish page")
     }
   }, [])
 
@@ -706,14 +758,16 @@ export function EditorProvider({ children, pageId, adapter, initialBlocks, mode 
         updatedAt: now,
       }
 
-      const saved = await savePageToApi(unpublishedPage)
-      if (saved) {
-        dispatch({ type: "MARK_SAVED", timestamp: now, page: saved })
+      const result = await savePageToApi(unpublishedPage)
+      if (result.status === "ok") {
+        dispatch({ type: "MARK_SAVED", timestamp: now, page: result.page })
       } else {
         dispatch({ type: "SET_SAVE_STATUS", status: "error" })
+        toast.error("Failed to unpublish page")
       }
     } catch {
       dispatch({ type: "SET_SAVE_STATUS", status: "error" })
+      toast.error("Failed to unpublish page")
     }
   }, [])
 
@@ -850,16 +904,47 @@ export function EditorProvider({ children, pageId, adapter, initialBlocks, mode 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageId, adapter])
 
-  // Auto-save effect (debounced 30s)
+  // Auto-save effect (debounced) with exponential-backoff retry.
+  //
+  // First attempt fires 30s after the last change. On failure it retries after
+  // 60s, then 120s. If all three attempts fail, a persistent toast asks the
+  // user to save manually. Any new edit resets the schedule (the effect
+  // re-runs), and a conflict short-circuits retries (the notice bar takes over).
   useEffect(() => {
     if (!state.hasUnsavedChanges || !state.currentPage) return
+    // Don't auto-save into a known conflict — let the user resolve it first.
+    if (state.conflict) return
 
-    const timeout = setTimeout(() => {
-      saveCurrentPage()
-    }, 30000)
+    let cancelled = false
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const delays = [30000, 60000, 120000]
 
-    return () => clearTimeout(timeout)
-  }, [state.hasUnsavedChanges, state.currentPage, state.blocks, saveCurrentPage])
+    const attempt = async (i: number) => {
+      if (cancelled) return
+      const ok = await saveCurrentPage()
+      if (cancelled || ok) return
+      // A conflict sets state.conflict and re-runs this effect; stop retrying.
+      if (stateRef.current.conflict) return
+      if (i + 1 < delays.length) {
+        toast.error(`Auto-save failed — retrying in ${delays[i + 1] / 1000}s`, {
+          id: "autosave-failed",
+        })
+        timer = setTimeout(() => void attempt(i + 1), delays[i + 1])
+      } else {
+        toast.error("Auto-save failed — click Save to retry", {
+          id: "autosave-failed",
+          duration: Infinity,
+        })
+      }
+    }
+
+    timer = setTimeout(() => void attempt(0), delays[0])
+
+    return () => {
+      cancelled = true
+      if (timer) clearTimeout(timer)
+    }
+  }, [state.hasUnsavedChanges, state.currentPage, state.blocks, state.conflict, saveCurrentPage])
 
   return (
     <EditorContext.Provider
@@ -889,6 +974,8 @@ export function EditorProvider({ children, pageId, adapter, initialBlocks, mode 
         redo,
         // Page management
         saveCurrentPage,
+        reloadCurrentPage,
+        dismissConflict,
         loadPage,
         newPage,
         updatePageMeta,

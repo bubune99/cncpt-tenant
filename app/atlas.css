@@ -89,7 +89,11 @@
 }
 .atlas .topbar .store { display: flex; align-items: center; gap: 10px; font-family: var(--font-sans); font-size: 17px; }
 .atlas .topbar .store-dot { width: 14px; height: 14px; background: var(--ink); }
-.atlas .topbar .store-logo { height: 24px; width: auto; max-width: 132px; object-fit: contain; border-radius: 5px; display: block; }
+.atlas .topbar .store-logo { max-height: 28px; height: auto; width: auto; max-width: 140px; object-fit: contain; border-radius: 5px; display: block; }
+/* White-label dark-mode logo swap: show the dark variant only in dark theme. */
+.atlas .topbar .store-logo-dark { display: none; }
+:is([data-theme="dark"], .dark) .atlas .topbar .store-logo-light { display: none; }
+:is([data-theme="dark"], .dark) .atlas .topbar .store-logo-dark { display: block; }
 .atlas .topbar .right {
   margin-left: auto; display: flex; align-items: center; gap: 18px;
   font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft);
@@ -117,24 +121,55 @@
 .atlas .sidebar .meta { padding: 0 18px 14px; }
 .atlas .sidebar .meta .date { font-family: var(--font-sans); font-style: italic; font-size: 13px; color: var(--ink-soft); }
 .atlas .sidebar .nav { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 0; }
-.atlas .sidebar .nav-h { padding: 0 18px 6px; }
+.atlas .sidebar .nav-h { padding: 0 24px 6px; }
+/* ── Grainy MergedShell nav rows (mirrors .gr-nav in grainy.css) ──────────
+   Rounded pill rows inset from the sidebar edge, warm hover wash, clay-tint
+   active state (no left-border indicator), icon + label, subtle mono count. */
 .atlas .sidebar a {
   display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center;
-  padding: 9px 20px; color: var(--ink); text-decoration: none; font-size: 14.5px;
-  border-left: 3px solid transparent;
+  margin: 1px 12px; padding: 9px 12px; border-radius: var(--r-md);
+  color: var(--text-secondary); text-decoration: none; font-size: 13.5px; font-weight: 500;
+  transition: background .14s ease, color .14s ease;
 }
 .atlas .sidebar a .n { font-family: var(--font-mono); font-size: 10px; color: var(--ink-faint); }
 .atlas .sidebar a .nav-ico { color: var(--ink-soft); flex-shrink: 0; transition: color .14s ease; }
-.atlas .sidebar a:hover .nav-ico { color: var(--ink); }
-.atlas .sidebar a.active .nav-ico { color: var(--accent); }
-.atlas .sidebar a .badge {
-  font-family: var(--font-mono); font-size: 10px;
-  background: var(--accent); color: var(--accent-fg); padding: 1px 6px; border-radius: var(--r-sm);
+.atlas .sidebar a:hover .nav-ico { color: var(--text); }
+.atlas .sidebar a.active .nav-ico { color: var(--clay-ink); }
+:is([data-theme="dark"], .dark) .atlas .sidebar a.active .nav-ico { color: var(--clay-300); }
+.atlas .sidebar a .badge,
+.atlas .sidebar a .gr-navct {
+  margin-left: auto; font-family: var(--font-mono); font-size: 11px;
+  color: var(--text-muted); background: none; padding: 0; border-radius: 0;
 }
-.atlas .sidebar a:hover { background: var(--paper-2); }
-.atlas .sidebar a.active { background: var(--paper-2); border-left-color: var(--accent); }
+.atlas .sidebar a:hover { background: rgba(74,54,32,0.06); color: var(--text); }
+.atlas .sidebar a.active {
+  background: color-mix(in srgb, var(--clay-100) 60%, var(--surface-raised));
+  color: var(--clay-ink);
+}
+:is([data-theme="dark"], .dark) .atlas .sidebar a.active {
+  background: color-mix(in srgb, var(--clay-500) 20%, var(--surface-raised));
+  color: var(--clay-300);
+}
 .atlas .sidebar a.active .label { font-weight: 600; }
-.atlas .sidebar .acct { border-top: 1px solid var(--rule); padding: 14px 18px 0; }
+.atlas .sidebar .acct { border-top: 1px solid var(--rule); padding: 14px 12px 0; }
+/* ── Footer actions — Grainy icon rows (Visit site / Sign out) ──────────── */
+.atlas .sidebar .acct-actions {
+  margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line-faint);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.atlas .sidebar .acct-action {
+  display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center;
+  width: 100%; padding: 8px 10px; border-radius: var(--r-md);
+  color: var(--text-secondary); font-size: 13px; font-weight: 500; text-decoration: none;
+  background: none; border: none; cursor: pointer; text-align: left;
+  font-family: inherit; line-height: 1.2;
+  transition: background .14s ease, color .14s ease;
+}
+.atlas .sidebar .acct-action:hover { background: rgba(74,54,32,0.06); color: var(--text); }
+.atlas .sidebar .acct-action .nav-ico { color: var(--ink-soft); flex-shrink: 0; transition: color .14s ease; }
+.atlas .sidebar .acct-action:hover .nav-ico { color: var(--text); }
+.atlas .sidebar .acct-action-accent,
+.atlas .sidebar .acct-action-accent .nav-ico { color: var(--accent); }
 .atlas .sidebar .acct .initials {
   width: 30px; height: 30px; border-radius: 50%; color: #fff;
   background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #000));
@@ -255,15 +290,24 @@
   border: 1.5px solid var(--paper); line-height: 1;
 }
 .atlas .inbox-link {
-  display: grid; grid-template-columns: 22px 1fr auto; gap: 6px; align-items: baseline;
-  padding: 9px 20px; color: var(--ink); text-decoration: none; font-size: 14.5px;
-  border-left: 3px solid transparent; margin-bottom: 4px;
+  display: grid; grid-template-columns: 22px 1fr auto; gap: 8px; align-items: center;
+  margin: 1px 12px 8px; padding: 9px 12px; border-radius: var(--r-md);
+  color: var(--text-secondary); text-decoration: none; font-size: 13.5px; font-weight: 500;
+  transition: background .14s ease, color .14s ease;
 }
-.atlas .inbox-link:hover { background: var(--paper-2); }
-.atlas .inbox-link .n { color: var(--accent); font-family: var(--font-sans); font-size: 13px; }
+.atlas .inbox-link:hover { background: rgba(74,54,32,0.06); color: var(--text); }
+.atlas .inbox-link.active {
+  background: color-mix(in srgb, var(--clay-100) 60%, var(--surface-raised));
+  color: var(--clay-ink);
+}
+:is([data-theme="dark"], .dark) .atlas .inbox-link.active {
+  background: color-mix(in srgb, var(--clay-500) 20%, var(--surface-raised));
+  color: var(--clay-300);
+}
+.atlas .inbox-link .n { color: var(--accent); font-family: var(--font-sans); font-size: 14px; }
 .atlas .inbox-link .badge {
-  font-family: var(--font-mono); font-size: 10px;
-  background: var(--accent); color: var(--accent-fg); padding: 1px 6px; border-radius: 3px;
+  margin-left: auto; font-family: var(--font-mono); font-size: 11px;
+  color: var(--text-muted); background: none; padding: 0; border-radius: 0;
 }
 .atlas .inbox-link.active { background: var(--paper-2); border-left-color: var(--accent); }
 .atlas .adm-drawer {
@@ -360,21 +404,25 @@
 .atlas .sidebar.collapsed .label,
 .atlas .sidebar.collapsed .nav .badge,
 .atlas .sidebar.collapsed .acct-h,
-.atlas .sidebar.collapsed .acct-detail { display: none; }
+.atlas .sidebar.collapsed .acct-detail,
+.atlas .sidebar.collapsed .acct-action .label { display: none; }
 .atlas .sidebar.collapsed a,
-.atlas .sidebar.collapsed .inbox-link {
+.atlas .sidebar.collapsed .inbox-link,
+.atlas .sidebar.collapsed .acct-action {
   grid-template-columns: 1fr; justify-items: center; padding: 10px 0; gap: 0;
-  position: relative;
+  margin-left: 8px; margin-right: 8px; position: relative;
 }
 .atlas .sidebar.collapsed .nav-ico { color: var(--ink-soft); }
-.atlas .sidebar.collapsed a.active .nav-ico { color: var(--accent); }
+.atlas .sidebar.collapsed a.active .nav-ico { color: var(--clay-ink); }
+:is([data-theme="dark"], .dark) .atlas .sidebar.collapsed a.active .nav-ico { color: var(--clay-300); }
 .atlas .sidebar.collapsed .inbox-link .n { font-size: 16px; }
-.atlas .sidebar.collapsed .acct { padding: 14px 0 0; text-align: center; }
+.atlas .sidebar.collapsed .acct { padding: 14px 8px 0; text-align: center; }
 .atlas .sidebar.collapsed .acct-id { justify-content: center; }
 .atlas .sidebar.collapsed .acct .initials { margin-right: 0; }
+.atlas .sidebar.collapsed .acct-action { margin-left: 0; margin-right: 0; }
 /* Inbox unread → tiny accent dot in the corner when collapsed */
 .atlas .sidebar.collapsed .inbox-link .badge {
-  position: absolute; top: 4px; right: 12px;
+  position: absolute; top: 4px; right: 12px; background: var(--accent);
   min-width: 0; width: 7px; height: 7px; padding: 0; font-size: 0; border-radius: 50%;
 }
 

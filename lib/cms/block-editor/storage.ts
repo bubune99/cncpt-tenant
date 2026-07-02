@@ -162,30 +162,54 @@ export async function getPageBySlug(slug: string): Promise<SavedPage | null> {
   }
 }
 
-export async function savePage(page: SavedPage): Promise<SavedPage | null> {
+/** Result of a save attempt — distinguishes a stale-write conflict from a
+ *  generic failure so the editor can react differently (409 vs everything else). */
+export type SavePageResult =
+  | { status: "ok"; page: SavedPage }
+  | { status: "conflict"; remoteUpdatedAt: string | null }
+  | { status: "error" }
+
+export interface SavePageOptions {
+  /** The updatedAt the page was loaded with — enables 409 conflict detection. */
+  lastKnownUpdatedAt?: string
+  /** Skip conflict detection and overwrite the remote row unconditionally. */
+  force?: boolean
+}
+
+export async function savePage(
+  page: SavedPage,
+  opts: SavePageOptions = {}
+): Promise<SavePageResult> {
   try {
     const content = toPageDocument(page.blocks, page.layout, page.annotations)
-    const isNew = !page.id || page.id.includes("-") // localStorage-style IDs contain dashes
+    const normalizedSlug = page.slug.startsWith("/") ? page.slug : `/${page.slug}`
+    const status = page.status === "published" ? "PUBLISHED" : "DRAFT"
 
     // Check if page exists in the database
     const checkRes = await fetch(`/api/cms/admin/pages/${page.id}`)
     const exists = checkRes.ok
 
     if (exists) {
-      // Update existing page
+      // Update existing page. Send lastKnownUpdatedAt (unless forcing an
+      // overwrite) so the server can reject stale writes with a 409.
       const res = await fetch(`/api/cms/admin/pages/${page.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: page.title,
-          slug: page.slug.startsWith("/") ? page.slug : `/${page.slug}`,
+          slug: normalizedSlug,
           content,
-          status: page.status === "published" ? "PUBLISHED" : "DRAFT",
+          status,
+          ...(opts.force ? {} : { lastKnownUpdatedAt: opts.lastKnownUpdatedAt }),
         }),
       })
-      if (!res.ok) return null
+      if (res.status === 409) {
+        const data = await res.json().catch(() => ({}))
+        return { status: "conflict", remoteUpdatedAt: data?.conflict?.remoteUpdatedAt ?? null }
+      }
+      if (!res.ok) return { status: "error" }
       const data = await res.json()
-      return apiResponseToSavedPage(data)
+      return { status: "ok", page: apiResponseToSavedPage(data) }
     } else {
       // Create new page
       const res = await fetch("/api/cms/admin/pages", {
@@ -193,17 +217,17 @@ export async function savePage(page: SavedPage): Promise<SavedPage | null> {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: page.title,
-          slug: page.slug.startsWith("/") ? page.slug : `/${page.slug}`,
+          slug: normalizedSlug,
           content,
-          status: page.status === "published" ? "PUBLISHED" : "DRAFT",
+          status,
         }),
       })
-      if (!res.ok) return null
+      if (!res.ok) return { status: "error" }
       const data = await res.json()
-      return apiResponseToSavedPage(data)
+      return { status: "ok", page: apiResponseToSavedPage(data) }
     }
   } catch {
-    return null
+    return { status: "error" }
   }
 }
 

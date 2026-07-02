@@ -1301,6 +1301,7 @@ model Page {
   featuredImage Media?       @relation(fields: [featuredImageId], references: [id])
   routeConfig   RouteConfig? // If this page is mapped to a root-level route
   bundles       PageBundle[] // Bundles that created this page
+  versions      PageVersion[] // Snapshots of prior content (version history)
 
   @@unique([tenantId, slug]) // Unique slugs per tenant
   @@unique([tenantId, systemKey]) // At most one of each system page per tenant
@@ -1309,6 +1310,29 @@ model Page {
   @@index([status])
   @@index([systemKey])
   @@map("pages")
+}
+
+/// Point-in-time snapshot of a page's content. A new row is written on every
+/// content-changing save (capturing the PREVIOUS content) and on restore
+/// (capturing the current content first). Retention: last 20 per page.
+model PageVersion {
+  id     String @id @default(cuid())
+  pageId String
+  page   Page   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  // Multi-tenant scoping — mirrors Page's tenant relation exactly.
+  tenantId Int?       @map("tenant_id")
+  tenant   Subdomain? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  content   Json?
+  title     String
+  status    PageStatus @default(DRAFT)
+  createdBy String?
+  createdAt DateTime   @default(now())
+
+  @@index([pageId, createdAt])
+  @@index([tenantId])
+  @@map("page_versions")
 }
 
 enum PageLayoutMode {
@@ -4147,6 +4171,7 @@ model Subdomain {
   blogCategories       BlogCategory[]
   blogTags             BlogTag[]
   pages                Page[]
+  pageVersions         PageVersion[]
   products             Product[]
   categories           Category[]
   media                Media[]

@@ -61,6 +61,10 @@ import {
   X,
   PanelLeft,
   ArrowLeft,
+  History,
+  Link2,
+  AlertTriangle,
+  RotateCcw,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -78,6 +82,7 @@ import {
 } from "@/lib/cms/block-editor/screenshot"
 import { AIChatPanelV2 } from "./chat/ai-chat-panel-v2"
 import { AnnotationPanel } from "./annotation-panel"
+import { PageHistoryDialog } from "./page-history-dialog"
 
 // Redesigned, Atlas-skinned builder chat (components/cms/block-editor/chat).
 // Flip to `false` to fall back to the original Kofi panel.
@@ -110,16 +115,18 @@ function PreviewRenderer({ blocks }: { blocks: Block[] }) {
 
 function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hidePageMeta?: boolean }) {
   const editor = useEditor()
-  const { 
-    state, 
-    undo, 
-    redo, 
-    clearAll, 
-    saveCurrentPage, 
+  const {
+    state,
+    undo,
+    redo,
+    clearAll,
+    saveCurrentPage,
+    reloadCurrentPage,
     updatePageMeta,
     publishPage,
     unpublishPage,
   } = editor
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
   const [rightPanel, setRightPanel] = useState<"properties" | "ai" | "annotations">("properties")
   // Hand the open annotations to the builder AI chat to address as a batch.
@@ -182,10 +189,37 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
     setIsEditingTitle(false)
   }, [titleInput, pageTitle, updatePageMeta])
 
-  // Handle manual save (Ctrl+S)
+  // Handle manual save (Ctrl+S). Surface failures instead of always claiming
+  // success — a conflict additionally raises the notice bar below the toolbar.
   const handleSave = useCallback(async () => {
-    await saveCurrentPage()
-    toast.success("Page saved")
+    const ok = await saveCurrentPage()
+    if (ok) {
+      toast.success("Page saved")
+    } else {
+      toast.error("Couldn't save your changes")
+    }
+  }, [saveCurrentPage])
+
+  // Copy the page's public URL to the clipboard. The tenant storefront is
+  // served from the same origin as the admin (subdomain), so the public link
+  // is origin + slug — matching the "View live" / publish-toast links.
+  const handleCopyPublicLink = useCallback(async () => {
+    const slug = (pageSlug || "").replace(/^\//, "")
+    const origin = typeof window !== "undefined" ? window.location.origin : ""
+    const url = `${origin}/${slug}`
+    try {
+      await navigator.clipboard.writeText(url)
+      toast.success("Public link copied", { description: url })
+    } catch {
+      toast.error("Couldn't copy the link")
+    }
+  }, [pageSlug])
+
+  // Overwrite the remote row despite a concurrent-edit conflict.
+  const handleOverwriteConflict = useCallback(async () => {
+    const ok = await saveCurrentPage({ force: true })
+    if (ok) toast.success("Page saved (overwrote the other change)")
+    else toast.error("Couldn't save your changes")
   }, [saveCurrentPage])
 
   // Handle publish
@@ -609,6 +643,19 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
                       Import / Export
                     </DropdownMenuItem>
                   </ImportExportDialog>
+                  {!hidePageMeta && state.currentPage?.id && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setHistoryOpen(true)}>
+                        <History size={14} className="mr-2" />
+                        Version History
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleCopyPublicLink}>
+                        <Link2 size={14} className="mr-2" />
+                        Copy public link
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleCaptureScreenshot} disabled={isCapturing}>
                     <Camera size={14} className="mr-2" />
@@ -733,6 +780,31 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
           )}
         </div>
       </div>
+
+      {/* Concurrent-edit conflict notice — blocks nothing but makes the choice
+          explicit and honest: take theirs (reload) or keep yours (overwrite). */}
+      {state.conflict && (
+        <div
+          className="flex flex-wrap items-center gap-2 border-b px-3 py-2 text-sm"
+          style={{ backgroundColor: "rgba(245, 158, 11, 0.12)", borderColor: "var(--border)" }}
+          role="alert"
+        >
+          <AlertTriangle size={16} className="text-amber-500 shrink-0" />
+          <span className="text-foreground">
+            This page was changed elsewhere — reload to get the latest, or Save again to overwrite.
+          </span>
+          <div className="flex items-center gap-2 ml-auto">
+            <Button variant="outline" size="sm" onClick={reloadCurrentPage} className="gap-1.5">
+              <RotateCcw size={14} />
+              Reload (discard my changes)
+            </Button>
+            <Button size="sm" onClick={handleOverwriteConflict} className="gap-1.5">
+              <Save size={14} />
+              Overwrite
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Main content */}
       {showPreview ? (
@@ -1008,6 +1080,18 @@ function EditorShell({ editorLabel, hidePageMeta }: { editorLabel?: string; hide
         baseline={screenshotBaseline}
         onSaveBaseline={handleSaveBaseline}
       />
+
+      {/* Version history */}
+      {!hidePageMeta && state.currentPage?.id && (
+        <PageHistoryDialog
+          open={historyOpen}
+          onOpenChange={setHistoryOpen}
+          pageId={state.currentPage.id}
+          onRestored={() => {
+            if (state.currentPage?.id) void reloadCurrentPage()
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -38,6 +38,10 @@ export type { DashboardStats, RecentOrder } from './dashboard-data'
 // Partial Data
 export { registerPartialFetchers } from './partial-data'
 
+// Form Data
+export { registerFormFetchers } from './forms-data'
+export type { SerializedForm } from './forms-data'
+
 // Default Templates
 export {
   defaultShopPageBlocks,

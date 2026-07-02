@@ -16,6 +16,7 @@ import { BlockPageRenderer } from '@/components/cms/page-wrapper/block-page-rend
 import type { Block } from '@/lib/cms/block-editor/types';
 import {
   registerCommerceFetchers,
+  registerFormFetchers,
   resolveSmartBlockData,
   serializeSmartBlockData,
 } from '@/lib/cms/block-editor/smart-blocks';
@@ -26,6 +27,7 @@ import {
 // server, no data requirement is emitted, fetchProduct never runs, and the page
 // renders "Product not found".
 import '@/components/cms/smart-blocks/commerce';
+import '@/components/cms/smart-blocks/forms';
 import { defaultProductDetailBlocks } from '@/lib/cms/block-editor/smart-blocks/default-templates';
 import { getTenantContext } from '../../../lib/tenant-context';
 
@@ -137,6 +139,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
   }
 
   registerCommerceFetchers();
+  registerFormFetchers();
   // Run block-data resolution inside the tenant context so the commerce fetchers
   // (fetchProduct etc.) are scoped to THIS tenant — otherwise the Prisma tenant
   // middleware has no tenant and the product lookup returns nothing ("Product not found").

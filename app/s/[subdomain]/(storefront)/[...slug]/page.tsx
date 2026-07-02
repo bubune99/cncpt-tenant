@@ -9,6 +9,7 @@
  */
 
 import { prisma } from '@/lib/cms/db';
+import { runWithTenant } from '@/lib/cms/db/tenant-context';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { PageWrapper, getPageLayoutSettings } from '@/components/cms/page-wrapper';
@@ -17,9 +18,13 @@ import type { Block } from '@/lib/cms/block-editor/types';
 import {
   registerCommerceFetchers,
   registerDashboardFetchers,
+  registerFormFetchers,
   resolveSmartBlockData,
   serializeSmartBlockData,
 } from '@/lib/cms/block-editor/smart-blocks';
+// Side-effect: register smart-block DEFINITIONS in the server registry so
+// resolveSmartBlockData can emit their data requirements.
+import '@/components/cms/smart-blocks/forms';
 import { getTenantContext } from '../../lib/tenant-context';
 
 export const dynamic = 'force-dynamic';
@@ -129,7 +134,8 @@ export default async function CatchAllPage({ params }: PageProps) {
   if (blocks.length > 0) {
     registerCommerceFetchers();
     registerDashboardFetchers();
-    const dataMap = await resolveSmartBlockData(blocks);
+    registerFormFetchers();
+    const dataMap = await runWithTenant(tenantContext.id, () => resolveSmartBlockData(blocks));
     const smartBlockData = serializeSmartBlockData(dataMap);
 
     return (

@@ -25,7 +25,7 @@ import {
   HelpCircle, Compass, Moon, Sun, Search, Plus, PanelLeft,
   LayoutDashboard, FileText, ShoppingBag, Package, Users, BookOpen,
   BarChart3, Settings, Layers, Image as ImageIcon, Megaphone, Workflow,
-  Tag, MessageSquare, Calendar, Boxes, Circle,
+  Tag, MessageSquare, Calendar, Boxes, Circle, ExternalLink, LogOut, Sparkles,
 } from 'lucide-react';
 
 /** Structural type for a lucide icon — tolerant of the lib's per-version typing. */
@@ -63,12 +63,14 @@ interface NavItem {
 const DEFAULT_NAV: readonly NavItem[] = [
   { num: '01', name: 'Dashboard', key: 'dashboard', href: '/admin',         helpKey: 'admin.sidebar.dashboard',  tourId: 'nav-admin-dashboard' },
   { num: '02', name: 'Pages',     key: 'pages',     href: '/admin/pages',   helpKey: 'admin.sidebar.pages',      tourId: 'nav-pages' },
-  { num: '03', name: 'Orders',    key: 'orders',     href: '/admin/orders',  helpKey: 'admin.sidebar.orders',     tourId: 'nav-orders',    badge: '12' },
+  { num: '03', name: 'Orders',    key: 'orders',     href: '/admin/orders',  helpKey: 'admin.sidebar.orders',     tourId: 'nav-orders' },
   { num: '04', name: 'Products',  key: 'products',  href: '/admin/products',helpKey: 'admin.sidebar.products',   tourId: 'nav-products' },
-  { num: '05', name: 'Customers', key: 'customers', href: '/admin/customers',helpKey: 'admin.sidebar.customers', tourId: 'nav-customers' },
-  { num: '06', name: 'Journal',   key: 'journal',   href: '/admin/blog',    helpKey: 'admin.sidebar.blog',       tourId: 'nav-blog' },
-  { num: '07', name: 'Analytics', key: 'analytics', href: '/admin/analytics',helpKey:'admin.sidebar.analytics',  tourId: 'nav-admin-analytics' },
-  { num: '08', name: 'Settings',  key: 'settings',  href: '/admin/settings',helpKey: 'admin.sidebar.settings',  tourId: 'nav-settings' },
+  { num: '05', name: 'Collections', key: 'collections', href: '/admin/collections', helpKey: 'admin.sidebar.collections', tourId: 'nav-collections' },
+  { num: '06', name: 'Inventory', key: 'inventory', href: '/admin/inventory', helpKey: 'admin.sidebar.inventory', tourId: 'nav-inventory' },
+  { num: '07', name: 'Customers', key: 'customers', href: '/admin/customers',helpKey: 'admin.sidebar.customers', tourId: 'nav-customers' },
+  { num: '08', name: 'Journal',   key: 'journal',   href: '/admin/blog',    helpKey: 'admin.sidebar.blog',       tourId: 'nav-blog' },
+  { num: '09', name: 'Analytics', key: 'analytics', href: '/admin/analytics',helpKey:'admin.sidebar.analytics',  tourId: 'nav-admin-analytics' },
+  { num: '10', name: 'Settings',  key: 'settings',  href: '/admin/settings',helpKey: 'admin.sidebar.settings',  tourId: 'nav-settings' },
 ] as const;
 
 // ─────────────────────────────────────────────
@@ -188,6 +190,8 @@ export function AdminShell({
     siteUrl = '/',
     siteName,
     logoUrl,
+    logoDarkUrl,
+    logoAlt,
     showChat = true,
     isDemo = false,
     moduleNavGroups,
@@ -346,8 +350,23 @@ export function AdminShell({
                 </button>
                 <div className="store" data-tour-id="header-store-name">
                   {logoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={logoUrl} alt="" className="store-logo" />
+                    <>
+                      {/* Light logo — hidden in dark theme only when a dark variant exists */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={logoUrl}
+                        alt={logoAlt ?? siteName ?? ''}
+                        className={'store-logo' + (logoDarkUrl ? ' store-logo-light' : '')}
+                      />
+                      {logoDarkUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={logoDarkUrl}
+                          alt={logoAlt ?? siteName ?? ''}
+                          className="store-logo store-logo-dark"
+                        />
+                      )}
+                    </>
                   ) : (
                     <span className="store-dot" />
                   )}
@@ -420,7 +439,7 @@ export function AdminShell({
                   <div className="nav-h eyebrow" style={{ color: 'var(--ink-faint)', padding: '0 18px 6px' }}>Quick</div>
                   <Link
                     href={sectionHref('/admin/notifications')}
-                    className={'inbox-link' + (activeSection === 'notifications' ? ' active' : '')}
+                    className={'inbox-link gr-nav' + (activeSection === 'notifications' ? ' active' : '')}
                     onClick={() => setMobileOpen(false)}
                     data-tour-id="nav-inbox"
                     title={collapsed ? 'Inbox' : undefined}
@@ -441,7 +460,7 @@ export function AdminShell({
                           key={item.key}
                           href={sectionHref(item.href)}
                           prefetch={false}
-                          className={active ? 'active' : ''}
+                          className={'gr-nav' + (active ? ' active' : '')}
                           onClick={() => setMobileOpen(false)}
                           data-help-key={item.helpKey}
                           data-tour-id={item.tourId ?? `nav-${item.key}`}
@@ -449,7 +468,7 @@ export function AdminShell({
                         >
                           <NavIcon className="nav-ico" size={17} strokeWidth={1.8} aria-hidden="true" />
                           <span className="label">{item.name}</span>
-                          {item.badge && <span className="badge">{item.badge}</span>}
+                          {item.badge && <span className="gr-navct">{item.badge}</span>}
                         </Link>
                       );
                     })}
@@ -467,35 +486,37 @@ export function AdminShell({
                         </div>
                       </div>
                     </div>
-                    <div className="acct-detail" style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 9, fontSize: 12 }}>
+                    <div className="acct-actions">
                       <Link
                         href={siteUrl}
-                        className="fig"
-                        style={{ fontSize: 12, color: 'var(--ink-soft)', textDecoration: 'none' }}
+                        className="acct-action"
                         target="_blank"
                         rel="noopener noreferrer"
                         data-tour-id="nav-view-site"
+                        title={collapsed ? 'Visit site' : undefined}
                       >
-                        ↗ Visit site
+                        <ExternalLink className="nav-ico" size={16} strokeWidth={1.8} aria-hidden="true" />
+                        <span className="label">Visit site</span>
                       </Link>
-                      <span aria-hidden="true" style={{ color: 'var(--ink-faint)' }}>·</span>
                       {isDemo ? (
                         <Link
                           href="/pricing"
-                          className="fig"
-                          style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none' }}
+                          className="acct-action acct-action-accent"
                           data-tour-id="nav-start-trial"
+                          title={collapsed ? 'Start free trial' : undefined}
                         >
-                          → Start free trial
+                          <Sparkles className="nav-ico" size={16} strokeWidth={1.8} aria-hidden="true" />
+                          <span className="label">Start free trial</span>
                         </Link>
                       ) : (
                         <button
                           onClick={() => { setMobileOpen(false); signOut(); }}
-                          className="fig"
-                          style={{ fontSize: 12, color: 'var(--ink-soft)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left' }}
+                          className="acct-action"
                           data-tour-id="header-sign-out"
+                          title={collapsed ? 'Sign out' : undefined}
                         >
-                          ← Sign out
+                          <LogOut className="nav-ico" size={16} strokeWidth={1.8} aria-hidden="true" />
+                          <span className="label">Sign out</span>
                         </button>
                       )}
                     </div>

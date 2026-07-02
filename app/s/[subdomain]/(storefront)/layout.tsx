@@ -53,7 +53,7 @@ export default async function StorefrontLayout({
   // Mobile nav reuses the configured header nav links (default set otherwise).
   const navLinks = header.navLinks ?? [
     { href: '/shop',       label: 'Shop' },
-    { href: '/posts',      label: 'Journal' },
+    { href: '/blog',       label: 'Journal' },
     { href: '/categories', label: 'Categories' },
   ];
 

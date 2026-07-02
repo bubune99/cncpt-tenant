@@ -15,6 +15,7 @@ import { BlockPageRenderer } from '@/components/cms/page-wrapper/block-page-rend
 import type { Block } from '@/lib/cms/block-editor/types';
 import {
   registerCommerceFetchers,
+  registerFormFetchers,
   resolveSmartBlockData,
   serializeSmartBlockData,
 } from '@/lib/cms/block-editor/smart-blocks';
@@ -22,6 +23,7 @@ import {
 // registry so resolveSmartBlockData can emit their data requirements server-side.
 // (block-page-renderer's copy of this import is client-only — see shop/[slug].)
 import '@/components/cms/smart-blocks/commerce';
+import '@/components/cms/smart-blocks/forms';
 import { ShopPageLayout } from '@/components/cms/shop/shop-page-layout';
 import { getTenantContext } from '../../lib/tenant-context';
 import { runWithTenant } from '@/lib/cms/db/tenant-context';
@@ -94,6 +96,7 @@ export default async function ShopPage({ params }: PageProps) {
   // If a CMS page exists with content, render it via the block editor
   if (blocks.length > 0) {
     registerCommerceFetchers();
+    registerFormFetchers();
     // Scope commerce fetchers to this tenant (see shop/[slug] for rationale).
     const dataMap = await runWithTenant(tenantContext.id, () => resolveSmartBlockData(blocks));
     const smartBlockData = serializeSmartBlockData(dataMap);

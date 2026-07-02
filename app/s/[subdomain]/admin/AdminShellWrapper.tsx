@@ -6,6 +6,7 @@ import { AdminShell } from './AdminShell';
 import { isDemoSubdomain, DEMO_CONFIG } from '@/lib/demo';
 import type { ModuleNavGroupData } from '@/contexts/CMSConfigContext';
 import { FeatureProvider } from '@/lib/cms/features/feature-context';
+import { useBranding } from '@/hooks/use-branding';
 
 /**
  * Serializable module data from API (no React components)
@@ -147,6 +148,12 @@ export function AdminShellWrapper({
   // Check if this is demo mode
   const isDemo = isDemoSubdomain(subdomain);
 
+  // White-label branding — fetched client-side (cached, non-blocking). We render
+  // the fallback brand mark + subdomain name first, then swap to the tenant's
+  // configured logo/name once branding resolves. Errors keep the fallback.
+  const { branding, isLoading: brandingLoading, error: brandingError } = useBranding();
+  const brandingReady = !brandingLoading && !brandingError;
+
   // Fetch modules and features on mount
   useEffect(() => {
     let cancelled = false;
@@ -199,7 +206,15 @@ export function AdminShellWrapper({
     // /s/<subdomain> prefix 404s on the subdomain. Keep empty for bare hrefs.
     basePath: ``,
     siteUrl: '/',
-    siteName: isDemo ? DEMO_CONFIG.siteName : subdomain,
+    // Demo always shows the demo name; real tenants show their branded site name
+    // once branding loads, falling back to the subdomain until then / on error.
+    siteName: isDemo
+      ? DEMO_CONFIG.siteName
+      : (brandingReady && branding.siteName ? branding.siteName : subdomain),
+    // White-label logo (fallback mark shown until branding resolves).
+    logoUrl: brandingReady ? branding.logoUrl : undefined,
+    logoDarkUrl: brandingReady ? branding.logoDarkUrl : undefined,
+    logoAlt: brandingReady ? branding.logoAlt : undefined,
     // These admin/governance items live under Settings (see settings overview)
     // rather than the top-level sidebar, to keep the nav short.
     hiddenItems: ['Roles & Permissions', 'Audit Log', 'Modules'] as string[],

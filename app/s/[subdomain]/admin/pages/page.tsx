@@ -368,19 +368,24 @@ export default function PagesPage() {
 
   const handleDuplicate = async (page: Page) => {
     try {
-      const res = await fetch('/api/cms/admin/pages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: `${page.title} (Copy)`, slug: `${page.slug}-copy`, status: 'draft' }),
-      });
+      // Use the dedicated clone endpoint so content, layout config and SEO are
+      // carried over (a plain POST would create an empty page).
+      const res = await fetch(`/api/cms/admin/pages/${page.id}/clone`, { method: 'POST' });
       if (!res.ok) {
         const data = await res.json() as { error?: string };
-        throw new Error(data.error ?? 'Failed to duplicate page');
+        throw new Error(data.error ?? 'Failed to clone page');
       }
-      toast.success('Page duplicated successfully');
+      const clone = await res.json() as { id: string; title: string };
+      toast.success('Page cloned', {
+        description: clone.title,
+        action: {
+          label: 'Open',
+          onClick: () => { window.location.href = buildPath(`/admin/pages/${clone.id}/builder`); },
+        },
+      });
       void fetchPages();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to duplicate page');
+      toast.error(err instanceof Error ? err.message : 'Failed to clone page');
     }
   };
 

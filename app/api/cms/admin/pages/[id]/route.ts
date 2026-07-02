@@ -115,6 +115,25 @@ export const PUT = withPermission(
         )
       }
 
+      // Concurrent-edit conflict detection. The client sends the updatedAt it
+      // loaded the page with. If the DB row is newer, someone else saved in the
+      // meantime — reject with 409 so the client can offer reload/overwrite.
+      // Overwrite re-PUTs without lastKnownUpdatedAt to bypass this check.
+      if (body.lastKnownUpdatedAt) {
+        const known = new Date(body.lastKnownUpdatedAt).getTime()
+        const current = page.updatedAt.getTime()
+        if (Number.isFinite(known) && known < current) {
+          return NextResponse.json(
+            {
+              error:
+                'This page was changed elsewhere since you loaded it.',
+              conflict: { remoteUpdatedAt: page.updatedAt.toISOString() },
+            },
+            { status: 409 }
+          )
+        }
+      }
+
       const updateData: Record<string, unknown> = {}
 
       // Handle title
@@ -289,19 +308,53 @@ export const PUT = withPermission(
         updateData.sourceDeps = body.sourceDeps
       }
 
-      const updatedPage = await prisma.page.update({
-        where: { id },
-        data: updateData,
-        include: {
-          featuredImage: true,
-          parent: {
-            select: {
-              id: true,
-              title: true,
-              slug: true,
+      // Snapshot the PREVIOUS content into a PageVersion whenever this save
+      // changes the content. Kept atomic with the update, and pruned to the
+      // last 20 versions per page in the same transaction.
+      const contentChanged =
+        body.content !== undefined &&
+        JSON.stringify(page.content ?? null) !== JSON.stringify(body.content ?? null)
+
+      const updatedPage = await prisma.$transaction(async (tx) => {
+        if (contentChanged) {
+          await tx.pageVersion.create({
+            data: {
+              pageId: page.id,
+              content: page.content ?? undefined,
+              title: page.title,
+              status: page.status,
+              createdBy: context.user.id,
+            },
+          })
+
+          // Retain only the 20 most recent versions for this page.
+          const stale = await tx.pageVersion.findMany({
+            where: { pageId: page.id },
+            orderBy: { createdAt: 'desc' },
+            skip: 20,
+            select: { id: true },
+          })
+          if (stale.length > 0) {
+            await tx.pageVersion.deleteMany({
+              where: { id: { in: stale.map((v) => v.id) } },
+            })
+          }
+        }
+
+        return tx.page.update({
+          where: { id },
+          data: updateData,
+          include: {
+            featuredImage: true,
+            parent: {
+              select: {
+                id: true,
+                title: true,
+                slug: true,
+              },
             },
           },
-        },
+        })
       })
 
       // Log the action

@@ -185,6 +185,7 @@ const TENANT_SCOPED_MODELS = new Set([
   "Order",
   "OrderWorkflow",
   "Page",
+  "PageVersion",
   "RouteConfig",
   "Media",
   "MediaFolder",

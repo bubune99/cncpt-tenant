@@ -1,161 +1,63 @@
 'use client';
 
 /**
- * Admin customers list — Atlas editorial style
- * Faithful port of atlas-v2-pages.jsx Customers()
+ * Customers — Grainy roster screen.
  *
- * Preserves all existing data wiring:
- *  - fetch /api/cms/admin/customers with filters
- *  - fetch /api/cms/admin/customers/stats
- *  - fetch /api/cms/admin/customers/export
- *  - POST /api/cms/admin/customers (create customer dialog)
- *  - fetch /api/cms/admin/business-owners/v2
- *  - useWizard tour integration
+ * Header stat chips, segment pill tabs, tier/tenant filter pills, sort + live
+ * search, selection bulk bar, and the roster table over the real
+ * /api/cms/admin/customers payload. Columns and stats are limited to fields the
+ * list API provides (spend / AOV / location / segment tags live on the detail
+ * page only). All existing capabilities are preserved: search, tenant + tier
+ * filters, status tabs, CSV export, create-customer dialog, and the guided tour.
  */
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useWizard } from '@/contexts/WizardContext';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/cms/ui/dialog';
-import { Loader2 } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { Users, Activity, Sparkles, ShoppingBag, Download, Plus, Mail, Tag, X } from 'lucide-react';
+import { useWizard } from '@/contexts/WizardContext';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
+import { Btn, Eyebrow, LiveSearch } from '@/components/cms/admin/grainy-ui';
+import { FilterSelect, SortSelect, SegTabs, type SegTab } from '@/components/cms/admin/customers/customers-ui';
+import { CustomersListTable } from '@/components/cms/admin/customers/customers-list-table';
+import { CustomerCreateDialog } from '@/components/cms/admin/customers/customer-create-dialog';
+import {
+  relativeTime,
+  monthYear,
+  type BusinessOwner,
+  type CustomerListRow,
+  type CustomerStats,
+} from '@/components/cms/admin/customers/customers-model';
 
-// ─────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────
+type SegKey = 'all' | 'active' | 'inactive' | 'new';
+const NEW_WINDOW_MS = 7 * 86_400_000;
 
-interface Customer {
-  readonly id: string;
-  readonly name: string;
-  readonly email: string;
-  readonly businessOwner: {
-    readonly id: string;
-    readonly businessName: string;
-  };
-  readonly stackAuthUserId?: string;
-  readonly accessLevel: string;
-  readonly storageUsed: number;
-  readonly storageLimit: number;
-  readonly designCount: number;
-  readonly lastActivityAt: string | null;
-  readonly isActive: boolean;
-  readonly createdAt: string;
+const TIER_OPTIONS = ['Any', 'Premium', 'Standard', 'Basic'] as const;
+const SORT_OPTIONS = ['Last order', 'Orders', 'Name A–Z'] as const;
+
+function tierToParam(tier: string): string {
+  return tier === 'Any' ? 'all' : tier.toLowerCase();
 }
 
-interface CustomerStats {
-  readonly totalCustomers: number;
-  readonly activeToday: number;
-  readonly newThisMonth: number;
-  readonly totalStorageUsed: number;
-  readonly averageStoragePerCustomer: number;
-}
-
-interface BusinessOwner {
-  readonly id: string;
-  readonly name: string;
-}
-
-type TabFilter = 'all' | 'active' | 'inactive' | 'new';
-
-interface CreateFormData {
-  email: string;
-  name: string;
-  businessOwnerId: string;
-  accessLevel: string;
-  storageLimit: number | undefined;
-  sendInvitation: boolean;
-}
-
-// ─────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────
-
-function initials(name: string): string {
-  return name
-    .split(' ')
-    .map(w => w[0] ?? '')
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-}
-
-/** Deterministic colour from string — cycles through atlas-friendly palette */
-const AVATAR_PALETTE = [
-  '#e7a23b', '#3a4a8b', '#c8443a', '#4f5e3a',
-  '#88857a', '#8b2c1f', '#1a1410', '#3a6b8b',
-] as const;
-
-function avatarColor(str: string): string {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash * 31 + str.charCodeAt(i)) | 0;
-  }
-  return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length] ?? '#88857a';
-}
-
-function tierPill(accessLevel: string): { label: string; cls: string } {
-  switch (accessLevel.toLowerCase()) {
-    case 'premium':  return { label: 'VIP',   cls: 'pill-solid-gold' };
-    case 'standard': return { label: 'REG',   cls: 'pill-out' };
-    case 'basic':    return { label: 'NEW',   cls: 'pill-out' };
-    default:         return { label: accessLevel.toUpperCase().slice(0, 6), cls: 'pill-out' };
-  }
-}
-
-function formatLastSeen(ts: string | null): string {
-  if (!ts) return 'never';
-  const diff = Date.now() - new Date(ts).getTime();
-  const minutes = Math.floor(diff / 60_000);
-  if (minutes < 60)  return `${minutes}m ago`;
-  const hours = Math.floor(diff / 3_600_000);
-  if (hours < 24)    return `${hours}h ago`;
-  const days = Math.floor(diff / 86_400_000);
-  if (days === 1)    return 'yesterday';
-  if (days < 7)      return `${days}d ago`;
-  return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
-function formatSince(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-}
-
-// ─────────────────────────────────────────────
-// Component
-// ─────────────────────────────────────────────
-
-export default function CustomersPage() {
+export default function CustomersPage(): React.ReactElement {
   const { startTour, isTourCompleted } = useWizard();
+  const { buildPath } = useCMSConfig();
+  const router = useRouter();
 
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customers, setCustomers] = useState<CustomerListRow[]>([]);
   const [stats, setStats] = useState<CustomerStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [businessOwnerFilter, setBusinessOwnerFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [accessLevelFilter, setAccessLevelFilter] = useState('all');
   const [businessOwners, setBusinessOwners] = useState<BusinessOwner[]>([]);
-  const [activeTab, setActiveTab] = useState<TabFilter>('all');
+  const [loading, setLoading] = useState(true);
 
-  // Create customer dialog state
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
-  const [createFormData, setCreateFormData] = useState<CreateFormData>({
-    email: '',
-    name: '',
-    businessOwnerId: '',
-    accessLevel: 'standard',
-    storageLimit: undefined,
-    sendInvitation: false,
-  });
+  const [seg, setSeg] = useState<SegKey>('all');
+  const [q, setQ] = useState('');
+  const [sort, setSort] = useState<string>('Last order');
+  const [tier, setTier] = useState<string>('Any');
+  const [ownerId, setOwnerId] = useState<string>('all');
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const [createOpen, setCreateOpen] = useState(false);
 
-  // ── Tour ──
+  // ── Guided tour (preserved) ──
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!isTourCompleted('customers')) startTour('customers');
@@ -163,37 +65,39 @@ export default function CustomersPage() {
     return () => clearTimeout(timer);
   }, [startTour, isTourCompleted]);
 
-  // ── Data fetching ──
-  useEffect(() => {
-    void fetchCustomers();
-    void fetchStats();
-    void fetchAllBusinessOwners();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [businessOwnerFilter, statusFilter, accessLevelFilter]);
-
-  const fetchAllBusinessOwners = async () => {
+  const fetchOwners = useCallback(async () => {
     try {
       const res = await fetch('/api/cms/admin/business-owners/v2');
       if (res.ok) {
-        const data = await res.json() as { businessOwners: Array<{ id: string; businessName: string }> };
-        setBusinessOwners(data.businessOwners.map(o => ({ id: o.id, name: o.businessName })));
+        const data = (await res.json()) as { businessOwners: Array<{ id: string; businessName: string }> };
+        setBusinessOwners(data.businessOwners.map((o) => ({ id: o.id, name: o.businessName })));
       }
     } catch {
-      // non-admin — empty list is fine
+      // non-super-admin — empty list is expected
     }
-  };
+  }, []);
 
-  const fetchCustomers = async () => {
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await fetch('/api/cms/admin/customers/stats');
+      if (res.ok) setStats((await res.json()) as CustomerStats);
+    } catch {
+      // silent — chips fall back to derived counts
+    }
+  }, []);
+
+  const fetchCustomers = useCallback(async () => {
+    setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (businessOwnerFilter !== 'all') params.append('businessOwnerId', businessOwnerFilter);
-      if (statusFilter !== 'all') params.append('status', statusFilter);
-      if (accessLevelFilter !== 'all') params.append('accessLevel', accessLevelFilter);
+      if (ownerId !== 'all') params.append('businessOwnerId', ownerId);
+      if (tier !== 'Any') params.append('accessLevel', tier.toLowerCase());
       const res = await fetch(`/api/cms/admin/customers?${params.toString()}`);
       if (res.ok) {
-        const data = await res.json() as { customers: Customer[] };
+        const data = (await res.json()) as { customers: CustomerListRow[] };
         setCustomers(data.customers);
-        if (businessOwners.length === 0) {
+        setBusinessOwners((prev) => {
+          if (prev.length > 0) return prev;
           const seen = new Set<string>();
           const unique: BusinessOwner[] = [];
           for (const c of data.customers) {
@@ -202,375 +106,207 @@ export default function CustomersPage() {
               unique.push({ id: c.businessOwner.id, name: c.businessOwner.businessName });
             }
           }
-          setBusinessOwners(unique);
-        }
+          return unique;
+        });
+      } else {
+        toast.error('Failed to load customers');
       }
     } catch {
-      // silence
+      toast.error('Failed to load customers');
     } finally {
       setLoading(false);
     }
-  };
+  }, [ownerId, tier]);
 
-  const fetchStats = async () => {
-    try {
-      const res = await fetch('/api/cms/admin/customers/stats');
-      if (res.ok) {
-        const data = await res.json() as CustomerStats;
-        setStats(data);
-      }
-    } catch {
-      // silence
+  useEffect(() => { void fetchOwners(); void fetchStats(); }, [fetchOwners, fetchStats]);
+  useEffect(() => { void fetchCustomers(); }, [fetchCustomers]);
+
+  // ── Derived rows ──
+  const segFiltered = useMemo(() => customers.filter((c) => {
+    switch (seg) {
+      case 'active': return c.isActive;
+      case 'inactive': return !c.isActive;
+      case 'new': return Date.now() - new Date(c.createdAt).getTime() < NEW_WINDOW_MS;
+      default: return true;
     }
-  };
+  }), [customers, seg]);
 
-  const exportCustomers = async () => {
+  const rows = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    const searched = !term ? segFiltered : segFiltered.filter((c) =>
+      c.name.toLowerCase().includes(term) || c.email.toLowerCase().includes(term) || c.id.toLowerCase().includes(term));
+    const sorted = [...searched];
+    sorted.sort((a, b) => {
+      if (sort === 'Orders') return b.designCount - a.designCount;
+      if (sort === 'Name A–Z') return a.name.localeCompare(b.name);
+      // Last order — most recent first, nulls last
+      const at = a.lastActivityAt ? new Date(a.lastActivityAt).getTime() : 0;
+      const bt = b.lastActivityAt ? new Date(b.lastActivityAt).getTime() : 0;
+      return bt - at;
+    });
+    return sorted;
+  }, [segFiltered, q, sort]);
+
+  const segTabs = useMemo<SegTab<SegKey>[]>(() => [
+    { key: 'all', label: 'All', count: customers.length },
+    { key: 'active', label: 'Active', count: customers.filter((c) => c.isActive).length },
+    { key: 'inactive', label: 'Dormant', count: customers.filter((c) => !c.isActive).length },
+    { key: 'new', label: 'New · 7d', count: customers.filter((c) => Date.now() - new Date(c.createdAt).getTime() < NEW_WINDOW_MS).length },
+  ], [customers]);
+
+  const withOrders = useMemo(() => customers.filter((c) => c.designCount > 0).length, [customers]);
+  const chips = [
+    { icon: Users, value: stats?.totalCustomers ?? customers.length, label: 'customers', tone: 'var(--text)' },
+    { icon: Activity, value: stats?.activeToday ?? 0, label: 'active today', tone: 'var(--sage-700)' },
+    { icon: Sparkles, value: stats?.newThisMonth ?? 0, label: 'new this month', tone: 'var(--clay-700)' },
+    { icon: ShoppingBag, value: withOrders, label: 'with orders', tone: 'var(--text)' },
+  ] as const;
+
+  // ── Selection ──
+  const toggle = (id: string) => setSel((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const allOn = rows.length > 0 && rows.every((c) => sel.has(c.id));
+  const toggleAll = () => setSel((s) => { const n = new Set(s); allOn ? rows.forEach((c) => n.delete(c.id)) : rows.forEach((c) => n.add(c.id)); return n; });
+
+  const openCustomer = (id: string) => router.push(buildPath(`/admin/customers/${id}`));
+
+  const showTenant = businessOwners.length > 1;
+  const narrowed = tier !== 'Any' || (ownerId !== 'all') || q.trim().length > 0;
+
+  // ── Export ──
+  const exportAll = useCallback(async () => {
     try {
       const res = await fetch('/api/cms/admin/customers/export');
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `customers-${new Date().toISOString().split('T')[0]}.csv`;
-        a.click();
-        window.URL.revokeObjectURL(url);
-      }
+      if (!res.ok) throw new Error('failed');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `customers-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success('Exported customers · CSV');
     } catch {
       toast.error('Failed to export customers');
     }
-  };
+  }, []);
 
-  const handleCreateCustomer = async () => {
-    if (!createFormData.email) { toast.error('Email is required'); return; }
-    if (!createFormData.businessOwnerId) { toast.error('Business owner is required'); return; }
-
-    setIsCreating(true);
-    try {
-      const res = await fetch('/api/cms/admin/customers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(createFormData),
-      });
-      const data = await res.json() as { success?: boolean; error?: string };
-      if (res.ok && data.success) {
-        toast.success(`Customer ${createFormData.name || createFormData.email} created successfully`);
-        setCreateFormData({ email: '', name: '', businessOwnerId: '', accessLevel: 'standard', storageLimit: undefined, sendInvitation: false });
-        setIsCreateDialogOpen(false);
-        void fetchCustomers();
-        void fetchStats();
-      } else {
-        toast.error(data.error ?? 'Failed to create customer');
-      }
-    } catch {
-      toast.error('An unexpected error occurred');
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  // ── Derived ──
-
-  const filtered = customers.filter(c => {
-    const matchTab =
-      activeTab === 'all'      ? true :
-      activeTab === 'active'   ? c.isActive :
-      activeTab === 'inactive' ? !c.isActive :
-      activeTab === 'new'      ? (Date.now() - new Date(c.createdAt).getTime()) < 7 * 86_400_000 :
-      true;
-
-    const matchSearch = !searchTerm ||
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.email.toLowerCase().includes(searchTerm.toLowerCase());
-
-    return matchTab && matchSearch;
-  });
-
-  const tabCounts = {
-    all:      customers.length,
-    active:   customers.filter(c => c.isActive).length,
-    inactive: customers.filter(c => !c.isActive).length,
-    new:      customers.filter(c => (Date.now() - new Date(c.createdAt).getTime()) < 7 * 86_400_000).length,
-  };
-
-  const tabItems: readonly [TabFilter, string, number][] = [
-    ['all',      'All',      tabCounts.all],
-    ['active',   'Active',   tabCounts.active],
-    ['inactive', 'Inactive', tabCounts.inactive],
-    ['new',      'New 7d',   tabCounts.new],
-  ];
+  const exportSelected = useCallback(() => {
+    const chosen = rows.filter((c) => sel.has(c.id));
+    if (chosen.length === 0) return;
+    const header = ['Name', 'Email', 'Tenant', 'Tier', 'Orders', 'Last order', 'Since', 'Status'];
+    const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const lines = chosen.map((c) => [
+      c.name, c.email, c.businessOwner.businessName, c.accessLevel, String(c.designCount),
+      relativeTime(c.lastActivityAt), monthYear(c.createdAt), c.isActive ? 'Active' : 'Dormant',
+    ].map(esc).join(','));
+    const blob = new Blob([[header.map(esc).join(','), ...lines].join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `customers-selected-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${chosen.length} customers · CSV`);
+  }, [rows, sel]);
 
   return (
-    <div data-tour-id="customers-page">
-
-      {/* Main head */}
-      <div className="main-head" data-tour-id="customers-heading">
-        <div>
-          <div className="eyebrow">People</div>
-          <h1>The <span className="display-i accent">roster.</span></h1>
-          <div className="sub">
-            {loading
-              ? 'Loading…'
-              : `${stats?.totalCustomers ?? customers.length} on the books · ${stats?.activeToday ?? 0} active today · ${stats?.newThisMonth ?? 0} new this month`}
+    <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }} data-tour-id="customers-page">
+      <div style={{ padding: '18px 26px 0', flex: 'none' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20 }} data-tour-id="customers-heading">
+          <div>
+            <Eyebrow>People</Eyebrow>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 3 }}>
+              <h2 style={{ fontSize: 'var(--text-xl)', margin: 0, letterSpacing: '-0.015em' }}>Customers</h2>
+              <span className="gr-num" style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>{customers.length} people</span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Btn icon={Download} onClick={() => void exportAll()}>Export</Btn>
+            <Btn kind="primary" icon={Plus} onClick={() => setCreateOpen(true)}>New customer</Btn>
           </div>
         </div>
-        <div className="actions">
-          <div style={{ position: 'relative' }}>
-            <input
-              type="search"
-              placeholder="Search…"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              style={{
-                height: 28, paddingLeft: 8, paddingRight: 8, fontSize: 12,
-                border: '1px solid var(--ink)', background: 'var(--paper)',
-                color: 'var(--ink)', fontFamily: 'inherit', outline: 'none',
-              }}
-              aria-label="Search customers"
+
+        {/* Stat chips */}
+        <div style={{ display: 'flex', gap: 10, margin: '15px 0 4px', flexWrap: 'wrap' }}>
+          {chips.map((chip) => {
+            const Icon = chip.icon;
+            return (
+              <span key={chip.label} className="gr-card" style={{ padding: '9px 15px', display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                <Icon size={16} style={{ color: 'var(--text-muted)' }} />
+                <span className="gr-num" style={{ fontSize: 18, fontWeight: 700, color: chip.tone }}>{chip.value}</span>
+                <span style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>{chip.label}</span>
+              </span>
+            );
+          })}
+        </div>
+
+        {/* Segment tabs */}
+        <div style={{ margin: '14px 0 4px' }}>
+          <SegTabs tabs={segTabs} value={seg} onChange={setSeg} />
+        </div>
+
+        {/* Filter row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '10px 0 12px', flexWrap: 'wrap' }}>
+          <FilterSelect label="tier" value={tier} options={TIER_OPTIONS} onChange={setTier} />
+          {showTenant && (
+            <FilterSelect
+              label="tenant"
+              value={ownerId === 'all' ? 'Any' : (businessOwners.find((o) => o.id === ownerId)?.name ?? 'Any')}
+              options={['Any', ...businessOwners.map((o) => o.name)]}
+              onChange={(name) => setOwnerId(name === 'Any' ? 'all' : (businessOwners.find((o) => o.name === name)?.id ?? 'all'))}
             />
-          </div>
-          <button className="btn" onClick={() => void exportCustomers()} type="button">
-            <span className="kbd">E</span>Export
-          </button>
-          <button
-            className="btn btn-solid"
-            onClick={() => setIsCreateDialogOpen(true)}
-            type="button"
-            data-tour-id="customers-create-button"
-          >
-            <span className="kbd">S</span>+ Customer
-          </button>
-        </div>
-      </div>
-
-      {/* Filter row — business owner + access level */}
-      {(businessOwners.length > 0 || accessLevelFilter !== 'all') && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
-          {businessOwners.length > 1 && (
-            <select
-              value={businessOwnerFilter}
-              onChange={e => setBusinessOwnerFilter(e.target.value)}
-              style={{ fontSize: 11, padding: '3px 8px', border: '1px solid var(--rule)', background: 'var(--paper)', color: 'var(--ink)', fontFamily: 'inherit' }}
-              aria-label="Filter by business owner"
-            >
-              <option value="all">All owners</option>
-              {businessOwners.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-            </select>
           )}
-          <select
-            value={accessLevelFilter}
-            onChange={e => setAccessLevelFilter(e.target.value)}
-            style={{ fontSize: 11, padding: '3px 8px', border: '1px solid var(--rule)', background: 'var(--paper)', color: 'var(--ink)', fontFamily: 'inherit' }}
-            aria-label="Filter by access level"
-          >
-            <option value="all">All levels</option>
-            <option value="premium">Premium</option>
-            <option value="standard">Standard</option>
-            <option value="basic">Basic</option>
-          </select>
-        </div>
-      )}
-
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--ink)', marginBottom: 0 }}>
-        {tabItems.map(([key, label, count]) => (
-          <button
-            key={key}
-            type="button"
-            className={activeTab === key ? 'tab on' : 'tab'}
-            onClick={() => setActiveTab(key)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px 14px 6px 0', fontSize: 12 }}
-          >
-            {label} <span className="ct">{count}</span>
-          </button>
-        ))}
-        <span style={{ marginLeft: 'auto', color: 'var(--ink-soft)', fontSize: 11, display: 'flex', alignItems: 'center', paddingBottom: 6 }}>
-          sort: LTV ↓
-        </span>
-      </div>
-
-      {/* Table */}
-      {loading ? (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 0', gap: 8 }}>
-          <Loader2 className="h-5 w-5 animate-spin" style={{ color: 'var(--ink-soft)' }} />
-          <span className="eyebrow">Loading…</span>
-        </div>
-      ) : (
-        <table className="tbl" style={{ marginTop: 0 }}>
-          <thead>
-            <tr>
-              <th className="check"><input type="checkbox" aria-label="Select all" /></th>
-              <th style={{ width: 30 }}></th>
-              <th>Customer</th>
-              <th style={{ width: 160 }}>Tenant</th>
-              <th className="num sort" style={{ width: 70 }}>Designs</th>
-              <th style={{ width: 100 }}>Last seen</th>
-              <th style={{ width: 90 }}>Since</th>
-              <th style={{ width: 80 }}>Tier</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(c => {
-              const { label: tierLabel, cls: tierCls } = tierPill(c.accessLevel);
-              const color = avatarColor(c.id);
-              const init = initials(c.name || c.email);
-              return (
-                <tr key={c.id}>
-                  <td className="check"><input type="checkbox" aria-label={`Select ${c.name || c.email}`} /></td>
-                  <td>
-                    <span style={{
-                      display: 'inline-flex', width: 28, height: 28,
-                      background: color, color: 'var(--paper)',
-                      alignItems: 'center', justifyContent: 'center',
-                      fontFamily: 'var(--font-display), Spectral, serif',
-                      fontSize: 12, fontWeight: 500,
-                      borderRadius: '50%', border: '1px solid var(--ink)',
-                      flexShrink: 0,
-                    }}>
-                      {init}
-                    </span>
-                  </td>
-                  <td>
-                    <Link
-                      href={`/admin/customers/${c.id}`}
-                      style={{ textDecoration: 'none', color: 'inherit' }}
-                    >
-                      <div className="name">{c.name || '—'}</div>
-                      <div className="mono" style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{c.email}</div>
-                    </Link>
-                  </td>
-                  <td>
-                    <span className="fig" style={{ fontSize: 12 }}>
-                      {c.businessOwner.businessName}
-                    </span>
-                  </td>
-                  <td className="num">{c.designCount}</td>
-                  <td><span className="meta">{formatLastSeen(c.lastActivityAt)}</span></td>
-                  <td><span className="meta">{formatSince(c.createdAt)}</span></td>
-                  <td>
-                    <span className={`pill ${tierCls}`}>{tierLabel}</span>
-                  </td>
-                </tr>
-              );
-            })}
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--ink-soft)', fontSize: 13 }}>
-                  {searchTerm ? `No customers match "${searchTerm}"` : 'No customers found'}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      )}
-
-      {/* Action bar */}
-      <div className="action-bar">
-        <span className="selct">Customers</span>
-        <span><span className="kbd">↑↓</span>move</span>
-        <span><span className="kbd">Enter</span>open</span>
-        <span><span className="kbd">M</span>message</span>
-        <span><span className="kbd">T</span>tag</span>
-        <span><span className="kbd">E</span>export</span>
-      </div>
-
-      {/* Create customer dialog — shadcn preserved */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>New Customer</DialogTitle>
-            <DialogDescription>
-              Create a customer account. An invitation email can be sent automatically.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div>
-              <label htmlFor="customer-email" style={{ fontSize: 12, fontWeight: 500, display: 'block', marginBottom: 4 }}>
-                Email *
-              </label>
-              <input
-                id="customer-email"
-                type="email"
-                value={createFormData.email}
-                onChange={e => setCreateFormData(prev => ({ ...prev, email: e.target.value }))}
-                placeholder="customer@example.com"
-                style={{ width: '100%', padding: '6px 8px', fontSize: 13, border: '1px solid var(--rule)', background: 'var(--paper)', color: 'var(--ink)', fontFamily: 'inherit' }}
-              />
-            </div>
-            <div>
-              <label htmlFor="customer-name" style={{ fontSize: 12, fontWeight: 500, display: 'block', marginBottom: 4 }}>
-                Name
-              </label>
-              <input
-                id="customer-name"
-                type="text"
-                value={createFormData.name}
-                onChange={e => setCreateFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Full name"
-                style={{ width: '100%', padding: '6px 8px', fontSize: 13, border: '1px solid var(--rule)', background: 'var(--paper)', color: 'var(--ink)', fontFamily: 'inherit' }}
-              />
-            </div>
-            {businessOwners.length > 0 && (
-              <div>
-                <label htmlFor="customer-owner" style={{ fontSize: 12, fontWeight: 500, display: 'block', marginBottom: 4 }}>
-                  Business Owner *
-                </label>
-                <select
-                  id="customer-owner"
-                  value={createFormData.businessOwnerId}
-                  onChange={e => setCreateFormData(prev => ({ ...prev, businessOwnerId: e.target.value }))}
-                  style={{ width: '100%', padding: '6px 8px', fontSize: 13, border: '1px solid var(--rule)', background: 'var(--paper)', color: 'var(--ink)', fontFamily: 'inherit' }}
-                >
-                  <option value="">Select owner…</option>
-                  {businessOwners.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-                </select>
-              </div>
-            )}
-            <div>
-              <label htmlFor="customer-level" style={{ fontSize: 12, fontWeight: 500, display: 'block', marginBottom: 4 }}>
-                Access Level
-              </label>
-              <select
-                id="customer-level"
-                value={createFormData.accessLevel}
-                onChange={e => setCreateFormData(prev => ({ ...prev, accessLevel: e.target.value }))}
-                style={{ width: '100%', padding: '6px 8px', fontSize: 13, border: '1px solid var(--rule)', background: 'var(--paper)', color: 'var(--ink)', fontFamily: 'inherit' }}
-              >
-                <option value="standard">Standard</option>
-                <option value="premium">Premium</option>
-                <option value="basic">Basic</option>
-              </select>
-            </div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={createFormData.sendInvitation}
-                onChange={e => setCreateFormData(prev => ({ ...prev, sendInvitation: e.target.checked }))}
-              />
-              Send invitation email
-            </label>
+          <SortSelect value={sort} options={SORT_OPTIONS} onChange={setSort} />
+          {narrowed && (
+            <button type="button" className="gr-link" onClick={() => { setTier('Any'); setOwnerId('all'); setQ(''); }} style={{ border: 'none', background: 'transparent', fontSize: 12, cursor: 'pointer' }}>
+              Clear all
+            </button>
+          )}
+          <div style={{ marginLeft: 'auto' }}>
+            <LiveSearch value={q} onChange={setQ} placeholder="Search name, email, ID…" width={240} />
           </div>
+        </div>
 
-          <DialogFooter>
-            <button className="btn" onClick={() => setIsCreateDialogOpen(false)} type="button">
-              Cancel
-            </button>
-            <button
-              className="btn btn-solid"
-              onClick={() => void handleCreateCustomer()}
-              disabled={isCreating}
-              type="button"
-            >
-              {isCreating ? (
-                <><Loader2 className="h-4 w-4 animate-spin" style={{ marginRight: 6 }} />Creating…</>
-              ) : (
-                'Create Customer'
-              )}
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        {/* Bulk bar */}
+        {sel.size > 0 && (
+          <div style={{ marginBottom: 12 }}>
+            <div className="bulkbar">
+              <span className="count"><b>{sel.size}</b> selected</span>
+              <span className="bb-sep" />
+              <button type="button" className="bb-btn" onClick={exportSelected}><Download size={15} />Export</button>
+              <button type="button" className="bb-btn" disabled title="Coming soon" style={{ opacity: 0.5, cursor: 'not-allowed' }}><Mail size={15} />Email</button>
+              <button type="button" className="bb-btn" disabled title="Coming soon" style={{ opacity: 0.5, cursor: 'not-allowed' }}><Tag size={15} />Add to segment</button>
+              <span className="bb-sep" />
+              <button type="button" className="bb-close bb-btn" onClick={() => setSel(new Set())} aria-label="Clear selection"><X size={15} /></button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div style={{ flex: 1, minHeight: 0, padding: '0 26px 22px', display: 'flex', flexDirection: 'column' }}>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
+            <span className="gr-eyebrow">Loading…</span>
+          </div>
+        ) : (
+          <CustomersListTable
+            rows={rows}
+            selected={sel}
+            showTenant={showTenant}
+            onToggle={toggle}
+            onToggleAll={toggleAll}
+            onOpen={openCustomer}
+            emptyLabel={q ? `No customers match "${q}"` : 'No customers found'}
+          />
+        )}
+      </div>
+
+      <CustomerCreateDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        businessOwners={businessOwners}
+        onCreated={() => { void fetchCustomers(); void fetchStats(); }}
+      />
     </div>
   );
 }

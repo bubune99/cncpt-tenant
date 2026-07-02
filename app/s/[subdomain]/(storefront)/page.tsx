@@ -21,6 +21,7 @@ import type { Block } from '@/lib/cms/block-editor/types';
 import {
   registerCommerceFetchers,
   registerDashboardFetchers,
+  registerFormFetchers,
   resolveSmartBlockData,
   serializeSmartBlockData,
 } from '@/lib/cms/block-editor/smart-blocks';
@@ -28,6 +29,7 @@ import {
 // resolveSmartBlockData can emit their data requirements (see shop/[slug]).
 import '@/components/cms/smart-blocks/commerce';
 import '@/components/cms/smart-blocks/dashboard';
+import '@/components/cms/smart-blocks/forms';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,6 +72,7 @@ export default async function StorefrontHome({ params }: PageProps) {
   if (blocks.length > 0) {
     registerCommerceFetchers();
     registerDashboardFetchers();
+    registerFormFetchers();
     // Resolve smart-block data inside the tenant context so commerce fetchers
     // are scoped to this tenant (otherwise products etc. don't resolve).
     const dataMap = await runWithTenant(tenantData.id, () => resolveSmartBlockData(blocks));

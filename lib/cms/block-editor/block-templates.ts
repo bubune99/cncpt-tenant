@@ -321,6 +321,17 @@ export const BLOCK_TEMPLATES: BlockTemplate[] = [
     defaultClassName: "flex flex-col gap-4 w-full",
     isContainer: true,
   },
+  {
+    label: "Managed Form",
+    tag: "div",
+    icon: "ClipboardList",
+    category: "form",
+    defaultClassName: "w-full max-w-xl mx-auto py-8",
+    componentName: "FormBlock",
+    description: "Renders a form built in Admin → Forms (newsletter, feedback, contact). Set the form slug in properties.",
+    defaultAttrs: { "data-form-slug": "" },
+    isContainer: false,
+  },
 
   // ========== GENERIC COMMERCE (CMS-bindable) ==========
   {

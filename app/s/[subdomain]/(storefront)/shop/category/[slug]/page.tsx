@@ -8,17 +8,22 @@
  * Route: /s/[subdomain]/shop/category/[slug]
  */
 
-import { prisma } from '@/lib/cms/db';
+import { prisma, runWithTenant } from '@/lib/cms/db';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { BlockPageRenderer } from '@/components/cms/page-wrapper/block-page-renderer';
 import type { Block } from '@/lib/cms/block-editor/types';
 import {
   registerCommerceFetchers,
+  registerFormFetchers,
   resolveSmartBlockData,
   serializeSmartBlockData,
 } from '@/lib/cms/block-editor/smart-blocks';
 import { defaultCategoryPageBlocks } from '@/lib/cms/block-editor/smart-blocks/default-templates';
+// Side-effect: register smart-block DEFINITIONS in the server registry so
+// resolveSmartBlockData can emit their data requirements.
+import '@/components/cms/smart-blocks/commerce';
+import '@/components/cms/smart-blocks/forms';
 import { getTenantContext } from '../../../../lib/tenant-context';
 
 export const dynamic = 'force-dynamic';
@@ -102,7 +107,8 @@ export default async function CategoryPage({ params }: PageProps) {
     : defaultCategoryPageBlocks(slug);
 
   registerCommerceFetchers();
-  const dataMap = await resolveSmartBlockData(finalBlocks);
+  registerFormFetchers();
+  const dataMap = await runWithTenant(tenantContext.id, () => resolveSmartBlockData(finalBlocks));
   const smartBlockData = serializeSmartBlockData(dataMap);
 
   return <BlockPageRenderer blocks={finalBlocks} smartBlockData={smartBlockData} />;

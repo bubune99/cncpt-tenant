@@ -12,12 +12,12 @@ import {
   Palette,
   Check,
   Loader2,
-  ArrowLeft,
   Sun,
   Moon,
   Square,
   RectangleHorizontal,
 } from 'lucide-react'
+import { PanelHeader } from '@/components/cms/admin/settings-hub/panel-header'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -38,7 +38,6 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
-import Link from 'next/link'
 
 // ---------------------------------------------------------------------------
 // Types (mirrored from lib/cms/dashboard/theme.ts to avoid server import)
@@ -166,29 +165,20 @@ export default function DashboardSettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-muted rounded w-1/3" />
-          <div className="h-64 bg-muted rounded" />
-        </div>
+      <div className="animate-pulse space-y-6">
+        <div className="h-8 bg-muted rounded w-1/3" />
+        <div className="h-64 bg-muted rounded" />
       </div>
     )
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 mb-4">
-          <Link href="/admin/settings" className="text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-          <h1 className="text-2xl sm:text-3xl font-bold">Dashboard Theme</h1>
-        </div>
-        <p className="text-muted-foreground">
-          Customize the look and feel of the customer dashboard
-        </p>
-      </div>
+    <div>
+      <PanelHeader
+        eyebrow="Storefront"
+        title="Dashboard theme"
+        desc="Customize the look and feel of the customer dashboard."
+      />
 
       <div className="space-y-6">
         {/* Colors */}

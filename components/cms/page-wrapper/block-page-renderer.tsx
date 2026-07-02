@@ -18,6 +18,7 @@ import { Component, ErrorInfo, ReactNode, useMemo, useCallback } from 'react';
 import '@/components/cms/smart-blocks/commerce';
 import '@/components/cms/smart-blocks/dashboard';
 import '@/components/cms/smart-blocks/partials';
+import '@/components/cms/smart-blocks/forms';
 
 export interface BlockPageRendererProps {
   blocks: Block[];
@@ -69,6 +70,44 @@ class BlockErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundar
       );
     }
 
+    return this.props.children;
+  }
+}
+
+/**
+ * Per-block error boundary. Isolates a single top-level block so one failing
+ * block can't take down the whole public page. Renders nothing in production
+ * (a dev-only hint otherwise) and logs the offending block id.
+ */
+class PerBlockErrorBoundary extends Component<
+  { blockId: string; children: ReactNode },
+  ErrorBoundaryState
+> {
+  constructor(props: { blockId: string; children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error) {
+    console.error(`Block render failed (block ${this.props.blockId}):`, error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      if (process.env.NODE_ENV === 'development') {
+        return (
+          <div className="my-2 rounded border border-dashed border-destructive/50 p-3 text-sm text-destructive">
+            Block <code>{this.props.blockId}</code> failed to render: {this.state.error?.message}
+          </div>
+        );
+      }
+      // Production: fail silently so the rest of the page still renders.
+      return null;
+    }
     return this.props.children;
   }
 }
@@ -160,7 +199,11 @@ export function BlockPageRenderer({ blocks, className = '', smartBlockData = {},
         <style dangerouslySetInnerHTML={{ __html: themeCSS }} />
       )}
       <BlockErrorBoundary>
-        {sanitizedBlocks.map((block) => renderBlock(block))}
+        {sanitizedBlocks.map((block) => (
+          <PerBlockErrorBoundary key={block.id} blockId={block.id}>
+            {renderBlock(block)}
+          </PerBlockErrorBoundary>
+        ))}
       </BlockErrorBoundary>
     </div>
   );

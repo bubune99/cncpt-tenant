@@ -28,8 +28,12 @@ export interface CMSConfig {
   siteUrl?: string;
   /** Site name to display */
   siteName?: string;
-  /** Optional site logo URL — rendered in the admin topbar in place of the dot */
+  /** Optional site logo URL (light backgrounds) — rendered in the admin topbar in place of the dot */
   logoUrl?: string;
+  /** Optional dark-mode logo URL — swapped in when the admin is in dark theme */
+  logoDarkUrl?: string;
+  /** Alt text for the white-label logo */
+  logoAlt?: string;
   /** User's role to display */
   userRole?: string;
   /** Whether to show the AI chat panel */
