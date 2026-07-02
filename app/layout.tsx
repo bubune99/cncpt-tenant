@@ -95,7 +95,7 @@ export default function RootLayout({
         className={`${inter.variable} ${spectral.variable} ${hanken.variable} ${splineMono.variable} ${GeistSans.variable} ${GeistMono.variable} antialiased`}
       >
         <ThemeProvider
-          attribute="class"
+          attribute={["class", "data-theme"]}
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
