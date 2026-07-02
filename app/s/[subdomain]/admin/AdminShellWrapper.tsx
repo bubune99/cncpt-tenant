@@ -27,7 +27,7 @@ interface ModuleData {
 /** Feature definitions: which nav items are gated by which feature */
 const FEATURE_NAV_GATES: Record<string, string[]> = {
   // Module-level gating: feature key -> nav item names
-  commerce: ['Products', 'Orders', 'Order Workflows', 'Shipping', 'Customers'],
+  commerce: ['Products', 'Collections', 'Inventory', 'Orders', 'Order Workflows', 'Shipping', 'Customers'],
   blog: ['Blog'],
   forms: ['Forms'],
   media: ['Media'],
@@ -73,6 +73,21 @@ function assembleModuleNavigation(modules: ModuleData[]): ModuleNavGroupData[] {
 
       groupMap.set(contribution.group, existing);
     }
+  }
+
+  // Collections + Inventory ride with the commerce module's Products entry —
+  // the stored module manifests predate these screens, so inject them beside
+  // Products until the manifests are republished.
+  for (const [groupName, items] of groupMap.entries()) {
+    const productsIdx = items.findIndex((e) => e.name === 'Products');
+    if (productsIdx === -1) continue;
+    const additions = [
+      { name: 'Collections', href: '/admin/collections', icon: 'Layers', helpKey: 'admin.sidebar.collections' },
+      { name: 'Inventory', href: '/admin/inventory', icon: 'Boxes', helpKey: 'admin.sidebar.inventory' },
+    ].filter((a) => !items.some((e) => e.name === a.name));
+    items.splice(productsIdx + 1, 0, ...additions);
+    groupMap.set(groupName, items);
+    break;
   }
 
   // Always add Modules link to System group
