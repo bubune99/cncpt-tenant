@@ -1,6 +1,5 @@
 "use server"
 
-import { redis } from "@/lib/redis"
 import { sql } from "@/lib/neon"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
@@ -14,6 +13,38 @@ const RESERVED_SUBDOMAINS = [
   "ftp", "blog", "shop", "store", "help", "support", "docs",
   "dev", "staging", "test", "demo",
 ]
+
+/**
+ * Load the feature_config JSONB for a subdomain, enforcing owner access.
+ * Returns the config object (empty object when unset) if the caller owns the
+ * subdomain, or null when the subdomain does not exist or is owned by someone else.
+ */
+async function getSubdomainFeatureConfig(
+  subdomain: string,
+  userId: string
+): Promise<Record<string, unknown> | null> {
+  const rows = await sql`
+    SELECT user_id, feature_config FROM subdomains WHERE subdomain = ${subdomain}
+  `
+  if (rows.length === 0 || rows[0].user_id !== userId) {
+    return null
+  }
+  return (rows[0].feature_config as Record<string, unknown> | null) ?? {}
+}
+
+/**
+ * Persist a feature_config JSONB payload for a subdomain.
+ */
+async function saveSubdomainFeatureConfig(
+  subdomain: string,
+  config: Record<string, unknown>
+): Promise<void> {
+  await sql`
+    UPDATE subdomains
+    SET feature_config = ${JSON.stringify(config)}::jsonb, updated_at = now()
+    WHERE subdomain = ${subdomain}
+  `
+}
 
 /**
  * Legacy form-based subdomain creation action
@@ -88,28 +119,11 @@ export async function createSubdomainAction(prevState: any, formData: FormData) 
       }
     }
 
-    // Also check Redis for legacy subdomains (backwards compatibility)
-    const existingRedis = await redis.get(`subdomain:${sanitizedSubdomain}`)
-    if (existingRedis) {
-      return {
-        subdomain,
-        success: false,
-        error: "This subdomain is already taken",
-      }
-    }
-
     // Create subdomain in database with configuration
     await sql`
       INSERT INTO subdomains (user_id, subdomain, site_name, contact_email, onboarding_completed)
       VALUES (${user.id}, ${sanitizedSubdomain}, ${siteName}, ${contactEmail}, false)
     `
-
-    // Also store in Redis for backwards compatibility during migration
-    await redis.set(`subdomain:${sanitizedSubdomain}`, {
-      siteName,
-      createdAt: Date.now(),
-      userId: user.id,
-    })
 
     // Create default tenant settings
     try {
@@ -160,9 +174,6 @@ export async function deleteSubdomainAction(prevState: any, formData: FormData) 
       return { success: false, error: "Subdomain not found or access denied" }
     }
 
-    // Also delete from Redis for backwards compatibility
-    await redis.del(`subdomain:${subdomain}`)
-
     // Clean up tenant settings
     try {
       await sql`DELETE FROM tenant_settings WHERE subdomain = ${subdomain}`
@@ -185,7 +196,7 @@ export async function getUserSubdomains() {
   }
 
   try {
-    // Get subdomains from database first
+    // Get subdomains from database
     const dbSubdomains = await sql`
       SELECT subdomain, created_at
       FROM subdomains
@@ -193,35 +204,10 @@ export async function getUserSubdomains() {
       ORDER BY created_at DESC
     `
 
-    if (dbSubdomains.length > 0) {
-      return dbSubdomains.map((row) => ({
-        subdomain: row.subdomain as string,
-        created_at: new Date(row.created_at as string),
-      }))
-    }
-
-    // Fallback to Redis for legacy subdomains
-    const keys = await redis.keys("subdomain:*")
-    if (!keys.length) {
-      return []
-    }
-
-    const values = await redis.mget(...keys)
-    const userSubdomains = keys
-      .map((key, index) => {
-        const subdomain = key.replace("subdomain:", "")
-        const data = values[index] as any
-        if (data?.userId === user.id) {
-          return {
-            subdomain,
-            created_at: new Date(data.createdAt || Date.now()),
-          }
-        }
-        return null
-      })
-      .filter(Boolean)
-
-    return userSubdomains
+    return dbSubdomains.map((row) => ({
+      subdomain: row.subdomain as string,
+      created_at: new Date(row.created_at as string),
+    }))
   } catch (error) {
     console.error("[actions] Error fetching subdomains:", error)
     return []
@@ -236,8 +222,10 @@ export async function updateSubdomainAction(prevState: any, formData: FormData) 
 
   const originalSubdomain = formData.get("originalSubdomain") as string
 
-  const existingData = (await redis.get(`subdomain:${originalSubdomain}`)) as any
-  if (!existingData || existingData.userId !== user.id) {
+  const rows = await sql`
+    SELECT user_id FROM subdomains WHERE subdomain = ${originalSubdomain}
+  `
+  if (rows.length === 0 || rows[0].user_id !== user.id) {
     return { success: false, error: "Subdomain not found or access denied" }
   }
 
@@ -253,13 +241,13 @@ export async function saveCustomCode(subdomain: string, customCSS: string, custo
   }
 
   try {
-    const existingData = (await redis.get(`subdomain:${subdomain}`)) as any
-    if (!existingData || existingData.userId !== user.id) {
+    const config = await getSubdomainFeatureConfig(subdomain, user.id)
+    if (!config) {
       return { success: false, error: "Subdomain not found or access denied" }
     }
 
-    await redis.set(`subdomain:${subdomain}`, {
-      ...existingData,
+    await saveSubdomainFeatureConfig(subdomain, {
+      ...config,
       customCSS,
       customJS,
       updatedAt: Date.now(),
@@ -280,15 +268,15 @@ export async function getCustomCode(subdomain: string) {
   }
 
   try {
-    const data = (await redis.get(`subdomain:${subdomain}`)) as any
-    if (!data || data.userId !== user.id) {
+    const config = await getSubdomainFeatureConfig(subdomain, user.id)
+    if (!config) {
       return { success: false, error: "Subdomain not found or access denied" }
     }
 
     return {
       success: true,
-      customCSS: data.customCSS || "",
-      customJS: data.customJS || "",
+      customCSS: (config.customCSS as string) || "",
+      customJS: (config.customJS as string) || "",
     }
   } catch (error) {
     console.error("[v0] Error loading custom code:", error)
@@ -304,16 +292,16 @@ export async function generateApiKey(subdomain: string) {
   }
 
   try {
-    const existingData = (await redis.get(`subdomain:${subdomain}`)) as any
-    if (!existingData || existingData.userId !== user.id) {
+    const config = await getSubdomainFeatureConfig(subdomain, user.id)
+    if (!config) {
       return { success: false, error: "Subdomain not found or access denied" }
     }
 
     // Generate a random API key
     const apiKey = `sk_live_${crypto.randomUUID().replace(/-/g, "")}`
 
-    await redis.set(`subdomain:${subdomain}`, {
-      ...existingData,
+    await saveSubdomainFeatureConfig(subdomain, {
+      ...config,
       apiKey,
       apiKeyCreatedAt: Date.now(),
     })
@@ -333,15 +321,15 @@ export async function getApiKey(subdomain: string) {
   }
 
   try {
-    const data = (await redis.get(`subdomain:${subdomain}`)) as any
-    if (!data || data.userId !== user.id) {
+    const config = await getSubdomainFeatureConfig(subdomain, user.id)
+    if (!config) {
       return { success: false, error: "Subdomain not found or access denied" }
     }
 
     return {
       success: true,
-      apiKey: data.apiKey || null,
-      createdAt: data.apiKeyCreatedAt || null,
+      apiKey: (config.apiKey as string) || null,
+      createdAt: (config.apiKeyCreatedAt as number) || null,
     }
   } catch (error) {
     console.error("[v0] Error loading API key:", error)
@@ -356,13 +344,13 @@ export async function saveWebhookUrl(subdomain: string, webhookUrl: string) {
   }
 
   try {
-    const existingData = (await redis.get(`subdomain:${subdomain}`)) as any
-    if (!existingData || existingData.userId !== user.id) {
+    const config = await getSubdomainFeatureConfig(subdomain, user.id)
+    if (!config) {
       return { success: false, error: "Subdomain not found or access denied" }
     }
 
-    await redis.set(`subdomain:${subdomain}`, {
-      ...existingData,
+    await saveSubdomainFeatureConfig(subdomain, {
+      ...config,
       webhookUrl,
     })
 
@@ -381,14 +369,14 @@ export async function getWebhookUrl(subdomain: string) {
   }
 
   try {
-    const data = (await redis.get(`subdomain:${subdomain}`)) as any
-    if (!data || data.userId !== user.id) {
+    const config = await getSubdomainFeatureConfig(subdomain, user.id)
+    if (!config) {
       return { success: false, error: "Subdomain not found or access denied" }
     }
 
     return {
       success: true,
-      webhookUrl: data.webhookUrl || "",
+      webhookUrl: (config.webhookUrl as string) || "",
     }
   } catch (error) {
     console.error("[v0] Error loading webhook URL:", error)

@@ -9,7 +9,6 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/neon";
-import { redis } from "@/lib/redis";
 import { prisma } from "@/lib/cms/db";
 import { DEMO_CONFIG } from "@/lib/demo";
 
@@ -163,14 +162,6 @@ export async function POST(request: NextRequest) {
         site_name = ${DEMO_CONFIG.siteName},
         site_description = ${DEMO_CONFIG.siteDescription}
     `;
-
-    // Also store in Redis for compatibility
-    await redis.set(`subdomain:demo`, {
-      siteName: DEMO_CONFIG.siteName,
-      createdAt: Date.now(),
-      userId: "demo-system",
-      isDemo: true,
-    });
 
     // Create the demo home page using editor content
     try {

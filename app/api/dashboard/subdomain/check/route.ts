@@ -5,7 +5,6 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { sql } from "@/lib/neon"
-import { redis } from "@/lib/redis"
 
 export const dynamic = 'force-dynamic'
 
@@ -39,12 +38,6 @@ export async function GET(request: NextRequest) {
     `
 
     if (existing.length > 0) {
-      return NextResponse.json({ available: false, taken: true })
-    }
-
-    // Also check Redis for legacy subdomains
-    const redisData = await redis.get(`subdomain:${subdomain}`)
-    if (redisData) {
       return NextResponse.json({ available: false, taken: true })
     }
 

@@ -1,31 +1,31 @@
-import { redis } from "@/lib/redis"
+import { sql } from "@/lib/neon"
 import { canAccessSubdomain as checkTeamSubdomainAccess } from "@/lib/team-auth"
 
 type SubdomainData = {
   createdAt: number
 }
 
-export async function getSubdomainData(subdomain: string) {
+export async function getSubdomainData(subdomain: string): Promise<SubdomainData | null> {
   const sanitizedSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, "")
-  const data = await redis.get<SubdomainData>(`subdomain:${sanitizedSubdomain}`)
-  return data
+  const rows = await sql`
+    SELECT subdomain, created_at FROM subdomains WHERE subdomain = ${sanitizedSubdomain}
+  `
+  if (rows.length === 0) {
+    return null
+  }
+  return {
+    createdAt: new Date(rows[0].created_at as string).getTime(),
+  }
 }
 
 export async function getAllSubdomains() {
-  const keys = await redis.keys("subdomain:*")
-  if (!keys.length) {
-    return []
-  }
-
-  const values = await redis.mget<SubdomainData[]>(...keys)
-  return keys.map((key, index) => {
-    const subdomain = key.replace("subdomain:", "")
-    const data = values[index]
-    return {
-      subdomain,
-      createdAt: data?.createdAt || Date.now(),
-    }
-  })
+  const rows = await sql`
+    SELECT subdomain, created_at FROM subdomains ORDER BY created_at DESC
+  `
+  return rows.map((row) => ({
+    subdomain: row.subdomain as string,
+    createdAt: new Date(row.created_at as string).getTime(),
+  }))
 }
 
 /**

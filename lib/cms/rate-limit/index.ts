@@ -151,7 +151,16 @@ export async function rateLimitCheck(
   const key = `${prefix}:${ip}`;
 
   const limiter = getLimiter({ maxRequests: resolved.maxRequests, windowMs: resolved.windowMs });
-  const { success, reset } = await limiter.limit(key);
+  let success: boolean;
+  let reset: number;
+  try {
+    ({ success, reset } = await limiter.limit(key));
+  } catch (error) {
+    // Rate limiting must never take a route down with it — if the Redis
+    // backend is unreachable (e.g. a deleted Upstash instance), fail open.
+    console.error('[rate-limit] backend unavailable, failing open:', error);
+    return null;
+  }
 
   if (!success) {
     const retryAfterSec = Math.max(1, Math.ceil((reset - Date.now()) / 1000));

@@ -59,7 +59,7 @@ export function DeveloperTools({ selectedSubdomain }: DeveloperToolsProps) {
       }
 
       if (keyResult.success) {
-        setApiKey(keyResult.apiKey)
+        setApiKey(keyResult.apiKey ?? null)
       }
 
       if (webhookResult.success) {
