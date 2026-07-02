@@ -39,3 +39,6 @@ scraped-templates/
 
 # fetched Claude Design sources — local reference only (repo is public)
 design-reference/
+
+# session probe scratch
+.claude-*.js
