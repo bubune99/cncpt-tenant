@@ -34,7 +34,7 @@ import {
 import { cn } from '@/lib/cms/utils';
 import { useChatStore, useChatPanel, useChatContext } from '@/lib/cms/ai/chat-store';
 import { useAutoChatContext } from '@/hooks/use-chat-context';
-import { AdminChatPanelV2 } from '@/components/cms/block-editor/chat/admin-chat-panel-v2';
+import { AdminChatPanelGrainy } from './v2';
 import { ConversationHistory } from './conversation-history';
 
 // Get icon for context type
@@ -207,19 +207,18 @@ Report the stats from step 1, the count from step 2, and the details from step 3
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
+              <button
                 onClick={togglePanel}
-                size="icon"
-                className={cn(
-                  'h-14 w-14 rounded-full shadow-lg',
-                  'bg-gradient-to-br from-primary to-primary/80',
-                  'hover:scale-110 hover:shadow-xl hover:shadow-primary/20',
-                  'active:scale-95',
-                  'transition-all duration-200'
-                )}
+                aria-label="Open AI Assistant"
+                className="flex h-14 w-14 items-center justify-center rounded-full transition-transform duration-200 hover:scale-110 active:scale-95"
+                style={{
+                  background: 'var(--primary)',
+                  color: 'var(--text-on-primary)',
+                  boxShadow: 'var(--shadow-lg)',
+                }}
               >
                 <Sparkles className="h-6 w-6" />
-              </Button>
+              </button>
             </TooltipTrigger>
             <TooltipContent side="left">
               <p>Open AI Assistant</p>
@@ -333,14 +332,15 @@ Report the stats from step 1, the count from step 2, and the details from step 3
   return (
     <aside
       className={cn(
-        'flex h-full flex-col overflow-hidden bg-background border-l border-border shrink-0',
+        'flex h-full flex-col overflow-hidden shrink-0',
         'transition-[width] duration-200',
         isFullScreen ? 'w-[min(760px,55vw)]' : 'w-[400px]'
       )}
+      style={{ background: 'var(--surface)', borderLeft: '1px solid var(--line)' }}
       data-tour-id="admin-ai-chat"
     >
         {/* Header */}
-        <div className="shrink-0 border-b bg-background p-4">
+        <div className="shrink-0 p-4" style={{ borderBottom: '1px solid var(--line-faint)', background: 'var(--surface-raised)' }}>
           <div className="mb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -459,7 +459,7 @@ Report the stats from step 1, the count from step 2, and the details from step 3
             />
           ) : (
             conversationId && (
-              <AdminChatPanelV2
+              <AdminChatPanelGrainy
                 key={chatKey}
                 conversationId={conversationId}
                 api="/api/cms/chat"

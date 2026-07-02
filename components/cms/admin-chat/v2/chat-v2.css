@@ -1,0 +1,48 @@
+/* ==========================================================================
+   Grainy admin chat v2 — a few structural rules the base grainy.css AI kit
+   doesn't cover. Every rule is self-scoped under .atlas / .grainy so nothing
+   leaks outside the admin shell. Do NOT add colours here that aren't Grainy
+   design tokens (var(--…)).
+   ========================================================================== */
+
+:is(.gr-app, .grainy, .atlas) .chat-v2-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 44px 12px;
+  margin: auto 0;
+}
+
+:is(.gr-app, .grainy, .atlas) .chat-v2-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px 12px;
+  border-left: 2px dashed var(--line);
+  margin-left: 2px;
+}
+
+/* Indeterminate streaming bar under the header */
+:is(.gr-app, .grainy, .atlas) .chat-v2-progress {
+  height: 2px;
+  flex: none;
+  overflow: hidden;
+  position: relative;
+  background: var(--surface-sunken);
+}
+:is(.gr-app, .grainy, .atlas) .chat-v2-progress::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 35%;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  animation: chatv2-shimmer 1.2s ease-in-out infinite;
+}
+@keyframes chatv2-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.gr-app, .grainy, .atlas) .chat-v2-progress::after { animation: none; }
+}

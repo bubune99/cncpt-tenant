@@ -1,418 +1,239 @@
-/**
- * Order Detail / Editor — Atlas A2
- *
- * Per-line-item sub-fulfillment checkoffs, configurable items with attachments,
- * aggregate progress strip, Ship disabled until all sub-tasks complete.
- *
- * Wires real fulfillment steps from GET /api/cms/orders/[id]/fulfillment and
- * persists step toggles via POST /api/cms/orders/[id]/fulfillment?action=complete-step.
- * Stage moves are wired via PATCH /api/cms/orders/[id]/stage.
- */
-
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+/**
+ * Order detail — Grainy layout over real order data.
+ *
+ * Fetches the order (GET /api/cms/orders/[id]) and its per-line fulfillment
+ * steps (GET /api/cms/orders/[id]/fulfillment), then drives real mutations:
+ *   • sub-step toggle → POST /fulfillment?action=complete-step
+ *   • ship           → PUT /api/cms/orders/[id] { status: 'SHIPPED' }
+ *   • add note       → PUT /api/cms/orders/[id] { internalNotes }
+ * The workflow stage stepper (OrderProgress) is preserved and injected into the
+ * Order tab so no stage-management capability is lost.
+ */
+
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { OrderEditor } from '@/components/cms/editor/OrderEditor';
+import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { OrderProgress } from '@/components/cms/admin/orders/OrderProgress';
-import type {
-  OrderData,
-  OrderLineItem,
-  SubStep,
-  SubStepState,
-  OrderAttachment,
-  ConfigOption,
-} from '@/components/cms/editor/OrderEditor';
+import { OrderDetail, type DetailLineItem, type DetailTimelineEntry, type OrderDetailModel } from '@/components/cms/admin/orders/order-detail';
+import type { OrderStatus, PaymentStatus } from '@/components/cms/admin/orders/orders-model';
+import { money } from '@/components/cms/admin/orders/orders-model';
 
-// ── API types (existing order shape) ─────────────────────────────────────────
+// ── API shapes (only the fields we consume) ──────────────────────────────────
 
-interface ApiOrderItem {
-  id: string;
-  name: string;
-  sku: string;
-  quantity: number;
-  price: number;
-  thumbnail: string;
+interface ApiStage { id: string; name: string; displayName: string; customerMessage?: string | null; icon?: string | null; color?: string | null; position: number; isTerminal: boolean }
+interface ApiProgress { id: string; stageId: string; enteredAt: string; exitedAt?: string | null; source: string; isOverride: boolean; reason?: string | null; notes?: string | null; stage: ApiStage; updatedBy?: { id: string; name?: string | null; email?: string | null } | null }
+interface ApiAttachment { name: string; url: string; mimeType: string; size: number }
+interface ApiItem {
+  id: string; title: string; variantTitle?: string | null; sku?: string | null;
+  quantity: number; price: number; total: number;
+  configOptions?: Record<string, string> | null;
+  attachments?: ApiAttachment[] | null;
+  product?: { title: string; slug: string } | null;
+  variant?: { sku?: string | null } | null;
 }
-
-interface ApiWorkflowStage {
-  id: string;
-  name: string;
-  displayName: string;
-  customerMessage?: string | null;
-  icon?: string | null;
-  color?: string | null;
-  position: number;
-  isTerminal: boolean;
-}
-
-interface ApiProgressEntry {
-  id: string;
-  stageId: string;
-  enteredAt: string;
-  exitedAt?: string | null;
-  source: string;
-  isOverride: boolean;
-  reason?: string | null;
-  notes?: string | null;
-  stage: ApiWorkflowStage;
-  updatedBy?: { id: string; name?: string | null; email?: string | null } | null;
-}
-
+interface ApiShipment { id: string; carrier?: string | null; service?: string | null; trackingNumber?: string | null; trackingUrl?: string | null; labelUrl?: string | null; status: string; shippedAt?: string | null; createdAt: string }
 interface ApiOrder {
-  id: string;
-  orderNumber: string;
-  customer: { id: string; name: string; email: string; phone: string };
-  items: ApiOrderItem[];
-  subtotal: number;
-  shipping: number;
-  tax: number;
-  total: number;
-  status: string;
-  paymentStatus: string;
-  paymentMethod: string;
-  shippingAddress: { name: string; street: string; city: string; state: string; zip: string; country: string };
-  notes: string;
-  trackingNumber: string;
+  id: string; orderNumber: string; email: string; status: string; paymentStatus: string; paidAt?: string | null;
+  subtotal: number; shippingTotal: number; taxTotal: number; discountTotal: number; total: number;
+  customerNotes?: string | null; internalNotes?: string | null;
+  createdAt: string; updatedAt: string;
+  customer?: { id: string; firstName?: string | null; lastName?: string | null; email?: string | null } | null;
+  items: ApiItem[];
+  shipments?: ApiShipment[];
+  progress?: ApiProgress[];
+  workflow?: { id: string; name: string; enableShippoSync: boolean; stages: ApiStage[] } | null;
+  currentStage?: ApiStage | null;
   trackingAutoSync?: boolean;
-  workflow?: { id: string; name: string; enableShippoSync: boolean; stages: ApiWorkflowStage[] } | null;
-  currentStage?: ApiWorkflowStage | null;
-  progress?: ApiProgressEntry[];
-  createdAt: string;
-  updatedAt: string;
 }
-
-// ── Fulfillment API types (G01 — GET /api/cms/orders/[id]/fulfillment) ────────
-
-interface ApiFulfillmentStep {
-  readonly id: string;
-  readonly orderItemId: string;
-  readonly name: string;
-  readonly position: number;
-  readonly completed: boolean;
-  readonly completedAt: string | null;
-  readonly completedBy: string | null;
-  readonly notes: string | null;
-  readonly createdAt: string;
-  readonly updatedAt: string;
-}
-
-/** Raw configOption value stored as JSON: Record<string, string> */
-type ApiConfigOptions = Record<string, string> | null;
-
-/** Single attachment stored in JSON array */
-interface ApiAttachment {
-  readonly name: string;
-  readonly url: string;
-  readonly mimeType: string;
-  readonly size: number;
-}
-
-interface ApiFulfillmentItem {
-  readonly id: string;
-  readonly title: string;
-  readonly variantTitle: string | null;
-  readonly quantity: number;
-  readonly configOptions: ApiConfigOptions;
-  readonly attachments: readonly ApiAttachment[] | null;
-  readonly fulfillmentSteps: readonly ApiFulfillmentStep[];
-}
-
-interface ApiFulfillmentOrder {
-  readonly id: string;
-  readonly orderNumber: string;
-  readonly status: string;
-  readonly items: readonly ApiFulfillmentItem[];
-}
+interface ApiStep { id: string; orderItemId?: string; name: string; position: number; completed: boolean; notes?: string | null }
+interface ApiFulfillmentItem { id: string; fulfillmentSteps: ApiStep[]; configOptions?: Record<string, string> | null; attachments?: ApiAttachment[] | null }
+interface ApiFulfillment { id: string; items: ApiFulfillmentItem[] }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+function bytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+function kindOf(mime: string): string {
+  if (mime.includes('pdf')) return 'PDF';
+  if (mime.includes('svg')) return 'SVG';
+  if (mime.startsWith('image/')) return 'IMG';
+  if (mime.includes('zip')) return 'ZIP';
+  return mime.split('/').pop()?.toUpperCase() ?? 'FILE';
 }
 
-function formatDate(dateString: string): string {
-  return new Intl.DateTimeFormat('en-US', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(dateString));
-}
+function buildModel(order: ApiOrder, fulfillment: ApiFulfillment | null): OrderDetailModel {
+  const stepsByItem = new Map<string, ApiStep[]>();
+  fulfillment?.items.forEach((fi) => stepsByItem.set(fi.id, fi.fulfillmentSteps));
 
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function mimeToKind(mimeType: string): string {
-  if (mimeType.includes('pdf')) return 'PDF';
-  if (mimeType.includes('svg')) return 'SVG';
-  if (mimeType.startsWith('image/')) return 'IMG';
-  if (mimeType.includes('zip') || mimeType.includes('compressed')) return 'ZIP';
-  return mimeType.split('/').pop()?.toUpperCase() ?? 'FILE';
-}
-
-/**
- * Merge fulfillment steps from the fulfillment endpoint into the base order
- * items that came from the order endpoint, producing the final OrderLineItem[].
- *
- * If no fulfillment data is available for an item, falls back to three
- * deterministic pending steps (Pick / Inspect / Pack).
- */
-function mergeItemsWithFulfillment(
-  apiItems: readonly ApiOrderItem[],
-  fulfillmentItems: readonly ApiFulfillmentItem[],
-): OrderLineItem[] {
-  const fulfillmentById = new Map<string, ApiFulfillmentItem>(
-    fulfillmentItems.map((fi) => [fi.id, fi]),
-  );
-
-  return apiItems.map((item, idx): OrderLineItem => {
-    const fi = fulfillmentById.get(item.id);
-
-    const subSteps: readonly SubStep[] = fi && fi.fulfillmentSteps.length > 0
-      ? fi.fulfillmentSteps.map((step): SubStep => ({
-          id: step.id,
-          label: step.name,
-          state: step.completed ? ('done' as SubStepState) : ('pending' as SubStepState),
-          hint: step.notes ?? undefined,
-        }))
-      : [
-          { id: `${item.id}-pick`, label: 'Pick', state: 'pending' as SubStepState, hint: `— shelf ${String.fromCharCode(65 + (idx % 3))}-${idx + 1}` },
-          { id: `${item.id}-inspect`, label: 'Inspect', state: 'pending' as SubStepState },
-          { id: `${item.id}-pack`, label: 'Pack', state: 'pending' as SubStepState },
-        ];
-
-    const configOptions: readonly ConfigOption[] | undefined =
-      fi?.configOptions != null
-        ? Object.entries(fi.configOptions).map(([key, value]) => ({ key, value }))
-        : undefined;
-
-    const attachments: readonly OrderAttachment[] | undefined =
-      fi?.attachments != null && fi.attachments.length > 0
-        ? fi.attachments.map((a, ai): OrderAttachment => ({
-            id: `${item.id}-att-${ai}`,
-            name: a.name,
-            size: formatBytes(a.size),
-            kind: mimeToKind(a.mimeType),
-            url: a.url,
-          }))
-        : undefined;
-
-    const hasCustomWork =
-      (configOptions != null && configOptions.length > 0) ||
-      (attachments != null && attachments.length > 0);
-
+  const items: DetailLineItem[] = order.items.map((it) => {
+    const steps = stepsByItem.get(it.id) ?? [];
+    const configOptions = it.configOptions
+      ? Object.entries(it.configOptions).map(([key, value]) => ({ key, value: String(value) }))
+      : undefined;
+    const attachments = it.attachments && it.attachments.length > 0
+      ? it.attachments.map((a, i) => ({ id: `${it.id}-att-${i}`, name: a.name, size: bytes(a.size), kind: kindOf(a.mimeType), url: a.url }))
+      : undefined;
+    const hasCustomWork = (configOptions?.length ?? 0) > 0 || (attachments?.length ?? 0) > 0;
     return {
-      id: item.id,
-      sku: item.sku,
-      name: fi?.title ?? item.name,
-      qty: item.quantity,
-      unitPrice: formatCurrency(item.price),
-      lineTotal: formatCurrency(item.price * item.quantity),
-      kind: hasCustomWork ? 'CONFIGURABLE' : 'STANDARD',
+      id: it.id,
+      sku: it.variant?.sku ?? it.sku ?? '',
+      name: it.title || it.product?.title || 'Item',
+      qty: it.quantity,
+      lineTotalCents: it.total,
       configOptions,
       attachments,
-      subSteps,
+      hasCustomWork,
+      subSteps: steps.map((s) => ({ id: s.id, label: s.name, done: s.completed, hint: s.notes ?? undefined })),
     };
   });
-}
 
-/** Map API order + optional fulfillment data to OrderEditor's OrderData shape. */
-function toOrderData(
-  apiOrder: ApiOrder,
-  fulfillmentOrder: ApiFulfillmentOrder | null,
-): OrderData {
-  const items = mergeItemsWithFulfillment(
-    apiOrder.items,
-    fulfillmentOrder?.items ?? [],
+  const timeline: DetailTimelineEntry[] = [];
+  timeline.push({ id: 'placed', at: order.createdAt, kind: 'placed', title: 'Order placed', meta: `${order.items.length} items · ${money(order.total)}` });
+  if (order.paidAt) timeline.push({ id: 'paid', at: order.paidAt, kind: 'payment', title: 'Payment captured', meta: order.paymentStatus });
+  (order.progress ?? []).forEach((p) =>
+    timeline.push({
+      id: p.id,
+      at: p.enteredAt,
+      kind: 'stage',
+      title: `Moved to ${p.stage.displayName}`,
+      meta: [p.source, p.updatedBy?.name || p.updatedBy?.email].filter(Boolean).join(' · ') || undefined,
+    }),
   );
+  (order.shipments ?? []).forEach((s) =>
+    timeline.push({
+      id: s.id,
+      at: s.shippedAt ?? s.createdAt,
+      kind: 'ship',
+      title: `Shipment ${s.status.toLowerCase().replace(/_/g, ' ')}`,
+      meta: [s.carrier, s.trackingNumber].filter(Boolean).join(' · ') || undefined,
+    }),
+  );
+  timeline.sort((a, b) => +new Date(a.at) - +new Date(b.at));
 
-  const nameParts = apiOrder.customer.name.trim().split(/\s+/);
-  const initials =
-    nameParts.length >= 2
-      ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
-      : apiOrder.customer.name.slice(0, 2).toUpperCase();
-
-  const addr = apiOrder.shippingAddress;
-  const hasCustomWork = items.some((it) => it.kind === 'CONFIGURABLE');
+  const ship = order.shipments?.[0];
+  const name = [order.customer?.firstName, order.customer?.lastName].filter(Boolean).join(' ').trim();
 
   return {
-    id: apiOrder.id,
-    orderNumber: `#${apiOrder.orderNumber}`,
-    placedAt: formatDate(apiOrder.createdAt),
-    customer: {
-      id: apiOrder.customer.id,
-      name: apiOrder.customer.name,
-      email: apiOrder.customer.email,
-      phone: apiOrder.customer.phone || undefined,
-      initials,
-      avatarBg: '#c8443a',
-    },
+    id: order.id,
+    orderNumber: order.orderNumber,
+    customerId: order.customer?.id,
+    customerName: name || order.customer?.email || order.email || 'Guest',
+    customerEmail: order.customer?.email || order.email || '',
+    placedAt: order.createdAt,
+    status: order.status.toUpperCase() as OrderStatus,
+    paymentStatus: order.paymentStatus.toUpperCase() as PaymentStatus,
     items,
     totals: [
-      { label: 'Subtotal', value: formatCurrency(apiOrder.subtotal) },
-      { label: 'Shipping', value: formatCurrency(apiOrder.shipping) },
-      { label: 'Tax', value: formatCurrency(apiOrder.tax) },
+      { label: 'Subtotal', cents: order.subtotal },
+      { label: 'Shipping', cents: order.shippingTotal },
+      { label: 'Tax', cents: order.taxTotal },
+      ...(order.discountTotal ? [{ label: 'Discount', cents: -order.discountTotal }] : []),
     ],
-    grandTotal: formatCurrency(apiOrder.total),
-    paymentCapture: `${apiOrder.paymentStatus} · ${apiOrder.paymentMethod}`,
-    status: apiOrder.status,
-    paymentStatus: apiOrder.paymentStatus,
-    hasCustomWork,
-    shipping: {
-      addressLines: [
-        addr.name,
-        addr.street,
-        `${addr.city}, ${addr.state} ${addr.zip}`,
-        addr.country,
-      ],
-      verified: false,
-      carrier: undefined,
-      eta: undefined,
-      labelGenerated: false,
-    },
-    notes: apiOrder.notes
-      ? [{ author: 'Admin', time: formatDate(apiOrder.updatedAt), body: apiOrder.notes }]
-      : [],
-    tags: [],
+    grandTotalCents: order.total,
+    hasCustomWork: items.some((i) => i.hasCustomWork),
+    shipment: ship
+      ? { carrier: ship.carrier ?? undefined, service: ship.service ?? undefined, trackingNumber: ship.trackingNumber ?? undefined, trackingUrl: ship.trackingUrl ?? undefined, labelUrl: ship.labelUrl ?? undefined, status: ship.status }
+      : undefined,
+    timeline,
+    internalNotes: order.internalNotes ?? undefined,
+    customerNotes: order.customerNotes ?? undefined,
   };
 }
 
-// ── Page component ────────────────────────────────────────────────────────────
+// ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function OrderDetailPage(): React.ReactElement {
-  const params = useParams<{ id: string; subdomain: string }>();
+  const params = useParams<{ id: string }>();
   const router = useRouter();
+  const { buildPath } = useCMSConfig();
   const orderId = params.id;
-  const subdomain = params.subdomain ?? 'admin';
 
   const [apiOrder, setApiOrder] = useState<ApiOrder | null>(null);
-  const [orderData, setOrderData] = useState<OrderData | null>(null);
-  const [fulfillmentOrder, setFulfillmentOrder] = useState<ApiFulfillmentOrder | null>(null);
+  const [fulfillment, setFulfillment] = useState<ApiFulfillment | null>(null);
   const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-
-  // Fetch base order data
-  const fetchOrder = useCallback(async (): Promise<ApiOrder | null> => {
-    const response = await fetch(`/api/cms/orders/${orderId}`);
-    if (!response.ok) {
-      if (response.status === 404) {
-        toast.error('Order not found');
-        router.push('/admin/orders');
-        return null;
-      }
-      throw new Error(`Order fetch failed: ${response.status}`);
-    }
-    const data: { order: ApiOrder } = await response.json();
-    return data.order;
-  }, [orderId, router]);
-
-  // Fetch real fulfillment steps from G01 endpoint
-  const fetchFulfillment = useCallback(async (): Promise<ApiFulfillmentOrder | null> => {
-    const response = await fetch(`/api/cms/orders/${orderId}/fulfillment`);
-    if (!response.ok) {
-      // Non-fatal: fall back to deterministic placeholder steps
-      return null;
-    }
-    const data: { success: boolean; data: ApiFulfillmentOrder } = await response.json();
-    return data.success ? data.data : null;
-  }, [orderId]);
+  const [error, setError] = useState<string | null>(null);
 
   const loadAll = useCallback(async (): Promise<void> => {
     setLoading(true);
-    setFetchError(null);
+    setError(null);
     try {
-      const [order, fulfillment] = await Promise.all([fetchOrder(), fetchFulfillment()]);
-      if (order == null) return; // redirected by fetchOrder
+      const [orderRes, fRes] = await Promise.all([
+        fetch(`/api/cms/orders/${orderId}`),
+        fetch(`/api/cms/orders/${orderId}/fulfillment`),
+      ]);
+      if (orderRes.status === 404) {
+        toast.error('Order not found');
+        router.push(buildPath('/admin/orders'));
+        return;
+      }
+      if (!orderRes.ok) throw new Error(`Order fetch failed (${orderRes.status})`);
+      const { order } = (await orderRes.json()) as { order: ApiOrder };
       setApiOrder(order);
-      setFulfillmentOrder(fulfillment);
-      setOrderData(toOrderData(order, fulfillment));
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to load order';
-      setFetchError(msg);
+      if (fRes.ok) {
+        const fData = (await fRes.json()) as { success: boolean; data: ApiFulfillment };
+        setFulfillment(fData.success ? fData.data : null);
+      } else {
+        setFulfillment(null);
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to load order';
+      setError(msg);
       toast.error(msg);
     } finally {
       setLoading(false);
     }
-  }, [fetchOrder, fetchFulfillment]);
+  }, [orderId, router, buildPath]);
 
   useEffect(() => {
     void loadAll();
   }, [loadAll]);
 
-  /**
-   * Toggle a fulfillment step.
-   *
-   * Called by OrderEditor after it applies the optimistic update.
-   * If this throws, OrderEditor reverts its optimistic state.
-   *
-   * The current toggle state is determined by finding the step in the current
-   * fulfillmentOrder snapshot. We compute the next completed value from the
-   * step's current DB state (not the optimistic UI state) so that even rapid
-   * double-toggles converge correctly.
-   */
-  const handleStepToggle = useCallback(async (itemId: string, stepId: string): Promise<void> => {
-    // Determine current DB completed state from fulfillment snapshot
-    let currentCompleted = false;
-    if (fulfillmentOrder != null) {
-      const fi = fulfillmentOrder.items.find((i) => i.id === itemId);
-      if (fi != null) {
-        const step = fi.fulfillmentSteps.find((s) => s.id === stepId);
-        if (step != null) {
-          currentCompleted = step.completed;
-        }
-      }
-    }
-    const nextCompleted = !currentCompleted;
+  const model = useMemo(() => (apiOrder ? buildModel(apiOrder, fulfillment) : null), [apiOrder, fulfillment]);
 
-    const response = await fetch(
-      `/api/cms/orders/${orderId}/fulfillment?action=complete-step`,
-      {
+  const handleToggleStep = useCallback(
+    async (itemId: string, stepId: string): Promise<void> => {
+      const fi = fulfillment?.items.find((i) => i.id === itemId);
+      const step = fi?.fulfillmentSteps.find((s) => s.id === stepId);
+      const next = !(step?.completed ?? false);
+
+      // optimistic
+      setFulfillment((prev) =>
+        prev
+          ? { ...prev, items: prev.items.map((i) => (i.id !== itemId ? i : { ...i, fulfillmentSteps: i.fulfillmentSteps.map((s) => (s.id === stepId ? { ...s, completed: next } : s)) })) }
+          : prev,
+      );
+
+      const res = await fetch(`/api/cms/orders/${orderId}/fulfillment?action=complete-step`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stepId, completed: nextCompleted }),
-      },
-    );
-
-    if (!response.ok) {
-      const errBody: unknown = await response.json().catch(() => ({}));
-      const errMsg =
-        typeof errBody === 'object' &&
-        errBody !== null &&
-        'error' in errBody &&
-        typeof (errBody as Record<string, unknown>).error === 'string'
-          ? (errBody as Record<string, string>).error
-          : 'Failed to update step';
-      throw new Error(errMsg);
-    }
-
-    const result: { success: boolean; data: ApiFulfillmentStep } = await response.json();
-
-    // Update fulfillment snapshot so future toggles have the correct base state
-    setFulfillmentOrder((prev): ApiFulfillmentOrder | null => {
-      if (prev == null) return prev;
-      return {
-        ...prev,
-        items: prev.items.map((fi): ApiFulfillmentItem =>
-          fi.id !== itemId
-            ? fi
-            : {
-                ...fi,
-                fulfillmentSteps: fi.fulfillmentSteps.map((s): ApiFulfillmentStep =>
-                  s.id !== stepId ? s : { ...s, completed: result.data.completed, completedAt: result.data.completedAt },
-                ),
-              },
-        ),
-      };
-    });
-  }, [orderId, fulfillmentOrder]);
+        body: JSON.stringify({ stepId, completed: next }),
+      });
+      if (!res.ok) {
+        // revert
+        setFulfillment((prev) =>
+          prev
+            ? { ...prev, items: prev.items.map((i) => (i.id !== itemId ? i : { ...i, fulfillmentSteps: i.fulfillmentSteps.map((s) => (s.id === stepId ? { ...s, completed: !next } : s)) })) }
+            : prev,
+        );
+        toast.error('Failed to update step');
+      }
+    },
+    [fulfillment, orderId],
+  );
 
   const handleShip = useCallback(async (): Promise<void> => {
-    const response = await fetch(`/api/cms/orders/${orderId}/status`, {
+    const res = await fetch(`/api/cms/orders/${orderId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'shipped' }),
+      body: JSON.stringify({ status: 'SHIPPED' }),
     });
-    if (response.ok) {
+    if (res.ok) {
       toast.success('Order marked as shipped');
       await loadAll();
     } else {
@@ -420,116 +241,72 @@ export default function OrderDetailPage(): React.ReactElement {
     }
   }, [orderId, loadAll]);
 
-  // ── Loading state ─────────────────────────────────────────────────────────
+  const handleAddNote = useCallback(
+    async (note: string): Promise<void> => {
+      const existing = apiOrder?.internalNotes?.trim();
+      const combined = existing ? `${existing}\n${note}` : note;
+      const res = await fetch(`/api/cms/orders/${orderId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ internalNotes: combined }),
+      });
+      if (res.ok) {
+        toast.success('Note added');
+        setApiOrder((prev) => (prev ? { ...prev, internalNotes: combined } : prev));
+      } else {
+        toast.error('Failed to add note');
+      }
+    },
+    [orderId, apiOrder],
+  );
 
   if (loading) {
     return (
-      <div
-        className="atlas"
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}
-      >
-        <div style={{ textAlign: 'center' }}>
-          <div
-            className="eyebrow"
-            style={{
-              animation: 'pulse 1.4s ease-in-out infinite',
-              fontSize: 11,
-              letterSpacing: '0.1em',
-            }}
-          >
-            Loading order…
-          </div>
-          <div
-            style={{
-              width: 240,
-              height: 4,
-              background: 'var(--rule)',
-              borderRadius: 2,
-              marginTop: 12,
-              overflow: 'hidden',
-            }}
-          >
-            <div
-              style={{
-                width: '40%',
-                height: '100%',
-                background: 'var(--ink)',
-                animation: 'shimmer 1.2s ease-in-out infinite',
-              }}
-            />
-          </div>
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
+        <span className="gr-eyebrow">Loading order…</span>
       </div>
     );
   }
-
-  // ── Error state ───────────────────────────────────────────────────────────
-
-  if (fetchError != null) {
+  if (error) {
     return (
-      <div
-        className="atlas"
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: 400,
-          gap: 12,
-        }}
-      >
-        <span className="eyebrow" style={{ color: 'var(--accent)' }}>Error loading order</span>
-        <span className="display-i" style={{ fontSize: 18 }}>{fetchError}</span>
-        <button className="btn btn-sm" onClick={() => void loadAll()}>Retry</button>
-        <a href="/admin/orders" className="btn btn-sm">← Back to orders</a>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, gap: 12 }}>
+        <span className="gr-eyebrow" style={{ color: 'var(--rust-700)' }}>Error loading order</span>
+        <span style={{ fontSize: 15 }}>{error}</span>
+        <button type="button" className="btn btn-secondary" onClick={() => void loadAll()}>Retry</button>
       </div>
     );
   }
-
-  // ── Empty / not-found state ───────────────────────────────────────────────
-
-  if (orderData == null || apiOrder == null) {
+  if (!model || !apiOrder) {
     return (
-      <div
-        className="atlas"
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: 400,
-          gap: 12,
-        }}
-      >
-        <span className="display-i" style={{ fontSize: 22 }}>Order not found</span>
-        <a href="/admin/orders" className="btn">← Back to orders</a>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, gap: 12 }}>
+        <span style={{ fontSize: 18 }}>Order not found</span>
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <OrderEditor
-        order={orderData}
-        subdomain={subdomain}
-        onStepToggle={handleStepToggle}
-        onShip={handleShip}
-      />
-
-      {/* Existing OrderProgress widget preserved for workflow integration */}
-      {apiOrder.workflow != null && (
-        <div style={{ padding: '0 32px 18px' }}>
-          <OrderProgress
-            orderId={apiOrder.id}
-            orderNumber={apiOrder.orderNumber}
-            workflow={apiOrder.workflow}
-            currentStage={apiOrder.currentStage ?? null}
-            progress={apiOrder.progress ?? []}
-            trackingAutoSync={apiOrder.trackingAutoSync ?? true}
-            onUpdate={loadAll}
-          />
-        </div>
-      )}
-    </div>
+    <OrderDetail
+      order={model}
+      buildPath={buildPath}
+      onBack={() => router.push(buildPath('/admin/orders'))}
+      onToggleStep={handleToggleStep}
+      onShip={handleShip}
+      onAddNote={handleAddNote}
+      workflowSlot={
+        apiOrder.workflow ? (
+          <div className="gr-card" style={{ padding: '16px 18px' }}>
+            <OrderProgress
+              orderId={apiOrder.id}
+              orderNumber={apiOrder.orderNumber}
+              workflow={apiOrder.workflow}
+              currentStage={apiOrder.currentStage ?? null}
+              progress={apiOrder.progress ?? []}
+              trackingAutoSync={apiOrder.trackingAutoSync ?? true}
+              onUpdate={loadAll}
+            />
+          </div>
+        ) : null
+      }
+    />
   );
 }

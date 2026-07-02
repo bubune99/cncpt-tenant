@@ -1,377 +1,292 @@
 'use client';
 
 /**
- * Orders list — Atlas Board / Ledger toggle
+ * Orders — Grainy fulfillment queue.
  *
- * Faithful port of atlas-v2-pages.jsx Orders() + OrdersBoard() + OrdersLedger()
- * Preserves all existing data wiring: fetch /api/cms/orders, status badges,
- * bulk-select, filtering. Board view adds kanban lanes on top of live data.
+ * List · Cards · Kanban over the real /api/cms/orders payload. Stage filters,
+ * bulk actions, kanban drag, and row actions all drive real mutations
+ * (PUT /api/cms/orders/[id] for status changes). Columns and stats are limited
+ * to fields the order model actually provides.
  */
 
-import { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { Table, LayoutGrid, Columns3, Download, Plus, ShoppingBag, DollarSign, Truck, Printer, Tag, X } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useCMSConfig } from '@/contexts/CMSConfigContext';
+import { Btn, Eyebrow, LiveSearch, Segment, StatCard, type SegmentOption } from '@/components/cms/admin/orders/orders-ui';
+import { OrdersListTable } from '@/components/cms/admin/orders/orders-list-table';
+import { OrdersKanban } from '@/components/cms/admin/orders/orders-kanban';
+import { OrderCard } from '@/components/cms/admin/orders/order-card';
+import {
+  STAGES,
+  money,
+  stageToStatus,
+  statusToStage,
+  toOrderRow,
+  type OrderRow,
+  type RawOrder,
+  type Stage,
+} from '@/components/cms/admin/orders/orders-model';
 
-// ─────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────
+type ViewMode = 'list' | 'cards' | 'kanban';
+type StageFilter = 'All' | Stage;
 
-type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-type PaymentStatus = 'paid' | 'pending' | 'refunded';
-type ViewMode = 'board' | 'ledger';
-
-interface Order {
-  readonly id: string;
-  readonly orderNumber: string;
-  readonly customer: { readonly name: string; readonly email: string };
-  readonly items: number;
-  readonly total: number;
-  readonly status: OrderStatus;
-  readonly paymentStatus: PaymentStatus;
-  readonly createdAt: string;
-  readonly shippingAddress: string;
+async function updateStatus(id: string, status: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/cms/orders/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
-// ─────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────
-
-const STATUS_PILL: Record<OrderStatus, string> = {
-  pending:    'pill-solid-accent',
-  processing: 'pill-solid-gold',
-  shipped:    'pill-solid-moss',
-  delivered:  'pill-solid-ink',
-  cancelled:  'pill-out-accent',
-};
-
-const STATUS_LABEL: Record<OrderStatus, string> = {
-  pending:    'NEW',
-  processing: 'PACKED',
-  shipped:    'SHIPPED',
-  delivered:  'DONE',
-  cancelled:  'CANCEL',
-};
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-}
-
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
-// ─────────────────────────────────────────────
-// Board (kanban) view
-// ─────────────────────────────────────────────
-
-interface BoardProps {
-  readonly orders: readonly Order[];
-}
-
-function OrdersBoard({ orders }: BoardProps) {
-  const lanes: readonly { key: OrderStatus; label: string; italic: string; alert: boolean }[] = [
-    { key: 'pending',    label: 'New',     italic: 'awaiting',   alert: false },
-    { key: 'processing', label: 'Packed',  italic: 'ready',      alert: false },
-    { key: 'shipped',    label: 'Shipped', italic: 'in transit', alert: false },
-    { key: 'cancelled',  label: 'Issue',   italic: 'stuck',      alert: true  },
-  ] as const;
-
-  return (
-    <>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 0, alignItems: 'flex-start' }}>
-        {lanes.map((lane, i) => {
-          const cards = orders.filter(o => o.status === lane.key);
-          return (
-            <div
-              key={lane.key}
-              style={{ padding: '0 14px', borderLeft: i ? '1px solid var(--rule)' : 'none' }}
-            >
-              <div className="kbn-lane-h">
-                <span className="display" style={{ fontSize: 22 }}>
-                  {lane.alert && <span className="accent">⚑ </span>}
-                  {lane.label}
-                </span>
-                <span className="fig" style={{ fontSize: 13, marginLeft: 'auto' }}>
-                  {cards.length} {lane.italic}
-                </span>
-              </div>
-
-              {cards.length === 0 && (
-                <div className="fig" style={{ fontSize: 12, padding: '8px 0', color: 'var(--ink-faint)' }}>
-                  No orders
-                </div>
-              )}
-
-              {cards.map(o => (
-                <div
-                  key={o.id}
-                  className={'kbn-card' + (lane.alert ? ' alert' : '')}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-                    <span className="mono accent" style={{ fontSize: 12 }}>{o.orderNumber}</span>
-                    <span className="fig" style={{ fontSize: 11 }}>{formatDate(o.createdAt)}</span>
-                  </div>
-                  <div style={{ fontSize: 14, fontWeight: 500 }}>{o.customer.name}</div>
-                  <div className="fig" style={{ fontSize: 12 }}>{o.shippingAddress}</div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 8, paddingTop: 6, borderTop: '1px solid var(--rule-soft)' }}>
-                    <span className="fig" style={{ fontSize: 11 }}>{o.items} item{o.items !== 1 ? 's' : ''}</span>
-                    <span className="mono" style={{ fontSize: 12 }}>{formatCurrency(o.total)}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="action-bar">
-        <span><span className="kbd">↑↓ →</span>move card</span>
-        <span><span className="kbd">Enter</span>open</span>
-        <span><span className="kbd">P</span>pack &amp; ship</span>
-        <span><span className="kbd">R</span>refund</span>
-        <span className="right mono" style={{ fontSize: 10 }}>
-          {new Date().toISOString().slice(0,16).replace('T',' ')} UTC
-        </span>
-      </div>
-    </>
-  );
-}
-
-// ─────────────────────────────────────────────
-// Ledger (table) view
-// ─────────────────────────────────────────────
-
-interface LedgerProps {
-  readonly orders: readonly Order[];
-  readonly selectedIds: readonly string[];
-  readonly onSelectAll: (checked: boolean) => void;
-  readonly onSelectOne: (id: string, checked: boolean) => void;
-  readonly activeTab: string;
-  readonly onTabChange: (tab: string) => void;
-}
-
-function OrdersLedger({ orders, selectedIds, onSelectAll, onSelectOne, activeTab, onTabChange }: LedgerProps) {
-  const tabs: readonly (readonly [string, string, number])[] = [
-    ['all',        'All',       orders.length],
-    ['pending',    'New',       orders.filter(o => o.status === 'pending').length],
-    ['processing', 'Packed',    orders.filter(o => o.status === 'processing').length],
-    ['shipped',    'Shipped',   orders.filter(o => o.status === 'shipped').length],
-    ['delivered',  'Delivered', orders.filter(o => o.status === 'delivered').length],
-    ['cancelled',  'Issue',     orders.filter(o => o.status === 'cancelled').length],
-  ] as const;
-
-  const visible = activeTab === 'all' ? orders : orders.filter(o => o.status === activeTab);
-
-  return (
-    <>
-      {/* Filter tabs */}
-      <div className="tabs">
-        {tabs.map(([key, label, count]) => (
-          <span
-            key={key}
-            className={'tab' + (activeTab === key ? ' on' : '')}
-            onClick={() => onTabChange(key)}
-          >
-            {label}<span className="ct">{count}</span>
-          </span>
-        ))}
-        <span className="right">
-          <span className="fig" style={{ fontSize: 11 }}>sort: placed ↓</span>
-        </span>
-      </div>
-
-      <table className="tbl" style={{ marginTop: 0 }}>
-        <thead>
-          <tr>
-            <th className="check">
-              <input
-                type="checkbox"
-                onChange={e => onSelectAll(e.target.checked)}
-                checked={selectedIds.length === visible.length && visible.length > 0}
-              />
-            </th>
-            <th style={{ width: 80 }}>Order</th>
-            <th>Customer</th>
-            <th style={{ width: 140 }}>Location</th>
-            <th className="sort" style={{ width: 110 }}>Placed</th>
-            <th className="num" style={{ width: 50 }}>Items</th>
-            <th className="num" style={{ width: 80 }}>Total</th>
-            <th style={{ width: 100 }}>Status</th>
-            <th style={{ width: 90 }}>Payment</th>
-          </tr>
-        </thead>
-        <tbody>
-          {visible.length === 0 ? (
-            <tr>
-              <td colSpan={9} style={{ textAlign: 'center', padding: 24 }}>
-                <span className="fig">No orders found</span>
-              </td>
-            </tr>
-          ) : visible.map(o => (
-            <tr key={o.id} className={selectedIds.includes(o.id) ? 'sel' : ''}>
-              <td className="check">
-                <input
-                  type="checkbox"
-                  checked={selectedIds.includes(o.id)}
-                  onChange={e => onSelectOne(o.id, e.target.checked)}
-                />
-              </td>
-              <td>
-                <Link href={`/admin/orders/${o.id}`} className="mono accent" style={{ fontSize: 12, textDecoration: 'none' }}>
-                  {o.orderNumber}
-                </Link>
-              </td>
-              <td>
-                <div className="name">{o.customer.name}</div>
-                <div className="mono" style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{o.customer.email}</div>
-              </td>
-              <td><span className="fig" style={{ fontSize: 12 }}>{o.shippingAddress}</span></td>
-              <td><span className="meta">{formatDate(o.createdAt)}</span></td>
-              <td className="num">{o.items}</td>
-              <td className="num">{formatCurrency(o.total)}</td>
-              <td><span className={`pill ${STATUS_PILL[o.status]}`}>{STATUS_LABEL[o.status]}</span></td>
-              <td>
-                <span className={`pill ${o.paymentStatus === 'paid' ? 'pill-solid-moss' : o.paymentStatus === 'refunded' ? 'pill-solid-accent' : 'pill-soft'}`}>
-                  {o.paymentStatus.toUpperCase()}
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <div className="action-bar">
-        {selectedIds.length > 0 && <span className="selct">{selectedIds.length} selected</span>}
-        <span><span className="kbd">↑↓</span>move</span>
-        <span><span className="kbd">Enter</span>open</span>
-        <span><span className="kbd">P</span>pack &amp; ship</span>
-        <span><span className="kbd">R</span>refund</span>
-        <span><span className="kbd">F</span>flag</span>
-        <span className="right mono" style={{ fontSize: 10 }}>
-          {new Date().toISOString().slice(0,16).replace('T',' ')} UTC
-        </span>
-      </div>
-    </>
-  );
-}
-
-// ─────────────────────────────────────────────
-// Page
-// ─────────────────────────────────────────────
-
-export default function OrdersPage() {
+export default function OrdersPage(): React.ReactElement {
   const { user } = useAuth();
   const { buildPath } = useCMSConfig();
+  const router = useRouter();
 
-  const [orders, setOrders]           = useState<Order[]>([]);
-  const [isLoading, setIsLoading]     = useState(true);
-  const [view, setView]               = useState<ViewMode>('board');
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [activeTab, setActiveTab]     = useState('all');
-  const [search, setSearch]           = useState('');
+  const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [view, setView] = useState<ViewMode>('list');
+  const [stage, setStage] = useState<StageFilter>('All');
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const [q, setQ] = useState('');
 
-  useEffect(() => { void fetchOrders(); }, [user]);
-
-  const fetchOrders = async () => {
-    setIsLoading(true);
+  const fetchOrders = useCallback(async () => {
+    setLoading(true);
     try {
-      const res = await fetch('/api/cms/orders');
-      if (res.ok) {
-        const data = await res.json() as { orders?: Order[] };
-        setOrders(data.orders ?? []);
-      } else {
-        setOrders([]);
-      }
+      const res = await fetch('/api/cms/orders?limit=200');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as { orders?: RawOrder[] };
+      setOrders((data.orders ?? []).map(toOrderRow));
     } catch {
       toast.error('Failed to load orders');
+      setOrders([]);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  };
+  }, []);
 
-  const filtered = orders.filter(o => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return (
-      o.orderNumber.toLowerCase().includes(q) ||
-      o.customer.name.toLowerCase().includes(q) ||
-      o.customer.email.toLowerCase().includes(q)
+  useEffect(() => {
+    void fetchOrders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  const searched = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    if (!term) return orders;
+    return orders.filter(
+      (o) =>
+        o.orderNumber.toLowerCase().includes(term) ||
+        o.customerName.toLowerCase().includes(term) ||
+        o.customerEmail.toLowerCase().includes(term),
     );
-  });
+  }, [orders, q]);
 
-  const handleSelectAll = (checked: boolean) =>
-    setSelectedIds(checked ? filtered.map(o => o.id) : []);
+  const rows = useMemo(
+    () => (stage === 'All' ? searched : searched.filter((o) => statusToStage(o.status) === stage)),
+    [searched, stage],
+  );
 
-  const handleSelectOne = (id: string, checked: boolean) =>
-    setSelectedIds(prev => checked ? [...prev, id] : prev.filter(x => x !== id));
+  const stageCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    STAGES.forEach((s) => {
+      counts[s] = searched.filter((o) => statusToStage(o.status) === s).length;
+    });
+    return counts;
+  }, [searched]);
 
-  const stats = {
-    total:   orders.length,
-    pending: orders.filter(o => o.status === 'pending').length,
-    revenue: orders.filter(o => o.paymentStatus === 'paid').reduce((s, o) => s + o.total, 0),
-    stuck:   orders.filter(o => o.status === 'cancelled').length,
-  };
+  const stats = useMemo(() => {
+    const open = orders.filter((o) => o.status === 'PENDING' || o.status === 'PROCESSING').length;
+    const collected = orders.filter((o) => o.paymentStatus === 'PAID').reduce((s, o) => s + o.totalCents, 0);
+    const shipped = orders.filter((o) => o.status === 'SHIPPED').length;
+    return { open, collected, shipped };
+  }, [orders]);
+
+  // ── selection ──
+  const toggle = (id: string) =>
+    setSel((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  const allOn = rows.length > 0 && rows.every((o) => sel.has(o.id));
+  const toggleAll = () =>
+    setSel((s) => {
+      const n = new Set(s);
+      if (allOn) rows.forEach((o) => n.delete(o.id));
+      else rows.forEach((o) => n.add(o.id));
+      return n;
+    });
+
+  const openOrder = (id: string) => router.push(buildPath(`/admin/orders/${id}`));
+
+  // ── mutations ──
+  const cancelOne = useCallback(async (id: string) => {
+    const ok = await updateStatus(id, 'CANCELLED');
+    if (ok) {
+      toast.success('Order cancelled');
+      void fetchOrders();
+    } else {
+      toast.error('Failed to cancel order');
+    }
+  }, [fetchOrders]);
+
+  const bulkStatus = useCallback(
+    async (status: string, verb: string) => {
+      const ids = [...sel];
+      if (ids.length === 0) return;
+      const results = await Promise.all(ids.map((id) => updateStatus(id, status)));
+      const done = results.filter(Boolean).length;
+      if (done > 0) toast.success(`${done} order${done === 1 ? '' : 's'} ${verb}`);
+      if (done < ids.length) toast.error(`${ids.length - done} failed`);
+      setSel(new Set());
+      void fetchOrders();
+    },
+    [sel, fetchOrders],
+  );
+
+  const moveStage = useCallback(
+    (id: string, from: Stage, to: Stage): boolean => {
+      if (to === 'Shipped' && from === 'New') {
+        toast.error('Move to In progress before shipping');
+        return false;
+      }
+      // optimistic: reflect the new status immediately, reconcile on refetch
+      setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: stageToStatus(to) } : o)));
+      void (async () => {
+        const ok = await updateStatus(id, stageToStatus(to));
+        if (ok) toast.success(`#${orders.find((o) => o.id === id)?.orderNumber ?? id} → ${to}`);
+        else {
+          toast.error('Failed to move order');
+        }
+        void fetchOrders();
+      })();
+      return true;
+    },
+    [orders, fetchOrders],
+  );
+
+  const exportCsv = useCallback(() => {
+    const header = ['Order', 'Customer', 'Email', 'Items', 'Total', 'Payment', 'Status', 'Placed'];
+    const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const lines = rows.map((o) =>
+      [o.orderNumber, o.customerName, o.customerEmail, String(o.itemUnits), money(o.totalCents), o.paymentStatus, o.status, o.createdAt]
+        .map(escape)
+        .join(','),
+    );
+    const blob = new Blob([[header.map(escape).join(','), ...lines].join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `orders-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${rows.length} orders · CSV`);
+  }, [rows]);
+
+  const viewOptions: readonly SegmentOption<ViewMode>[] = [
+    { value: 'list', label: 'List', icon: Table },
+    { value: 'cards', label: 'Cards', icon: LayoutGrid },
+    { value: 'kanban', label: 'Kanban', icon: Columns3 },
+  ];
+  const stageOptions: readonly SegmentOption<StageFilter>[] = [
+    { value: 'All', label: `All ${searched.length}` },
+    ...STAGES.map((s): SegmentOption<StageFilter> => ({ value: s, label: `${s} ${stageCounts[s] ?? 0}` })),
+  ];
 
   return (
-    <div data-tour-id="orders-page">
-      {/* Main head */}
-      <div className="main-head" data-tour-id="orders-heading">
-        <div>
-          <div className="eyebrow">Orders</div>
-          <h1>The <span className="display-i accent">{view === 'board' ? 'board.' : 'ledger.'}</span></h1>
-          <div className="sub">
-            {stats.total} total · {stats.pending} awaiting · {stats.stuck} stuck · {formatCurrency(stats.revenue)} collected
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }} data-tour-id="orders-page">
+      <div style={{ padding: '18px 26px 0', flex: 'none' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20 }} data-tour-id="orders-heading">
+          <div>
+            <Eyebrow>Fulfillment · today</Eyebrow>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 3 }}>
+              <h2 style={{ fontSize: 'var(--text-xl)', margin: 0, letterSpacing: '-0.015em' }}>Orders</h2>
+              <span className="gr-num" style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>{orders.length} total</span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Segment options={viewOptions} value={view} onChange={setView} />
+            <Btn icon={Download} onClick={exportCsv}>Export</Btn>
+            <Link href={buildPath('/admin/orders/new')} data-tour-id="orders-create-button">
+              <Btn kind="primary" icon={Plus}>New order</Btn>
+            </Link>
           </div>
         </div>
-        <div className="actions">
-          <span className="fig" style={{ fontSize: 11 }}>view:</span>
-          <button
-            className={`btn${view === 'board' ? ' btn-solid' : ''}`}
-            style={{ padding: '5px 10px', fontSize: 11 }}
-            onClick={() => setView('board')}
-          >
-            Board
-          </button>
-          <button
-            className={`btn${view === 'ledger' ? ' btn-solid' : ''}`}
-            style={{ padding: '5px 10px', fontSize: 11 }}
-            onClick={() => setView('ledger')}
-          >
-            Ledger
-          </button>
-          {/* Search input inline */}
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search…"
-            className="btn"
-            style={{ cursor: 'text', width: 140 }}
-            data-tour-id="orders-search-input"
-          />
-          <Link href={buildPath('/admin/orders/new')} className="btn btn-solid" data-tour-id="orders-create-button">
-            <span className="kbd">N</span>+ Order
-          </Link>
+
+        {view !== 'kanban' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, margin: '16px 0 4px' }}>
+            <StatCard icon={ShoppingBag} value={stats.open} label="Open orders" note="need fulfillment" />
+            <StatCard icon={DollarSign} value={money(stats.collected)} label="Collected" note="paid orders" />
+            <StatCard icon={Truck} value={stats.shipped} label="Shipped" note="in transit" />
+          </div>
+        )}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 0 12px', flexWrap: 'wrap' }}>
+          {view !== 'kanban' ? (
+            <Segment options={stageOptions} value={stage} onChange={setStage} />
+          ) : (
+            <span style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>Drag a card between columns to advance fulfillment.</span>
+          )}
+          <div style={{ marginLeft: 'auto' }} data-tour-id="orders-search-input">
+            <LiveSearch value={q} onChange={setQ} placeholder="Filter orders…" width={210} />
+          </div>
         </div>
+
+        {sel.size > 0 && view !== 'kanban' && (
+          <div style={{ marginBottom: 12 }}>
+            <div className="bulkbar">
+              <span className="count"><b>{sel.size}</b> selected</span>
+              <span className="bb-sep" />
+              <button type="button" className="bb-btn" onClick={() => void bulkStatus('SHIPPED', 'marked shipped')}>
+                <Truck size={15} />Mark shipped
+              </button>
+              <button type="button" className="bb-btn" disabled title="Coming soon" style={{ opacity: 0.5, cursor: 'not-allowed' }}>
+                <Printer size={15} />Print slips
+              </button>
+              <button type="button" className="bb-btn" disabled title="Coming soon" style={{ opacity: 0.5, cursor: 'not-allowed' }}>
+                <Tag size={15} />Tag
+              </button>
+              <span className="bb-sep" />
+              <button type="button" className="bb-btn danger" onClick={() => void bulkStatus('CANCELLED', 'cancelled')}>
+                <X size={15} />Cancel
+              </button>
+              <button type="button" className="bb-close bb-btn" onClick={() => setSel(new Set())} aria-label="Clear selection">
+                <X size={15} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {isLoading ? (
-        <div style={{ textAlign: 'center', padding: 40 }}>
-          <span className="eyebrow">Loading…</span>
-        </div>
-      ) : view === 'board' ? (
-        <OrdersBoard orders={filtered} />
-      ) : (
-        <OrdersLedger
-          orders={filtered}
-          selectedIds={selectedIds}
-          onSelectAll={handleSelectAll}
-          onSelectOne={handleSelectOne}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
-      )}
+      <div style={{ flex: 1, minHeight: 0, padding: '0 26px 22px', display: 'flex', flexDirection: 'column' }}>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
+            <span className="gr-eyebrow">Loading…</span>
+          </div>
+        ) : view === 'list' ? (
+          <OrdersListTable rows={rows} selected={sel} onToggle={toggle} onToggleAll={toggleAll} onOpen={openOrder} onCancel={(id) => void cancelOne(id)} />
+        ) : view === 'cards' ? (
+          <div className="gr-scroll" style={{ flex: 1, minHeight: 0 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14, paddingBottom: 8 }}>
+              {rows.map((o) => (
+                <OrderCard key={o.id} order={o} onClick={() => openOrder(o.id)} />
+              ))}
+            </div>
+          </div>
+        ) : (
+          <OrdersKanban rows={searched} onOpen={openOrder} onMove={moveStage} />
+        )}
+      </div>
     </div>
   );
 }
