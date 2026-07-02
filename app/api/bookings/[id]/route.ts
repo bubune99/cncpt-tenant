@@ -31,7 +31,7 @@ export async function GET(
 
     // Public access only shows limited info (for cancel/reschedule pages)
     const user = await getCurrentUser()
-    const isAdmin = user && (await isSuperAdmin(user.id))
+    const isAdmin = user && (await isSuperAdmin(String(user.id)))
 
     if (!isAdmin) {
       // Return limited info for public
@@ -68,7 +68,7 @@ export async function PATCH(
 ) {
   try {
     const user = await getCurrentUser()
-    if (!user || !(await isSuperAdmin(user.id))) {
+    if (!user || !(await isSuperAdmin(String(user.id)))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -138,7 +138,7 @@ export async function DELETE(
 
     // Check if admin
     const user = await getCurrentUser()
-    const isAdmin = user && (await isSuperAdmin(user.id))
+    const isAdmin = user && (await isSuperAdmin(String(user.id)))
 
     // If not admin, require email verification
     if (!isAdmin && !email) {

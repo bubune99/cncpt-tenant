@@ -11,7 +11,7 @@ import {
   withPermission,
   type AuthContext,
 } from '@/lib/cms/permissions/middleware'
-import { PERMISSIONS, logAuditEvent, seedBuiltInRoles } from '@/lib/cms/permissions'
+import { PERMISSIONS, logAuditEvent } from '@/lib/cms/permissions'
 
 export const dynamic = 'force-dynamic'
 
@@ -79,7 +79,7 @@ export const POST = withPermission(
       }
 
       // Check for duplicate name
-      const existing = await prisma.role.findUnique({
+      const existing = await prisma.role.findFirst({
         where: { name: body.name.trim().toLowerCase().replace(/\s+/g, '_') },
       })
 
@@ -134,7 +134,4 @@ export const POST = withPermission(
   }
 )
 
-// Special endpoint to seed built-in roles (call once on setup)
-export async function seedRoles(): Promise<void> {
-  await seedBuiltInRoles()
-}
+

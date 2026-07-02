@@ -17,7 +17,7 @@ export async function getAllSubdomains() {
     return []
   }
 
-  const values = await redis.mget<SubdomainData>(...keys)
+  const values = await redis.mget<SubdomainData[]>(...keys)
   return keys.map((key, index) => {
     const subdomain = key.replace("subdomain:", "")
     const data = values[index]

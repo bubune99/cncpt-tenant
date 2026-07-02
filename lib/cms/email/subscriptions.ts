@@ -54,7 +54,7 @@ export async function subscribeEmail(
 
   try {
     // Check if already subscribed
-    const existing = await prisma.emailSubscriber.findUnique({
+    const existing = await prisma.emailSubscriber.findFirst({
       where: { email: normalizedEmail },
     })
 
@@ -68,7 +68,7 @@ export async function subscribeEmail(
         const confirmationToken = options.doubleOptIn ? generateSubscriptionToken(normalizedEmail) : undefined
 
         const updated = await prisma.emailSubscriber.update({
-          where: { email: normalizedEmail },
+          where: { id: existing.id },
           data: {
             status: options.doubleOptIn ? 'PENDING' : 'ACTIVE',
             firstName: options.firstName || existing.firstName,
@@ -181,7 +181,7 @@ export async function unsubscribeEmail(
   const normalizedEmail = email.toLowerCase().trim()
 
   try {
-    const subscriber = await prisma.emailSubscriber.findUnique({
+    const subscriber = await prisma.emailSubscriber.findFirst({
       where: { email: normalizedEmail },
     })
 
@@ -194,7 +194,7 @@ export async function unsubscribeEmail(
     }
 
     await prisma.emailSubscriber.update({
-      where: { email: normalizedEmail },
+      where: { id: subscriber.id },
       data: {
         status: 'UNSUBSCRIBED',
         unsubscribedAt: new Date(),
@@ -275,7 +275,7 @@ export async function getSubscriberPreferences(
     })
 
     if (!subscriber) {
-      subscriber = await prisma.emailSubscriber.findUnique({
+      subscriber = await prisma.emailSubscriber.findFirst({
         where: { email: subscriberIdOrEmail.toLowerCase().trim() },
       })
     }
@@ -327,7 +327,7 @@ export async function updateSubscriberPreferences(
     })
 
     if (!subscriber) {
-      subscriber = await prisma.emailSubscriber.findUnique({
+      subscriber = await prisma.emailSubscriber.findFirst({
         where: { email: subscriberIdOrEmail.toLowerCase().trim() },
       })
     }
@@ -418,7 +418,7 @@ export async function addSubscriberTags(
     })
 
     if (!subscriber) {
-      subscriber = await prisma.emailSubscriber.findUnique({
+      subscriber = await prisma.emailSubscriber.findFirst({
         where: { email: subscriberIdOrEmail.toLowerCase().trim() },
       })
     }
@@ -457,7 +457,7 @@ export async function removeSubscriberTags(
     })
 
     if (!subscriber) {
-      subscriber = await prisma.emailSubscriber.findUnique({
+      subscriber = await prisma.emailSubscriber.findFirst({
         where: { email: subscriberIdOrEmail.toLowerCase().trim() },
       })
     }

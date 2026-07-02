@@ -8,10 +8,16 @@
 
 import Link from 'next/link';
 
-const ELIGIBLE = [
+const ELIGIBLE: ReadonlyArray<{
+  nm: string;
+  v: string;
+  price: string;
+  ordered: string;
+  days: number;
+}> = [
   { nm: 'Heritage hoodie',  v: 'Brick · M',   price: '$92', ordered: '08 May', days: 14 },
   { nm: 'Field journal',    v: 'A5 · linen',   price: '$22', ordered: '02 May', days: 21 },
-] as const;
+];
 
 const PAST_RETURNS = [
   { id: 'RET-0041', nm: 'Linen shirt (White · S)', date: '12 Apr', refund: '$64', method: 'Store credit', status: 'Completed' },

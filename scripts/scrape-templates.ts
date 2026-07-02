@@ -272,7 +272,7 @@ async function main() {
   log("")
 
   // Collect all scraped templates
-  const scraped: Awaited<ReturnType<typeof import("../lib/cms/marketplace/scrapers/types")>>["ScrapedTemplate"][] = []
+  const scraped: import("../lib/cms/marketplace/scrapers/types").ScrapedTemplate[] = []
   let count = 0
 
   try {

@@ -86,6 +86,16 @@ export type AuditAction =
   | 'blog.publish'
   | 'settings.update'
   | 'site_settings.update'
+  // Partial (reusable block sequence) audit actions
+  | 'partial.create'
+  | 'partial.update'
+  | 'partial.delete'
+  | 'partial.set_default'
+  // Page template / marketplace audit actions
+  | 'page_template.create'
+  | 'marketplace_template.create'
+  | 'marketplace_template.update'
+  | 'marketplace_template.delete'
 
 // Audit log entry
 export interface AuditLogEntry {

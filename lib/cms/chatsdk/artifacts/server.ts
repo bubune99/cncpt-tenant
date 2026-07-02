@@ -1,8 +1,8 @@
 import type { UIMessageStreamWriter } from "ai";
 import type { Session } from '../auth-types';
-import { codeDocumentHandler } from '../../../app/artifacts/code/server';
-import { sheetDocumentHandler } from '../../../app/artifacts/sheet/server';
-import { textDocumentHandler } from '../../../app/artifacts/text/server';
+import { codeDocumentHandler } from '@/app/s/[subdomain]/artifacts/code/server';
+import { sheetDocumentHandler } from '@/app/s/[subdomain]/artifacts/sheet/server';
+import { textDocumentHandler } from '@/app/s/[subdomain]/artifacts/text/server';
 import type { ArtifactKind } from '@/components/cms/chatsdk/artifact';
 import { saveDocument } from "../db/queries";
 import type { Document } from "../db/schema";

@@ -38,7 +38,7 @@ export async function GET(
         let ownerInfo = null
         if (subdomainData?.user_id) {
           try {
-            const owner = await stackServerApp.getUser({ userId: subdomainData.user_id as string })
+            const owner = await stackServerApp.getUser(subdomainData.user_id as string)
             if (owner) {
               ownerInfo = {
                 id: owner.id,

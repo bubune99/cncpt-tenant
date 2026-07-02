@@ -3,6 +3,7 @@
  * Page routing, hierarchy, and internal link management
  */
 
+import { Prisma } from "@prisma/client"
 import {
   prisma, c, sym, table, heading, success, error, info,
   formatStatus, truncate,
@@ -83,13 +84,13 @@ async function routesList() {
 async function routesSet(oldSlug: string, newSlug: string) {
   if (!oldSlug || !newSlug) { error("Usage: cms routes set <old-slug> <new-slug>"); return }
 
-  const page = await prisma.page.findUnique({ where: { slug: oldSlug } })
+  const page = await prisma.page.findFirst({ where: { slug: oldSlug } })
   if (!page) { error(`Page not found: ${oldSlug}`); return }
 
-  const conflict = await prisma.page.findUnique({ where: { slug: newSlug } })
+  const conflict = await prisma.page.findFirst({ where: { slug: newSlug } })
   if (conflict) { error(`Slug already in use: ${newSlug}`); return }
 
-  await prisma.page.update({ where: { slug: oldSlug }, data: { slug: newSlug } })
+  await prisma.page.update({ where: { id: page.id }, data: { slug: newSlug } })
   success(`Renamed: /${oldSlug} ${sym.arrow} /${newSlug}`)
 }
 
@@ -143,7 +144,7 @@ async function routesTree() {
 async function linksScan(pageSlug: string) {
   if (!pageSlug) { error("Usage: cms links scan <page-slug>"); return }
 
-  const page = await prisma.page.findUnique({ where: { slug: pageSlug } })
+  const page = await prisma.page.findFirst({ where: { slug: pageSlug } })
   if (!page) { error(`Page not found: ${pageSlug}`); return }
 
   const content = parseContent(page.content)
@@ -193,7 +194,7 @@ async function linksSet(pageSlug: string, blockId: string, flags: Record<string,
   const href = typeof flags.href === "string" ? flags.href : null
   if (!href) { error("Provide --href value"); return }
 
-  const page = await prisma.page.findUnique({ where: { slug: pageSlug } })
+  const page = await prisma.page.findFirst({ where: { slug: pageSlug } })
   if (!page) { error(`Page not found: ${pageSlug}`); return }
 
   const content = parseContent(page.content)
@@ -206,8 +207,8 @@ async function linksSet(pageSlug: string, blockId: string, flags: Record<string,
   })
 
   await prisma.page.update({
-    where: { slug: pageSlug },
-    data: { content: { ...content, blocks } as unknown as Record<string, unknown> },
+    where: { id: page.id },
+    data: { content: { ...content, blocks } as unknown as Prisma.InputJsonValue },
   })
 
   success(`Updated href on ${c.cyan(target.tag)} ${c.dim(`[${blockId}]`)}: ${c.green(href)}`)

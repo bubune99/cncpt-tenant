@@ -10,8 +10,8 @@
  * in the initial HTML response.
  */
 
-import { getBrandingSettings } from '../lib/settings'
-import { generateThemeCss } from '../lib/theme/color-utils'
+import { getBrandingSettings } from '@/lib/cms/settings'
+import { generateThemeCss } from '@/lib/cms/theme/color-utils'
 
 export async function ThemeInjector() {
   let css = ''

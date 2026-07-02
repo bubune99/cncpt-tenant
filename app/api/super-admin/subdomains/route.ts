@@ -223,7 +223,7 @@ export async function GET(request: NextRequest) {
 
     for (const userId of userIds) {
       try {
-        const user = await stackServerApp.getUser({ userId })
+        const user = await stackServerApp.getUser(userId)
         if (user) {
           userMap.set(userId, {
             id: user.id,

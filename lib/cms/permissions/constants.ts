@@ -161,7 +161,12 @@ export const PERMISSIONS = {
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
 
 // Permission groups for UI display
-export const PERMISSION_GROUPS = {
+export interface PermissionGroup {
+  label: string
+  permissions: ReadonlyArray<{ key: Permission; label: string }>
+}
+
+export const PERMISSION_GROUPS: Record<string, PermissionGroup> = {
   products: {
     label: 'Products',
     permissions: [
@@ -342,7 +347,7 @@ export const PERMISSION_GROUPS = {
       { key: PERMISSIONS.AUDIT_VIEW, label: 'View audit log' },
     ],
   },
-} as const
+}
 
 // Built-in role definitions
 export const BUILT_IN_ROLES = {

@@ -146,7 +146,7 @@ export async function isSuperAdmin(userId: string): Promise<boolean> {
     }
 
     // Check SUPER_ADMIN_EMAILS env var as fallback
-    const user = await stackServerApp.getUser({ userId })
+    const user = await stackServerApp.getUser(userId)
     if (!user) return false
 
     const superAdminEmails = process.env.SUPER_ADMIN_EMAILS?.split(",").map(e => e.trim().toLowerCase()) || []

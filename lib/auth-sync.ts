@@ -175,8 +175,10 @@ export async function syncUserToCms(stackUser: StackUserData): Promise<{
  */
 export async function ensureLocalUser(stackAuthId: string): Promise<LocalUser> {
   // Check if already exists
+  // The users table is hybrid: CMS-created rows have a cuid id + the Stack
+  // UUID in stack_auth_id; legacy platform rows used the Stack UUID as id.
   const existing = await sql`
-    SELECT * FROM users WHERE id = ${stackAuthId}
+    SELECT * FROM users WHERE stack_auth_id = ${stackAuthId} OR id = ${stackAuthId}
   `
 
   if (existing.length > 0) {
@@ -184,7 +186,7 @@ export async function ensureLocalUser(stackAuthId: string): Promise<LocalUser> {
   }
 
   // Fetch from Stack Auth
-  const stackUser = await stackServerApp.getUser({ userId: stackAuthId })
+  const stackUser = await stackServerApp.getUser(stackAuthId)
   if (!stackUser) {
     throw new Error(`Stack Auth user ${stackAuthId} not found`)
   }
@@ -242,7 +244,7 @@ export async function updateLocalUser(
       name = COALESCE(${data.name ?? null}, name),
       avatar_url = COALESCE(${data.avatar_url ?? null}, avatar_url),
       updated_at = NOW()
-    WHERE id = ${stackAuthId}
+    WHERE stack_auth_id = ${stackAuthId} OR id = ${stackAuthId}
   `
 }
 
@@ -260,7 +262,7 @@ export async function recordSignIn(
         last_login_ip = ${ipAddress || null},
         login_count = COALESCE(login_count, 0) + 1,
         updated_at = NOW()
-      WHERE id = ${stackAuthId}
+      WHERE stack_auth_id = ${stackAuthId} OR id = ${stackAuthId}
     `
   } catch (error) {
     console.error("[auth-sync] Error recording sign-in:", error)
@@ -278,7 +280,7 @@ export async function handleUserDeletion(stackAuthId: string): Promise<void> {
         status = 'deleted',
         deleted_at = NOW(),
         updated_at = NOW()
-      WHERE id = ${stackAuthId}
+      WHERE stack_auth_id = ${stackAuthId} OR id = ${stackAuthId}
     `
 
     // Clean up related records

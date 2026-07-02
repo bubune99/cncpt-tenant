@@ -50,7 +50,7 @@ program
           type: "password",
           name: "token",
           message: "GitHub Personal Access Token:",
-          validate: (input) => input.length > 0 || "Token is required",
+          validate: (input: string) => input.length > 0 || "Token is required",
         },
       ])
       config.token = answers.token
@@ -64,7 +64,7 @@ program
           type: "input",
           name: "repo",
           message: "Repository (owner/repo):",
-          validate: (input) => {
+          validate: (input: string) => {
             return input.includes("/") || "Format: owner/repo"
           },
         },
@@ -320,7 +320,7 @@ program
     if (options.set) {
       const [key, value] = options.set.split("=")
       if (config && key && value) {
-        (config as Record<string, string>)[key] = value
+        (config as unknown as Record<string, string>)[key] = value
         saveConfig(config)
         console.log(chalk.green(`Set ${key} = ${value}`))
       }

@@ -6,6 +6,7 @@
 
 import { tool } from 'ai'
 import { z } from 'zod'
+import type { NotificationType } from '@prisma/client'
 
 async function getDb() {
   const { prisma } = await import('../../db')
@@ -52,7 +53,7 @@ export const listNotifications = tool({
             where: {
               tenantId,
               ...(unreadOnly ? { read: false } : {}),
-              ...(type ? { type: type as Parameters<typeof prisma.notification.findMany>[0]['where'] extends undefined ? never : NonNullable<Parameters<typeof prisma.notification.findMany>[0]['where']>['type'] } : {}),
+              ...(type ? { type: type as NotificationType } : {}),
             },
             take,
             skip,

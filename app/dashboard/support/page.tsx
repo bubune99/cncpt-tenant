@@ -134,7 +134,7 @@ export default function SupportPage() {
     title: "",
     description: "",
     category: "General",
-    priority: "normal" as const,
+    priority: "normal" as SupportTicket["priority"],
   })
 
   // Loading states

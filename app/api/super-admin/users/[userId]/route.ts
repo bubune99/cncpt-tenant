@@ -25,7 +25,7 @@ export async function GET(
     }
 
     const { userId } = await params
-    const user = await stackServerApp.getUser({ userId })
+    const user = await stackServerApp.getUser(userId)
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
@@ -234,7 +234,7 @@ export async function PATCH(
       tierOverride,
     } = body
 
-    const user = await stackServerApp.getUser({ userId })
+    const user = await stackServerApp.getUser(userId)
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
@@ -516,7 +516,7 @@ export async function DELETE(
       )
     }
 
-    const user = await stackServerApp.getUser({ userId })
+    const user = await stackServerApp.getUser(userId)
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }

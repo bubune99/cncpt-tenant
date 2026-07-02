@@ -9,7 +9,6 @@ function env(name: string): string {
 }
 
 export default defineConfig({
-  earlyAccess: true,
   schema: path.join(__dirname, 'prisma', 'cms', 'schema.prisma'),
   datasource: {
     url: env('DATABASE_URL_UNPOOLED'),

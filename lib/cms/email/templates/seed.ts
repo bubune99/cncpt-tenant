@@ -29,14 +29,14 @@ export async function seedEmailTemplates(overwrite = false): Promise<SeedResult>
 
   for (const template of defaultEmailTemplates) {
     try {
-      const existing = await prisma.emailTemplate.findUnique({
+      const existing = await prisma.emailTemplate.findFirst({
         where: { slug: template.slug },
       });
 
       if (existing) {
         if (overwrite) {
           await prisma.emailTemplate.update({
-            where: { slug: template.slug },
+            where: { id: existing.id },
             data: {
               name: template.name,
               description: template.description,

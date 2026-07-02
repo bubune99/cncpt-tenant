@@ -136,9 +136,9 @@ export const PUT = withPermission(
       // Audit log
       await logAuditEvent({
         userId: context.user.id,
-        action: 'update' as any,
-        resource: 'marketplace_template',
-        resourceId: template.id,
+        action: 'marketplace_template.update',
+        targetType: 'marketplace_template',
+        targetId: template.id,
         details: { name: template.name, slug: template.slug },
       }).catch(() => {})
 
@@ -191,9 +191,9 @@ export const DELETE = withPermission(
       // Audit log
       await logAuditEvent({
         userId: context.user.id,
-        action: 'delete' as any,
-        resource: 'marketplace_template',
-        resourceId: existing.id,
+        action: 'marketplace_template.delete',
+        targetType: 'marketplace_template',
+        targetId: existing.id,
         details: { name: existing.name, slug },
       }).catch(() => {})
 

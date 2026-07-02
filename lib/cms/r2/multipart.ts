@@ -139,7 +139,7 @@ export async function generatePartPresignedUrl(
     PartNumber: partNumber,
   })
 
-  const url = await getSignedUrl(client, command, {
+  const url = await getSignedUrl(client as unknown as Parameters<typeof getSignedUrl>[0], command as unknown as Parameters<typeof getSignedUrl>[1], {
     expiresIn: PRESIGN_EXPIRY_SECONDS,
   })
 

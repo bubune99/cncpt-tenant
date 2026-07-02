@@ -1,14 +1,19 @@
 {
-  "name": "my-v0-project",
+  "name": "cncpt-tenant",
   "version": "0.1.0",
   "private": true,
   "pnpm": {
     "overrides": {
-      "@types/react": "^19",
-      "@types/react-dom": "^19"
+      "@smithy/types": "^4.13.0",
+      "@types/node": "^22.18.1",
+      "lucide-react": "^0.508.0",
+      "@types/react": "^18",
+      "@types/react-dom": "^18"
     },
     "onlyBuiltDependencies": [
       "@prisma/engines",
+      "@tailwindcss/oxide",
+      "esbuild",
       "prisma"
     ]
   },
@@ -39,6 +44,7 @@
     "@codemirror/view": "^6.39.8",
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@neondatabase/serverless": "latest",
+    "@octokit/rest": "^22.0.1",
     "@prisma/adapter-pg": "^7.2.0",
     "@radix-ui/react-accordion": "1.2.2",
     "@radix-ui/react-alert-dialog": "1.1.4",
@@ -157,16 +163,21 @@
     "@types/node": "^22",
     "@types/nodemailer": "^7.0.4",
     "@types/papaparse": "^5.5.2",
+    "@types/pg": "^8.20.0",
     "@types/pngjs": "^6.0.5",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/uuid": "^11.0.0",
+    "chalk": "^5.6.2",
+    "commander": "^15.0.0",
+    "inquirer": "^14.0.2",
+    "ora": "^9.4.1",
     "pg": "^8.16.3",
     "postcss": "^8.5",
     "prisma": "^7.2.0",
     "tailwindcss": "^4.1.9",
     "tw-animate-css": "1.3.3",
-    "typescript": "^5"
+    "typescript": "^5.9.3"
   }
 }

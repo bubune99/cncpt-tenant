@@ -332,7 +332,7 @@ function ActivityRail({ events = DEMO_EVENTS }: ActivityRailProps) {
       <div className="ca-rrail__tabs">
         {(
           [
-            { id: "activity" as RailTab, label: "Activity" },
+            { id: "activity" as RailTab, label: "Activity", n: undefined },
             { id: "queue" as RailTab,    label: "Queue",    n: 5 },
             { id: "mentions" as RailTab, label: "Mentions", n: 2 },
           ] as const

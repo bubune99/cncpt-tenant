@@ -164,9 +164,8 @@ export function createSubdomainStackServerApp(
 
   // Add custom base URL for self-hosted Stack Auth
   if (config.stack_auth_base_url) {
-    options.urls = {
-      api: config.stack_auth_base_url,
-    }
+    // Self-hosted Stack Auth: the API host is `baseUrl`, not a handler URL.
+    options.baseUrl = config.stack_auth_base_url
   }
 
   return new StackServerApp(options)
@@ -187,9 +186,8 @@ export function createSubdomainStackClientApp(
 
   // Add custom base URL for self-hosted Stack Auth
   if (config.stack_auth_base_url) {
-    options.urls = {
-      api: config.stack_auth_base_url,
-    }
+    // Self-hosted Stack Auth: the API host is `baseUrl`, not a handler URL.
+    options.baseUrl = config.stack_auth_base_url
   }
 
   return new StackClientApp(options)

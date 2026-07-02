@@ -119,8 +119,8 @@ export function isTenantContextError(error: unknown): error is TenantContextErro
  */
 export async function withTenant(
   request: NextRequest,
-  handler: (tenant: CmsTenantContext) => Promise<NextResponse>
-): Promise<NextResponse> {
+  handler: (tenant: CmsTenantContext) => Promise<Response>
+): Promise<Response> {
   const tenant = await getTenantContext(request)
   if (!tenant) {
     return tenantRequiredResponse()

@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter, Spectral } from "next/font/google"
+import { Inter, Spectral, Hanken_Grotesk, Spline_Sans_Mono } from "next/font/google"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { SpeedInsights } from "@vercel/speed-insights/next"
@@ -20,6 +20,24 @@ const spectral = Spectral({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
+  display: "swap",
+})
+
+// Grainy design system typefaces — self-hosted via next/font instead of a
+// render-blocking Google Fonts stylesheet. grainy.css resolves these through
+// var(--font-hanken)/var(--font-spline-mono) with the literal family names as
+// fallback.
+const hanken = Hanken_Grotesk({
+  variable: "--font-hanken",
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  display: "swap",
+})
+
+const splineMono = Spline_Sans_Mono({
+  variable: "--font-spline-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
   display: "swap",
 })
 
@@ -73,17 +91,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      {/* Grainy design system fonts — Hanken Grotesk (sans) + Spline Sans Mono.
-          Loaded via Google Fonts so grainy.css's --font-sans/--font-mono resolve
-          by literal family name. */}
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      <link
-        href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..800;1,400..600&family=Spline+Sans+Mono:wght@400;500;600&display=swap"
-        rel="stylesheet"
-      />
       <body
-        className={`${inter.variable} ${spectral.variable} ${GeistSans.variable} ${GeistMono.variable} antialiased`}
+        className={`${inter.variable} ${spectral.variable} ${hanken.variable} ${splineMono.variable} ${GeistSans.variable} ${GeistMono.variable} antialiased`}
       >
         <ThemeProvider
           attribute="class"

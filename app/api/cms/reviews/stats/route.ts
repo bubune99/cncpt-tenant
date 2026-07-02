@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getReviewDashboardStats } from '@/lib/cms/reviews';
-import { withTenant } from '@/lib/cms/api/tenant';
+import { withTenantAuth } from '@/lib/cms/api/tenant';
 
 export const dynamic = 'force-dynamic'
 

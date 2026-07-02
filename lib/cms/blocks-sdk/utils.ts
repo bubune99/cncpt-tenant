@@ -5,7 +5,7 @@
 import type { Block } from "./types"
 
 // Re-export tree utils from block-editor
-export { generateId, rehydrateParentIds, stripParentIds } from "@/lib/cms/block-editor/tree-utils"
+export { rehydrateParentIds, stripParentIds } from "@/lib/cms/block-editor/tree-utils"
 
 /**
  * Deep clone a block tree

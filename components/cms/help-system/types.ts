@@ -62,6 +62,30 @@ export interface HelpModeState {
   isLoading: boolean
 }
 
+// A single step in a guided explanation
+export interface GuidedExplanationStep {
+  tips?: string[]
+}
+
+// Guided explanation (multi-step walkthrough of a single feature) state
+export interface GuidedExplanationState {
+  isActive: boolean
+  title: string
+  steps: GuidedExplanationStep[]
+  currentStepIndex: number
+  targetElement: RegisteredElement | null
+  content: HelpContent | null
+  isLoading: boolean
+}
+
+// Spotlight (single-element highlight) state
+export interface SpotlightModeState {
+  isActive: boolean
+  targetElement: RegisteredElement | null
+  content: HelpContent | null
+  isLoading: boolean
+}
+
 // Walkthrough tour
 export interface HelpTour {
   id: string
@@ -84,6 +108,15 @@ export interface JoyrideOptions {
   showSkipButton?: boolean
   disableOverlayClose?: boolean
   spotlightClicks?: boolean
+  // Per-part style overrides merged onto the runner's defaults
+  styles?: {
+    options?: Record<string, unknown>
+    tooltip?: Record<string, unknown>
+    buttonNext?: Record<string, unknown>
+    buttonBack?: Record<string, unknown>
+    buttonSkip?: Record<string, unknown>
+    buttonClose?: Record<string, unknown>
+  }
 }
 
 // Help system context value
@@ -112,6 +145,16 @@ export interface HelpContextValue {
   startWalkthrough: (tourSlug?: string) => void
   stopWalkthrough: () => void
   availableTours: HelpTour[]
+
+  // Guided explanation (multi-step)
+  guidedExplanation: GuidedExplanationState
+  guidedExplanationNext: () => void
+  guidedExplanationBack: () => void
+  dismissGuidedExplanation: () => void
+
+  // Spotlight (single element)
+  spotlightMode: SpotlightModeState
+  dismissSpotlight: () => void
 }
 
 // Default content registry (code-based fallback)

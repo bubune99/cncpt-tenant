@@ -134,7 +134,7 @@ The generated tour is saved and can be reused.`,
 
       // Check if tour already exists (with timeout)
       const existing = await withTimeout(
-        db.helpTour.findFirst({ where: { slug, tenantId: null } }),
+        db.helpTour.findFirst({ where: { slug } }),
         3000,
         'Database query timed out while checking existing tour'
       )

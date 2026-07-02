@@ -51,7 +51,8 @@ async function ensureUniqueBlogSlug(prisma: any, slug: string, excludeId?: strin
   let candidate = slug;
   let suffix = 2;
   while (true) {
-    const existing = await prisma.blogPost.findUnique({ where: { slug: candidate } });
+    // BlogPost.slug is compound-unique with tenantId — findUnique on slug alone throws at runtime.
+    const existing = await prisma.blogPost.findFirst({ where: { slug: candidate } });
     if (!existing || (excludeId && existing.id === excludeId)) return candidate;
     candidate = `${slug}-${suffix}`;
     suffix++;
@@ -290,7 +291,7 @@ export const manageBlogCategory = tool({
         const baseSlug = slug || generateSlug(name);
         let candidate = baseSlug;
         let suffix = 2;
-        while (await prisma.blogCategory.findUnique({ where: { slug: candidate } })) {
+        while (await prisma.blogCategory.findFirst({ where: { slug: candidate } })) {
           candidate = `${baseSlug}-${suffix}`;
           suffix++;
         }
@@ -372,7 +373,7 @@ export const manageBlogTag = tool({
         const baseSlug = slug || generateSlug(name);
         let candidate = baseSlug;
         let suffix = 2;
-        while (await prisma.blogTag.findUnique({ where: { slug: candidate } })) {
+        while (await prisma.blogTag.findFirst({ where: { slug: candidate } })) {
           candidate = `${baseSlug}-${suffix}`;
           suffix++;
         }

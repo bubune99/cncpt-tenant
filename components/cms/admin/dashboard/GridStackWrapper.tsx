@@ -59,7 +59,6 @@ export default function GridStackWrapper({
       if (!gridRef.current || gsRef.current) return;
 
       const { GridStack } = await import('gridstack');
-      // @ts-expect-error -- CSS module import has no type declarations
       await import('gridstack/dist/gridstack.min.css');
 
       if (!mounted || !gridRef.current) return;

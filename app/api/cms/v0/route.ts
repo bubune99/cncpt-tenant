@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
       // Create page content
       const pageContent = {
         root: { props: { title: pageName } },
-        content: [template.root],
+        content: template.blocks,
         zones: {},
       };
 
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
             description: result.template.description || "",
             category: category || "v0-import",
             type: "SECTION",
-            content: { root: result.template.root } as unknown as Prisma.InputJsonValue,
+            content: { blocks: result.template.blocks } as unknown as Prisma.InputJsonValue,
             isSystem: false,
             isActive: true,
           },

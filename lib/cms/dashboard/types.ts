@@ -343,6 +343,11 @@ export type AdminWidgetType =
   | 'system-health';
 
 /**
+ * Category groupings for admin widgets (used by the widget picker)
+ */
+export type AdminWidgetCategory = 'overview' | 'analytics' | 'actions' | 'data';
+
+/**
  * Registry metadata for an admin widget
  */
 export interface AdminWidgetMeta {
@@ -350,7 +355,7 @@ export interface AdminWidgetMeta {
   title: string;
   description: string;
   icon: string;
-  category: string;
+  category: AdminWidgetCategory;
   defaultW: number;
   defaultH: number;
   minW: number;
@@ -370,6 +375,12 @@ export interface AdminWidgetInstance {
   h: number;
   visible: boolean;
 }
+
+/**
+ * Alias for a positioned admin widget instance.
+ * Used by the dashboard grid components.
+ */
+export type AdminWidgetConfig = AdminWidgetInstance;
 
 /**
  * Admin dashboard layout (grid-based)

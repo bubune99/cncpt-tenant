@@ -23,6 +23,7 @@ import { getDeploymentOverview, getDetailedDeploymentLogs } from "@/app/deployme
 
 interface AnalyticsProps {
   subdomains: any[]
+  selectedSubdomain?: string | null
 }
 
 interface DeploymentOverview {

@@ -7,6 +7,7 @@
  */
 
 import { prisma, getCurrentTenant } from "../db"
+import { Prisma, PartialCategory } from "@prisma/client"
 import type { Block } from "../block-editor/types"
 import { generateId } from "../block-editor/tree-utils"
 import { buildDependencyManifest } from "../block-editor/dependency-context"
@@ -182,7 +183,7 @@ async function uploadAssets(
 
       const uploadRes = await fetch(presigned.uploadUrl, {
         method: "PUT",
-        body: asset.buffer,
+        body: new Uint8Array(asset.buffer),
         headers: { "Content-Type": asset.mimeType },
       })
 
@@ -193,6 +194,7 @@ async function uploadAssets(
 
       await createMedia({
         filename,
+        originalName: filename,
         url: presigned.publicUrl,
         key: presigned.key,
         mimeType: asset.mimeType,
@@ -247,7 +249,7 @@ export async function seedProject(
     const name = comp.file.exportName || comp.file.path.split("/").pop()?.replace(/\.(tsx?|jsx?)$/, "") || "Component"
     const slug = resolved.componentSlugs.get(comp.file.exportName || "") ||
       name.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase().replace(/[^a-z0-9-]/g, "-")
-    const category = derivePartialCategory(name, comp.file.path)
+    const category = derivePartialCategory(name, comp.file.path) as PartialCategory
     const displayName = deriveTitle(comp.file.exportName, slug)
 
     const content = {
@@ -261,7 +263,7 @@ export async function seedProject(
         update: {
           name: displayName,
           status,
-          content: content as Record<string, unknown>,
+          content: content as unknown as Prisma.InputJsonValue,
           category,
           sourceCode: comp.file.content,
         },
@@ -269,7 +271,7 @@ export async function seedProject(
           name: displayName,
           slug,
           status,
-          content: content as Record<string, unknown>,
+          content: content as unknown as Prisma.InputJsonValue,
           category,
           sourceCode: comp.file.content,
           ...(tenantId != null ? { tenant: { connect: { id: tenantId } } } : {}),
@@ -352,26 +354,26 @@ export async function seedProject(
         update: {
           title,
           status,
-          content: content as Record<string, unknown>,
+          content: content as unknown as Prisma.InputJsonValue,
           sourceCode: page.file.content,
           sourceDeps: hasDeps ? (JSON.parse(JSON.stringify(sourceDeps))) : undefined,
           headerMode,
           footerMode,
-          customHeader: hasLayoutHeader ? buildPartialRefDocument(headerPartialId!) : undefined,
-          customFooter: hasLayoutFooter ? buildPartialRefDocument(footerPartialId!) : undefined,
+          customHeader: hasLayoutHeader ? (buildPartialRefDocument(headerPartialId!) as Prisma.InputJsonValue) : undefined,
+          customFooter: hasLayoutFooter ? (buildPartialRefDocument(footerPartialId!) as Prisma.InputJsonValue) : undefined,
           ...(status === "PUBLISHED" ? { publishedAt: new Date() } : {}),
         },
         create: {
           title,
           slug: finalSlug,
           status,
-          content: content as Record<string, unknown>,
+          content: content as unknown as Prisma.InputJsonValue,
           sourceCode: page.file.content,
           sourceDeps: hasDeps ? (JSON.parse(JSON.stringify(sourceDeps))) : undefined,
           headerMode,
           footerMode,
-          customHeader: hasLayoutHeader ? buildPartialRefDocument(headerPartialId!) : undefined,
-          customFooter: hasLayoutFooter ? buildPartialRefDocument(footerPartialId!) : undefined,
+          customHeader: hasLayoutHeader ? (buildPartialRefDocument(headerPartialId!) as Prisma.InputJsonValue) : undefined,
+          customFooter: hasLayoutFooter ? (buildPartialRefDocument(footerPartialId!) as Prisma.InputJsonValue) : undefined,
           ...(tenantId != null ? { tenant: { connect: { id: tenantId } } } : {}),
           ...(status === "PUBLISHED" ? { publishedAt: new Date() } : {}),
         },
@@ -400,7 +402,7 @@ export async function seedProject(
             await prisma.partial.update({
               where: { id: partialId },
               data: {
-                content: { version: "2.0", blocks: comp.blocks } as Record<string, unknown>,
+                content: { version: "2.0", blocks: comp.blocks } as unknown as Prisma.InputJsonValue,
               },
             })
           } catch {

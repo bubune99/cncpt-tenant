@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
     const topUsers = await Promise.all(
       topUsersBySubdomains.map(async (row) => {
         try {
-          const user = await stackServerApp.getUser({ userId: row.user_id as string })
+          const user = await stackServerApp.getUser(row.user_id as string)
           return {
             userId: row.user_id,
             email: user?.primaryEmail || "Unknown",

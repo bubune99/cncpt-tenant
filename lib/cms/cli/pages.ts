@@ -4,6 +4,7 @@
  */
 
 import { readFileSync, writeFileSync } from "fs"
+import { Prisma } from "@prisma/client"
 import {
   prisma, c, sym, table, heading, success, error, warn, info,
   ask, confirm, closeRL, formatStatus, formatDate, truncate, readStdin,
@@ -106,7 +107,7 @@ async function pagesList(flags: Record<string, string | boolean>) {
 async function pagesGet(slug: string) {
   if (!slug) { error("Usage: cms pages get <slug>"); return }
 
-  const page = await prisma.page.findUnique({
+  const page = await prisma.page.findFirst({
     where: { slug },
     include: { parent: { select: { title: true, slug: true } }, children: { select: { title: true, slug: true } } },
   })
@@ -176,7 +177,7 @@ async function pagesCreate(slug: string, flags: Record<string, string | boolean>
   if (!slug) { error("Usage: cms pages create <slug> --title \"Title\""); return }
 
   // Check uniqueness
-  const existing = await prisma.page.findUnique({ where: { slug } })
+  const existing = await prisma.page.findFirst({ where: { slug } })
   if (existing) { error(`Slug already exists: ${slug}`); return }
 
   const title = (typeof flags.title === "string" ? flags.title : null) || slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
@@ -245,7 +246,7 @@ async function pagesCreate(slug: string, flags: Record<string, string | boolean>
       title,
       slug,
       status: "DRAFT",
-      content: content as unknown as Record<string, unknown>,
+      content: content as unknown as Prisma.InputJsonValue,
       ...tenantData,
     },
   })
@@ -259,7 +260,7 @@ async function pagesCreate(slug: string, flags: Record<string, string | boolean>
 async function pagesDelete(slug: string) {
   if (!slug) { error("Usage: cms pages delete <slug>"); return }
 
-  const page = await prisma.page.findUnique({
+  const page = await prisma.page.findFirst({
     where: { slug },
     include: { children: { select: { id: true } } },
   })
@@ -273,7 +274,7 @@ async function pagesDelete(slug: string) {
   const ok = await confirm(`Delete page "${page.title}" (/${slug})?`, false)
   if (!ok) { info("Cancelled."); closeRL(); return }
 
-  await prisma.page.delete({ where: { slug } })
+  await prisma.page.delete({ where: { id: page.id } })
   success(`Deleted page: ${page.title}`)
   closeRL()
 }
@@ -283,13 +284,13 @@ async function pagesDelete(slug: string) {
 async function pagesPublish(slug: string) {
   if (!slug) { error("Usage: cms pages publish <slug>"); return }
 
-  const page = await prisma.page.findUnique({ where: { slug } })
+  const page = await prisma.page.findFirst({ where: { slug } })
   if (!page) { error(`Page not found: ${slug}`); return }
 
   if (page.status === "PUBLISHED") { info("Page is already published."); return }
 
   await prisma.page.update({
-    where: { slug },
+    where: { id: page.id },
     data: { status: "PUBLISHED", publishedAt: new Date() },
   })
 
@@ -299,13 +300,13 @@ async function pagesPublish(slug: string) {
 async function pagesUnpublish(slug: string) {
   if (!slug) { error("Usage: cms pages unpublish <slug>"); return }
 
-  const page = await prisma.page.findUnique({ where: { slug } })
+  const page = await prisma.page.findFirst({ where: { slug } })
   if (!page) { error(`Page not found: ${slug}`); return }
 
   if (page.status === "DRAFT") { info("Page is already a draft."); return }
 
   await prisma.page.update({
-    where: { slug },
+    where: { id: page.id },
     data: { status: "DRAFT" },
   })
 
@@ -321,13 +322,13 @@ async function pagesSetSlug(oldSlug: string, newSlug: string) {
   const slugCheck = validateSlug(newSlug)
   if (!slugCheck.valid) { error(slugCheck.error!); return }
 
-  const page = await prisma.page.findUnique({ where: { slug: oldSlug } })
+  const page = await prisma.page.findFirst({ where: { slug: oldSlug } })
   if (!page) { error(`Page not found: ${oldSlug}`); return }
 
-  const conflict = await prisma.page.findUnique({ where: { slug: newSlug } })
+  const conflict = await prisma.page.findFirst({ where: { slug: newSlug } })
   if (conflict) { error(`Slug already in use: ${newSlug}`); return }
 
-  await prisma.page.update({ where: { slug: oldSlug }, data: { slug: newSlug } })
+  await prisma.page.update({ where: { id: page.id }, data: { slug: newSlug } })
   success(`Renamed: /${oldSlug} ${sym.arrow} /${newSlug}`)
 }
 
@@ -336,7 +337,7 @@ async function pagesSetSlug(oldSlug: string, newSlug: string) {
 async function pagesSetLayout(slug: string, flags: Record<string, string | boolean>) {
   if (!slug) { error("Usage: cms pages set-layout <slug> --header GLOBAL --footer NONE"); return }
 
-  const page = await prisma.page.findUnique({ where: { slug } })
+  const page = await prisma.page.findFirst({ where: { slug } })
   if (!page) { error(`Page not found: ${slug}`); return }
 
   const validModes = ["GLOBAL", "CUSTOM", "NONE"]
@@ -359,7 +360,7 @@ async function pagesSetLayout(slug: string, flags: Record<string, string | boole
     return
   }
 
-  await prisma.page.update({ where: { slug }, data })
+  await prisma.page.update({ where: { id: page.id }, data })
   success(`Updated layout for "${page.title}":`)
   if (data.headerMode) console.log(`  Header: ${data.headerMode}`)
   if (data.footerMode) console.log(`  Footer: ${data.footerMode}`)
@@ -370,7 +371,7 @@ async function pagesSetLayout(slug: string, flags: Record<string, string | boole
 async function pagesExport(slug: string, flags: Record<string, string | boolean>) {
   if (!slug) { error("Usage: cms pages export <slug> [-o path]"); return }
 
-  const page = await prisma.page.findUnique({ where: { slug } })
+  const page = await prisma.page.findFirst({ where: { slug } })
   if (!page) { error(`Page not found: ${slug}`); return }
 
   const content = parseContent(page.content)
@@ -397,7 +398,7 @@ async function pagesDeps(slug: string) {
 
   // Try with and without leading slash
   const normalizedSlug = slug.startsWith("/") ? slug.slice(1) : slug
-  const page = await prisma.page.findUnique({
+  const page = await prisma.page.findFirst({
     where: { slug: normalizedSlug },
     select: { title: true, slug: true, sourceDeps: true },
   })

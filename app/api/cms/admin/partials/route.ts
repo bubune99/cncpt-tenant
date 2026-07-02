@@ -111,7 +111,7 @@ export const POST = withPermission(
       }
 
       // Check for duplicate slug
-      const existing = await prisma.partial.findUnique({
+      const existing = await prisma.partial.findFirst({
         where: { slug: body.slug.trim() },
       })
 

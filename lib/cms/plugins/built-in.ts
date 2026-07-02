@@ -466,7 +466,7 @@ export async function loadBuiltInPrimitives(): Promise<{
     try {
       // Check if already exists
       const existing = await prisma.primitive.findFirst({
-        where: { name: primitive.name, tenantId: null },
+        where: { name: primitive.name },
       });
 
       if (existing) {
@@ -502,7 +502,6 @@ export async function loadBuiltInPrimitives(): Promise<{
             timeout: primitive.timeout || 30000,
             enabled: true,
             builtIn: true,
-            tenantId: null,
           },
         });
       }

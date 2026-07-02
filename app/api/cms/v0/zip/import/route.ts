@@ -26,7 +26,7 @@ function generateSlug(name: string): string {
 }
 
 export const POST = withPermission(
-  PERMISSIONS.TEMPLATES_CREATE,
+  PERMISSIONS.PAGES_CREATE,
   async (request: NextRequest, context: AuthContext) => {
     try {
       const formData = await request.formData();

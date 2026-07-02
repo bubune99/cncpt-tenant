@@ -140,7 +140,7 @@ const handler = createMcpHandler(
 
           for (const userId of userIds) {
             try {
-              const user = await stackServerApp.getUser({ userId })
+              const user = await stackServerApp.getUser(userId)
               if (user) {
                 userMap.set(userId, {
                   id: user.id,
@@ -198,7 +198,7 @@ const handler = createMcpHandler(
           // Get owner info
           let owner = null
           try {
-            const user = await stackServerApp.getUser({ userId: s.user_id as string })
+            const user = await stackServerApp.getUser(s.user_id as string)
             if (user) {
               owner = {
                 id: user.id,
@@ -273,7 +273,9 @@ const handler = createMcpHandler(
 
           // Get users from Stack Auth
           const usersResponse = await stackServerApp.listUsers()
-          let users = usersResponse.items || []
+          // Copy into a plain array — listUsers() returns an array with an
+          // extra nextCursor property that filter() wouldn't preserve.
+          let users = [...usersResponse]
 
           // Filter by search if provided
           if (search) {
@@ -321,7 +323,7 @@ const handler = createMcpHandler(
       },
       async ({ userId }) => {
         try {
-          const user = await stackServerApp.getUser({ userId })
+          const user = await stackServerApp.getUser(userId)
           if (!user) {
             return mcpError("User not found")
           }
@@ -410,7 +412,7 @@ const handler = createMcpHandler(
 
           // Get user count from Stack Auth
           const usersResponse = await stackServerApp.listUsers()
-          const totalUsers = usersResponse.items?.length || 0
+          const totalUsers = usersResponse.length
 
           return mcpResponse({
             period: `${days} days`,

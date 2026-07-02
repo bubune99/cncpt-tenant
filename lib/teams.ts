@@ -288,7 +288,7 @@ export async function getTeamMembers(teamId: string): Promise<TeamMember[]> {
         let displayName: string | null = null
 
         try {
-          const user = await stackServerApp.getUser({ userId: m.userId })
+          const user = await stackServerApp.getUser(m.userId)
           if (user) {
             email = user.primaryEmail || ""
             displayName = user.displayName

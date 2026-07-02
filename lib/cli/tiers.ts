@@ -162,7 +162,7 @@ export async function handleTiers(action: string, args: ParsedArgs) {
 
       updates.push('updated_at = NOW()')
 
-      await sql(`UPDATE subscription_tiers SET ${updates.join(', ')} WHERE name = $1`, values)
+      await sql.query(`UPDATE subscription_tiers SET ${updates.join(', ')} WHERE name = $1`, values)
 
       success(`Updated tier: ${name}`)
       break

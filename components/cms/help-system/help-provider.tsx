@@ -22,6 +22,8 @@ import type {
   RegisteredElement,
   HelpContent,
   HelpTour,
+  GuidedExplanationState,
+  SpotlightModeState,
 } from './types'
 import type { HelpContentUpdateEvent } from './types'
 import { getDefaultContent } from './default-content'
@@ -70,6 +72,47 @@ export function HelpProvider({
 
   // Content update tracking (for AI integration)
   const [recentUpdates, setRecentUpdates] = useState<HelpContentUpdateEvent[]>([])
+
+  // Guided explanation (multi-step) state
+  const [guidedExplanation, setGuidedExplanation] = useState<GuidedExplanationState>({
+    isActive: false,
+    title: '',
+    steps: [],
+    currentStepIndex: 0,
+    targetElement: null,
+    content: null,
+    isLoading: false,
+  })
+
+  // Spotlight (single element) state
+  const [spotlightMode, setSpotlightMode] = useState<SpotlightModeState>({
+    isActive: false,
+    targetElement: null,
+    content: null,
+    isLoading: false,
+  })
+
+  const guidedExplanationNext = useCallback(() => {
+    setGuidedExplanation((prev) => ({
+      ...prev,
+      currentStepIndex: Math.min(prev.currentStepIndex + 1, prev.steps.length - 1),
+    }))
+  }, [])
+
+  const guidedExplanationBack = useCallback(() => {
+    setGuidedExplanation((prev) => ({
+      ...prev,
+      currentStepIndex: Math.max(prev.currentStepIndex - 1, 0),
+    }))
+  }, [])
+
+  const dismissGuidedExplanation = useCallback(() => {
+    setGuidedExplanation((prev) => ({ ...prev, isActive: false }))
+  }, [])
+
+  const dismissSpotlight = useCallback(() => {
+    setSpotlightMode((prev) => ({ ...prev, isActive: false }))
+  }, [])
 
   // Auto-discover elements with data-help-key attribute
   const discoverHelpElements = useCallback(() => {
@@ -328,6 +371,12 @@ export function HelpProvider({
     startWalkthrough,
     stopWalkthrough,
     availableTours,
+    guidedExplanation,
+    guidedExplanationNext,
+    guidedExplanationBack,
+    dismissGuidedExplanation,
+    spotlightMode,
+    dismissSpotlight,
   }
 
   if (disabled) {

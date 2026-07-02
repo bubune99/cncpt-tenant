@@ -46,7 +46,7 @@ export async function createVercelProject(data: {
           key: key.trim(),
           value: valueParts.join("=").trim(),
           type: "encrypted" as const,
-          target: ["production", "preview", "development"] as const,
+          target: ["production", "preview", "development"] as Array<"production" | "preview" | "development">,
         }
       })
     }

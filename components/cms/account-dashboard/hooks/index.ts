@@ -24,6 +24,16 @@ const fetcher = async (url: string) => {
 // ORDERS HOOK
 // ============================================================================
 
+export interface OrderAddress {
+  name?: string;
+  line1?: string;
+  line2?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
+}
+
 export interface Order {
   id: string;
   orderNumber: string;
@@ -56,6 +66,8 @@ export interface Order {
     shippedAt?: string;
     deliveredAt?: string;
   } | null;
+  shippingAddress?: OrderAddress | null;
+  billingAddress?: OrderAddress | null;
 }
 
 interface OrdersResponse {

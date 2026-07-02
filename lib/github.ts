@@ -43,7 +43,7 @@ export async function getGitHubConnection(userId: number): Promise<GitHubConnect
       ORDER BY created_at DESC 
       LIMIT 1
     `
-    return result[0] || null
+    return (result[0] as GitHubConnection) || null
   } catch (error) {
     console.error("Error fetching GitHub connection:", error)
     return null
@@ -73,7 +73,7 @@ export async function createGitHubConnection(
       updated_at = NOW()
     RETURNING *
   `
-  return result[0]
+  return result[0] as GitHubConnection
 }
 
 export async function fetchGitHubRepositories(accessToken: string): Promise<GitHubRepository[]> {
@@ -114,7 +114,7 @@ export async function getRepositoryConnection(subdomain: string): Promise<Reposi
       JOIN github_connections gc ON rc.github_connection_id = gc.id
       WHERE rc.subdomain = ${subdomain}
     `
-    return result[0] || null
+    return (result[0] as RepositoryConnection) || null
   } catch (error) {
     console.error("Error fetching repository connection:", error)
     return null
@@ -153,5 +153,5 @@ export async function createRepositoryConnection(data: {
       updated_at = NOW()
     RETURNING *
   `
-  return result[0]
+  return result[0] as RepositoryConnection
 }

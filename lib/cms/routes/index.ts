@@ -54,7 +54,7 @@ export const getRouteConfig = cache(async (slug: string): Promise<ResolvedRoute>
     return { type: 'NOT_FOUND' }
   }
 
-  switch (routeConfig.type) {
+  switch (routeConfig.type as string) {
     case 'CMS':
       if (!routeConfig.page) {
         return { type: 'NOT_FOUND' }

@@ -40,7 +40,7 @@ export async function renderEmailTemplateBySlug(
   slug: string,
   data: Record<string, unknown>
 ): Promise<RenderResult | null> {
-  const template = await prisma.emailTemplate.findUnique({
+  const template = await prisma.emailTemplate.findFirst({
     where: { slug },
   });
 

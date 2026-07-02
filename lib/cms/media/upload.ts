@@ -164,7 +164,7 @@ async function generateS3PresignedUrl(
     ContentLength: size,
   })
 
-  const uploadUrl = await getSignedUrl(client, command, { expiresIn: 3600 })
+  const uploadUrl = await getSignedUrl(client as unknown as Parameters<typeof getSignedUrl>[0], command as unknown as Parameters<typeof getSignedUrl>[1], { expiresIn: 3600 })
 
   // Build public URL based on provider
   let publicUrl: string

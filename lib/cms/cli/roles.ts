@@ -64,7 +64,7 @@ async function rolesList() {
 async function rolesGet(name: string) {
   if (!name) { error("Usage: cms roles get <name>"); return }
 
-  const role = await prisma.role.findUnique({
+  const role = await prisma.role.findFirst({
     where: { name },
     include: {
       assignments: { include: { user: { select: { email: true, name: true } } } },
@@ -108,7 +108,7 @@ async function rolesGet(name: string) {
 async function rolesCreate(name: string, flags: Record<string, string | boolean>) {
   if (!name) { error("Usage: cms roles create <name> --permissions perm1 perm2 ..."); return }
 
-  const existing = await prisma.role.findUnique({ where: { name } })
+  const existing = await prisma.role.findFirst({ where: { name } })
   if (existing) { error(`Role already exists: ${name}`); return }
 
   const permsStr = typeof flags.permissions === "string" ? flags.permissions : ""
@@ -143,7 +143,7 @@ async function rolesCreate(name: string, flags: Record<string, string | boolean>
 async function rolesEdit(name: string, flags: Record<string, string | boolean>) {
   if (!name) { error("Usage: cms roles edit <name> --add-perm <perm> --remove-perm <perm>"); return }
 
-  const role = await prisma.role.findUnique({ where: { name } })
+  const role = await prisma.role.findFirst({ where: { name } })
   if (!role) { error(`Role not found: ${name}`); return }
 
   if (role.isSystem) {
@@ -187,7 +187,7 @@ async function rolesEdit(name: string, flags: Record<string, string | boolean>) 
   }
 
   await prisma.role.update({
-    where: { name },
+    where: { id: role.id },
     data: {
       permissions: [...perms],
       ...(typeof flags.display === "string" ? { displayName: flags.display } : {}),

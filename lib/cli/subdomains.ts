@@ -65,7 +65,7 @@ export async function handleSubdomains(action: string, args: ParsedArgs) {
       label('ID', sub.id)
       label('Subdomain', sub.subdomain)
       label('Maintenance', sub.maintenanceMode ? 'ON' : 'off')
-      if (sub.maintenanceMessage) label('Maint. Message', sub.maintenanceMessage)
+      if (sub.maintenanceMsg) label('Maint. Message', sub.maintenanceMsg)
       label('Created', formatDate(sub.createdAt))
 
       // Owner
@@ -264,7 +264,7 @@ export async function handleSubdomains(action: string, args: ParsedArgs) {
           }
           setClauses.push('updated_at = NOW()')
 
-          await sql(`UPDATE subdomain_auth_config SET ${setClauses.join(', ')} WHERE subdomain = $1`, [name, ...values])
+          await sql.query(`UPDATE subdomain_auth_config SET ${setClauses.join(', ')} WHERE subdomain = $1`, [name, ...values])
         } else {
           // Need at minimum project + key for new config
           if (!updates.stack_auth_project_id || !updates.stack_auth_publishable_key) {

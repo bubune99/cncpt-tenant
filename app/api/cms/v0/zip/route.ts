@@ -15,7 +15,7 @@ import { PERMISSIONS } from "@/lib/cms/permissions";
 import { processV0Zip } from "@/lib/cms/v0/zip-engine";
 
 export const POST = withPermission(
-  PERMISSIONS.TEMPLATES_CREATE,
+  PERMISSIONS.PAGES_CREATE,
   async (request: NextRequest, _context: AuthContext) => {
     try {
       const formData = await request.formData();

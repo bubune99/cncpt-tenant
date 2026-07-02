@@ -298,7 +298,6 @@ export async function handleUsers(action: string, args: ParsedArgs) {
                 data: {
                   teamId: selectedTeam.id,
                   userId: user!.id,
-                  email: user!.email,
                   role: teamRole as any,
                   customPermissions: [],
                 },

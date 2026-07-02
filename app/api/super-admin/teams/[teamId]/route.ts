@@ -39,7 +39,7 @@ export async function GET(
     // Get owner details
     let ownerDetails = null
     try {
-      const owner = await stackServerApp.getUser({ userId: team.ownerId })
+      const owner = await stackServerApp.getUser(team.ownerId)
       if (owner) {
         ownerDetails = {
           id: owner.id,

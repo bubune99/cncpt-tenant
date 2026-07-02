@@ -15,7 +15,7 @@
    and a real grain overlay for the matte finish.
 
    Load order in any page:
-     <link rel="preconnect" href="https://fonts.googleapis.com">
+     (fonts now self-hosted via next/font — see app/layout.tsx)
      <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..800;1,400..600&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
      <link rel="stylesheet" href="colors_and_type.css">
    ========================================================================== */
@@ -108,8 +108,8 @@
   --link:          var(--clay-700);
 
   /* ── Type ─────────────────────────────────────────────────────────────── */
-  --font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-sans: var(--font-hanken, "Hanken Grotesk"), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-spline-mono, "Spline Sans Mono"), ui-monospace, "SFMono-Regular", Menlo, monospace;
 
   /* Type scale (1.20 minor third, base 16) */
   --text-xs:   12px;

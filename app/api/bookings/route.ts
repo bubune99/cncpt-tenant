@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser()
-    if (!user || !(await isSuperAdmin(user.id))) {
+    if (!user || !(await isSuperAdmin(String(user.id)))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

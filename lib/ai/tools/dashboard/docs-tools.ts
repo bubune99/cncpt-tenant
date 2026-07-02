@@ -111,7 +111,7 @@ export function createDocsTools() {
     searchDocs: tool({
       description:
         "Search platform documentation for answers to user questions about features, billing, domains, teams, API, and getting started.",
-      parameters: z.object({
+      inputSchema: z.object({
         query: z.string().describe("Search query — use keywords relevant to the user's question"),
       }),
       execute: async ({ query }) => {

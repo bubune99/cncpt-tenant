@@ -84,6 +84,15 @@ export interface JoyrideOptions {
   showSkipButton?: boolean
   disableOverlayClose?: boolean
   spotlightClicks?: boolean
+  // Per-part style overrides merged onto the runner's defaults
+  styles?: {
+    options?: Record<string, unknown>
+    tooltip?: Record<string, unknown>
+    buttonNext?: Record<string, unknown>
+    buttonBack?: Record<string, unknown>
+    buttonSkip?: Record<string, unknown>
+    buttonClose?: Record<string, unknown>
+  }
 }
 
 // Help system context value

@@ -118,11 +118,10 @@ export async function importV0AsPage(
       };
     }
 
-    // Convert template to page content
-    const pageContent: PageContent = {
-      root: { props: {} },
-      content: [importResult.template.root],
-      zones: {},
+    // Convert template to page content (Block editor format)
+    const pageContent = {
+      version: "2.0",
+      blocks: importResult.template.blocks,
     };
 
     // Create the page
@@ -145,7 +144,7 @@ export async function importV0AsPage(
           slug: `v0-${Date.now()}`,
           description: importResult.template.description,
           category: request.category || "v0-import",
-          content: { root: importResult.template.root } as unknown as Prisma.InputJsonValue,
+          content: { version: "2.0", blocks: importResult.template.blocks } as unknown as Prisma.InputJsonValue,
           createdById: userId,
         },
       });

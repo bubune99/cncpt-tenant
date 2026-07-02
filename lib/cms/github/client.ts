@@ -122,7 +122,7 @@ export class GitHubClient {
 
     return {
       name: data.name,
-      sha: data.commit.sha,
+      sha: data.commit.sha ?? '',
       protected: data.protected,
     }
   }
@@ -258,7 +258,7 @@ export class GitHubClient {
     })
 
     return {
-      sha: data.commit.sha,
+      sha: data.commit.sha ?? '',
       message: data.commit.message || message,
       author: {
         name: data.commit.author?.name || "Unknown",
@@ -290,7 +290,7 @@ export class GitHubClient {
     })
 
     return {
-      sha: data.commit.sha,
+      sha: data.commit.sha ?? '',
       message: data.commit.message || message,
       author: {
         name: data.commit.author?.name || "Unknown",

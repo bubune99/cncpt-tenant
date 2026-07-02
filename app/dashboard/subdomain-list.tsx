@@ -38,7 +38,7 @@ function SubdomainCard({ subdomain }: { subdomain: Subdomain }) {
       const formData = new FormData(e.currentTarget)
       const result = await deleteSubdomainAction({}, formData)
       if (result?.success) {
-        setDeleteMessage(result.success)
+        setDeleteMessage(result.message ?? "Subdomain deleted")
       }
     } catch (error) {
       console.error("[v0] Error deleting subdomain:", error)

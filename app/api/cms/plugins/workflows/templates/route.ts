@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
     // Ensure unique slug
     let slug = baseSlug;
     let counter = 1;
-    while (await prisma.workflow.findFirst({ where: { slug, tenantId: null } })) {
+    while (await prisma.workflow.findFirst({ where: { slug } })) {
       slug = `${baseSlug}-${counter}`;
       counter++;
     }

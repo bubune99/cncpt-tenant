@@ -35,7 +35,7 @@ export async function checkUserRole(userId: string): Promise<{ isAdmin: boolean 
     }
 
     // Fallback: check if user email is in admin list (you can configure this)
-    const user = await stackServerApp.getUser({ userId })
+    const user = await stackServerApp.getUser(userId)
     const adminEmails = process.env.ADMIN_EMAILS?.split(",") || []
 
     if (user && adminEmails.includes(user.primaryEmail || "")) {
@@ -58,7 +58,7 @@ export async function checkUserRole(userId: string): Promise<{ isAdmin: boolean 
 // Get user with role information
 export async function getUserWithRole(userId: string): Promise<UserWithRole | null> {
   try {
-    const user = await stackServerApp.getUser({ userId })
+    const user = await stackServerApp.getUser(userId)
     if (!user) {
       console.log(`[v0] No user found for ID: ${userId}`)
       return null

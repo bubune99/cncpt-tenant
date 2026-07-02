@@ -196,8 +196,8 @@
   --wl-success: #7E8B61;
   --wl-warning: #C49A45;
   --wl-error: #B5503B;
-  --wl-font-display: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --wl-font-body: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --wl-font-display: var(--font-hanken, "Hanken Grotesk"), ui-sans-serif, system-ui, sans-serif;
+  --wl-font-body: var(--font-hanken, "Hanken Grotesk"), ui-sans-serif, system-ui, sans-serif;
   --wl-font-mono: var(--font-geist-mono), "Geist Mono", monospace;
   /* Density (regular) */
   --wl-pad: 16px;

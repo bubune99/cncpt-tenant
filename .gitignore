@@ -31,3 +31,8 @@ next-env.d.ts
 # scraped template output
 /scraped-templates/
 .claude/worktrees/
+
+# local design-extraction junk — not part of the app
+*.zip
+platforms-main/
+scraped-templates/

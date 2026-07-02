@@ -349,23 +349,32 @@ export async function logAuditEvent(params: {
  */
 export async function seedBuiltInRoles(): Promise<void> {
   for (const [, roleData] of Object.entries(BUILT_IN_ROLES)) {
-    await prisma.role.upsert({
+    const existing = await prisma.role.findFirst({
       where: { name: roleData.name },
-      update: {
-        displayName: roleData.displayName,
-        description: roleData.description,
-        permissions: roleData.permissions,
-        position: roleData.position,
-      },
-      create: {
-        name: roleData.name,
-        displayName: roleData.displayName,
-        description: roleData.description,
-        permissions: roleData.permissions,
-        isSystem: roleData.isSystem,
-        position: roleData.position,
-      },
     })
+
+    if (existing) {
+      await prisma.role.update({
+        where: { id: existing.id },
+        data: {
+          displayName: roleData.displayName,
+          description: roleData.description,
+          permissions: roleData.permissions,
+          position: roleData.position,
+        },
+      })
+    } else {
+      await prisma.role.create({
+        data: {
+          name: roleData.name,
+          displayName: roleData.displayName,
+          description: roleData.description,
+          permissions: roleData.permissions,
+          isSystem: roleData.isSystem,
+          position: roleData.position,
+        },
+      })
+    }
   }
 }
 

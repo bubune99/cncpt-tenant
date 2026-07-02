@@ -289,7 +289,7 @@ export async function generateImages(
 
   // Construct the call options — size uses `${number}x${number}` template
   const sizeStr = OPENAI_SIZES[sizeKey] as `${number}x${number}`
-  const aspectStr = ASPECT_RATIOS[sizeKey]
+  const aspectStr = ASPECT_RATIOS[sizeKey] as `${number}:${number}`
 
   // Determine provider-specific options
   const isOpenAIModel =

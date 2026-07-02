@@ -97,7 +97,7 @@ const THEME_SETTINGS_KEY = 'dashboard.theme'
 /** Load dashboard theme from the database */
 export async function getDashboardTheme(): Promise<DashboardTheme> {
   try {
-    const setting = await prisma.setting.findUnique({
+    const setting = await prisma.setting.findFirst({
       where: { key: THEME_SETTINGS_KEY },
     })
 
@@ -117,18 +117,25 @@ export async function saveDashboardTheme(theme: Partial<DashboardTheme>): Promis
   const current = await getDashboardTheme()
   const merged: DashboardTheme = { ...current, ...theme }
 
-  await prisma.setting.upsert({
+  const existing = await prisma.setting.findFirst({
     where: { key: THEME_SETTINGS_KEY },
-    create: {
-      key: THEME_SETTINGS_KEY,
-      value: JSON.stringify(merged),
-      group: 'dashboard',
-      encrypted: false,
-    },
-    update: {
-      value: JSON.stringify(merged),
-    },
   })
+
+  if (existing) {
+    await prisma.setting.update({
+      where: { id: existing.id },
+      data: { value: JSON.stringify(merged) },
+    })
+  } else {
+    await prisma.setting.create({
+      data: {
+        key: THEME_SETTINGS_KEY,
+        value: JSON.stringify(merged),
+        group: 'dashboard',
+        encrypted: false,
+      },
+    })
+  }
 
   return merged
 }

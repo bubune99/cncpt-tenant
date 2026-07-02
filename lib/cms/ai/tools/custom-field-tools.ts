@@ -86,7 +86,7 @@ export const getProductCustomFields = tool({
             variants: {
               select: {
                 id: true,
-                title: true,
+                sku: true,
                 customFieldValues: {
                   include: { customField: { select: { id: true, name: true, type: true } } },
                 },

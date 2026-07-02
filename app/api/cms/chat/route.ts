@@ -32,7 +32,7 @@ import type { ChatContext } from '@/lib/cms/ai/chat-store';
 import { nanoid } from 'nanoid';
 import type { EntityContext } from '@/lib/cms/socket/types';
 import { checkCredits, useCredits } from '@/lib/ai-credits';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { withTenant } from '@/lib/cms/api/tenant';
 
 export const maxDuration = 60;
@@ -638,7 +638,7 @@ export async function POST(request: NextRequest) {
     const modelId = selectedChatModel || aiSettings.enabledModels?.[0] || 'anthropic/claude-sonnet-4.5';
     console.log('[Chat API] Step 7: Creating model instance for:', modelId);
 
-    let model;
+    let model: ReturnType<typeof myProvider.languageModel>;
     try {
       model = myProvider.languageModel(modelId);
       console.log('[Chat API] ✓ Model instance created');
@@ -896,7 +896,7 @@ export async function GET(request: NextRequest) {
         return ChatSDKError.notFound().toResponse();
       }
 
-      return Response.json(conversation);
+      return NextResponse.json(conversation);
     }
 
     // Get conversation list
@@ -917,7 +917,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return Response.json({
+    return NextResponse.json({
       conversations: conversations.map((c) => ({
         id: c.id,
         title: c.title,
@@ -972,7 +972,7 @@ export async function DELETE(request: NextRequest) {
       where: { id: conversationId },
     });
 
-    return Response.json({ success: true });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('[Chat API] DELETE Error:', error);
     return ChatSDKError.internal().toResponse();

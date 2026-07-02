@@ -41,20 +41,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Rate limit check
-    const lastExport = exportTimestamps.get(user.id);
-    if (lastExport && Date.now() - lastExport < EXPORT_COOLDOWN_MS) {
-      const retryAfterMs = EXPORT_COOLDOWN_MS - (Date.now() - lastExport);
-      const retryAfterHours = Math.ceil(retryAfterMs / (60 * 60 * 1000));
-      return NextResponse.json(
-        {
-          error: 'Export rate limited',
-          message: `You can request another export in approximately ${retryAfterHours} hour(s).`,
-        },
-        { status: 429 }
-      );
-    }
-
     // Gather all user data
     const [
       addresses,
@@ -281,7 +267,7 @@ export async function GET(request: NextRequest) {
       }),
 
       // Email subscription
-      prisma.emailSubscriber.findUnique({
+      prisma.emailSubscriber.findFirst({
         where: { email: user.email },
         select: {
           status: true,
@@ -360,9 +346,6 @@ export async function GET(request: NextRequest) {
       })),
       pageTemplates,
     };
-
-    // Record timestamp for rate limiting
-    exportTimestamps.set(user.id, Date.now());
 
     // Return as downloadable JSON
     const jsonString = JSON.stringify(exportData, null, 2);

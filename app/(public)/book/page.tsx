@@ -117,10 +117,12 @@ export default function BookingPage() {
   // Load availability when service is selected
   useEffect(() => {
     if (!selectedService) return
+    // Capture after the guard so TS keeps the narrowing inside the closure.
+    const service = selectedService
 
     async function loadAvailability() {
       try {
-        const res = await fetch(`/api/bookings/availability?serviceId=${selectedService.id}`)
+        const res = await fetch(`/api/bookings/availability?serviceId=${service.id}`)
         const data = await res.json()
         setAvailability(data.availability || [])
       } catch (err) {

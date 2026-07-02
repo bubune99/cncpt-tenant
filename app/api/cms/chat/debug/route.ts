@@ -3,7 +3,7 @@
  * Returns diagnostic information about the chat configuration
  */
 
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { stackServerApp } from '@/lib/cms/stack';
 import { prisma } from '@/lib/cms/db';
 import { isAiAvailable, getAiStatus } from '@/lib/cms/ai';
@@ -127,6 +127,6 @@ export async function GET(request: NextRequest) {
     issues: diagnostics.errors.length > 0 ? diagnostics.errors.map((e: any) => e.check) : [],
   };
 
-  return Response.json(diagnostics, { status: 200 });
+  return NextResponse.json(diagnostics, { status: 200 });
   })
 }

@@ -12,7 +12,7 @@ type RegisterState = {
 }
 
 export function RegisterForm() {
-  const [state, action] = useFormState<RegisterState>(registerAction, {})
+  const [state, action] = useFormState<RegisterState, FormData>(registerAction, {})
 
   return (
     <form action={action} className="space-y-4" data-tour-id="register-form">

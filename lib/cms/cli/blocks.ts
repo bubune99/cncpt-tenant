@@ -4,6 +4,7 @@
  */
 
 import { readFileSync, writeFileSync } from "fs"
+import { Prisma } from "@prisma/client"
 import {
   prisma, c, sym, table, heading, success, error, warn, info,
   formatStatus, truncate, readStdin,
@@ -93,7 +94,7 @@ async function blocksListTemplates(flags: Record<string, string | boolean>) {
 async function blocksAdd(pageSlug: string, templateLabel: string, flags: Record<string, string | boolean>) {
   if (!pageSlug) { error("Usage: cms blocks add <page-slug> <template-label>"); return }
 
-  const page = await prisma.page.findUnique({ where: { slug: pageSlug } })
+  const page = await prisma.page.findFirst({ where: { slug: pageSlug } })
   if (!page) { error(`Page not found: ${pageSlug}`); return }
 
   const content = parseContent(page.content)
@@ -126,7 +127,7 @@ async function blocksAdd(pageSlug: string, templateLabel: string, flags: Record<
   }
   // Add partial reference
   else if (typeof flags.partial === "string") {
-    const partial = await prisma.partial.findUnique({ where: { slug: flags.partial } })
+    const partial = await prisma.partial.findFirst({ where: { slug: flags.partial } })
     if (!partial) { error(`Partial not found: ${flags.partial}`); return }
 
     newBlocks = [{
@@ -187,8 +188,8 @@ async function blocksAdd(pageSlug: string, templateLabel: string, flags: Record<
   }
 
   await prisma.page.update({
-    where: { slug: pageSlug },
-    data: { content: updatedContent as unknown as Record<string, unknown> },
+    where: { id: page.id },
+    data: { content: updatedContent as unknown as Prisma.InputJsonValue },
   })
 
   success(`Added ${newBlocks.length} block(s) to /${pageSlug}`)
@@ -202,7 +203,7 @@ async function blocksAdd(pageSlug: string, templateLabel: string, flags: Record<
 async function blocksRemove(pageSlug: string, blockId: string) {
   if (!pageSlug || !blockId) { error("Usage: cms blocks remove <page-slug> <block-id>"); return }
 
-  const page = await prisma.page.findUnique({ where: { slug: pageSlug } })
+  const page = await prisma.page.findFirst({ where: { slug: pageSlug } })
   if (!page) { error(`Page not found: ${pageSlug}`); return }
 
   const content = parseContent(page.content)
@@ -213,8 +214,8 @@ async function blocksRemove(pageSlug: string, blockId: string) {
   const blocks = removeBlockById(content.blocks, blockId)
 
   await prisma.page.update({
-    where: { slug: pageSlug },
-    data: { content: { ...content, blocks } as unknown as Record<string, unknown> },
+    where: { id: page.id },
+    data: { content: { ...content, blocks } as unknown as Prisma.InputJsonValue },
   })
 
   success(`Removed block ${c.dim(blockId)} (${c.cyan(target.tag)}) from /${pageSlug}`)
@@ -225,7 +226,7 @@ async function blocksRemove(pageSlug: string, blockId: string) {
 async function blocksTree(pageSlug: string) {
   if (!pageSlug) { error("Usage: cms blocks tree <page-slug>"); return }
 
-  const page = await prisma.page.findUnique({ where: { slug: pageSlug } })
+  const page = await prisma.page.findFirst({ where: { slug: pageSlug } })
   if (!page) { error(`Page not found: ${pageSlug}`); return }
 
   const content = parseContent(page.content)
@@ -247,7 +248,7 @@ async function blocksTree(pageSlug: string) {
 async function blocksSet(pageSlug: string, blockId: string, flags: Record<string, string | boolean>) {
   if (!pageSlug || !blockId) { error("Usage: cms blocks set <page-slug> <block-id> --text \"...\" --class \"...\""); return }
 
-  const page = await prisma.page.findUnique({ where: { slug: pageSlug } })
+  const page = await prisma.page.findFirst({ where: { slug: pageSlug } })
   if (!page) { error(`Page not found: ${pageSlug}`); return }
 
   const content = parseContent(page.content)
@@ -300,8 +301,8 @@ async function blocksSet(pageSlug: string, blockId: string, flags: Record<string
   const blocks = updateBlockInTree(content.blocks, blockId, updates)
 
   await prisma.page.update({
-    where: { slug: pageSlug },
-    data: { content: { ...content, blocks } as unknown as Record<string, unknown> },
+    where: { id: page.id },
+    data: { content: { ...content, blocks } as unknown as Prisma.InputJsonValue },
   })
 
   success(`Updated block ${c.dim(blockId)} on /${pageSlug}:`)
@@ -315,7 +316,7 @@ async function blocksSet(pageSlug: string, blockId: string, flags: Record<string
 async function blocksExport(slug: string, flags: Record<string, string | boolean>) {
   if (!slug) { error("Usage: cms blocks export <slug> [--o path] [--source]"); return }
 
-  const page = await prisma.page.findUnique({ where: { slug } })
+  const page = await prisma.page.findFirst({ where: { slug } })
   if (!page) { error(`Page not found: ${slug}`); return }
 
   if (flags.source) {
@@ -348,7 +349,7 @@ async function blocksDiff(slug: string | undefined, flags: Record<string, string
   if (flags.all) return blocksDiffAll()
   if (!slug) { error("Usage: cms blocks diff <slug> [--all]"); return }
 
-  const page = await prisma.page.findUnique({ where: { slug } })
+  const page = await prisma.page.findFirst({ where: { slug } })
   if (!page) { error(`Page not found: ${slug}`); return }
   if (!page.sourceCode) { warn(`No sourceCode stored for /${slug}`); return }
 
@@ -408,7 +409,7 @@ async function blocksSync(slug: string | undefined, flags: Record<string, string
   if (flags.all) return blocksSyncAll(flags)
   if (!slug) { error("Usage: cms blocks sync <slug> [--dry-run] [--all]"); return }
 
-  const page = await prisma.page.findUnique({ where: { slug } })
+  const page = await prisma.page.findFirst({ where: { slug } })
   if (!page) { error(`Page not found: ${slug}`); return }
   if (!page.sourceCode) { warn(`No sourceCode stored for /${slug}`); return }
 
@@ -436,8 +437,8 @@ async function blocksSync(slug: string | undefined, flags: Record<string, string
 
   const updated = { ...content, blocks: result.blocks }
   await prisma.page.update({
-    where: { slug },
-    data: { content: updated as unknown as Record<string, unknown> },
+    where: { id: page.id },
+    data: { content: updated as unknown as Prisma.InputJsonValue },
   })
 
   success(`Synced /${slug}: ${beforeCount} -> ${afterCount} blocks`)
@@ -446,7 +447,7 @@ async function blocksSync(slug: string | undefined, flags: Record<string, string
 async function blocksSyncAll(flags: Record<string, string | boolean>) {
   const pages = await prisma.page.findMany({
     where: { sourceCode: { not: null } },
-    select: { slug: true, content: true, sourceCode: true },
+    select: { id: true, slug: true, content: true, sourceCode: true },
   })
 
   if (pages.length === 0) { warn("No pages with stored sourceCode found."); return }
@@ -472,8 +473,8 @@ async function blocksSyncAll(flags: Record<string, string | boolean>) {
     if (!flags["dry-run"]) {
       const updated = { ...content, blocks: result.blocks }
       await prisma.page.update({
-        where: { slug: page.slug },
-        data: { content: updated as unknown as Record<string, unknown> },
+        where: { id: page.id },
+        data: { content: updated as unknown as Prisma.InputJsonValue },
       })
       synced++
     }
@@ -499,7 +500,7 @@ async function blocksResolve(
     return
   }
 
-  const page = await prisma.page.findUnique({ where: { slug: pageSlug } })
+  const page = await prisma.page.findFirst({ where: { slug: pageSlug } })
   if (!page) { error(`Page not found: ${pageSlug}`); return }
 
   // sourceDeps is stored as JSON on the Page record

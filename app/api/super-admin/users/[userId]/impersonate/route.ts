@@ -24,7 +24,7 @@ export async function POST(
       )
     }
 
-    const targetUser = await stackServerApp.getUser({ userId })
+    const targetUser = await stackServerApp.getUser(userId)
     if (!targetUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }

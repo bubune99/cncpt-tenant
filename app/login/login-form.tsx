@@ -12,7 +12,7 @@ type LoginState = {
 }
 
 export function LoginForm() {
-  const [state, action] = useFormState<LoginState>(loginAction, {})
+  const [state, action] = useFormState<LoginState, FormData>(loginAction, {})
 
   return (
     <form action={action} className="space-y-4" data-tour-id="login-form">

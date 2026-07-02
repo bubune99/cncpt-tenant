@@ -35,12 +35,17 @@ export default async function LoginPage({
   searchParams: Promise<{ redirect?: string }>
 }) {
   const { redirect } = await searchParams
-  const afterAuth = safeRedirectPath(redirect)
+  // Validated but currently unused: SignIn takes no redirect props; kept so the
+  // ?redirect= contract stays documented for when this moves to handler URLs.
+  void safeRedirectPath(redirect)
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50" data-tour-id="login-page">
       <div data-tour-id="login-stack-container">
-        <SignIn afterSignIn={afterAuth} afterSignUp={afterAuth} />
+        {/* SignIn takes no redirect props — the after-auth destination comes from
+            the stack app's url config / after_auth_return_to. The old
+            afterSignIn/afterSignUp props were silently ignored. */}
+        <SignIn />
       </div>
     </div>
   )

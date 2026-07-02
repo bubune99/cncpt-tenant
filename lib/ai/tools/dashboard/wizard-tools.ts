@@ -60,7 +60,7 @@ export function createWizardTools() {
 - User needs guidance on a multi-step process
 - User is setting up something for the first time
 Returns structured wizard data that renders as an interactive stepper in the chat UI.`,
-    parameters: z.object({
+    inputSchema: z.object({
       title: z.string().describe("Wizard title (e.g., 'Set Up Custom Domain')"),
       description: z
         .string()
@@ -108,7 +108,7 @@ Returns structured wizard data that renders as an interactive stepper in the cha
   const saveWizardAsTour = tool({
     description:
       "Save a generated wizard as a persistent guided tour (HelpTour). Use when the user wants to save a wizard for later or share it with their team.",
-    parameters: z.object({
+    inputSchema: z.object({
       title: z.string().describe("Tour title"),
       description: z.string().optional().describe("Tour description"),
       slug: z
@@ -204,7 +204,7 @@ Returns structured wizard data that renders as an interactive stepper in the cha
 - User seems lost or asks general "what can I do?" questions
 - User just signed up or created a new subdomain
 - After completing an action, to suggest next steps`,
-    parameters: z.object({
+    inputSchema: z.object({
       context: z
         .string()
         .describe("What the user is trying to do or learn about"),
@@ -245,7 +245,7 @@ Returns structured wizard data that renders as an interactive stepper in the cha
   const startWalkthrough = tool({
     description:
       "Start a saved guided tour by its slug. Triggers the Joyride runner in the help system.",
-    parameters: z.object({
+    inputSchema: z.object({
       tourSlug: z.string().describe("The slug of the tour to start"),
       navigateFirst: z
         .string()
@@ -296,7 +296,7 @@ Returns structured wizard data that renders as an interactive stepper in the cha
   const listTours = tool({
     description:
       "List all available guided tours. Use when the user asks what tours or guides are available.",
-    parameters: z.object({
+    inputSchema: z.object({
       activeOnly: z
         .boolean()
         .optional()

@@ -4,6 +4,7 @@
  */
 
 import { readFileSync } from "fs"
+import { Prisma } from "@prisma/client"
 import {
   prisma, c, sym, table, heading, success, error, warn, info,
   confirm, closeRL, formatStatus, formatDate, truncate,
@@ -92,7 +93,7 @@ async function partialsList(flags: Record<string, string | boolean>) {
 async function partialsGet(slug: string) {
   if (!slug) { error("Usage: cms partials get <slug>"); return }
 
-  const partial = await prisma.partial.findUnique({ where: { slug } })
+  const partial = await prisma.partial.findFirst({ where: { slug } })
   if (!partial) { error(`Partial not found: ${slug}`); return }
 
   const content = parseContent(partial.content)
@@ -122,7 +123,7 @@ async function partialsCreate(slug: string, flags: Record<string, string | boole
     return
   }
 
-  const existing = await prisma.partial.findUnique({ where: { slug } })
+  const existing = await prisma.partial.findFirst({ where: { slug } })
   if (existing) { error(`Slug already exists: ${slug}`); return }
 
   const name = typeof flags.name === "string" ? flags.name : slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
@@ -168,8 +169,8 @@ async function partialsCreate(slug: string, flags: Record<string, string | boole
     data: {
       name,
       slug,
-      category: category as any,
-      content: content as unknown as Record<string, unknown>,
+      category: category as unknown as Prisma.PartialCreateInput["category"],
+      content: content as unknown as Prisma.InputJsonValue,
       status: "DRAFT",
     },
   })
@@ -183,13 +184,13 @@ async function partialsCreate(slug: string, flags: Record<string, string | boole
 async function partialsDelete(slug: string) {
   if (!slug) { error("Usage: cms partials delete <slug>"); return }
 
-  const partial = await prisma.partial.findUnique({ where: { slug } })
+  const partial = await prisma.partial.findFirst({ where: { slug } })
   if (!partial) { error(`Partial not found: ${slug}`); return }
 
   const ok = await confirm(`Delete partial "${partial.name}" (${partial.category})?`, false)
   if (!ok) { info("Cancelled."); closeRL(); return }
 
-  await prisma.partial.delete({ where: { slug } })
+  await prisma.partial.delete({ where: { id: partial.id } })
   success(`Deleted partial: ${partial.name}`)
   closeRL()
 }
@@ -199,7 +200,7 @@ async function partialsDelete(slug: string) {
 async function partialsSetDefault(slug: string) {
   if (!slug) { error("Usage: cms partials set-default <slug>"); return }
 
-  const partial = await prisma.partial.findUnique({ where: { slug } })
+  const partial = await prisma.partial.findFirst({ where: { slug } })
   if (!partial) { error(`Partial not found: ${slug}`); return }
 
   if (partial.isDefault) { info("Already the default."); return }
@@ -211,7 +212,7 @@ async function partialsSetDefault(slug: string) {
   })
 
   await prisma.partial.update({
-    where: { slug },
+    where: { id: partial.id },
     data: { isDefault: true },
   })
 

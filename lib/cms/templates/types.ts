@@ -4,7 +4,15 @@
  * Types for seeded templates and template management
  */
 
-import { ComponentNode } from "../v0-agent/types";
+/**
+ * A node in the legacy Puck-style template content tree. Retained for the
+ * built-in seed templates that still ship in this format.
+ */
+export interface ComponentNode {
+  type: string;
+  props?: Record<string, unknown>;
+  slots?: Record<string, ComponentNode[]>;
+}
 
 /**
  * A seeded template that comes pre-built with the CMS

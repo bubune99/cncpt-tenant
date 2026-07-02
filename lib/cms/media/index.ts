@@ -189,7 +189,7 @@ export async function listMedia(filters: MediaFilters = {}): Promise<MediaListRe
   ])
 
   return {
-    media: media as MediaWithRelations[],
+    media: media as unknown as MediaWithRelations[],
     total,
     page,
     limit,
@@ -304,7 +304,7 @@ export async function updateMedia(id: string, input: MediaUpdateInput): Promise<
     },
   })
 
-  return media as MediaWithRelations
+  return media as unknown as MediaWithRelations
 }
 
 // =============================================================================
@@ -351,7 +351,7 @@ export async function restoreMedia(id: string): Promise<MediaWithRelations> {
     },
   })
 
-  return media as MediaWithRelations
+  return media as unknown as MediaWithRelations
 }
 
 // =============================================================================

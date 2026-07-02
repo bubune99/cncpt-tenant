@@ -64,7 +64,7 @@ export default function DashboardPage() {
     try {
       const userSubdomains = await getUserSubdomains()
       setSubdomains(Array.isArray(userSubdomains) ? userSubdomains : [])
-      setSelectedSubdomain(userSubdomains && userSubdomains.length > 0 ? userSubdomains[0].subdomain : null)
+      setSelectedSubdomain(userSubdomains?.[0]?.subdomain ?? null)
     } catch (err) {
       console.error("Dashboard subdomain loading error:", err)
       setError("Failed to load subdomains")

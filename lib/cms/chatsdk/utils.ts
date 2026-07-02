@@ -116,7 +116,7 @@ export function convertToUIMessages(messages: DBMessage[]): ChatMessage[] {
 
 export function getTextFromMessage(message: ChatMessage): string {
   return message.parts
-    .filter((part) => part.type === 'text')
+    .filter((part): part is Extract<typeof part, { type: 'text' }> => part.type === 'text')
     .map((part) => part.text)
     .join('');
 }

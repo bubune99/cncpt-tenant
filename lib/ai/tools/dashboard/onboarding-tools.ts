@@ -22,7 +22,7 @@ export function createOnboardingTools(userId: string) {
 - User seems new and needs guidance
 - You want to proactively suggest next steps
 - At the start of a conversation to understand the user's setup state`,
-    parameters: z.object({
+    inputSchema: z.object({
       subdomainId: z
         .number()
         .optional()
@@ -106,7 +106,7 @@ export function createOnboardingTools(userId: string) {
   const completeOnboardingStep = tool({
     description:
       "Mark an onboarding checklist item as complete. Use when the user has completed a task mentioned in their onboarding checklist.",
-    parameters: z.object({
+    inputSchema: z.object({
       subdomainId: z.number().describe("Subdomain ID"),
       itemKey: z
         .enum([
@@ -196,7 +196,7 @@ export function createOnboardingTools(userId: string) {
 - Starting a new conversation
 - User asks "what should I do next?"
 - After completing a task`,
-    parameters: z.object({
+    inputSchema: z.object({
       subdomainId: z
         .number()
         .optional()

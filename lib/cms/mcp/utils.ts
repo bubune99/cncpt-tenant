@@ -66,10 +66,12 @@ export const MAX_LIMIT = 100
  */
 export function normalizePagination(
   limit?: number,
-  offset?: number
+  offset?: number,
+  defaultLimit: number = DEFAULT_LIMIT,
+  maxLimit: number = MAX_LIMIT
 ): { limit: number; offset: number } {
   return {
-    limit: Math.min(limit || DEFAULT_LIMIT, MAX_LIMIT),
+    limit: Math.min(limit || defaultLimit, maxLimit),
     offset: offset || 0
   }
 }

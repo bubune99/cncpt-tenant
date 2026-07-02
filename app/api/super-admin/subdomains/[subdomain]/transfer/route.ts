@@ -55,7 +55,7 @@ export async function POST(
     }
 
     // Verify target user exists
-    const targetUser = await stackServerApp.getUser({ userId: targetUserId })
+    const targetUser = await stackServerApp.getUser(targetUserId)
     if (!targetUser) {
       return NextResponse.json(
         { error: "Target user not found" },
@@ -66,7 +66,7 @@ export async function POST(
     // Get current owner info for logging
     let currentOwnerEmail = ""
     try {
-      const currentOwner = await stackServerApp.getUser({ userId: currentOwnerId })
+      const currentOwner = await stackServerApp.getUser(currentOwnerId)
       currentOwnerEmail = currentOwner?.primaryEmail || ""
     } catch {
       // Owner may have been deleted

@@ -49,11 +49,11 @@ function SmartBlockField({ field, block, onUpdate }: {
   const target = field.target || "attrs"
   let currentValue: unknown = field.defaultValue
   if (target === "commerce" && block.commerce) {
-    currentValue = (block.commerce as Record<string, unknown>)[field.key] ?? field.defaultValue
+    currentValue = (block.commerce as unknown as Record<string, unknown>)[field.key] ?? field.defaultValue
   } else if (target === "attrs" && block.attrs) {
     currentValue = block.attrs[field.key] ?? field.defaultValue
   } else if (target === "root") {
-    currentValue = (block as Record<string, unknown>)[field.key] ?? field.defaultValue
+    currentValue = (block as unknown as Record<string, unknown>)[field.key] ?? field.defaultValue
   }
 
   switch (field.type) {
@@ -377,7 +377,7 @@ export function RightPanel({
                 </div>
 
                 {/* Smart Block Settings */}
-                {selectedElement.props.componentName && getSmartBlock(String(selectedElement.props.componentName)) && (() => {
+                {!!selectedElement.props.componentName && getSmartBlock(String(selectedElement.props.componentName)) && (() => {
                   const smartDef = getSmartBlock(String(selectedElement.props.componentName))!
                   // Build a Block-like object from element props for the field renderer
                   const blockProxy: Block = {

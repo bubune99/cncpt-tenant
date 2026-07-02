@@ -73,7 +73,7 @@ async function loadCommerceConfig(): Promise<CommerceProviderConfig> {
 
     // 2. Fallback to Setting table (existing behavior)
     const { prisma } = await import("../db")
-    const setting = await prisma.setting.findUnique({
+    const setting = await prisma.setting.findFirst({
       where: { key: "commerce.provider" },
     })
 

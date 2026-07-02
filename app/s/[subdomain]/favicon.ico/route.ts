@@ -49,7 +49,7 @@ export async function GET(
     // Fallback: serve default favicon from /public
     try {
       const defaultFavicon = await readFile(join(process.cwd(), 'public', 'favicon.ico'))
-      return new NextResponse(defaultFavicon, {
+      return new NextResponse(new Uint8Array(defaultFavicon), {
         status: 200,
         headers: {
           'Content-Type': 'image/x-icon',

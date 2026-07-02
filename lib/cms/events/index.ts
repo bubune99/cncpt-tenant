@@ -21,7 +21,7 @@ async function ensureUniqueSlug(slug: string, excludeId?: string): Promise<strin
   let counter = 1
 
   while (true) {
-    const existing = await prisma.event.findUnique({ where: { slug: uniqueSlug } })
+    const existing = await prisma.event.findFirst({ where: { slug: uniqueSlug } })
 
     if (!existing || existing.id === excludeId) {
       return uniqueSlug
@@ -135,7 +135,7 @@ export async function getEvent(id: string) {
 }
 
 export async function getEventBySlug(slug: string) {
-  return prisma.event.findUnique({
+  return prisma.event.findFirst({
     where: { slug },
     include: {
       ticketTypes: { where: { isActive: true }, orderBy: { position: 'asc' } },

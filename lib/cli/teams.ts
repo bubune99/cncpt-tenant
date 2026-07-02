@@ -84,7 +84,7 @@ export async function handleTeams(action: string, args: ParsedArgs) {
         console.log(`\n  ${c.bold}Members (${team.members.length}):${c.reset}`)
         for (const m of team.members) {
           const roleColor = m.role === 'owner' ? c.yellow : m.role === 'admin' ? c.cyan : c.reset
-          console.log(`    ${sym.bullet} ${m.email || m.userId} ${roleColor}${m.role}${c.reset} ${m.displayName ? dim(`(${m.displayName})`) : ''}`)
+          console.log(`    ${sym.bullet} ${m.userId} ${roleColor}${m.role}${c.reset}`)
         }
       }
 
@@ -136,7 +136,6 @@ export async function handleTeams(action: string, args: ParsedArgs) {
         data: {
           teamId: team.id,
           userId: owner.id,
-          email: owner.email,
           role: 'owner',
           customPermissions: [],
         },
@@ -195,8 +194,6 @@ export async function handleTeams(action: string, args: ParsedArgs) {
           data: {
             teamId: team.id,
             userId: user.id,
-            email: user.email,
-            displayName: user.name,
             role: role as any,
             customPermissions: [],
           },
@@ -288,6 +285,7 @@ export async function handleTeams(action: string, args: ParsedArgs) {
             role: role as any,
             token,
             expiresAt,
+            invitedBy: team.ownerId,
           },
         })
         success(`Invited ${email} to ${team.name} as ${role}`)

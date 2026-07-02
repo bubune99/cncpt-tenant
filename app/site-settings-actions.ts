@@ -139,7 +139,7 @@ export async function getSiteSettings(subdomain: string): Promise<SiteSettings |
 // Update general settings
 export async function updateGeneralSettings(
   subdomain: string,
-  settings: GeneralSettings
+  settings: Partial<GeneralSettings>
 ): Promise<{ success: boolean; error?: string }> {
   const user = await getCurrentUser()
   if (!user) {
@@ -152,12 +152,12 @@ export async function updateGeneralSettings(
     // Upsert settings
     await sql`
       INSERT INTO site_settings (subdomain, site_title, site_tagline, site_description, visibility)
-      VALUES (${subdomain}, ${settings.site_title}, ${settings.site_tagline}, ${settings.site_description}, ${settings.visibility})
+      VALUES (${subdomain}, ${settings.site_title ?? null}, ${settings.site_tagline ?? null}, ${settings.site_description ?? null}, ${settings.visibility ?? null})
       ON CONFLICT (subdomain) DO UPDATE SET
-        site_title = ${settings.site_title},
-        site_tagline = ${settings.site_tagline},
-        site_description = ${settings.site_description},
-        visibility = ${settings.visibility},
+        site_title = COALESCE(${settings.site_title ?? null}, site_settings.site_title),
+        site_tagline = COALESCE(${settings.site_tagline ?? null}, site_settings.site_tagline),
+        site_description = COALESCE(${settings.site_description ?? null}, site_settings.site_description),
+        visibility = COALESCE(${settings.visibility ?? null}, site_settings.visibility),
         updated_at = NOW()
     `
 

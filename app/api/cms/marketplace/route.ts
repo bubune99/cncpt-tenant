@@ -168,9 +168,9 @@ export const POST = withPermission(
       // Audit log
       await logAuditEvent({
         userId: context.user.id,
-        action: 'create' as any,
-        resource: 'marketplace_template',
-        resourceId: template.id,
+        action: 'marketplace_template.create',
+        targetType: 'marketplace_template',
+        targetId: template.id,
         details: { name: template.name, slug: template.slug },
       }).catch(() => {}) // Non-critical
 

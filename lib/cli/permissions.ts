@@ -38,7 +38,7 @@ export async function handlePermissions(action: string, args: ParsedArgs) {
         const roleName = args.positional[1]
         if (!roleName) { error('Usage: tenant permissions roles get <name>'); return }
 
-        const role = await prisma.role.findUnique({
+        const role = await prisma.role.findFirst({
           where: { name: roleName },
           include: { _count: { select: { assignments: true } } },
         })
@@ -71,7 +71,7 @@ export async function handlePermissions(action: string, args: ParsedArgs) {
         const permsStr = args.flags.perms as string || ''
         const permissions = permsStr ? permsStr.split(',').map(p => p.trim()) : []
 
-        const existing = await prisma.role.findUnique({ where: { name: roleName } })
+        const existing = await prisma.role.findFirst({ where: { name: roleName } })
         if (existing) { error(`Role already exists: ${roleName}`); return }
 
         const role = await prisma.role.create({
@@ -93,7 +93,7 @@ export async function handlePermissions(action: string, args: ParsedArgs) {
         const roleName = args.positional[1]
         if (!roleName) { error('Usage: tenant permissions roles edit <name> --add "perm" --remove "perm"'); return }
 
-        const role = await prisma.role.findUnique({ where: { name: roleName } })
+        const role = await prisma.role.findFirst({ where: { name: roleName } })
         if (!role) { error(`Role not found: ${roleName}`); return }
 
         const perms = new Set(role.permissions as string[])
@@ -112,13 +112,13 @@ export async function handlePermissions(action: string, args: ParsedArgs) {
 
         if (args.flags.display) {
           await prisma.role.update({
-            where: { name: roleName },
+            where: { id: role.id },
             data: { displayName: args.flags.display as string },
           })
         }
 
         await prisma.role.update({
-          where: { name: roleName },
+          where: { id: role.id },
           data: { permissions: Array.from(perms) },
         })
 
@@ -153,7 +153,7 @@ export async function handlePermissions(action: string, args: ParsedArgs) {
       if (!email || !roleName) { error('Usage: tenant permissions assign <email> <role-name>'); return }
 
       const user = await requireUser(email)
-      const role = await prisma.role.findUnique({ where: { name: roleName } })
+      const role = await prisma.role.findFirst({ where: { name: roleName } })
       if (!role) { error(`Role not found: ${roleName}`); return }
 
       try {
@@ -172,7 +172,7 @@ export async function handlePermissions(action: string, args: ParsedArgs) {
       if (!email || !roleName) { error('Usage: tenant permissions unassign <email> <role-name>'); return }
 
       const user = await requireUser(email)
-      const role = await prisma.role.findUnique({ where: { name: roleName } })
+      const role = await prisma.role.findFirst({ where: { name: roleName } })
       if (!role) { error(`Role not found: ${roleName}`); return }
 
       try {

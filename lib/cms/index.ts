@@ -1,23 +1,8 @@
 /**
  * @cncpt/cms - Headless CMS with e-commerce capabilities
  *
- * Main entry point that re-exports all modules
+ * Library entry point. The packaged export structure (./exports/*, contexts,
+ * storefront router) is not present in the tenant application, so this barrel
+ * intentionally re-exports nothing. Import from the concrete modules instead.
  */
-
-// Admin components
-export * from './exports/admin'
-
-// UI components
-export * from './exports/ui'
-
-// Hooks
-export * from './exports/hooks'
-
-// Library utilities
-export * from './exports/lib'
-
-// Contexts
-export { WizardProvider, useWizard } from './contexts/WizardContext'
-
-// Storefront Router (for multi-tenant subdomain rendering)
-export { StorefrontRouter } from './components/storefront/StorefrontRouter'
+export {}

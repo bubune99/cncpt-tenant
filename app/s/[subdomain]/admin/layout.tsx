@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { stackServerApp } from '@/stack';
 import { isSuperAdmin } from '@/lib/super-admin';
 import { canAccessSubdomain } from '@/lib/team-auth';
+import { isDemoSubdomain } from '@/lib/demo';
 import { sql } from '@/lib/neon';
 import { AdminShellWrapper } from './AdminShellWrapper';
 
@@ -105,6 +106,18 @@ export default async function AdminLayout({
   params: Promise<{ subdomain: string }>;
 }) {
   const { subdomain } = await params;
+
+  // The "demo" subdomain is an unauthenticated, read-only showcase — the
+  // access API (/api/subdomains/[subdomain]/access) and client shell already
+  // handle demo mode, but this server gate ran first and bounced everyone to
+  // sign-in, making the demo unreachable. Skip auth for it.
+  if (isDemoSubdomain(subdomain)) {
+    return (
+      <Suspense fallback={<AdminLoadingFallback />}>
+        <AdminShellWrapper>{children}</AdminShellWrapper>
+      </Suspense>
+    );
+  }
 
   // Verify authenticated user has access to this subdomain's admin
   const user = await stackServerApp.getUser();

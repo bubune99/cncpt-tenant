@@ -158,7 +158,7 @@ async function usersCreate(email: string, flags: Record<string, string | boolean
 
   // Assign role if provided
   if (typeof flags.role === "string") {
-    const role = await prisma.role.findUnique({ where: { name: flags.role } })
+    const role = await prisma.role.findFirst({ where: { name: flags.role } })
     if (role) {
       await assignRole({ userId: user.id, roleId: role.id })
       success(`Assigned role: ${c.green(role.displayName)}`)
@@ -176,7 +176,7 @@ async function usersAssignRole(email: string, roleName: string) {
   const user = await prisma.user.findUnique({ where: { email } })
   if (!user) { error(`User not found: ${email}`); return }
 
-  const role = await prisma.role.findUnique({ where: { name: roleName } })
+  const role = await prisma.role.findFirst({ where: { name: roleName } })
   if (!role) { error(`Role not found: ${roleName}`); return }
 
   // Check if already assigned
@@ -197,7 +197,7 @@ async function usersRemoveRole(email: string, roleName: string) {
   const user = await prisma.user.findUnique({ where: { email } })
   if (!user) { error(`User not found: ${email}`); return }
 
-  const role = await prisma.role.findUnique({ where: { name: roleName } })
+  const role = await prisma.role.findFirst({ where: { name: roleName } })
   if (!role) { error(`Role not found: ${roleName}`); return }
 
   try {
