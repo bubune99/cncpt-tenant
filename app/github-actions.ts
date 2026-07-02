@@ -29,7 +29,9 @@ export async function initiateGitHubOAuth() {
 }
 
 export async function handleGitHubCallback(code: string, state: string) {
-  const userId = Number.parseInt(state)
+  // The OAuth state carries the user id verbatim — ids are uuid/cuid strings,
+  // so parseInt would corrupt them (NaN or truncated leading digits).
+  const userId = state
 
   if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
     throw new Error("GitHub OAuth not configured")

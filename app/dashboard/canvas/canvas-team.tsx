@@ -4,34 +4,36 @@
  * TEAM — Members + Roles & Permissions + Activity. Recreates tenant-team.jsx
  * (Tnt_Members / Tnt_RolesPermissions / Tnt_ActivityLog) on the Canvas chrome.
  *
+ * Each sidebar Team entry (Members / Roles & Permissions / Activity log) maps to
+ * a distinct section that mounts this component with the matching `initialTab`
+ * (see canvas-shell), so the three nav items render three distinct views. The
+ * in-view tab bar lets you switch between them without leaving the section.
+ *
  * DATA WIRING:
  *  - Members: REAL. Loads the user's teams (/api/teams) and, per team, the
  *    members (/api/teams/[teamId]/members) and pending invitations
  *    (/api/teams/[teamId]/invitations). Invite + remove use the real endpoints.
- *  - Roles & Permissions matrix: REAL. Built from TEAM_PERMISSIONS +
- *    PERMISSION_DESCRIPTIONS in lib/team-utils (the actual role→permission model
- *    enforced server-side). Columns Owner/Admin/Member/Viewer; checks reflect
- *    the real grants (owner = "*").
- *  - Activity log: PLACEHOLDER (no per-team audit source yet) — clearly labeled.
+ *  - Roles & Permissions: REAL — see canvas-team-roles.tsx (TEAM_PERMISSIONS).
+ *  - Activity log: REAL — see canvas-team-activity.tsx (/api/dashboard/activity).
  */
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
-  UserPlus, Filter, Download, Mail, MoreHorizontal, ShieldCheck, History,
-  Users, Crown, Shield, Eye, Check, X, Plus, Globe, CreditCard, Send,
-  LayoutGrid, Loader2,
+  UserPlus, Filter, Mail, MoreHorizontal, ShieldCheck, History,
+  Users, Crown, Plus, Loader2,
 } from "lucide-react"
-import {
-  TEAM_PERMISSIONS, PERMISSION_DESCRIPTIONS, getRoleLabel, getRoleDescription,
-  hasTeamPermission, type TeamRole,
-} from "@/lib/team-utils"
+import { getRoleLabel, type TeamRole } from "@/lib/team-utils"
 import { CanvasInviteModal } from "./canvas-team-modals"
+import { RolesPanel } from "./canvas-team-roles"
+import { ActivityPanel } from "./canvas-team-activity"
 
 type Tab = "members" | "roles" | "activity"
 
 interface CanvasTeamProps {
   user: any
+  /** Which view to open — driven by the active sidebar Team entry. */
+  initialTab?: Tab
 }
 
 interface Team { id: string; name: string; slug: string; description: string | null; memberCount: number; role?: string }
@@ -54,8 +56,8 @@ const ROLE_CHIP: Record<string, string> = {
   member: "role-chip--editor", viewer: "role-chip--viewer",
 }
 
-export function CanvasTeam({ user }: CanvasTeamProps) {
-  const [tab, setTab] = useState<Tab>("members")
+export function CanvasTeam({ user, initialTab = "members" }: CanvasTeamProps) {
+  const [tab, setTab] = useState<Tab>(initialTab)
   const [inviteFor, setInviteFor] = useState<string | null>(null)
 
   return (
@@ -72,7 +74,7 @@ export function CanvasTeam({ user }: CanvasTeamProps) {
       </div>
       <div className="dirH__page" style={{ padding: "20px 24px", overflow: "auto" }}>
         {tab === "members" ? <MembersPanel onInvite={(teamId) => setInviteFor(teamId)} /> : null}
-        {tab === "roles" ? <RolesPanel /> : null}
+        {tab === "roles" ? <RolesPanel onManageMembers={() => setTab("members")} /> : null}
         {tab === "activity" ? <ActivityPanel /> : null}
       </div>
       {inviteFor ? <CanvasInviteModal teamId={inviteFor} onClose={() => setInviteFor(null)} /> : null}
@@ -229,154 +231,6 @@ function MembersPanel({ onInvite }: { onInvite: (teamId: string) => void }) {
           )
         })
       )}
-    </>
-  )
-}
-
-/* ─── Roles & Permissions (wired to real TEAM_PERMISSIONS) ─── */
-const ROLE_COLS: TeamRole[] = ["owner", "admin", "member", "viewer"]
-const PERM_GROUPS: { group: string; icon: any; perms: string[] }[] = [
-  { group: "Team & Members", icon: Users, perms: ["team.view", "team.edit", "team.delete", "members.view", "members.invite", "members.remove", "members.edit_role"] },
-  { group: "Invitations", icon: Send, perms: ["invitations.view", "invitations.create", "invitations.cancel"] },
-  { group: "Subdomains", icon: Globe, perms: ["subdomains.view", "subdomains.add", "subdomains.remove", "subdomains.edit"] },
-  { group: "Settings", icon: CreditCard, perms: ["settings.view", "settings.edit"] },
-]
-
-function RolesPanel() {
-  return (
-    <>
-      <div className="tnt__page-h">
-        <div>
-          <h1>Roles &amp; Permissions</h1>
-          <div className="sub">What each role can do. These reflect the access enforced across your workspace.</div>
-        </div>
-      </div>
-
-      {/* Role cards */}
-      <div className="card" style={{ marginBottom: 16 }}>
-        <div className="card__head"><h3 className="card__title">Roles</h3><span className="muted" style={{ fontSize: 11 }}>4 built-in roles</span></div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 0 }}>
-          {ROLE_COLS.map((r, i) => {
-            const Icon = r === "owner" ? Crown : r === "viewer" ? Eye : Shield
-            const bg = r === "owner" ? "#fef3c7" : r === "admin" ? "#dbeafe" : r === "member" ? "#ede9fe" : "#f1f5f9"
-            const fg = r === "owner" ? "#92400e" : r === "admin" ? "#1d4ed8" : r === "member" ? "#6d28d9" : "#475569"
-            return (
-              <div key={r} style={{ padding: 14, borderRight: i < ROLE_COLS.length - 1 ? "1px solid var(--br-border)" : "none", display: "flex", flexDirection: "column", gap: 6 }}>
-                <div className="row" style={{ gap: 6 }}>
-                  <span style={{ width: 22, height: 22, borderRadius: 5, background: bg, color: fg, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon style={{ width: 12, height: 12 }} /></span>
-                  <strong style={{ fontSize: 13 }}>{getRoleLabel(r)}</strong>
-                </div>
-                <span className="muted" style={{ fontSize: 11, lineHeight: 1.4 }}>{getRoleDescription(r)}</span>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Permission matrix */}
-      <div className="card">
-        <div className="card__head">
-          <div>
-            <h3 className="card__title">Permissions matrix</h3>
-            <div className="muted" style={{ fontSize: 11 }}>What each role is granted. Owners always have everything.</div>
-          </div>
-        </div>
-
-        <div className="tnt__perm-row" style={{ background: "var(--br-surface)", borderBottom: "1px solid var(--br-border)" }}>
-          <div className="head-cell" style={{ textAlign: "left" }}>Capability</div>
-          {ROLE_COLS.map((r) => <div key={r} className="head-cell">{getRoleLabel(r)}</div>)}
-          <div className="head-cell" /><div className="head-cell" />
-        </div>
-
-        {PERM_GROUPS.map((grp) => {
-          const Icon = grp.icon
-          return (
-            <div key={grp.group}>
-              <div className="row" style={{ padding: "10px 14px", background: "#fafafa", borderBottom: "1px solid var(--br-border)", gap: 8 }}>
-                <Icon style={{ width: 13, height: 13, color: "var(--br-primary)" }} />
-                <strong style={{ fontSize: 12 }}>{grp.group}</strong>
-                <span className="muted" style={{ fontSize: 11 }}>{grp.perms.length} permissions</span>
-              </div>
-              {grp.perms.map((perm) => (
-                <div key={perm} className="tnt__perm-row">
-                  <div className="col" style={{ gap: 2 }}>
-                    <span className="tnt__perm-name">{PERMISSION_DESCRIPTIONS[perm] || perm}</span>
-                    <span className="tnt__perm-desc mono" style={{ fontSize: 10.5 }}>{perm}</span>
-                  </div>
-                  {ROLE_COLS.map((r) => {
-                    const granted = hasTeamPermission(TEAM_PERMISSIONS[r], perm)
-                    return (
-                      <div key={r} className="toggle-cell">
-                        <span className={"tnt__perm-check " + (granted ? "tnt__perm-check--on" : "tnt__perm-check--off")}>
-                          {granted ? <Check /> : <X />}
-                        </span>
-                      </div>
-                    )
-                  })}
-                  <div /><div />
-                </div>
-              ))}
-            </div>
-          )
-        })}
-      </div>
-    </>
-  )
-}
-
-/* ─── Activity — REAL (recent audit entries, /api/dashboard/activity) ─── */
-interface AuditEntry { id: string; action: string; targetType: string | null; targetId: string | null; userEmail: string | null; createdAt: string }
-
-function activityRelTime(iso: string): string {
-  const diff = Math.max(0, Date.now() - new Date(iso).getTime())
-  const s = Math.floor(diff / 1000)
-  if (s < 60) return "just now"
-  const m = Math.floor(s / 60); if (m < 60) return `${m}m ago`
-  const h = Math.floor(m / 60); if (h < 24) return `${h}h ago`
-  const d = Math.floor(h / 24); if (d < 7) return `${d}d ago`
-  return new Date(iso).toLocaleDateString()
-}
-
-function ActivityPanel() {
-  const [logs, setLogs] = useState<AuditEntry[] | null>(null)
-  useEffect(() => {
-    fetch("/api/dashboard/activity")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => setLogs(Array.isArray(d?.logs) ? d.logs : []))
-      .catch(() => setLogs([]))
-  }, [])
-
-  return (
-    <>
-      <div className="tnt__page-h">
-        <div>
-          <h1>Activity log</h1>
-          <div className="sub">Recent account actions — member, role, permission and invite changes.</div>
-        </div>
-      </div>
-      <div className="card">
-        {logs === null ? (
-          <div style={{ padding: 18 }} className="muted">Loading…</div>
-        ) : logs.length === 0 ? (
-          <div className="tnt__empty" style={{ padding: "48px 24px" }}>
-            <div className="tnt__empty-glyph"><History /></div>
-            <h2 className="tnt__empty-h">No activity yet</h2>
-            <p className="tnt__empty-p">Member changes, role updates, and invites will be recorded here as they happen.</p>
-          </div>
-        ) : (
-          <div>
-            {logs.map((a) => (
-              <div className="tnt__act-row" key={a.id}>
-                <div className="tnt__act-icon"><History /></div>
-                <div className="tnt__act-body">
-                  <strong>{a.userEmail ?? "You"}</strong> {a.action.replace(/[._]/g, " ").trim()}{a.targetId ? ` · ${a.targetType ?? "item"}` : ""}
-                  <div className="tnt__act-time">{activityRelTime(a.createdAt)}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
     </>
   )
 }

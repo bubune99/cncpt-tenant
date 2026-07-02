@@ -41,10 +41,6 @@ const SECTION_LABEL: Record<string, string> = {
   overview: "Overview",
   sites: "Subdomains",
   team: "Team",
-  comms: "Communications",
-  "comms-announce": "Communications",
-  "comms-campaigns": "Communications",
-  "comms-feedback": "Communications",
   analytics: "Analytics",
   branding: "Branding",
   domains: "Custom domains",
@@ -54,6 +50,24 @@ const SECTION_LABEL: Record<string, string> = {
   credits: "AI Credits",
   billing: "Billing & plan",
   mcp: "MCP / AI Agents",
+}
+
+// Communications sub-views each carry their own header name (breadcrumb reads
+// Workspace › Communications › <view>) so the topbar never drifts to "Overview".
+const COMMS_LABEL: Record<string, string> = {
+  comms: "Support inbox",
+  "comms-announce": "Announcements",
+  "comms-campaigns": "Email campaigns",
+  "comms-team-chat": "Team messages",
+  "comms-feedback": "Feedback board",
+}
+
+// Team sub-views each carry their own header name (breadcrumb reads
+// Workspace › Team › <view>) so the topbar reflects the active nav item.
+const TEAM_LABEL: Record<string, string> = {
+  team: "Members",
+  "team-roles": "Roles & Permissions",
+  "team-activity": "Activity log",
 }
 
 function userInitials(user: any): string {
@@ -92,7 +106,11 @@ export function CanvasShell({
     return () => window.removeEventListener("keydown", onKey)
   }, [])
 
-  const crumbs = ["Workspace", SECTION_LABEL[activeSection] ?? "Overview"]
+  const crumbs = activeSection.startsWith("comms")
+    ? ["Workspace", "Communications", COMMS_LABEL[activeSection] ?? "Support inbox"]
+    : activeSection.startsWith("team")
+    ? ["Workspace", "Team", TEAM_LABEL[activeSection] ?? "Members"]
+    : ["Workspace", SECTION_LABEL[activeSection] ?? "Overview"]
   const isSitesDetail = activeSection === "sites" && detailSubdomain
 
   // The Sites detail renders its own topbar (with tabs); every other view uses
@@ -118,16 +136,21 @@ export function CanvasShell({
         />
       )
     }
-    if (activeSection === "team") {
-      return <CanvasTeam user={user} />
+    if (activeSection.startsWith("team")) {
+      const teamTab =
+        activeSection === "team-roles" ? "roles"
+        : activeSection === "team-activity" ? "activity"
+        : "members"
+      return <CanvasTeam key={activeSection} user={user} initialTab={teamTab} />
     }
     if (activeSection.startsWith("comms")) {
       const commsTab =
         activeSection === "comms-announce" ? "announce"
         : activeSection === "comms-campaigns" ? "campaigns"
+        : activeSection === "comms-team-chat" ? "team-chat"
         : activeSection === "comms-feedback" ? "feedback"
         : "tickets"
-      return <CanvasComms key={activeSection} initialTab={commsTab} />
+      return <CanvasComms key={activeSection} initialTab={commsTab} subdomains={subdomains} />
     }
     // Account: AI Credits + Billing + Branding + Workspace settings under one
     // tabbed surface. The three sidebar entries open the matching tab.

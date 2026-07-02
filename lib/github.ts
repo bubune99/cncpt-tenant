@@ -2,7 +2,7 @@ import { sql } from "@/lib/neon"
 
 export interface GitHubConnection {
   id: number
-  user_id: number
+  user_id: string
   github_user_id: number
   github_username: string
   access_token: string
@@ -35,7 +35,7 @@ export interface RepositoryConnection {
   vercel_deployment_url?: string
 }
 
-export async function getGitHubConnection(userId: number): Promise<GitHubConnection | null> {
+export async function getGitHubConnection(userId: string): Promise<GitHubConnection | null> {
   try {
     const result = await sql`
       SELECT * FROM github_connections 
@@ -51,7 +51,7 @@ export async function getGitHubConnection(userId: number): Promise<GitHubConnect
 }
 
 export async function createGitHubConnection(
-  userId: number,
+  userId: string,
   githubData: {
     github_user_id: number
     github_username: string

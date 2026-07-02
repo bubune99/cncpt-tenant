@@ -190,7 +190,7 @@ function CreateSubdomainContent() {
     setLoading(true)
     try {
       const [tiersRes, subdomainRes] = await Promise.all([
-        fetch("/api/admin/tiers"),
+        fetch("/api/dashboard/tiers"),
         fetch("/api/dashboard/subdomain"),
       ])
 

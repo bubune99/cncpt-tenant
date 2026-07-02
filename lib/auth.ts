@@ -4,7 +4,7 @@ import { redirect } from "next/navigation"
 import bcrypt from "bcryptjs"
 
 export interface User {
-  id: number
+  id: string
   email: string
   name: string
   created_at: string
@@ -12,7 +12,7 @@ export interface User {
 
 export interface Session {
   id: string
-  user_id: number
+  user_id: string
   expires_at: string
 }
 
@@ -27,7 +27,7 @@ function generateSessionId(): string {
 }
 
 // Create a new session for a user
-export async function createSession(userId: number): Promise<string> {
+export async function createSession(userId: string): Promise<string> {
   const sessionId = generateSessionId()
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
 
@@ -49,8 +49,28 @@ export async function createSession(userId: number): Promise<string> {
   return sessionId
 }
 
-// Get current user from session
+// Get current user. Stack Auth is the primary auth — the legacy session
+// cookie only exists for pre-migration sessions. Every consumer of this
+// helper (domain/deployment/github/vercel actions) was permanently
+// "Not authenticated" for Stack-authenticated users before this.
 export async function getCurrentUser(): Promise<User | null> {
+  try {
+    const { stackServerApp } = await import("@/stack")
+    const stackUser = await stackServerApp.getUser()
+    if (stackUser) {
+      const { ensureLocalUser } = await import("@/lib/auth-sync")
+      const local = await ensureLocalUser(stackUser.id)
+      return {
+        id: local.id,
+        email: local.email,
+        name: local.name ?? "",
+        created_at: local.created_at,
+      }
+    }
+  } catch (error) {
+    console.error("[auth] Stack Auth lookup failed, trying legacy session:", error)
+  }
+
   const cookieStore = await cookies()
   const sessionId = cookieStore.get("session")?.value
 

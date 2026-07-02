@@ -71,8 +71,8 @@ export const NAV: NavEntry[] = [
 
   { heading: "Team" },
   { id: "members", label: "Members", icon: Users, section: "team" },
-  { id: "roles", label: "Roles & Permissions", icon: ShieldCheck, section: "team" },
-  { id: "activity", label: "Activity log", icon: History, section: "team" },
+  { id: "roles", label: "Roles & Permissions", icon: ShieldCheck, section: "team-roles" },
+  { id: "activity", label: "Activity log", icon: History, section: "team-activity" },
 
   { heading: "Communications" },
   { id: "tickets", label: "Support inbox", icon: MessageSquare, section: "comms" },
@@ -99,6 +99,8 @@ export function activeNavId(section: string): string {
     overview: "overview",
     sites: "subdomains",
     team: "members",
+    "team-roles": "roles",
+    "team-activity": "activity",
     comms: "tickets",
     "comms-announce": "announce",
     "comms-campaigns": "campaigns",

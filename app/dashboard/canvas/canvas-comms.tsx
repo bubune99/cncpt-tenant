@@ -25,8 +25,8 @@ import { useEffect, useState, useCallback } from "react"
 import {
   MessageSquare, Plus, Inbox, UserX, User, Hourglass, CheckCircle,
   Sparkles, Send, Megaphone, MessagesSquare, Lightbulb, AlarmClock, Loader2,
-  Mail,
 } from "lucide-react"
+import { CampaignsPanel, type CommsSite } from "./canvas-comms-campaigns"
 
 type Tab = "tickets" | "announce" | "campaigns" | "team-chat" | "feedback"
 
@@ -44,7 +44,7 @@ interface Ticket {
 }
 interface Stats { open: number; inProgress: number; resolved: number; closed: number; total: number }
 
-export function CanvasComms({ initialTab = "tickets" }: { initialTab?: Tab }) {
+export function CanvasComms({ initialTab = "tickets", subdomains = [] }: { initialTab?: Tab; subdomains?: CommsSite[] }) {
   const [tab, setTab] = useState<Tab>(initialTab)
   return (
     <>
@@ -59,7 +59,7 @@ export function CanvasComms({ initialTab = "tickets" }: { initialTab?: Tab }) {
         })}
       </div>
       {tab === "tickets" ? <SupportInbox /> : null}
-      {tab === "campaigns" ? <CampaignsPanel /> : null}
+      {tab === "campaigns" ? <CampaignsPanel subdomains={subdomains} /> : null}
       {tab === "feedback" ? <FeedbackPanel /> : null}
       {tab === "announce" ? <AnnouncementsPanel /> : null}
       {tab === "team-chat" ? <TeamChatPanel /> : null}
@@ -277,59 +277,6 @@ function SupportInbox() {
               <span className="muted" style={{ fontSize: 10.5, marginTop: 6, display: "block" }}>Sending replies from here is handled by the existing Support area; this inbox drafts and reads.</span>
             </div>
           </>
-        )}
-      </div>
-    </div>
-  )
-}
-
-/* ─── Email campaigns — REAL (account-level, /api/dashboard/campaigns) ─── */
-interface Campaign {
-  id: string; name: string; subject: string; status: string
-  sentAt: string | null; recipientCount: number; sentCount: number; createdAt: string; site?: string
-}
-
-function CampaignsPanel() {
-  const [rows, setRows] = useState<Campaign[] | null>(null)
-  useEffect(() => {
-    fetch("/api/dashboard/campaigns")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => setRows(Array.isArray(d?.campaigns) ? d.campaigns : []))
-      .catch(() => setRows([]))
-  }, [])
-
-  return (
-    <div className="dirH__page" style={{ padding: "20px 24px", overflow: "auto" }}>
-      <div className="tnt__page-h">
-        <div>
-          <h1>Email campaigns</h1>
-          <div className="sub">Newsletters and automated flows across your sites.</div>
-        </div>
-      </div>
-      <div className="card">
-        <div className="card__head"><h3 className="card__title">Campaigns</h3></div>
-        {rows === null ? (
-          <div style={{ padding: 18 }} className="muted"><Loader2 className="tnt-spin" style={{ width: 14, height: 14 }} /> Loading…</div>
-        ) : rows.length === 0 ? (
-          <div style={{ padding: "28px 18px", textAlign: "center" }} className="muted">
-            <Mail style={{ width: 22, height: 22, opacity: 0.5 }} />
-            <div style={{ fontSize: 12.5, marginTop: 8 }}>No campaigns yet. Create one from a site&apos;s email tools and it&apos;ll show here.</div>
-          </div>
-        ) : (
-          <table className="tnt__matrix">
-            <thead><tr><th>Campaign</th><th>Site</th><th>Status</th><th>Sent</th><th>Recipients</th></tr></thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id}>
-                  <td><strong style={{ fontSize: 12.5 }}>{r.name}</strong><div className="muted" style={{ fontSize: 11 }}>{r.subject}</div></td>
-                  <td className="mono" style={{ fontSize: 11 }}>{r.site ?? "—"}</td>
-                  <td><span className={"pill " + (r.status === "SENT" ? "pill--green" : r.status === "DRAFT" ? "pill--slate" : "pill--blue")} style={{ fontSize: 10.5 }}>{r.status.toLowerCase()}</span></td>
-                  <td className="mono">{r.sentCount.toLocaleString()}</td>
-                  <td className="mono">{r.recipientCount.toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         )}
       </div>
     </div>

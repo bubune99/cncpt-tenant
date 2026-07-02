@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { NAV, isHeading, activeNavId, type NavItem } from "./nav-config"
+import { rootDomain } from "@/lib/utils"
 
 interface CanvasSidebarProps {
   user: any
@@ -81,7 +82,7 @@ export function CanvasSidebar({
             <div className="tnt__site-mark">{(site?.subdomain?.[0] || "S").toUpperCase()}</div>
             <div className="col" style={{ flex: 1, minWidth: 0 }}>
               <span className="tnt__site-name">{site?.site_title || site?.subdomain || "Select site"}</span>
-              <span className="tnt__site-host">{site ? `${site.subdomain}.cncpt.app` : "no sites yet"}</span>
+              <span className="tnt__site-host">{site ? `${site.subdomain}.${rootDomain}` : "no sites yet"}</span>
             </div>
             <ChevronsUpDown style={{ width: 12, height: 12, color: "var(--br-text-secondary)" }} />
           </button>

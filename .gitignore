@@ -36,3 +36,6 @@ next-env.d.ts
 *.zip
 platforms-main/
 scraped-templates/
+
+# fetched Claude Design sources — local reference only (repo is public)
+design-reference/

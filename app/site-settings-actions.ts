@@ -77,7 +77,7 @@ export interface SecuritySettings {
 // Ensure table exists
 async function ensureSiteSettingsTableExists() {
   await sql`
-    CREATE TABLE IF NOT EXISTS site_settings (
+    CREATE TABLE IF NOT EXISTS subdomain_settings (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       subdomain VARCHAR(255) NOT NULL UNIQUE,
       site_title VARCHAR(255),
@@ -116,13 +116,13 @@ export async function getSiteSettings(subdomain: string): Promise<SiteSettings |
     await ensureSiteSettingsTableExists()
 
     const result = await sql`
-      SELECT * FROM site_settings WHERE subdomain = ${subdomain}
+      SELECT * FROM subdomain_settings WHERE subdomain = ${subdomain}
     `
 
     if (result.length === 0) {
       // Create default settings
       const newSettings = await sql`
-        INSERT INTO site_settings (subdomain)
+        INSERT INTO subdomain_settings (subdomain)
         VALUES (${subdomain})
         RETURNING *
       `
@@ -151,13 +151,13 @@ export async function updateGeneralSettings(
 
     // Upsert settings
     await sql`
-      INSERT INTO site_settings (subdomain, site_title, site_tagline, site_description, visibility)
+      INSERT INTO subdomain_settings (subdomain, site_title, site_tagline, site_description, visibility)
       VALUES (${subdomain}, ${settings.site_title ?? null}, ${settings.site_tagline ?? null}, ${settings.site_description ?? null}, ${settings.visibility ?? null})
       ON CONFLICT (subdomain) DO UPDATE SET
-        site_title = COALESCE(${settings.site_title ?? null}, site_settings.site_title),
-        site_tagline = COALESCE(${settings.site_tagline ?? null}, site_settings.site_tagline),
-        site_description = COALESCE(${settings.site_description ?? null}, site_settings.site_description),
-        visibility = COALESCE(${settings.visibility ?? null}, site_settings.visibility),
+        site_title = COALESCE(${settings.site_title ?? null}, subdomain_settings.site_title),
+        site_tagline = COALESCE(${settings.site_tagline ?? null}, subdomain_settings.site_tagline),
+        site_description = COALESCE(${settings.site_description ?? null}, subdomain_settings.site_description),
+        visibility = COALESCE(${settings.visibility ?? null}, subdomain_settings.visibility),
         updated_at = NOW()
     `
 
@@ -183,7 +183,7 @@ export async function updateAppearanceSettings(
     await ensureSiteSettingsTableExists()
 
     await sql`
-      INSERT INTO site_settings (subdomain, primary_color, secondary_color, accent_color, font_heading, font_body, theme_preset)
+      INSERT INTO subdomain_settings (subdomain, primary_color, secondary_color, accent_color, font_heading, font_body, theme_preset)
       VALUES (${subdomain}, ${settings.primary_color}, ${settings.secondary_color}, ${settings.accent_color}, ${settings.font_heading}, ${settings.font_body}, ${settings.theme_preset})
       ON CONFLICT (subdomain) DO UPDATE SET
         primary_color = ${settings.primary_color},
@@ -217,7 +217,7 @@ export async function updateSeoSettings(
     await ensureSiteSettingsTableExists()
 
     await sql`
-      INSERT INTO site_settings (subdomain, meta_title, meta_description, og_image_url, favicon_url, sitemap_enabled)
+      INSERT INTO subdomain_settings (subdomain, meta_title, meta_description, og_image_url, favicon_url, sitemap_enabled)
       VALUES (${subdomain}, ${settings.meta_title}, ${settings.meta_description}, ${settings.og_image_url}, ${settings.favicon_url}, ${settings.sitemap_enabled})
       ON CONFLICT (subdomain) DO UPDATE SET
         meta_title = ${settings.meta_title},
@@ -258,7 +258,7 @@ export async function updateSecuritySettings(
 
     if (passwordHash) {
       await sql`
-        INSERT INTO site_settings (subdomain, password_protected, password_hash, security_headers_enabled)
+        INSERT INTO subdomain_settings (subdomain, password_protected, password_hash, security_headers_enabled)
         VALUES (${subdomain}, ${settings.password_protected}, ${passwordHash}, ${settings.security_headers_enabled})
         ON CONFLICT (subdomain) DO UPDATE SET
           password_protected = ${settings.password_protected},
@@ -268,7 +268,7 @@ export async function updateSecuritySettings(
       `
     } else {
       await sql`
-        INSERT INTO site_settings (subdomain, password_protected, security_headers_enabled)
+        INSERT INTO subdomain_settings (subdomain, password_protected, security_headers_enabled)
         VALUES (${subdomain}, ${settings.password_protected}, ${settings.security_headers_enabled})
         ON CONFLICT (subdomain) DO UPDATE SET
           password_protected = ${settings.password_protected},
