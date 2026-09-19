@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { syncUserToCms, recordSignIn } from "@/lib/auth-sync"
+import { stackServerApp } from "@/stack"
+import { rateLimitCheck, RATE_LIMIT_PRESETS } from "@/lib/cms/rate-limit"
 
 export const dynamic = "force-dynamic"
 
@@ -18,13 +20,23 @@ export const dynamic = "force-dynamic"
  * user record on first login and updates it on subsequent logins.
  */
 export async function POST(request: NextRequest) {
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.auth, { name: "auth" })
+  if (limited) return limited
   try {
-    const body = await request.json()
-    const { stackAuthId, email, name, avatar } = body
+    // Identity comes from the Stack Auth session, never from the body.
+    const sessionUser = await stackServerApp.getUser()
+    if (!sessionUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+    const body = await request.json().catch(() => ({}))
+    const stackAuthId = sessionUser.id
+    const email = sessionUser.primaryEmail
+    const name = (typeof body?.name === "string" && body.name) || sessionUser.displayName || undefined
+    const avatar = (typeof body?.avatar === "string" && body.avatar) || sessionUser.profileImageUrl || undefined
 
-    if (!stackAuthId || !email) {
+    if (!email) {
       return NextResponse.json(
-        { error: "stackAuthId and email are required" },
+        { error: "Stack Auth account has no primary email" },
         { status: 400 }
       )
     }

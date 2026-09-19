@@ -53,7 +53,45 @@ export const RATE_LIMIT_PRESETS = {
   upload: { maxRequests: 20, windowMs: 60_000, keyPrefix: 'media-upload' } satisfies RateLimitConfig,
   /** Presigned URL generation: 30 req / 60s */
   presign: { maxRequests: 30, windowMs: 60_000, keyPrefix: 'media-presign' } satisfies RateLimitConfig,
+  /** Anonymous storefront writes (votes, registrations, back-in-stock, discount codes): 20 req / 60s */
+  publicWrite: { maxRequests: 20, windowMs: 60_000 } satisfies RateLimitConfig,
+  /** Anonymous reads that hit the database (availability, lookups): 60 req / 60s */
+  publicRead: { maxRequests: 60, windowMs: 60_000 } satisfies RateLimitConfig,
+  /** Payment intent / session creation: 20 req / 60s */
+  payment: { maxRequests: 20, windowMs: 60_000 } satisfies RateLimitConfig,
+  /** Analytics beacon: 120 req / 60s */
+  beacon: { maxRequests: 120, windowMs: 60_000 } satisfies RateLimitConfig,
 } as const;
+
+// ---------------------------------------------------------------------------
+// In-memory fallback — used when the Redis backend is unset or unreachable.
+// Per function instance only (a stopgap, not DDoS protection), but it keeps
+// brute-force and spam limits meaningful instead of failing open.
+// ---------------------------------------------------------------------------
+
+const memoryBuckets = new Map<string, number[]>();
+const MEMORY_MAX_KEYS = 10_000;
+
+function memoryLimit(key: string, maxRequests: number, windowMs: number): { success: boolean; reset: number } {
+  const now = Date.now();
+  const since = now - windowMs;
+  const hits = (memoryBuckets.get(key) ?? []).filter((t) => t > since);
+  if (hits.length >= maxRequests) {
+    memoryBuckets.set(key, hits);
+    return { success: false, reset: hits[0] + windowMs };
+  }
+  hits.push(now);
+  memoryBuckets.set(key, hits);
+  if (memoryBuckets.size > MEMORY_MAX_KEYS) {
+    for (const [k, v] of memoryBuckets) {
+      if (v.every((t) => t <= since)) memoryBuckets.delete(k);
+      if (memoryBuckets.size <= MEMORY_MAX_KEYS / 2) break;
+    }
+  }
+  return { success: true, reset: now + windowMs };
+}
+
+const hasRedisBackend = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
 
 // ---------------------------------------------------------------------------
 // Limiter cache — one Ratelimit instance per unique config
@@ -150,16 +188,21 @@ export async function rateLimitCheck(
   const prefix = config.keyPrefix ?? path;
   const key = `${prefix}:${ip}`;
 
-  const limiter = getLimiter({ maxRequests: resolved.maxRequests, windowMs: resolved.windowMs });
   let success: boolean;
   let reset: number;
-  try {
-    ({ success, reset } = await limiter.limit(key));
-  } catch (error) {
-    // Rate limiting must never take a route down with it — if the Redis
-    // backend is unreachable (e.g. a deleted Upstash instance), fail open.
-    console.error('[rate-limit] backend unavailable, failing open:', error);
-    return null;
+  if (hasRedisBackend) {
+    try {
+      const limiter = getLimiter({ maxRequests: resolved.maxRequests, windowMs: resolved.windowMs });
+      ({ success, reset } = await limiter.limit(key));
+    } catch (error) {
+      // Rate limiting must never take a route down with it — if the Redis
+      // backend is unreachable (e.g. a deleted Upstash instance), degrade to
+      // the per-instance in-memory limiter instead of failing open.
+      console.error('[rate-limit] backend unavailable, using in-memory fallback:', error);
+      ({ success, reset } = memoryLimit(key, resolved.maxRequests, resolved.windowMs));
+    }
+  } else {
+    ({ success, reset } = memoryLimit(key, resolved.maxRequests, resolved.windowMs));
   }
 
   if (!success) {

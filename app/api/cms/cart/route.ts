@@ -10,6 +10,7 @@ import { cookies } from 'next/headers';
 import { getOrCreateCart, getCartStats } from '@/lib/cms/cart';
 import { getCurrentUserId } from '@/lib/cms/cart/auth';
 import { withTenant } from '@/lib/cms/api/tenant';
+import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit';
 
 export const dynamic = 'force-dynamic'
 
@@ -77,6 +78,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new cart (explicit creation with session)
 export async function POST(request: NextRequest) {
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.cart, { name: 'cart' });
+  if (limited) return limited;
   return withTenant(request, async () => {
     try {
     const body = await request.json().catch(() => ({}));

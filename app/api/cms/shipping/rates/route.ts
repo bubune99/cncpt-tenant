@@ -13,6 +13,7 @@ import {
 } from '@/lib/cms/shippo'
 import type { Parcel, ShippingAddress } from '@/lib/cms/shippo/types'
 import { withTenant } from '@/lib/cms/api/tenant'
+import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,6 +28,8 @@ interface RatesRequestBody {
 }
 
 export async function POST(request: NextRequest) {
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.cart, { name: 'cart' })
+  if (limited) return limited
   return withTenant(request, async () => {
   try {
     const body: RatesRequestBody = await request.json()

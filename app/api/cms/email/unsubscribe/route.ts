@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { unsubscribeById, unsubscribeEmail } from '@/lib/cms/email/subscriptions'
 import { withTenant } from '@/lib/cms/api/tenant'
+import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,6 +15,8 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
 // One-click unsubscribe (List-Unsubscribe-Post header support)
 export async function POST(request: NextRequest) {
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.forms, { name: 'forms' })
+  if (limited) return limited
   return withTenant(request, async () => {
   try {
     const contentType = request.headers.get('content-type') || ''

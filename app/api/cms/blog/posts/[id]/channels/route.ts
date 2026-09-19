@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/cms/db'
 import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant'
+import { requireTenantMember } from '@/lib/cms/api/guard'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,7 +24,7 @@ const upsertChannelSchema = z.object({
   scheduledAt: z.string().optional(),
 })
 
-export async function GET(_request: NextRequest, context: RouteContext) {
+async function _GET(_request: NextRequest, context: RouteContext) {
   return withTenant(_request, async () => {
     try {
       const { id: postId } = await context.params
@@ -81,3 +82,6 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     }
   })
 }
+
+// Tenant-member guard: signed-in + owner/team access to this tenant (or platform super admin).
+export const GET = requireTenantMember('view', _GET)

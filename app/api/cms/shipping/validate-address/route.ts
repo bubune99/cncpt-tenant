@@ -8,10 +8,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { validateAddress, getShippingSettings } from '@/lib/cms/shippo'
 import type { ShippingAddress } from '@/lib/cms/shippo/types'
 import { withTenant } from '@/lib/cms/api/tenant'
+import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.cart, { name: 'cart' })
+  if (limited) return limited
   return withTenant(request, async () => {
   try {
     const address: ShippingAddress = await request.json()

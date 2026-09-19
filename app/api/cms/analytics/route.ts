@@ -9,10 +9,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAnalyticsSummary, trackServerEvent } from '@/lib/cms/analytics'
 import { prisma } from '@/lib/cms/db'
 import { withTenant } from '@/lib/cms/api/tenant'
+import { requireTenantMember } from '@/lib/cms/api/guard'
+import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: NextRequest) {
+async function _GET(request: NextRequest) {
   return withTenant(request, async (tenant) => {
   try {
     const { searchParams } = new URL(request.url)
@@ -82,6 +84,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.beacon, { name: 'beacon' })
+  if (limited) return limited
   return withTenant(request, async () => {
   try {
     const body = await request.json()
@@ -117,3 +121,6 @@ export async function POST(request: NextRequest) {
   }
   })
 }
+
+// Tenant-member guard: signed-in + owner/team access to this tenant (or platform super admin).
+export const GET = requireTenantMember('view', _GET)

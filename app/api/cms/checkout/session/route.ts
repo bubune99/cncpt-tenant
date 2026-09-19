@@ -14,6 +14,10 @@ import {
 } from '@/lib/cms/stripe'
 import type { CreateCheckoutSessionRequest, CheckoutItem } from '@/lib/cms/stripe/types'
 import { withTenant } from '@/lib/cms/api/tenant'
+import { stackServerApp } from '@/lib/cms/stack'
+import { isSuperAdmin } from '@/lib/super-admin'
+import { canAccessSubdomain } from '@/lib/team-auth'
+import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,7 +33,9 @@ interface CreateSessionBody {
 }
 
 export async function POST(request: NextRequest) {
-  return withTenant(request, async () => {
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.payment, { name: 'payment' })
+  if (limited) return limited
+  return withTenant(request, async (tenant) => {
   try {
     const settings = await getStripeSettings()
 
@@ -87,6 +93,19 @@ export async function POST(request: NextRequest) {
         body.customerEmail = order.customer.email
       }
     } else if (body.items && body.items.length > 0) {
+      // Ad-hoc items carry client-supplied prices: staff only. Shoppers go
+      // through /api/cms/checkout (catalog-priced) or an orderId.
+      const staff = await stackServerApp.getUser()
+      const allowed =
+        !!staff &&
+        ((await isSuperAdmin(staff.id)) ||
+          (await canAccessSubdomain(staff.id, tenant.subdomain, 'edit')).hasAccess)
+      if (!allowed) {
+        return NextResponse.json(
+          { error: 'Provide an orderId; ad-hoc priced items require staff access' },
+          { status: 403 }
+        )
+      }
       items = body.items
     } else {
       return NextResponse.json(

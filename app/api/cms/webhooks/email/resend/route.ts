@@ -18,11 +18,18 @@ export async function POST(request: NextRequest) {
     const body = await request.text()
     const payload = JSON.parse(body)
 
-    // Verify webhook signature if configured
+    // Verify webhook signature — fail closed when unconfigured or unsigned.
     const signature = request.headers.get('svix-signature')
     const webhookSecret = process.env.RESEND_WEBHOOK_SECRET
 
-    if (webhookSecret && signature) {
+    if (!webhookSecret) {
+      console.error('[resend-webhook] RESEND_WEBHOOK_SECRET not set — rejecting delivery')
+      return NextResponse.json({ error: 'Webhook not configured' }, { status: 503 })
+    }
+    if (!signature) {
+      return NextResponse.json({ error: 'Missing signature' }, { status: 401 })
+    }
+    {
       const isValid = verifyResendWebhook(body, signature, webhookSecret)
       if (!isValid) {
         console.error('Invalid Resend webhook signature')

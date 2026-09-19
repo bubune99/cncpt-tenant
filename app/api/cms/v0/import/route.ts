@@ -9,6 +9,7 @@ import { stackServerApp } from "@/lib/cms/stack";
 import { getV0ImportAgent } from "@/lib/cms/v0-agent";
 import type { V0ImportRequest } from "@/lib/cms/v0-agent";
 import { withTenant } from '@/lib/cms/api/tenant';
+import { requireTenantMember } from "@/lib/cms/api/guard";
 
 export const dynamic = 'force-dynamic'
 
@@ -22,7 +23,7 @@ export const dynamic = 'force-dynamic'
  * - category?: string - Category for the template
  * - description?: string - Custom description
  */
-export async function POST(request: NextRequest) {
+async function _POST(request: NextRequest) {
   return withTenant(request, async () => {
   try {
     // Check authentication
@@ -94,3 +95,6 @@ export async function POST(request: NextRequest) {
   }
   })
 }
+
+// Tenant-member guard: signed-in + owner/team access to this tenant (or platform super admin).
+export const POST = requireTenantMember("edit", _POST);

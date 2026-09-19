@@ -14,11 +14,14 @@ import {
   getAvailableSlots,
 } from '@/lib/booking'
 import type { CreateBookingInput, BookingStatus } from '@/types/booking'
+import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
 // Create a new booking (public)
 export async function POST(request: NextRequest) {
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.forms, { name: 'forms' })
+  if (limited) return limited
   try {
     const body = await request.json()
 

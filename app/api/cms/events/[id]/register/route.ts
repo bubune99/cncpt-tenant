@@ -10,12 +10,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getEvent, listTicketTypes, createRegistration } from '@/lib/cms/events'
 import { withTenant } from '@/lib/cms/api/tenant'
+import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit'
 
 interface RouteParams {
   params: Promise<{ id: string }>
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.forms, { name: 'forms' })
+  if (limited) return limited
   return withTenant(request, async () => {
     try {
       const { id } = await params

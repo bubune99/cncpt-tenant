@@ -25,6 +25,8 @@ import {
   tenantRequiredResponse,
   type CmsTenantContext,
 } from '@/lib/cms/tenant-context'
+import { canAccessSubdomain } from '@/lib/team-auth'
+import { isSuperAdmin } from '@/lib/super-admin'
 
 // ---------------------------------------------------------------------------
 //  Types
@@ -269,6 +271,25 @@ export function withContentAuth(
     const { key: apiKey, error: authError } = await resolveApiKey(request)
     if (authError) {
       return authError // Already has CORS headers
+    }
+
+    // An API key is only as powerful as its owner on THIS tenant. Without
+    // this, any user's key + a spoofed x-subdomain header reads/writes every
+    // tenant's content.
+    if (apiKey) {
+      const write = !['GET', 'HEAD', 'OPTIONS'].includes(request.method.toUpperCase())
+      const superAdmin = await isSuperAdmin(apiKey.userId)
+      if (!superAdmin) {
+        const access = await canAccessSubdomain(apiKey.userId, tenant.subdomain, write ? 'edit' : 'view')
+        if (!access.hasAccess) {
+          return withCors(
+            NextResponse.json(
+              { error: 'Forbidden: this API key has no access to this site' },
+              { status: 403 }
+            )
+          )
+        }
+      }
     }
 
     // Run handler within tenant context

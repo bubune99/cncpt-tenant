@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getInvitationByToken } from "@/lib/teams"
+import { rateLimitCheck, RATE_LIMIT_PRESETS } from "@/lib/cms/rate-limit"
 
 export const dynamic = 'force-dynamic'
 
@@ -7,6 +8,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.publicRead, { name: "publicRead" })
+  if (limited) return limited
   try {
     const { token } = await params
 

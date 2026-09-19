@@ -10,6 +10,7 @@ import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import { prisma } from '@/lib/cms/db'
 import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant'
+import { requireTenantMember } from '@/lib/cms/api/guard'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,7 +21,7 @@ const createDashboardSchema = z.object({
   layout: z.unknown().optional(),
 })
 
-export async function GET(request: NextRequest) {
+async function _GET(request: NextRequest) {
   return withTenant(request, async (tenant) => {
     try {
       const dashboards = await prisma.analyticsDashboard.findMany({
@@ -69,3 +70,6 @@ export async function POST(request: NextRequest) {
     }
   })
 }
+
+// Tenant-member guard: signed-in + owner/team access to this tenant (or platform super admin).
+export const GET = requireTenantMember('view', _GET)

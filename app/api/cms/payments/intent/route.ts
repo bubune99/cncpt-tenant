@@ -22,6 +22,8 @@ import {
 import { createOrderPaymentIntent } from '@/lib/cms/stripe/product-sync'
 import type { CreatePaymentIntentRequest } from '@/lib/cms/stripe/types'
 import { withTenant } from '@/lib/cms/api/tenant'
+import { requireTenantMember } from '@/lib/cms/api/guard'
+import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,6 +45,8 @@ interface CreateIntentBody {
 }
 
 export async function POST(request: NextRequest) {
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.payment, { name: 'payment' })
+  if (limited) return limited
   return withTenant(request, async () => {
   try {
     const settings = await getStripeSettings()
@@ -56,8 +60,10 @@ export async function POST(request: NextRequest) {
 
     const body: CreateIntentBody = await request.json()
 
-    // Mode 2: Order-based payment intent
-    if (body.orderId && !body.amount) {
+    // Mode 2: Order-based payment intent. When an orderId is supplied the
+    // amount ALWAYS comes from the order — a client-supplied amount must never
+    // be attached to a real order (price tampering).
+    if (body.orderId) {
       // Use the specialized function for order-based payment intents
       const result = await createOrderPaymentIntent(body.orderId)
 
@@ -159,7 +165,7 @@ export async function GET(request: NextRequest) {
   })
 }
 
-export async function PUT(request: NextRequest) {
+async function _PUT(request: NextRequest) {
   return withTenant(request, async () => {
   try {
     const body = await request.json()
@@ -193,3 +199,7 @@ export async function PUT(request: NextRequest) {
   }
   })
 }
+
+// Capture / cancel are staff operations (partial capture with a client amount
+// would let a shopper lower what the merchant collects).
+export const PUT = requireTenantMember('edit', _PUT)

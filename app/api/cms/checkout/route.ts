@@ -11,6 +11,9 @@ import type { CreateCheckoutSessionRequest, CheckoutItem } from '@/lib/cms/strip
 import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit';
 import { validateCsrf } from '@/lib/cms/csrf';
 import { withTenant } from '@/lib/cms/api/tenant';
+import { stackServerApp } from '@/lib/cms/stack';
+import { isSuperAdmin } from '@/lib/super-admin';
+import { canAccessSubdomain } from '@/lib/team-auth';
 
 // =============================================================================
 // TYPES
@@ -83,7 +86,7 @@ async function generateOrderNumber(): Promise<string> {
 // =============================================================================
 
 export async function POST(request: NextRequest) {
-  return withTenant(request, async () => {
+  return withTenant(request, async (tenant) => {
   const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.checkout);
   if (limited) return limited;
 
@@ -105,6 +108,23 @@ export async function POST(request: NextRequest) {
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: 'Cart items required' }, { status: 400 });
+    }
+
+    // Client-supplied name+price items bypass catalog pricing. Only tenant
+    // staff (or platform super admins) may create those; shoppers must
+    // reference catalog products so every price comes from the database.
+    if (items.some((item) => !item.productId)) {
+      const staff = await stackServerApp.getUser();
+      const allowed =
+        !!staff &&
+        ((await isSuperAdmin(staff.id)) ||
+          (await canAccessSubdomain(staff.id, tenant.subdomain, 'edit')).hasAccess);
+      if (!allowed) {
+        return NextResponse.json(
+          { error: 'Each item must reference a catalog productId' },
+          { status: 403 }
+        );
+      }
     }
 
     // Resolve cart items to checkout items

@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/cms/db'
 import { withTenant } from '@/lib/cms/api/tenant'
+import { requireTenantMember } from '@/lib/cms/api/guard'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,7 +26,7 @@ const analyticsQuerySchema = z.object({
   limit: z.number().int().min(1).max(200).optional(),
 })
 
-export async function POST(request: NextRequest) {
+async function _POST(request: NextRequest) {
   return withTenant(request, async (tenant) => {
     try {
       const body: unknown = await request.json()
@@ -84,3 +85,6 @@ export async function POST(request: NextRequest) {
     }
   })
 }
+
+// Tenant-member guard: signed-in + owner/team access to this tenant (or platform super admin).
+export const POST = requireTenantMember('view', _POST)

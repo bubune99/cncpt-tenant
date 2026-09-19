@@ -7,10 +7,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { subscribeEmail } from '@/lib/cms/email/subscriptions'
 import { withTenant } from '@/lib/cms/api/tenant'
+import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.emailSubscribe, { name: 'emailSubscribe' })
+  if (limited) return limited
   return withTenant(request, async () => {
   try {
     const body = await request.json()

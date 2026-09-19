@@ -22,6 +22,7 @@ import {
   assignWorkflowToOrder,
 } from '@/lib/cms/order-workflows'
 import { withTenant } from '@/lib/cms/api/tenant'
+import { requireTenantMember } from '@/lib/cms/api/guard'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,7 +30,7 @@ interface RouteParams {
   params: Promise<{ id: string }>
 }
 
-export async function GET(request: NextRequest, { params }: RouteParams) {
+async function _GET(request: NextRequest, { params }: RouteParams) {
   return withTenant(request, async () => {
     try {
     const { id: orderId } = await params
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   })
 }
 
-export async function POST(request: NextRequest, { params }: RouteParams) {
+async function _POST(request: NextRequest, { params }: RouteParams) {
   return withTenant(request, async () => {
     try {
     const { id: orderId } = await params
@@ -142,7 +143,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   })
 }
 
-export async function PUT(request: NextRequest, { params }: RouteParams) {
+async function _PUT(request: NextRequest, { params }: RouteParams) {
   return withTenant(request, async () => {
     try {
     const { id: orderId } = await params
@@ -208,3 +209,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
   })
 }
+
+// Tenant-member guard: signed-in + owner/team access to this tenant (or platform super admin).
+export const GET = requireTenantMember('view', _GET)
+export const POST = requireTenantMember('edit', _POST)
+export const PUT = requireTenantMember('edit', _PUT)

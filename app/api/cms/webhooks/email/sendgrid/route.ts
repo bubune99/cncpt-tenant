@@ -23,7 +23,15 @@ export async function POST(request: NextRequest) {
     const timestamp = request.headers.get('X-Twilio-Email-Event-Webhook-Timestamp')
     const verificationKey = process.env.SENDGRID_WEBHOOK_VERIFICATION_KEY
 
-    if (verificationKey && signature && timestamp) {
+    // Fail closed when unconfigured or unsigned.
+    if (!verificationKey) {
+      console.error('[sendgrid-webhook] SENDGRID_WEBHOOK_VERIFICATION_KEY not set — rejecting delivery')
+      return NextResponse.json({ error: 'Webhook not configured' }, { status: 503 })
+    }
+    if (!signature || !timestamp) {
+      return NextResponse.json({ error: 'Missing signature' }, { status: 401 })
+    }
+    {
       const isValid = verifySendGridWebhook(body, signature, timestamp, verificationKey)
       if (!isValid) {
         console.error('Invalid SendGrid webhook signature')

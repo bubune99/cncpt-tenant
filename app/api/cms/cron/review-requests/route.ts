@@ -18,6 +18,7 @@ import {
   getOrdersForReviewRequest,
   sendReviewRequestEmail,
 } from '@/lib/cms/reviews';
+import { isAuthorizedCron } from '@/lib/cms/cron-auth';
 
 export const dynamic = 'force-dynamic'
 
@@ -25,10 +26,7 @@ export const dynamic = 'force-dynamic'
 export async function POST(request: NextRequest) {
   try {
     // Verify cron secret for security (fail closed — deny if not configured)
-    const cronSecret = request.headers.get('x-cron-secret');
-    const expectedSecret = process.env.CRON_SECRET;
-
-    if (!expectedSecret || cronSecret !== expectedSecret) {
+    if (!isAuthorizedCron(request)) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }

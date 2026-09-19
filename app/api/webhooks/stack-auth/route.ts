@@ -41,8 +41,8 @@ interface StackAuthWebhookPayload {
  * Stack Auth uses SVIX for webhook delivery, which signs payloads with
  * HMAC-SHA256. The signature is in the `svix-signature` header.
  *
- * If STACK_AUTH_WEBHOOK_SECRET is not set, verification is skipped
- * (development mode). In production, always set this env var.
+ * If STACK_AUTH_WEBHOOK_SECRET is not set, every delivery is rejected
+ * (fail closed).
  */
 async function verifyWebhookSignature(
   request: NextRequest,
@@ -50,12 +50,12 @@ async function verifyWebhookSignature(
 ): Promise<boolean> {
   const secret = process.env.STACK_AUTH_WEBHOOK_SECRET
 
-  // In development, skip verification if no secret is configured
+  // Fail closed: with no secret configured every delivery is rejected.
   if (!secret) {
-    console.warn(
-      "[stack-auth-webhook] No STACK_AUTH_WEBHOOK_SECRET set — skipping signature verification. Set this in production!"
+    console.error(
+      "[stack-auth-webhook] STACK_AUTH_WEBHOOK_SECRET is not set — rejecting delivery. Configure it in Vercel."
     )
-    return true
+    return false
   }
 
   const svixId = request.headers.get("svix-id")

@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { get } from "@vercel/edge-config"
+import { isPublicApi, AUTH_COOKIE_RE } from "./lib/public-api"
 
 // Define rootDomain inline for Edge runtime compatibility
 const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "localhost:3000"
@@ -99,6 +100,19 @@ export async function middleware(request: NextRequest) {
   const isContentApiRoute = pathname.startsWith("/api/cms/content")
   if (!isContentApiRoute) {
     requestHeaders.delete("x-subdomain")
+  }
+
+  // SECURITY BACKSTOP: every /api route needs a session cookie unless it is on
+  // the public allowlist (lib/public-api.ts). This only proves "someone is
+  // signed in" — handlers still enforce permissions / tenant access. It stops
+  // a forgotten guard from being reachable anonymously.
+  if (pathname.startsWith("/api") && !isPublicApi(pathname, request.method)) {
+    const hasAuthCookie = request.cookies
+      .getAll()
+      .some((c) => AUTH_COOKIE_RE.test(c.name) && c.value.length > 0)
+    if (!hasAuthCookie) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
   }
 
   // Maintenance mode check

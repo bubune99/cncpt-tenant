@@ -10,10 +10,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { uploadTenantMedia, getStorageConfig } from "@/lib/cms/r2";
 import { withRequiredTenantContext } from '@/lib/cms/tenant-context';
 import type { MediaCategory } from "@/lib/cms/r2";
+import { requireTenantMember } from '@/lib/cms/api/guard';
 
 export const dynamic = 'force-dynamic'
 
-export const POST = withRequiredTenantContext(async (request: NextRequest, tenantContext) => {
+const _POST = withRequiredTenantContext(async (request: NextRequest, tenantContext) => {
   const storageConfig = await getStorageConfig();
   if (!storageConfig.isConfigured) {
     return NextResponse.json(
@@ -35,7 +36,8 @@ export const POST = withRequiredTenantContext(async (request: NextRequest, tenan
     }
 
     // Validate file type
-    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"];
+    // SVG is excluded: unsanitised SVG served inline is stored XSS.
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
         { error: "Invalid file type. Allowed: JPEG, PNG, GIF, WebP, SVG" },
@@ -83,3 +85,6 @@ export const POST = withRequiredTenantContext(async (request: NextRequest, tenan
     );
   }
 })
+
+// Uploads are a staff operation: signed-in + edit access to this tenant.
+export const POST = requireTenantMember('edit', _POST);

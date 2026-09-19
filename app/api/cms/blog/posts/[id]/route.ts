@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPost, updatePost, deletePost } from '@/lib/cms/blog'
 import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant'
+import { requireTenantMember } from '@/lib/cms/api/guard'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +17,7 @@ interface RouteParams {
   params: Promise<{ id: string }>
 }
 
-export async function GET(request: NextRequest, { params }: RouteParams) {
+async function _GET(request: NextRequest, { params }: RouteParams) {
   return withTenant(request, async (tenant) => {
     try {
       const { id } = await params
@@ -92,3 +93,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
   })
 }
+
+// Tenant-member guard: signed-in + owner/team access to this tenant (or platform super admin).
+export const GET = requireTenantMember('view', _GET)

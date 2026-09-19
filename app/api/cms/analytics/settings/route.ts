@@ -10,10 +10,11 @@ import { prisma } from '@/lib/cms/db'
 import { getAnalyticsSettings, clearAnalyticsSettingsCache } from '@/lib/cms/analytics'
 import type { AnalyticsSettings } from '@/lib/cms/analytics/types'
 import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant'
+import { requireTenantMember } from '@/lib/cms/api/guard'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: NextRequest) {
+async function _GET(request: NextRequest) {
   return withTenant(request, async () => {
   try {
     const settings = await getAnalyticsSettings()
@@ -121,3 +122,6 @@ export async function PUT(request: NextRequest) {
   }
   })
 }
+
+// Tenant-member guard: signed-in + owner/team access to this tenant (or platform super admin).
+export const GET = requireTenantMember('view', _GET)

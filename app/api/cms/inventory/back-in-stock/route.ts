@@ -8,10 +8,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { subscribeToBackInStock, unsubscribeFromBackInStock } from '@/lib/cms/inventory';
 import { withTenant } from '@/lib/cms/api/tenant';
+import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit';
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.publicWrite, { name: 'publicWrite' });
+  if (limited) return limited;
   return withTenant(request, async () => {
   try {
     const body = await request.json();
@@ -57,6 +60,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.publicWrite, { name: 'publicWrite' });
+  if (limited) return limited;
   return withTenant(request, async () => {
   try {
     const { searchParams } = new URL(request.url);

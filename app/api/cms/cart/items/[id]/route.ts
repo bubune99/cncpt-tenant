@@ -10,6 +10,7 @@ import { cookies } from 'next/headers';
 import { getOrCreateCart, updateCartItem, removeFromCart } from '@/lib/cms/cart';
 import { getCurrentUserId } from '@/lib/cms/cart/auth';
 import { withTenant } from '@/lib/cms/api/tenant';
+import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit';
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +22,8 @@ interface RouteParams {
 
 // PATCH - Update item quantity
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.cart, { name: 'cart' });
+  if (limited) return limited;
   return withTenant(request, async () => {
     try {
     const { id: itemId } = await params;
@@ -79,6 +82,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
 // DELETE - Remove item from cart
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.cart, { name: 'cart' });
+  if (limited) return limited;
   return withTenant(request, async () => {
     try {
     const { id: itemId } = await params;

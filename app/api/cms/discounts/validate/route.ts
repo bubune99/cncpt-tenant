@@ -12,6 +12,7 @@ import {
   getDiscountSummary,
 } from '@/lib/cms/discounts';
 import { withTenant } from '@/lib/cms/api/tenant';
+import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit';
 
 export const dynamic = 'force-dynamic'
 
@@ -31,6 +32,8 @@ interface ValidateRequest {
 }
 
 export async function POST(request: NextRequest) {
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.publicWrite, { name: 'publicWrite' });
+  if (limited) return limited;
   return withTenant(request, async () => {
     try {
     const body: ValidateRequest = await request.json();

@@ -10,10 +10,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { checkStorageConfig } from '@/lib/cms/media/upload'
 import { getCorsConfigJson } from '@/lib/cms/media/types'
 import { stackServerApp } from '@/lib/cms/stack'
+import { requireTenantMember } from '@/lib/cms/api/guard'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: NextRequest) {
+async function _GET(request: NextRequest) {
   try {
     // Auth check
     const user = await stackServerApp.getUser()
@@ -97,3 +98,6 @@ Note: R2_ACCOUNT_ID is used to construct the API endpoint automatically.
     )
   }
 }
+
+// Tenant-member guard: signed-in + owner/team access to this tenant (or platform super admin).
+export const GET = requireTenantMember('view', _GET)

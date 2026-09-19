@@ -9,10 +9,13 @@ import {
   getBookingSettings,
   getAvailableSlots,
 } from '@/lib/booking'
+import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.publicRead, { name: 'publicRead' })
+  if (limited) return limited
   try {
     const { searchParams } = new URL(request.url)
     const serviceId = searchParams.get('serviceId')

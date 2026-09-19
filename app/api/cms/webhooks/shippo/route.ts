@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createHmac } from 'crypto'
+import { createHmac, timingSafeEqual } from 'crypto'
 import { prisma } from '@/lib/cms/db'
 import { getShippingSettings } from '@/lib/cms/shippo'
 import { handleShippoTrackingEvent } from '@/lib/cms/order-workflows/progress'
@@ -58,7 +58,9 @@ function verifySignature(payload: string, signature: string, secret: string): bo
   const hmac = createHmac('sha256', secret)
   hmac.update(payload)
   const expectedSignature = hmac.digest('hex')
-  return signature === expectedSignature
+  const a = Buffer.from(signature)
+  const b = Buffer.from(expectedSignature)
+  return a.length === b.length && timingSafeEqual(a, b)
 }
 
 export async function POST(request: NextRequest) {
@@ -70,8 +72,15 @@ export async function POST(request: NextRequest) {
     const settings = await getShippingSettings()
     const webhookSecret = settings.shippoWebhookSecret || process.env.SHIPPO_WEBHOOK_SECRET
 
-    // Verify signature if secret is configured
-    if (webhookSecret && signature) {
+    // Fail closed: no secret configured → reject; no signature → reject.
+    if (!webhookSecret) {
+      console.error('[shippo-webhook] no webhook secret configured — rejecting delivery')
+      return NextResponse.json({ error: 'Webhook not configured' }, { status: 503 })
+    }
+    if (!signature) {
+      return NextResponse.json({ error: 'Missing signature' }, { status: 401 })
+    }
+    {
       if (!verifySignature(rawBody, signature, webhookSecret)) {
         console.error('Invalid webhook signature')
         return NextResponse.json(

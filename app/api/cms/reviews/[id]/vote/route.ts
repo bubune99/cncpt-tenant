@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { voteReview, getReviewById } from '@/lib/cms/reviews';
 import { withTenant } from '@/lib/cms/api/tenant';
+import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit';
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +17,8 @@ interface RouteParams {
 
 // POST - Vote on a review
 export async function POST(request: NextRequest, { params }: RouteParams) {
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.publicWrite, { name: 'publicWrite' });
+  if (limited) return limited;
   return withTenant(request, async () => {
     try {
     const { id } = await params;

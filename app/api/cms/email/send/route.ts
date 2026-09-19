@@ -30,6 +30,7 @@ import { renderCartAbandonmentEmail } from '@/lib/cms/email/templates/cart-aband
 import { renderTemplate, StoreConfig } from '@/lib/cms/email/templates/renderer'
 import { getEmailSettings } from '@/lib/cms/settings'
 import { withTenant } from '@/lib/cms/api/tenant'
+import { requireTenantMember } from '@/lib/cms/api/guard'
 
 export const dynamic = 'force-dynamic'
 
@@ -108,7 +109,7 @@ function normalizeEmails(input: EmailAddress | EmailAddress[] | string | string[
   return arr.map(normalizeEmail)
 }
 
-export async function POST(request: NextRequest) {
+async function _POST(request: NextRequest) {
   return withTenant(request, async () => {
   try {
     const body: SendEmailRequest = await request.json()
@@ -306,7 +307,7 @@ export async function POST(request: NextRequest) {
 /**
  * GET /api/email/send - Get queue status (for async sends)
  */
-export async function GET(request: NextRequest) {
+async function _GET(request: NextRequest) {
   return withTenant(request, async () => {
   try {
     const { searchParams } = new URL(request.url)
@@ -355,3 +356,7 @@ export async function GET(request: NextRequest) {
   }
   })
 }
+
+// Tenant-member guard: signed-in + owner/team access to this tenant (or platform super admin).
+export const POST = requireTenantMember('edit', _POST)
+export const GET = requireTenantMember('view', _GET)

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withTenant } from '@/lib/cms/api/tenant';
+import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit';
 
 // Stub vote endpoint to prevent 404s from ChatSDK message actions
 export async function GET(request: NextRequest) {
@@ -14,6 +15,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.publicWrite, { name: 'publicWrite' });
+  if (limited) return limited;
   return withTenant(request, async () => {
   // Accept vote requests silently — voting not implemented
   return NextResponse.json({ success: true }, { status: 200 });

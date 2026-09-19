@@ -5,19 +5,15 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { sendPendingReminders } from '@/lib/booking'
+import { isAuthorizedCron } from '@/lib/cms/cron-auth'
 
 export const dynamic = 'force-dynamic'
 
-// Cron secret for authentication
-const CRON_SECRET = process.env.CRON_SECRET
 
 export async function GET(request: NextRequest) {
   try {
     // Verify cron secret (fail closed — deny if not configured)
-    const authHeader = request.headers.get('authorization')
-    const cronSecret = authHeader?.replace('Bearer ', '')
-
-    if (!CRON_SECRET || cronSecret !== CRON_SECRET) {
+    if (!isAuthorizedCron(request)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

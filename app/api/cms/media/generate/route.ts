@@ -33,6 +33,7 @@ import { createMedia } from '@/lib/cms/media'
 import { rateLimitCheck } from '@/lib/cms/rate-limit'
 import type { RateLimitConfig } from '@/lib/cms/rate-limit'
 import { getTenantIdBySubdomain } from '@/lib/cms/media/tenant'
+import { requireTenantMember } from '@/lib/cms/api/guard'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60 // Image generation can take 30-60s
@@ -66,7 +67,7 @@ function sanitizeFilename(prompt: string): string {
 // POST handler
 // ---------------------------------------------------------------------------
 
-export async function POST(request: NextRequest) {
+async function _POST(request: NextRequest) {
   try {
     // 1. Auth check
     const user = await stackServerApp.getUser()
@@ -364,7 +365,7 @@ export async function POST(request: NextRequest) {
 // GET - Check image generation availability
 // ---------------------------------------------------------------------------
 
-export async function GET() {
+async function _GET() {
   const available = isImageGenerationAvailable()
   const providers = getAvailableImageProviders()
   const primary = providers[0] ?? null
@@ -376,3 +377,7 @@ export async function GET() {
     providers,
   })
 }
+
+// Tenant-member guard: signed-in + owner/team access to this tenant (or platform super admin).
+export const GET = requireTenantMember('view', _GET)
+export const POST = requireTenantMember('edit', _POST)

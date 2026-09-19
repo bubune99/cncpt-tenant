@@ -113,8 +113,11 @@ export async function resolveRateLimit(input: ResolveInput): Promise<ResolvedLim
     chosenMode = null
   }
 
-  // Effective mode = per-rule override, else master mode.
-  const mode = chosenMode ?? settings.mode
+  // Effective mode = per-rule override, else master mode. The hardcoded
+  // preset is the security floor: when no owner rule matched it ENFORCES
+  // regardless of the master "observe" default (observe only governs
+  // owner-configured rules, so enabling those can never lock anyone out).
+  const mode = chosenMode ?? (source === "preset" ? "enforce" : settings.mode)
 
   return { maxRequests, windowMs, mode, source }
 }

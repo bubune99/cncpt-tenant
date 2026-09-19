@@ -11,6 +11,7 @@ import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import { prisma } from '@/lib/cms/db'
 import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant'
+import { requireTenantMember } from '@/lib/cms/api/guard'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,7 +28,7 @@ const updateDashboardSchema = z.object({
   sharedWith: z.array(z.string()).optional(),
 })
 
-export async function GET(request: NextRequest, context: RouteContext) {
+async function _GET(request: NextRequest, context: RouteContext) {
   return withTenant(request, async (tenant) => {
     try {
       const { id } = await context.params
@@ -117,3 +118,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     }
   })
 }
+
+// Tenant-member guard: signed-in + owner/team access to this tenant (or platform super admin).
+export const GET = requireTenantMember('view', _GET)

@@ -12,6 +12,7 @@ import {
   getCustomerSyncStatus,
 } from '@/lib/cms/stripe/customer-sync'
 import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant'
+import { requireTenantMember } from '@/lib/cms/api/guard'
 
 export const dynamic = 'force-dynamic'
 
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   })
 }
 
-export async function GET(request: NextRequest, { params }: RouteParams) {
+async function _GET(request: NextRequest, { params }: RouteParams) {
   return withTenant(request, async () => {
   try {
     const { id } = await params
@@ -92,3 +93,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
   })
 }
+
+// Tenant-member guard: signed-in + owner/team access to this tenant (or platform super admin).
+export const GET = requireTenantMember('view', _GET)

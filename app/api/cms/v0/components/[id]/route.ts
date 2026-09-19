@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { stackServerApp } from "@/lib/cms/stack";
 import { prisma } from "@/lib/cms/db";
 import { withTenant } from '@/lib/cms/api/tenant';
+import { requireTenantMember } from "@/lib/cms/api/guard";
 
 export const dynamic = 'force-dynamic'
 
@@ -20,7 +21,7 @@ interface RouteParams {
 /**
  * GET - Get component by ID with full details
  */
-export async function GET(request: NextRequest, { params }: RouteParams) {
+async function _GET(request: NextRequest, { params }: RouteParams) {
   return withTenant(request, async () => {
   try {
     // Check authentication
@@ -66,7 +67,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  * - status: DRAFT | ACTIVE | DEPRECATED | ARCHIVED
  * - isPublished: boolean
  */
-export async function PATCH(request: NextRequest, { params }: RouteParams) {
+async function _PATCH(request: NextRequest, { params }: RouteParams) {
   return withTenant(request, async () => {
   try {
     // Check authentication
@@ -141,7 +142,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 /**
  * DELETE - Delete component
  */
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+async function _DELETE(request: NextRequest, { params }: RouteParams) {
   return withTenant(request, async () => {
   try {
     // Check authentication
@@ -182,3 +183,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   }
   })
 }
+
+// Tenant-member guard: signed-in + owner/team access to this tenant (or platform super admin).
+export const GET = requireTenantMember("view", _GET);
+export const PATCH = requireTenantMember("edit", _PATCH);
+export const DELETE = requireTenantMember("edit", _DELETE);

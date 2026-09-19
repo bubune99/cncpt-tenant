@@ -10,6 +10,7 @@ import { stackServerApp } from "@/lib/cms/stack";
 import { prisma } from "@/lib/cms/db";
 import { Prisma } from "@prisma/client";
 import { withTenant } from '@/lib/cms/api/tenant';
+import { requireTenantMember } from "@/lib/cms/api/guard";
 
 export const dynamic = 'force-dynamic'
 
@@ -24,7 +25,7 @@ export const dynamic = 'force-dynamic'
  * - page: Page number (default 1)
  * - limit: Items per page (default 20)
  */
-export async function GET(request: NextRequest) {
+async function _GET(request: NextRequest) {
   return withTenant(request, async () => {
   try {
     // Check authentication
@@ -132,7 +133,7 @@ export async function GET(request: NextRequest) {
  * - sourceCode: string (required)
  * - editorConfig: object (required) - editor component configuration
  */
-export async function POST(request: NextRequest) {
+async function _POST(request: NextRequest) {
   return withTenant(request, async () => {
   try {
     // Check authentication
@@ -195,3 +196,7 @@ export async function POST(request: NextRequest) {
   }
   })
 }
+
+// Tenant-member guard: signed-in + owner/team access to this tenant (or platform super admin).
+export const GET = requireTenantMember("view", _GET);
+export const POST = requireTenantMember("edit", _POST);

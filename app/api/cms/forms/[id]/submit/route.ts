@@ -9,6 +9,7 @@ import { prisma } from '@/lib/cms/db'
 import { headers } from 'next/headers'
 import { sendFormNotification } from '@/lib/cms/forms/notifications'
 import { withTenant } from '@/lib/cms/api/tenant'
+import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +18,8 @@ interface RouteParams {
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.forms, { name: 'forms' })
+  if (limited) return limited
   return withTenant(request, async () => {
     try {
       const { id } = await params

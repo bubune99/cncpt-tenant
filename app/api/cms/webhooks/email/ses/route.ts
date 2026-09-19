@@ -11,6 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { timingSafeEqual } from 'crypto'
 import {
   parseSesWebhook,
   processEmailWebhookEvent,
@@ -18,7 +19,35 @@ import {
 
 export const dynamic = 'force-dynamic'
 
+/**
+ * Shared-secret gate. SNS cannot sign with a customer secret, so the
+ * subscription endpoint must be registered as
+ *   https://<tenant>/api/cms/webhooks/email/ses?token=<SES_WEBHOOK_TOKEN>
+ * Fails closed when SES_WEBHOOK_TOKEN is unset.
+ */
+function isAuthorizedSes(request: NextRequest): boolean {
+  const expected = process.env.SES_WEBHOOK_TOKEN
+  if (!expected) return false
+  const presented =
+    request.headers.get('x-webhook-token') ?? request.nextUrl.searchParams.get('token') ?? ''
+  const a = Buffer.from(presented)
+  const b = Buffer.from(expected)
+  return a.length === b.length && timingSafeEqual(a, b)
+}
+
+function isSnsUrl(url: string): boolean {
+  try {
+    const u = new URL(url)
+    return u.protocol === 'https:' && /^sns\.[a-z0-9-]+\.amazonaws\.com$/.test(u.hostname)
+  } catch {
+    return false
+  }
+}
+
 export async function POST(request: NextRequest) {
+  if (!isAuthorizedSes(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
   try {
     const body = await request.text()
     const payload = JSON.parse(body)
@@ -26,7 +55,8 @@ export async function POST(request: NextRequest) {
     // Handle SNS subscription confirmation
     if (payload.Type === 'SubscriptionConfirmation') {
       const subscribeUrl = payload.SubscribeURL
-      if (subscribeUrl) {
+      // Only follow confirmation URLs that point at SNS itself (SSRF guard).
+      if (subscribeUrl && isSnsUrl(subscribeUrl)) {
         // Automatically confirm the subscription
         try {
           await fetch(subscribeUrl)

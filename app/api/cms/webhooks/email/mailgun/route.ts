@@ -17,16 +17,24 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
-    // Verify webhook signature
+    // Verify webhook signature — fail closed when unconfigured or unsigned.
     const apiKey = process.env.MAILGUN_WEBHOOK_SIGNING_KEY || process.env.MAILGUN_API_KEY
-    if (apiKey) {
-      const signature = body.signature as {
+    if (!apiKey) {
+      console.error('[mailgun-webhook] MAILGUN_WEBHOOK_SIGNING_KEY not set — rejecting delivery')
+      return NextResponse.json({ error: 'Webhook not configured' }, { status: 503 })
+    }
+    {
+      const signature = body?.signature as {
         timestamp: string
         token: string
         signature: string
+      } | undefined
+
+      if (!signature?.timestamp || !signature?.token || !signature?.signature) {
+        return NextResponse.json({ error: 'Missing signature' }, { status: 401 })
       }
 
-      if (signature) {
+      {
         const isValid = verifyMailgunWebhook(
           signature.timestamp,
           signature.token,

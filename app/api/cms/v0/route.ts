@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { getV0ImportAgent } from "@/lib/cms/v0-agent";
 import { prisma } from "@/lib/cms/db";
 import { withTenant, withTenantAuth } from '@/lib/cms/api/tenant';
+import { requireTenantMember } from "@/lib/cms/api/guard";
 
 export const dynamic = 'force-dynamic'
 
@@ -174,7 +175,7 @@ export async function POST(request: NextRequest) {
  *
  * Health check endpoint
  */
-export async function GET(request: NextRequest) {
+async function _GET(request: NextRequest) {
   return withTenant(request, async () => {
   const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
 
@@ -187,3 +188,6 @@ export async function GET(request: NextRequest) {
   });
   })
 }
+
+// Tenant-member guard: signed-in + owner/team access to this tenant (or platform super admin).
+export const GET = requireTenantMember("view", _GET);

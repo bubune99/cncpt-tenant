@@ -22,10 +22,11 @@ import {
   resolveTenantContext,
   tenantRequiredResponse,
 } from '@/lib/cms/media/tenant'
+import { requireTenantMember } from '@/lib/cms/api/guard'
 
 export const dynamic = 'force-dynamic'
 
-export async function POST(request: NextRequest) {
+async function _POST(request: NextRequest) {
   try {
     // Auth check
     const user = await stackServerApp.getUser()
@@ -119,3 +120,6 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+// Tenant-member guard: signed-in + owner/team access to this tenant (or platform super admin).
+export const POST = requireTenantMember('edit', _POST)

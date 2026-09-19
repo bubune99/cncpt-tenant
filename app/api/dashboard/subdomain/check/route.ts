@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { sql } from "@/lib/neon"
+import { rateLimitCheck, RATE_LIMIT_PRESETS } from "@/lib/cms/rate-limit"
 
 export const dynamic = 'force-dynamic'
 
@@ -19,6 +20,8 @@ const RESERVED_SUBDOMAINS = [
  * Check if a subdomain is available
  */
 export async function GET(request: NextRequest) {
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.publicRead, { name: "publicRead" })
+  if (limited) return limited
   const { searchParams } = new URL(request.url)
   const subdomain = searchParams.get("subdomain")?.toLowerCase().trim()
 

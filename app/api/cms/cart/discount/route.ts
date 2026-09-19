@@ -10,6 +10,7 @@ import { cookies } from 'next/headers';
 import { getOrCreateCart, applyDiscount, removeDiscount } from '@/lib/cms/cart';
 import { getCurrentUserId } from '@/lib/cms/cart/auth';
 import { withTenant } from '@/lib/cms/api/tenant';
+import { rateLimitCheck, RATE_LIMIT_PRESETS } from '@/lib/cms/rate-limit';
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +18,8 @@ const CART_SESSION_COOKIE = 'cart_session_id';
 
 // POST - Apply discount code
 export async function POST(request: NextRequest) {
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.publicWrite, { name: 'publicWrite' });
+  if (limited) return limited;
   return withTenant(request, async () => {
     try {
     const body = await request.json();
@@ -72,6 +75,8 @@ export async function POST(request: NextRequest) {
 
 // DELETE - Remove discount code
 export async function DELETE(request: NextRequest) {
+  const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.publicWrite, { name: 'publicWrite' });
+  if (limited) return limited;
   return withTenant(request, async () => {
     try {
     // Get session
