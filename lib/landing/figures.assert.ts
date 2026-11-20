@@ -27,4 +27,10 @@ ok("no page anywhere still claims an uptime SLA", () => {
     assert.doesNotMatch(read(p), /Uptime SLA|99\.9%/, p)
   }
 })
+ok("no promise that a trial needs no card (paid plans start in Stripe Checkout, which asks for one)", () => {
+  for (const p of ["app/page.tsx", "components/landing/hero-section.tsx", "components/landing/cta-section.tsx", "components/landing/pricing-section.tsx", "app/pricing/page.tsx"]) {
+    if (!existsSync(new URL(`../../${p}`, import.meta.url))) continue
+    assert.doesNotMatch(read(p), /no credit card/i, p)
+  }
+})
 console.log(`\n${n} checks passed`)
