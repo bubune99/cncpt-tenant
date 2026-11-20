@@ -70,9 +70,11 @@ export function isPublicApi(pathname: string, method: string): boolean {
 }
 
 /**
- * Session cookies that prove "some user is signed in". Stack Auth
- * (tokenStore: nextjs-cookie) sets `stack-access` and `stack-refresh-<projectId>`;
- * the legacy platform auth sets `session`. Production may prefix with
- * __Host-/__Secure-. Utility cookies (stack-is-https, oauth state) are ignored.
+ * Session cookies that prove "some user is signed in". Stack Auth, now named
+ * Hexclave (tokenStore: nextjs-cookie), sets `hexclave-access` and
+ * `hexclave-refresh-<projectId>`; sessions from before the rename carry
+ * `stack-access` / `stack-refresh-<projectId>`. The legacy platform auth sets
+ * `session`. Production may prefix with __Host-/__Secure-. Utility cookies
+ * (…-is-https, oauth state) are ignored. Check: lib/public-api.assert.ts
  */
-export const AUTH_COOKIE_RE = /^(?:__Host-|__Secure-)?(?:stack-(?:access|refresh)|session)(?:-|$)/
+export const AUTH_COOKIE_RE = /^(?:__Host-|__Secure-)?(?:(?:stack|hexclave)-(?:access|refresh)|session)(?:-|$)/
