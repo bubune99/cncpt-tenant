@@ -417,6 +417,20 @@ export function AdminShell({
                     <Plus size={15} strokeWidth={2} />
                     <span className="btn-new-label">New</span>
                   </Link>
+                  {/* Visit site, always in the top bar (owner's note 2026-05-04: "A place in the top bar to enable visit site is important"). */}
+                  <a
+                    href={siteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-ghost"
+                    title="Visit site (opens in a new tab)"
+                    aria-label="Visit site (opens in a new tab)"
+                    data-tour-id="header-visit-site"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                  >
+                    <ExternalLink size={15} strokeWidth={1.8} aria-hidden="true" />
+                    <span className="btn-new-label">Visit site</span>
+                  </a>
                   {/* Light / dark theme toggle */}
                   <ThemeToggleAdmin />
                   {/* Bell + unread pip */}

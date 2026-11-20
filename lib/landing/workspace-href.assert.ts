@@ -16,6 +16,8 @@ assert.equal(workspaceHref("www.projectdzidzor.org", "cncptweb.com"), "https://c
 const shell = readFileSync(new URL("../../app/s/[subdomain]/admin/AdminShell.tsx", import.meta.url), "utf8")
 assert.match(shell, /data-tour-id="header-all-sites"/, "the top bar has All sites")
 assert.match(shell, /data-tour-id="nav-all-sites"/, "the account area has All sites")
+assert.match(shell, /data-tour-id="header-visit-site"/, "the top bar has Visit site (owner note 2026-05-04)")
+assert.match(shell, /<ThemeToggleAdmin \/>/, "the top bar has the light/dark switch (owner note 2026-06-17)")
 const overview = readFileSync(new URL("../../app/dashboard/canvas/canvas-overview.tsx", import.meta.url), "utf8")
 const shellDash = readFileSync(new URL("../../app/dashboard/canvas/canvas-shell.tsx", import.meta.url), "utf8")
 assert.match(overview, /data-ui="overview.open_site"[\s\S]{0,300}new CustomEvent\("open-site"/, "Overview site rows open the site")
