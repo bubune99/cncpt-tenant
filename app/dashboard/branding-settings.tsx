@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { BrandImageUpload } from "./brand-image-upload"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
@@ -140,7 +141,7 @@ export function BrandingSettings({ selectedSubdomain }: BrandingSettingsProps) {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Branding & White Label</h1>
+          <h2 className="text-xl font-semibold mb-1">Branding & White Label</h2>
           <p className="text-muted-foreground">
             Customize your site&apos;s identity and appearance
           </p>
@@ -167,7 +168,7 @@ export function BrandingSettings({ selectedSubdomain }: BrandingSettingsProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Branding & White Label</h1>
+          <h2 className="text-xl font-semibold mb-1">Branding & White Label</h2>
           <p className="text-muted-foreground">
             Customize branding for{" "}
             <span className="font-medium">{selectedSubdomain}</span>
@@ -248,6 +249,7 @@ export function BrandingSettings({ selectedSubdomain }: BrandingSettingsProps) {
                 onChange={(e) => updateField("logoUrl", e.target.value)}
                 placeholder="https://example.com/logo.png"
               />
+              <BrandImageUpload subdomain={selectedSubdomain} slot="logo" label="logo" onUploaded={(url) => updateField("logoUrl", url)} />
               {branding.logoUrl && (
                 <div className="mt-2 p-3 bg-white border rounded">
                   <img
@@ -266,6 +268,7 @@ export function BrandingSettings({ selectedSubdomain }: BrandingSettingsProps) {
                 onChange={(e) => updateField("logoDarkUrl", e.target.value)}
                 placeholder="https://example.com/logo-dark.png"
               />
+              <BrandImageUpload subdomain={selectedSubdomain} slot="logo_dark" label="dark mode logo" onUploaded={(url) => updateField("logoDarkUrl", url)} />
               {branding.logoDarkUrl && (
                 <div className="mt-2 p-3 bg-gray-900 border rounded">
                   <img
@@ -310,6 +313,7 @@ export function BrandingSettings({ selectedSubdomain }: BrandingSettingsProps) {
                 onChange={(e) => updateField("faviconUrl", e.target.value)}
                 placeholder="https://example.com/favicon.ico"
               />
+              <BrandImageUpload subdomain={selectedSubdomain} slot="favicon" label="favicon" onUploaded={(url) => updateField("faviconUrl", url)} />
               <p className="text-xs text-muted-foreground">
                 32x32px .ico or .png
               </p>
@@ -336,6 +340,7 @@ export function BrandingSettings({ selectedSubdomain }: BrandingSettingsProps) {
                 }
                 placeholder="https://example.com/apple-icon.png"
               />
+              <BrandImageUpload subdomain={selectedSubdomain} slot="apple_touch_icon" label="Apple touch icon" onUploaded={(url) => updateField("appleTouchIconUrl", url)} />
               <p className="text-xs text-muted-foreground">180x180px .png</p>
             </div>
           </div>
