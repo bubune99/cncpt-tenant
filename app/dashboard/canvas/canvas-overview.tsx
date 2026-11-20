@@ -219,7 +219,15 @@ export function CanvasOverview({ user, subdomains, selectedSubdomain }: CanvasOv
                       <div style={{ width: 36, height: 36, borderRadius: 8, background: "linear-gradient(135deg,#0F172A,#3B82F6)", color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
                         {(s.subdomain[0] || "S").toUpperCase()}
                       </div>
-                      <div className="col" style={{ gap: 1, flex: 1, minWidth: 0 }}>
+                      {/* The whole name block opens the site's page here (walk 2026-11-20: the row did nothing). */}
+                      <button
+                        type="button"
+                        className="col"
+                        data-ui="overview.open_site"
+                        aria-label={`Open ${s.site_title || s.subdomain}`}
+                        onClick={() => window.dispatchEvent(new CustomEvent("open-site", { detail: s.subdomain }))}
+                        style={{ gap: 1, flex: 1, minWidth: 0, minHeight: 36, textAlign: "left", background: "none", border: 0, padding: 0, cursor: "pointer", color: "inherit", font: "inherit" }}
+                      >
                         <div className="row" style={{ gap: 6 }}>
                           <strong style={{ fontSize: 13 }}>{s.site_title || s.subdomain}</strong>
                           <span className="pill pill--green" style={{ fontSize: 10 }}><span className="dot" /> Active</span>
@@ -227,11 +235,11 @@ export function CanvasOverview({ user, subdomains, selectedSubdomain }: CanvasOv
                         <div className="mono" style={{ fontSize: 11, color: "var(--br-text-secondary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                           {s.subdomain}.{rootDomain}
                         </div>
-                      </div>
-                      <a className="iconbtn iconbtn--sm" href={siteUrl} target="_blank" rel="noreferrer" aria-label="Visit site">
+                      </button>
+                      <a className="iconbtn" href={siteUrl} target="_blank" rel="noreferrer" aria-label="Visit site" title="Visit site">
                         <ExternalLink style={{ width: 12, height: 12 }} />
                       </a>
-                      <a className="iconbtn iconbtn--sm iconbtn--ghost" href={`${siteUrl}/admin`} aria-label="Manage site">
+                      <a className="iconbtn iconbtn--ghost" href={`${siteUrl}/admin`} aria-label="Manage content" title="Manage content">
                         <ChevronRight style={{ width: 13, height: 13 }} />
                       </a>
                     </div>

@@ -7,7 +7,6 @@ import { useTheme } from "next-themes"
 import { Navbar } from "@/components/landing/navbar"
 import { HeroSection } from "@/components/landing/hero-section"
 import { LogoMarquee } from "@/components/landing/logo-marquee"
-import { StatsSection } from "@/components/landing/stats-section"
 import { FeaturesSection } from "@/components/landing/features-section"
 import { CTASection } from "@/components/landing/cta-section"
 import { Footer } from "@/components/landing/footer"
@@ -28,7 +27,6 @@ export default function HomePage() {
       <Navbar user={user} mounted={mounted} resolvedTheme={resolvedTheme} />
       <HeroSection />
       <LogoMarquee />
-      <StatsSection />
       <FeaturesSection />
       <CTASection />
       <Footer mounted={mounted} resolvedTheme={resolvedTheme} />

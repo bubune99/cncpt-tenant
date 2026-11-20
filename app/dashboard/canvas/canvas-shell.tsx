@@ -94,6 +94,19 @@ export function CanvasShell({
     if (activeSection !== "sites") setDetailSubdomain(null)
   }, [activeSection])
 
+  // "open-site" (Overview's site rows): go to Sites and open that site's page.
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      const sub = (e as CustomEvent<string>).detail
+      if (typeof sub !== "string" || !subdomains.some((s) => s.subdomain === sub)) return
+      window.dispatchEvent(new CustomEvent("navigate-to-section", { detail: "sites" }))
+      setSelectedSubdomain(sub)
+      setDetailSubdomain(sub)
+    }
+    window.addEventListener("open-site", onOpen)
+    return () => window.removeEventListener("open-site", onOpen)
+  }, [subdomains, setSelectedSubdomain])
+
   // ⌘K / Ctrl+K opens the command palette.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
