@@ -125,7 +125,7 @@ export const WIDGETS: Readonly<Record<WidgetId, WidgetDef>> = {
       const revenue = a?.revenue ?? 0;
       const orders = a?.purchases ?? 0;
       const avg = orders > 0 ? revenue / orders : 0;
-      const customers = data.stats?.totalUsers ?? 0;
+      const customers = data.stats?.totalCustomers ?? data.stats?.totalUsers ?? 0;
       const cells: ReadonlyArray<readonly [string, string]> = [
         ['Revenue · 30d', revenue > 0 ? fmtUSD(revenue) : '—'],
         ['Orders · 30d', orders > 0 ? orders.toLocaleString('en-US') : '—'],
@@ -197,7 +197,7 @@ export const WIDGETS: Readonly<Record<WidgetId, WidgetDef>> = {
       const s = data.stats;
       const rows: ReadonlyArray<readonly [string, number, () => void]> = [
         ['Products', s?.totalProducts ?? 0, () => nav.onNav('products')],
-        ['Customers', s?.totalUsers ?? 0, () => nav.onNav('customers')],
+        ['Customers', s?.totalCustomers ?? s?.totalUsers ?? 0, () => nav.onNav('customers')],
         ['Orders', s?.totalOrders ?? 0, () => nav.onNav('orders')],
         ['Journal posts', s?.totalBlogPosts ?? 0, () => nav.onNav('blog')],
       ];

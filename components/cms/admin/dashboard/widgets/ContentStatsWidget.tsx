@@ -7,6 +7,7 @@ import { FileText, Layout, Image as ImageIcon, Tag } from 'lucide-react';
 interface Stats {
   totalBlogPosts: number;
   totalUsers: number;
+  totalCustomers?: number;
   totalProducts: number;
   totalOrders: number;
 }
@@ -38,7 +39,7 @@ export default function ContentStatsWidget({ editing }: { editing?: boolean }) {
         { label: 'Blog Posts', value: stats.totalBlogPosts, icon: FileText, color: 'text-blue-600' },
         { label: 'Products', value: stats.totalProducts, icon: Tag, color: 'text-green-600' },
         { label: 'Orders', value: stats.totalOrders, icon: Layout, color: 'text-purple-600' },
-        { label: 'Users', value: stats.totalUsers, icon: ImageIcon, color: 'text-orange-600' },
+        { label: 'Customers', value: stats.totalCustomers ?? stats.totalUsers, icon: ImageIcon, color: 'text-orange-600' },
       ]
     : [];
 

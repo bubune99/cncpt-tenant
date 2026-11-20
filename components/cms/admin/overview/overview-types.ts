@@ -13,7 +13,9 @@
 
 /** Counts from /api/cms/admin/stats-simple */
 export interface OverviewStats {
+  /** The site's customers (same as totalCustomers; kept for older readers). */
   readonly totalUsers: number;
+  readonly totalCustomers?: number;
   readonly totalProducts: number;
   readonly totalOrders: number;
   readonly totalBlogPosts: number;
