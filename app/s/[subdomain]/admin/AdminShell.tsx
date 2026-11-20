@@ -25,8 +25,9 @@ import {
   HelpCircle, Compass, Moon, Sun, Search, Plus, PanelLeft,
   LayoutDashboard, FileText, ShoppingBag, Package, Users, BookOpen,
   BarChart3, Settings, Layers, Image as ImageIcon, Megaphone, Workflow,
-  Tag, MessageSquare, Calendar, Boxes, Circle, ExternalLink, LogOut, Sparkles,
+  Tag, MessageSquare, Calendar, Boxes, Circle, ExternalLink, LogOut, Sparkles, LayoutGrid,
 } from 'lucide-react';
+import { workspaceHref } from '@/lib/landing/workspace-href';
 
 /** Structural type for a lucide icon — tolerant of the lib's per-version typing. */
 type NavIcon = React.ComponentType<{
@@ -205,6 +206,12 @@ export function AdminShell({
     { refreshInterval: 60000 }
   );
 
+  // The way back to the CNCPT workspace (all sites), worked out from where this CMS is open.
+  const [workspaceUrl, setWorkspaceUrl] = useState<string | null>(null);
+  useEffect(() => {
+    setWorkspaceUrl(workspaceHref(window.location.host, process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'cncptweb.com'));
+  }, []);
+
   const normalizePath = (p: string | null): string => {
     if (!p) return '';
     if (basePath && p.startsWith(basePath)) return p.slice(basePath.length) || '/';
@@ -348,6 +355,18 @@ export function AdminShell({
                 >
                   <PanelLeft size={17} strokeWidth={1.8} />
                 </button>
+                {/* Back to the CNCPT workspace and the other sites (walk 2026-11-20). */}
+                {workspaceUrl && !isDemo && (
+                  <a
+                    href={workspaceUrl}
+                    className="collapse-btn"
+                    title="All sites"
+                    aria-label="All sites: back to the CNCPT workspace"
+                    data-tour-id="header-all-sites"
+                  >
+                    <LayoutGrid size={17} strokeWidth={1.8} aria-hidden="true" />
+                  </a>
+                )}
                 <div className="store" data-tour-id="header-store-name">
                   {logoUrl ? (
                     <>
@@ -487,6 +506,17 @@ export function AdminShell({
                       </div>
                     </div>
                     <div className="acct-actions">
+                      {workspaceUrl && !isDemo && (
+                        <a
+                          href={workspaceUrl}
+                          className="acct-action"
+                          data-tour-id="nav-all-sites"
+                          title={collapsed ? 'All sites' : undefined}
+                        >
+                          <LayoutGrid className="nav-ico" size={16} strokeWidth={1.8} aria-hidden="true" />
+                          <span className="label">All sites</span>
+                        </a>
+                      )}
                       <Link
                         href={siteUrl}
                         className="acct-action"
