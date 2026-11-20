@@ -65,17 +65,9 @@ export default function CustomersPage(): React.ReactElement {
     return () => clearTimeout(timer);
   }, [startTour, isTourCompleted]);
 
-  const fetchOwners = useCallback(async () => {
-    try {
-      const res = await fetch('/api/cms/admin/business-owners/v2');
-      if (res.ok) {
-        const data = (await res.json()) as { businessOwners: Array<{ id: string; businessName: string }> };
-        setBusinessOwners(data.businessOwners.map((o) => ({ id: o.id, name: o.businessName })));
-      }
-    } catch {
-      // non-super-admin — empty list is expected
-    }
-  }, []);
+  // A site's CMS lists only this site's customers (owner's note 2026-06-17: "This is for customers of
+  // the site not of the platform"). The platform's list of sites is never loaded here, so there is no
+  // tenant filter, Tenant column or Business owner picker; the server scopes by x-subdomain.
 
   const fetchStats = useCallback(async () => {
     try {
@@ -118,7 +110,7 @@ export default function CustomersPage(): React.ReactElement {
     }
   }, [ownerId, tier]);
 
-  useEffect(() => { void fetchOwners(); void fetchStats(); }, [fetchOwners, fetchStats]);
+  useEffect(() => { void fetchStats(); }, [fetchStats]);
   useEffect(() => { void fetchCustomers(); }, [fetchCustomers]);
 
   // ── Derived rows ──

@@ -23,3 +23,10 @@ const page = readFileSync(new URL("../../../app/s/[subdomain]/admin/page.tsx", i
 assert.doesNotMatch(page, /setStats\(\{ totalUsers: 0/, "a failed load is not shown as zeros")
 assert.match(widgets, /value === null \? '—'/, "unknown figures show a dash")
 console.log("ok - a site's dashboard counts that site's products, orders, customers and posts\n\n1 checks passed")
+
+// A site's Customers page never loads the platform's sites (no tenant filter, column or owner picker).
+{
+  const cust = readFileSync(new URL("../../../app/s/[subdomain]/admin/customers/page.tsx", import.meta.url), "utf8")
+  assert.doesNotMatch(cust, /business-owners/, "the site's Customers page does not list other sites")
+  console.log("ok - a site's Customers page shows only that site's customers")
+}
