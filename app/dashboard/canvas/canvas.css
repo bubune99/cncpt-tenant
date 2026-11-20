@@ -47,8 +47,9 @@
   /* Map to the self-hosted geist variables loaded in app/layout.tsx */
   --br-font-sans: var(--font-geist-sans), "Geist", -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --br-font-mono: var(--font-geist-mono), "Geist Mono", ui-monospace, SFMono-Regular,
-    Menlo, Consolas, "Liberation Mono", monospace;
+  /* No monospace anywhere (owner rule): "mono" spots use the sans face with
+     tabular figures so numbers still line up. */
+  --br-font-mono: var(--br-font-sans);
 
   font-family: var(--br-font-sans);
   color: var(--br-text);
@@ -77,6 +78,11 @@
   --br-border: var(--border);
   --br-primary-50: color-mix(in srgb, var(--br-primary) 18%, transparent);
 }
+/* Banners keep the light theme's dark text otherwise: unreadable on navy. */
+.dark .tnt-canvas .tnt__banner--info { color: #bfdbfe; border-color: color-mix(in srgb, #3b82f6 45%, transparent); }
+.dark .tnt-canvas .tnt__banner--warn { color: #fde68a; background: color-mix(in srgb, #f59e0b 14%, transparent); border-color: color-mix(in srgb, #f59e0b 40%, transparent); }
+.dark .tnt-canvas .tnt__banner--err { color: #fecaca; background: color-mix(in srgb, #ef4444 14%, transparent); border-color: color-mix(in srgb, #ef4444 40%, transparent); }
+.dark .tnt-canvas .tnt__banner--ok { color: #a7f3d0; background: color-mix(in srgb, #10b981 14%, transparent); border-color: color-mix(in srgb, #10b981 40%, transparent); }
 
 .tnt-canvas *,
 .tnt-canvas *::before,
@@ -90,7 +96,7 @@
 .tnt-canvas .row { display: flex; align-items: center; gap: 8px; }
 .tnt-canvas .col { display: flex; flex-direction: column; }
 .tnt-canvas .between { justify-content: space-between; }
-.tnt-canvas .mono { font-family: var(--br-font-mono); }
+.tnt-canvas .mono { font-family: var(--br-font-mono); font-variant-numeric: tabular-nums; }
 .tnt-canvas .muted { color: var(--br-text-secondary); }
 
 .tnt-canvas .avatar {
