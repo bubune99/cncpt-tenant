@@ -125,12 +125,12 @@ export const WIDGETS: Readonly<Record<WidgetId, WidgetDef>> = {
       const revenue = a?.revenue ?? 0;
       const orders = a?.purchases ?? 0;
       const avg = orders > 0 ? revenue / orders : 0;
-      const customers = data.stats?.totalCustomers ?? data.stats?.totalUsers ?? 0;
+      const customers = data.stats ? (data.stats.totalCustomers ?? data.stats.totalUsers) : null;
       const cells: ReadonlyArray<readonly [string, string]> = [
         ['Revenue · 30d', revenue > 0 ? fmtUSD(revenue) : '—'],
         ['Orders · 30d', orders > 0 ? orders.toLocaleString('en-US') : '—'],
         ['Avg order', avg > 0 ? fmtMoney(avg) : '—'],
-        ['Customers', customers.toLocaleString('en-US')],
+        ['Customers', customers === null ? '—' : customers.toLocaleString('en-US')],
       ];
       return (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 14 }}>
@@ -195,18 +195,19 @@ export const WIDGETS: Readonly<Record<WidgetId, WidgetDef>> = {
     blurb: 'Live totals across your catalog, customers, and content.',
     render: (data, nav) => {
       const s = data.stats;
-      const rows: ReadonlyArray<readonly [string, number, () => void]> = [
-        ['Products', s?.totalProducts ?? 0, () => nav.onNav('products')],
-        ['Customers', s?.totalCustomers ?? s?.totalUsers ?? 0, () => nav.onNav('customers')],
-        ['Orders', s?.totalOrders ?? 0, () => nav.onNav('orders')],
-        ['Journal posts', s?.totalBlogPosts ?? 0, () => nav.onNav('blog')],
+      // Unknown (not loaded or failed) shows a dash, never 0.
+      const rows: ReadonlyArray<readonly [string, number | null, () => void]> = [
+        ['Products', s ? s.totalProducts : null, () => nav.onNav('products')],
+        ['Customers', s ? (s.totalCustomers ?? s.totalUsers) : null, () => nav.onNav('customers')],
+        ['Orders', s ? s.totalOrders : null, () => nav.onNav('orders')],
+        ['Journal posts', s ? s.totalBlogPosts : null, () => nav.onNav('blog')],
       ];
       return (
         <div>
           {rows.map(([label, value, go]) => (
             <WRow key={label} onClick={go}>
               <span style={{ fontSize: 12.5, color: 'var(--text-secondary)', flex: 1 }}>{label}</span>
-              <span className="gr-num" style={{ fontSize: 15, fontWeight: 700 }}>{value.toLocaleString('en-US')}</span>
+              <span className="gr-num" style={{ fontSize: 15, fontWeight: 700 }}>{value === null ? '—' : value.toLocaleString('en-US')}</span>
             </WRow>
           ))}
         </div>

@@ -19,4 +19,7 @@ assert.doesNotMatch(route, /prisma\.user\.count\(\)/, "staff accounts are not co
 const widgets = readFileSync(new URL("../../../components/cms/admin/overview/overview-widgets.tsx", import.meta.url), "utf8")
 assert.doesNotMatch(widgets, /\['Customers', s\?\.totalUsers/, "Store snapshot's Customers is customers")
 assert.doesNotMatch(widgets, /customers = data\.stats\?\.totalUsers/, "Sales summary's Customers is customers")
+const page = readFileSync(new URL("../../../app/s/[subdomain]/admin/page.tsx", import.meta.url), "utf8")
+assert.doesNotMatch(page, /setStats\(\{ totalUsers: 0/, "a failed load is not shown as zeros")
+assert.match(widgets, /value === null \? '—'/, "unknown figures show a dash")
 console.log("ok - a site's dashboard counts that site's products, orders, customers and posts\n\n1 checks passed")

@@ -98,8 +98,9 @@ export default function AdminOverviewPage() {
     // Counts gate the first meaningful paint; the rest fill in progressively.
     fetch('/api/cms/admin/stats-simple')
       .then((res) => (res.ok ? (res.json() as Promise<{ stats: OverviewStats }>) : null))
-      .then((d) => setStats(d?.stats ?? { totalUsers: 0, totalProducts: 0, totalOrders: 0, totalBlogPosts: 0 }))
-      .catch(() => setStats({ totalUsers: 0, totalProducts: 0, totalOrders: 0, totalBlogPosts: 0 }))
+      // Couldn't load: leave the figures unknown (shown as a dash), never zeros.
+      .then((d) => setStats(d?.stats ?? null))
+      .catch(() => setStats(null))
       .finally(() => setLoading(false));
 
     fetch('/api/cms/analytics?range=30d')
