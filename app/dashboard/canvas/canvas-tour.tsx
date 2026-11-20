@@ -31,21 +31,28 @@ export function CanvasTour({ stops, open, onClose }: { stops: TourStop[]; open: 
     [stops],
   )
 
+  // Kept in a ref so a parent re-render (a new onClose) does not re-run the effects below and steal focus.
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
   const close = useCallback(() => {
-    onClose()
+    setRect(null)
+    onCloseRef.current()
     returnTo.current?.focus?.()
-  }, [onClose])
+  }, [])
 
   useEffect(() => {
     if (!open) return
     returnTo.current = document.activeElement as HTMLElement | null
-    setI(Math.max(0, visible(0, 1)))
-  }, [open, visible])
+    setRect(null)
+    const first = visible(0, 1)
+    if (first < 0) { close(); return }
+    setI(first)
+  }, [open, visible, close])
 
   useLayoutEffect(() => {
     if (!open) return
     const el = document.querySelector(stops[i]?.target ?? "") as HTMLElement | null
-    if (!el) return
+    if (!el) { setRect(null); return }
     el.scrollIntoView({ block: "nearest" })
     const measure = () => {
       const r = el.getBoundingClientRect()
@@ -60,9 +67,15 @@ export function CanvasTour({ stops, open, onClose }: { stops: TourStop[]; open: 
     }
   }, [open, i, stops])
 
+  // Focus the main button when a stop is shown (only when the stop changes).
+  useEffect(() => {
+    if (!open || !rect) return
+    boxRef.current?.querySelector<HTMLButtonElement>("[data-tour-next]")?.focus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, i, rect === null])
+
   useEffect(() => {
     if (!open) return
-    boxRef.current?.querySelector<HTMLButtonElement>("[data-tour-next]")?.focus()
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") { e.stopPropagation(); close() }
     }
@@ -75,9 +88,9 @@ export function CanvasTour({ stops, open, onClose }: { stops: TourStop[]; open: 
       document.removeEventListener("keydown", onKey, true)
       document.removeEventListener("pointerdown", onDown, true)
     }
-  }, [open, i, close])
+  }, [open, close])
 
-  if (!open || !rect || !stops[i]) return null
+  if (!open || !rect || !stops[i] || !document.querySelector(stops[i].target)) return null
 
   const next = visible(i + 1, 1)
   const prev = visible(i - 1, -1)

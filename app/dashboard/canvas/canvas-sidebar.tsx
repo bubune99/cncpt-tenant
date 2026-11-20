@@ -29,6 +29,8 @@ interface CanvasSidebarProps {
   selectedSubdomain: string | null
   setSelectedSubdomain: (s: string | null) => void
   onOpenSearch: () => void
+  /** opens the New client site panel on the Overview */
+  onNewSite: () => void
 }
 
 function userInitials(name: string | undefined, email: string | undefined): string {
@@ -49,6 +51,7 @@ export function CanvasSidebar({
   selectedSubdomain,
   setSelectedSubdomain,
   onOpenSearch,
+  onNewSite,
 }: CanvasSidebarProps) {
   const router = useRouter()
   const activeGroup = groupOfSection(activeSection)
@@ -87,12 +90,7 @@ export function CanvasSidebar({
             </DropdownMenuItem>
           ))}
           {subdomains.length > 0 && <DropdownMenuSeparator />}
-          <DropdownMenuItem
-            onClick={() => {
-              setActiveSection("overview")
-              setTimeout(() => window.dispatchEvent(new CustomEvent("open-new-site")), 0)
-            }}
-          >
+          <DropdownMenuItem onClick={onNewSite}>
             <Plus className="w-4 h-4 mr-2" /> New client site
           </DropdownMenuItem>
         </DropdownMenuContent>

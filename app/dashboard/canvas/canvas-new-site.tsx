@@ -39,22 +39,32 @@ export function CanvasNewSite({
   const [error, setError] = useState<string | null>(null)
   const [atLimit, setAtLimit] = useState<string | null>(null)
   const seq = useRef(0)
+  const defaultEmailRef = useRef(defaultEmail)
+  defaultEmailRef.current = defaultEmail
 
+  // Start clean each time it opens (only then: a user refresh mid-typing must not wipe the form).
   useEffect(() => {
     if (!open) return
-    setName(""); setAddress(""); setAddressTouched(false); setEmail(defaultEmail)
+    setName(""); setAddress(""); setAddressTouched(false); setEmail(defaultEmailRef.current)
     setAvail("idle"); setError(null); setAtLimit(null); setSaving(false)
-  }, [open, defaultEmail])
+  }, [open])
 
   useEffect(() => {
     if (!addressTouched) setAddress(addressFromName(name))
   }, [name, addressTouched])
 
+  const setAddressNow = (v: string) => {
+    setAddressTouched(true)
+    setAvail("checking")
+    setAddress(v)
+  }
+
   const rule = address ? checkAddress(address) : null
 
   useEffect(() => {
-    if (!address || !rule?.valid) { setAvail("idle"); return }
+    // Every change of address invalidates any answer still on its way.
     const my = ++seq.current
+    if (!address || !rule?.valid) { setAvail("idle"); return }
     setAvail("checking")
     const t = setTimeout(async () => {
       try {
@@ -119,7 +129,7 @@ export function CanvasNewSite({
                 id="new-site-name"
                 data-ui="new_site.name"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => { setName(e.target.value); if (!addressTouched) setAvail("checking") }}
                 placeholder="Acme Coffee"
                 autoFocus
                 maxLength={120}
@@ -134,7 +144,7 @@ export function CanvasNewSite({
                   className="rounded-r-none"
                   data-ui="new_site.address"
                   value={address}
-                  onChange={(e) => { setAddressTouched(true); setAddress(e.target.value.toLowerCase().trim()) }}
+                  onChange={(e) => setAddressNow(e.target.value.toLowerCase().trim())}
                   placeholder="acme-coffee"
                   aria-describedby="new-site-address-note"
                   aria-invalid={rule ? !rule.valid || avail === "taken" : undefined}

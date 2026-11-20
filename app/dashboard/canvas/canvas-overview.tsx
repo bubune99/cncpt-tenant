@@ -12,7 +12,7 @@
  * Dropped: the "All systems normal" pill, which was fixed text and not a status.
  */
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Plus, ExternalLink, Settings as SettingsIcon, Check, ArrowRight, Compass } from "lucide-react"
 import { rootDomain, protocol } from "@/lib/utils"
@@ -24,6 +24,10 @@ interface CanvasOverviewProps {
   user: any
   subdomains: any[]
   selectedSubdomain: string | null
+  /** goes up by one each time something outside (the site switcher) asks for the New client site panel */
+  newSiteRequest?: number
+  /** tells the shell the request was handled, so coming back to the Overview later does not reopen it */
+  onNewSiteHandled?: () => void
 }
 
 const GUIDE_HIDDEN_KEY = "cncpt:dashboard:guide-hidden"
@@ -51,7 +55,7 @@ function writeHidden(v: boolean) {
   try { v ? window.localStorage.setItem(GUIDE_HIDDEN_KEY, "1") : window.localStorage.removeItem(GUIDE_HIDDEN_KEY) } catch { /* private mode */ }
 }
 
-export function CanvasOverview({ user, subdomains }: CanvasOverviewProps) {
+export function CanvasOverview({ user, subdomains, newSiteRequest = 0, onNewSiteHandled }: CanvasOverviewProps) {
   const router = useRouter()
   const [facts, setFacts] = useState<SiteFacts[] | null>(null)
   const [failed, setFailed] = useState(false)
@@ -59,21 +63,25 @@ export function CanvasOverview({ user, subdomains }: CanvasOverviewProps) {
   const [tourOpen, setTourOpen] = useState(false)
   const [newOpen, setNewOpen] = useState(false)
 
+  // Only the newest request may set the facts (a site created, then the list refreshed, overlaps two loads).
+  const loadSeq = useRef(0)
   const load = useCallback(() => {
+    const my = ++loadSeq.current
     setFailed(false)
     fetch("/api/dashboard/setup-status")
       .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-      .then((d) => setFacts(Array.isArray(d?.sites) ? d.sites : []))
-      .catch(() => setFailed(true))
+      .then((d) => { if (my === loadSeq.current) setFacts(Array.isArray(d?.sites) ? d.sites : []) })
+      .catch(() => { if (my === loadSeq.current) setFailed(true) })
   }, [])
+  useEffect(() => () => { loadSeq.current++ }, [])
 
   useEffect(() => { setGuideHidden(readHidden()) }, [])
-  // The site switcher's "New client site" opens the same panel.
+  // The site switcher's "New client site" opens the same panel (the request is held by the shell).
   useEffect(() => {
-    const onOpen = () => setNewOpen(true)
-    window.addEventListener("open-new-site", onOpen)
-    return () => window.removeEventListener("open-new-site", onOpen)
-  }, [])
+    if (newSiteRequest > 0) { setNewOpen(true); onNewSiteHandled?.() }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [newSiteRequest])
+  const closeTour = useCallback(() => setTourOpen(false), [])
   useEffect(() => { load() }, [subdomains.length, load])
 
   const guide = facts ? accountGuide(facts) : null
@@ -243,7 +251,7 @@ export function CanvasOverview({ user, subdomains }: CanvasOverviewProps) {
           router.refresh()
         }}
       />
-      <CanvasTour stops={TOUR} open={tourOpen} onClose={() => setTourOpen(false)} />
+      <CanvasTour stops={TOUR} open={tourOpen} onClose={closeTour} />
     </div>
   )
 }

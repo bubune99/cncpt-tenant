@@ -89,6 +89,7 @@ export function CanvasShell({
   // When viewing a single subdomain's detail (Sites section).
   const [detailSubdomain, setDetailSubdomain] = useState<string | null>(null)
   const [detailTab, setDetailTab] = useState<string | undefined>(undefined)
+  const [newSiteRequest, setNewSiteRequest] = useState(0)
 
   // Leave detail view whenever the section changes away from Sites.
   useEffect(() => {
@@ -134,7 +135,7 @@ export function CanvasShell({
   // the default CanvasTopbar.
   const renderMain = () => {
     if (activeSection === "overview") {
-      return <CanvasOverview user={user} subdomains={subdomains} selectedSubdomain={selectedSubdomain} />
+      return <CanvasOverview user={user} subdomains={subdomains} selectedSubdomain={selectedSubdomain} newSiteRequest={newSiteRequest} onNewSiteHandled={() => setNewSiteRequest(0)} />
     }
     if (activeSection === "sites") {
       if (detailSubdomain) {
@@ -202,6 +203,7 @@ export function CanvasShell({
         selectedSubdomain={selectedSubdomain}
         setSelectedSubdomain={setSelectedSubdomain}
         onOpenSearch={() => setPaletteOpen(true)}
+        onNewSite={() => { setActiveSection("overview"); setNewSiteRequest((n) => n + 1) }}
       />
 
       <div className="dirH__main">

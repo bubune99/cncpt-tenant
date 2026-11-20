@@ -67,4 +67,10 @@ ok("the guide is complete only when every step is done", () => {
 ok("one site reads '1 site', not '1 sites'", () => {
   assert.match(accountGuide([bare]).steps[0].detail, /^1 site\b/)
 })
+ok("a disabled site is left out of the guide", () => {
+  const g = accountGuide([{ ...dz, disabled: true }, bare])
+  assert.match(g.steps[0].detail, /^1 site\b/)
+  assert.equal(g.steps.find((s) => s.id === "brand")!.done, false)
+  assert.equal(g.steps.find((s) => s.id === "brand")!.site, "bubune")
+})
 console.log(`\n${n} checks passed`)

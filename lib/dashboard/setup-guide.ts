@@ -15,6 +15,8 @@ export interface SiteFacts {
   visibility: string
   /** people other than the owner who can open this site's CMS */
   collaborators: number
+  /** a site the platform has disabled; the guide does not point at it */
+  disabled?: boolean
 }
 
 export type SiteItemId = "brand" | "domain" | "invite" | "public"
@@ -55,7 +57,8 @@ const STEPS: { id: StepId; title: string; what: string }[] = [
 
 const name = (f: SiteFacts) => f.title || f.subdomain
 
-export function accountGuide(sites: SiteFacts[]): Guide {
+export function accountGuide(all: SiteFacts[]): Guide {
+  const sites = all.filter((s) => !s.disabled)
   const setups = sites.map((s) => ({ s, setup: siteSetup(s) }))
   const steps: GuideStep[] = STEPS.map((st) => {
     if (st.id === "site") {
