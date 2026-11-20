@@ -4,7 +4,13 @@ import { useEffect, useRef } from "react"
 import { useInView, useMotionValue, useSpring } from "framer-motion"
 
 import { cn } from "@/lib/utils"
+import { formatFigure } from "@/lib/landing/figures"
 
+/**
+ * A figure that counts up when it scrolls into view. The figure itself is in the HTML from the start
+ * (search engines, screen readers, and a window that never draws all see it); the count-up only runs
+ * on top, and not at all for people who asked for less motion. Check: lib/landing/figures.assert.ts.
+ */
 export function NumberTicker({
   value,
   direction = "up",
@@ -27,21 +33,19 @@ export function NumberTicker({
   const isInView = useInView(ref, { once: true, margin: "0px" })
 
   useEffect(() => {
-    isInView &&
-      setTimeout(() => {
-        motionValue.set(direction === "down" ? 0 : value)
-      }, delay * 1000)
+    if (!isInView) return
+    if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return
+    const t = setTimeout(() => {
+      motionValue.jump(direction === "down" ? value : 0)
+      motionValue.set(direction === "down" ? 0 : value)
+    }, delay * 1000)
+    return () => clearTimeout(t)
   }, [motionValue, isInView, delay, value, direction])
 
   useEffect(
     () =>
       springValue.on("change", (latest) => {
-        if (ref.current) {
-          ref.current.textContent = Intl.NumberFormat("en-US", {
-            minimumFractionDigits: decimalPlaces,
-            maximumFractionDigits: decimalPlaces,
-          }).format(Number(latest.toFixed(decimalPlaces)))
-        }
+        if (ref.current) ref.current.textContent = formatFigure(latest, decimalPlaces)
       }),
     [springValue, decimalPlaces],
   )
@@ -53,6 +57,8 @@ export function NumberTicker({
         className,
       )}
       ref={ref}
-    />
+    >
+      {formatFigure(value, decimalPlaces)}
+    </span>
   )
 }

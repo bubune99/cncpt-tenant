@@ -9,7 +9,6 @@ import { HeroSection } from "@/components/landing/hero-section"
 import { LogoMarquee } from "@/components/landing/logo-marquee"
 import { StatsSection } from "@/components/landing/stats-section"
 import { FeaturesSection } from "@/components/landing/features-section"
-import { TestimonialsLanding } from "@/components/landing/testimonials-section"
 import { CTASection } from "@/components/landing/cta-section"
 import { Footer } from "@/components/landing/footer"
 
@@ -31,7 +30,6 @@ export default function HomePage() {
       <LogoMarquee />
       <StatsSection />
       <FeaturesSection />
-      <TestimonialsLanding />
       <CTASection />
       <Footer mounted={mounted} resolvedTheme={resolvedTheme} />
     </div>
