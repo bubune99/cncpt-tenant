@@ -22,5 +22,7 @@ const overview = readFileSync(new URL("../../app/dashboard/canvas/canvas-overvie
 const shellDash = readFileSync(new URL("../../app/dashboard/canvas/canvas-shell.tsx", import.meta.url), "utf8")
 assert.match(overview, /data-ui="overview.open_site"[\s\S]{0,300}new CustomEvent\("open-site"/, "Overview site rows open the site")
 assert.match(shellDash, /addEventListener\("open-site"/, "the dashboard shell opens the site page")
-assert.match(overview, /aria-label="Dismiss"[^>]*onClick=\{\(\) => setBannerDismissed\(true\)\}/, "the setup banner's close button has a name")
-console.log("ok - a site's CMS links back to the workspace; Overview rows open their site; the banner close is named\n\n3 checks passed")
+// The setup banner (and its Dismiss) was replaced by the setup guide on 2026-11-20; the guide hides with a named button.
+assert.match(overview, /data-ui="overview.guide_hide"/, "the setup guide can be hidden")
+assert.match(overview, /data-ui="overview.new_site"/, "the Overview has New client site")
+console.log("ok - a site's CMS links back to the workspace; Overview rows open their site; the guide can be hidden\n\n3 checks passed")

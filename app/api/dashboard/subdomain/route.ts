@@ -9,58 +9,12 @@ import { stackServerApp } from "@/stack"
 import { canCreateSubdomain, getSubdomainUsage } from "@/lib/subscription"
 import { rootDomain, protocol } from "@/lib/utils"
 import { logPlatformActivity } from "@/lib/super-admin"
+import { checkAddress } from "@/lib/dashboard/site-address"
 
 export const dynamic = 'force-dynamic'
 
-// Validation helpers
-const SUBDOMAIN_REGEX = /^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/
-const RESERVED_SUBDOMAINS = [
-  "www",
-  "app",
-  "api",
-  "admin",
-  "dashboard",
-  "mail",
-  "email",
-  "ftp",
-  "blog",
-  "shop",
-  "store",
-  "help",
-  "support",
-  "docs",
-  "dev",
-  "staging",
-  "test",
-  "demo",
-]
-
-function isValidSubdomain(subdomain: string): { valid: boolean; error?: string } {
-  if (!subdomain) {
-    return { valid: false, error: "Subdomain is required" }
-  }
-
-  if (subdomain.length < 3) {
-    return { valid: false, error: "Subdomain must be at least 3 characters" }
-  }
-
-  if (subdomain.length > 63) {
-    return { valid: false, error: "Subdomain must be at most 63 characters" }
-  }
-
-  if (!SUBDOMAIN_REGEX.test(subdomain)) {
-    return {
-      valid: false,
-      error: "Subdomain can only contain lowercase letters, numbers, and hyphens (cannot start or end with hyphen)",
-    }
-  }
-
-  if (RESERVED_SUBDOMAINS.includes(subdomain)) {
-    return { valid: false, error: "This subdomain is reserved" }
-  }
-
-  return { valid: true }
-}
+// Address rules are shared with the New client site panel (lib/dashboard/site-address.ts).
+const isValidSubdomain = checkAddress
 
 /**
  * GET /api/dashboard/subdomain

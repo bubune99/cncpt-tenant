@@ -88,6 +88,7 @@ export function CanvasShell({
   const [paletteOpen, setPaletteOpen] = useState(false)
   // When viewing a single subdomain's detail (Sites section).
   const [detailSubdomain, setDetailSubdomain] = useState<string | null>(null)
+  const [detailTab, setDetailTab] = useState<string | undefined>(undefined)
 
   // Leave detail view whenever the section changes away from Sites.
   useEffect(() => {
@@ -96,11 +97,14 @@ export function CanvasShell({
 
   // "open-site" (Overview's site rows): go to Sites and open that site's page.
   useEffect(() => {
+    // detail: "<subdomain>" or { subdomain, tab } (the setup guide opens the tab for its step).
     const onOpen = (e: Event) => {
-      const sub = (e as CustomEvent<string>).detail
+      const d = (e as CustomEvent<string | { subdomain: string; tab?: string }>).detail
+      const sub = typeof d === "string" ? d : d?.subdomain
       if (typeof sub !== "string" || !subdomains.some((s) => s.subdomain === sub)) return
       window.dispatchEvent(new CustomEvent("navigate-to-section", { detail: "sites" }))
       setSelectedSubdomain(sub)
+      setDetailTab(typeof d === "string" ? undefined : d.tab)
       setDetailSubdomain(sub)
     }
     window.addEventListener("open-site", onOpen)
@@ -136,9 +140,11 @@ export function CanvasShell({
       if (detailSubdomain) {
         return (
           <CanvasSubdomainDetail
+            key={detailSubdomain + ":" + (detailTab ?? "")}
             subdomain={detailSubdomain}
             subdomains={subdomains}
-            onBack={() => setDetailSubdomain(null)}
+            initialTab={detailTab}
+            onBack={() => { setDetailSubdomain(null); setDetailTab(undefined) }}
           />
         )
       }

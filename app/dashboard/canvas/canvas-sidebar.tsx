@@ -9,7 +9,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Boxes, ChevronsUpDown, Search, Plus, MoreHorizontal, ChevronDown } from "lucide-react"
+import { Boxes, ChevronsUpDown, Search, Plus, MoreHorizontal } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +17,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { NAV, isHeading, activeNavId, type NavItem } from "./nav-config"
+import { GROUP_ICONS } from "./nav-config"
+import { NAV_GROUPS, groupOfSection, firstSection } from "@/lib/dashboard/nav-groups"
 import { rootDomain } from "@/lib/utils"
 
 interface CanvasSidebarProps {
@@ -50,18 +51,10 @@ export function CanvasSidebar({
   onOpenSearch,
 }: CanvasSidebarProps) {
   const router = useRouter()
-  const active = activeNavId(activeSection)
+  const activeGroup = groupOfSection(activeSection)
   const site = subdomains.find((s) => s.subdomain === selectedSubdomain) || subdomains[0] || null
   const displayName = user?.displayName ?? user?.name ?? (user?.primaryEmail ?? user?.email ?? "Account")
   const email = user?.primaryEmail ?? user?.email ?? ""
-
-  const handleNav = (item: NavItem) => {
-    if (item.route) {
-      router.push(item.route)
-      return
-    }
-    if (item.section) setActiveSection(item.section)
-  }
 
   return (
     <aside className="dirH__rail">
@@ -94,8 +87,13 @@ export function CanvasSidebar({
             </DropdownMenuItem>
           ))}
           {subdomains.length > 0 && <DropdownMenuSeparator />}
-          <DropdownMenuItem onClick={() => router.push("/dashboard/create-subdomain")}>
-            <Plus className="w-4 h-4 mr-2" /> Create new
+          <DropdownMenuItem
+            onClick={() => {
+              setActiveSection("overview")
+              setTimeout(() => window.dispatchEvent(new CustomEvent("open-new-site")), 0)
+            }}
+          >
+            <Plus className="w-4 h-4 mr-2" /> New client site
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -107,36 +105,41 @@ export function CanvasSidebar({
         <span className="kbd">⌘K</span>
       </button>
 
-      {/* Grouped nav */}
-      <nav className="dirH__nav">
-        {NAV.map((entry, i) => {
-          if (isHeading(entry)) {
-            return (
-              <div className="dirH__nav-h" key={"h" + i}>
-                <ChevronDown />
-                {entry.heading}
-              </div>
-            )
-          }
-          const item = entry
-          const Icon = item.icon
-          const isActive = active === item.id
+      {/* Seven places; the open place lists its pages under it (walk dce2661a: 22 items at once). */}
+      <nav className="dirH__nav" aria-label="Workspace">
+        {NAV_GROUPS.map((g) => {
+          const Icon = GROUP_ICONS[g.id]
+          const open = activeGroup === g.id
           return (
-            <button
-              key={item.id}
-              className={"dirH__nav-item" + (isActive ? " is-active" : "")}
-              onClick={() => handleNav(item)}
-              data-tour-id={`canvas-nav-${item.id}`}
-            >
-              <Icon />
-              <span>{item.label}</span>
-              {item.badge !== undefined ? (
-                <span className={"badge" + (item.badgeKind === "hot" ? " is-hot" : item.badgeKind === "blue" ? " is-blue" : "")}>
-                  {item.badge}
-                </span>
+            <div key={g.id} className="dirH__nav-group">
+              <button
+                type="button"
+                className={"dirH__nav-item" + (open && g.items.length === 0 ? " is-active" : "") + (open && g.items.length ? " is-open" : "")}
+                onClick={() => setActiveSection(firstSection(g.id))}
+                aria-expanded={g.items.length ? open : undefined}
+                aria-current={open && g.items.length === 0 ? "page" : undefined}
+                data-tour-id={`canvas-nav-${g.id}`}
+              >
+                {Icon ? <Icon /> : null}
+                <span>{g.label}</span>
+              </button>
+              {open && g.items.length ? (
+                <div className="dirH__nav-sub">
+                  {g.items.map((it) => (
+                    <button
+                      type="button"
+                      key={it.id}
+                      className={"dirH__nav-subitem" + (activeSection === it.section ? " is-active" : "")}
+                      aria-current={activeSection === it.section ? "page" : undefined}
+                      onClick={() => setActiveSection(it.section)}
+                      data-tour-id={`canvas-nav-${it.id}`}
+                    >
+                      {it.label}
+                    </button>
+                  ))}
+                </div>
               ) : null}
-              {item.phase2 ? <span className="badge" style={{ fontSize: 9 }}>soon</span> : null}
-            </button>
+            </div>
           )
         })}
       </nav>
@@ -152,7 +155,7 @@ export function CanvasSidebar({
             {email}
           </div>
         </div>
-        <button className="iconbtn iconbtn--sm iconbtn--ghost" onClick={() => router.push("/handler/account-settings")}>
+        <button className="iconbtn iconbtn--sm iconbtn--ghost" aria-label="Account settings" title="Account settings" onClick={() => router.push("/handler/account-settings")}>
           <MoreHorizontal style={{ width: 13, height: 13 }} />
         </button>
       </div>

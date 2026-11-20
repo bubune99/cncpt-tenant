@@ -6,14 +6,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { sql } from "@/lib/neon"
 import { rateLimitCheck, RATE_LIMIT_PRESETS } from "@/lib/cms/rate-limit"
+import { RESERVED_ADDRESSES } from "@/lib/dashboard/site-address"
 
 export const dynamic = 'force-dynamic'
 
-const RESERVED_SUBDOMAINS = [
-  "www", "app", "api", "admin", "dashboard", "mail", "email",
-  "ftp", "blog", "shop", "store", "help", "support", "docs",
-  "dev", "staging", "test", "demo",
-]
 
 /**
  * GET /api/dashboard/subdomain/check?subdomain=xxx
@@ -30,7 +26,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Check reserved list
-  if (RESERVED_SUBDOMAINS.includes(subdomain)) {
+  if (RESERVED_ADDRESSES.includes(subdomain)) {
     return NextResponse.json({ available: false, taken: true, reason: "reserved" })
   }
 
@@ -47,7 +43,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ available: true, taken: false })
   } catch (error) {
     console.error("[subdomain-check] Error:", error)
-    // On error, return available to let the actual creation validate
-    return NextResponse.json({ available: true, taken: false })
+    // Unknown is not "available": the panel says it could not check, and creation still validates.
+    return NextResponse.json({ available: null, error: "Could not check the address" }, { status: 500 })
   }
 }

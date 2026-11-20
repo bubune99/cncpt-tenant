@@ -60,11 +60,20 @@ export default function DashboardPage() {
     loadSubdomains()
   }, [user])
 
-  const loadSubdomains = async () => {
+  // A site created from the New client site panel: reload the list and select the new site.
+  useEffect(() => {
+    const onChanged = (e: Event) => { loadSubdomains((e as CustomEvent<string>).detail) }
+    window.addEventListener("sites-changed", onChanged)
+    return () => window.removeEventListener("sites-changed", onChanged)
+  }, [])
+
+  const loadSubdomains = async (select?: string) => {
     try {
       const userSubdomains = await getUserSubdomains()
       setSubdomains(Array.isArray(userSubdomains) ? userSubdomains : [])
-      setSelectedSubdomain(userSubdomains?.[0]?.subdomain ?? null)
+      setSelectedSubdomain(
+        (select && userSubdomains?.some((s: any) => s.subdomain === select) ? select : null) ?? userSubdomains?.[0]?.subdomain ?? null,
+      )
     } catch (err) {
       console.error("Dashboard subdomain loading error:", err)
       setError("Failed to load subdomains")
