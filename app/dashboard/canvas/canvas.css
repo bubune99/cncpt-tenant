@@ -678,3 +678,28 @@
   .tnt-canvas .tnt__guide-step { flex-wrap: wrap; }
   .tnt-canvas .tnt__guide-step .btn, .tnt-canvas .tnt__guide-done { margin-left: 34px; }
 }
+
+/* ---------- narrow screens: activity rail goes, sidebar becomes a drawer ---------- */
+.tnt-canvas .dirH__menu-btn { display: none; }
+.tnt-canvas .dirH__nav-backdrop { display: none; }
+@media (max-width: 1024px) {
+  .tnt-canvas .dirH__rrail { display: none; }
+}
+@media (max-width: 720px) {
+  .tnt-canvas .dirH__menu-btn {
+    display: inline-flex; position: fixed; top: 8px; left: 8px; z-index: 61;
+    width: 32px; height: 32px; background: var(--br-background); border: 1px solid var(--br-border);
+  }
+  .tnt-canvas .dirH__top { padding-left: 52px; }
+  .tnt-canvas .dirH__rail {
+    position: fixed; left: 0; top: 0; z-index: 60; height: 100vh;
+    width: min(280px, 85vw); padding-top: 44px;
+    transform: translateX(-100%); transition: transform .2s ease; box-shadow: var(--shadow-xl);
+  }
+  .tnt-canvas.is-nav-open .dirH__rail { transform: translateX(0); }
+  .tnt-canvas.is-nav-open .dirH__nav-backdrop { display: block; position: fixed; inset: 0; z-index: 59; background: rgb(2 6 23 / 0.45); }
+  .tnt-canvas .dirH__page { padding: 16px !important; }
+  .tnt-canvas .tnt__site-grid { grid-template-columns: 1fr; padding: 12px; }
+  .tnt-canvas .tnt__ov-head > .row { width: 100%; }
+  .tnt-canvas .tnt__ov-head > .row .btn { flex: 1; justify-content: center; }
+}

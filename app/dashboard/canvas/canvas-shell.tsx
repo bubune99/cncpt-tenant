@@ -15,6 +15,7 @@
  */
 
 import { useEffect, useState } from "react"
+import { Menu, X } from "lucide-react"
 import { DashboardContent } from "../dashboard-content"
 import { CanvasSidebar } from "./canvas-sidebar"
 import { CanvasTopbar } from "./canvas-topbar"
@@ -90,6 +91,15 @@ export function CanvasShell({
   const [detailSubdomain, setDetailSubdomain] = useState<string | null>(null)
   const [detailTab, setDetailTab] = useState<string | undefined>(undefined)
   const [newSiteRequest, setNewSiteRequest] = useState(0)
+  // Phone width: the sidebar is a drawer (walk 2026-11-20 at 440px: both rails left the page 0px wide).
+  const [navOpen, setNavOpen] = useState(false)
+  useEffect(() => { setNavOpen(false) }, [activeSection, detailSubdomain])
+  useEffect(() => {
+    if (!navOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setNavOpen(false) }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [navOpen])
 
   // Leave detail view whenever the section changes away from Sites.
   useEffect(() => {
@@ -194,16 +204,27 @@ export function CanvasShell({
   }
 
   return (
-    <div className="tnt-canvas dirH br-theme">
+    <div className={"tnt-canvas dirH br-theme" + (navOpen ? " is-nav-open" : "")}>
+      <button
+        type="button"
+        className="dirH__menu-btn iconbtn iconbtn--ghost"
+        aria-label={navOpen ? "Close menu" : "Open menu"}
+        aria-expanded={navOpen}
+        onClick={() => setNavOpen((v) => !v)}
+        data-ui="shell.menu"
+      >
+        {navOpen ? <X style={{ width: 16, height: 16 }} /> : <Menu style={{ width: 16, height: 16 }} />}
+      </button>
+      {navOpen ? <div className="dirH__nav-backdrop" aria-hidden="true" onPointerDown={() => setNavOpen(false)} /> : null}
       <CanvasSidebar
         user={user}
         subdomains={subdomains}
         activeSection={activeSection}
-        setActiveSection={setActiveSection}
+        setActiveSection={(sec: string) => { setActiveSection(sec); setNavOpen(false) }}
         selectedSubdomain={selectedSubdomain}
-        setSelectedSubdomain={setSelectedSubdomain}
+        setSelectedSubdomain={(sub: string | null) => { setSelectedSubdomain(sub); setNavOpen(false) }}
         onOpenSearch={() => setPaletteOpen(true)}
-        onNewSite={() => { setActiveSection("overview"); setNewSiteRequest((n) => n + 1) }}
+        onNewSite={() => { setActiveSection("overview"); setNewSiteRequest((n) => n + 1); setNavOpen(false) }}
       />
 
       <div className="dirH__main">
