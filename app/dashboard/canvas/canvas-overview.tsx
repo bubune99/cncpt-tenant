@@ -167,7 +167,7 @@ export function CanvasOverview({ user, subdomains, selectedSubdomain }: CanvasOv
             </span>
           </div>
           <button className="btn btn--secondary btn--xs" onClick={() => window.dispatchEvent(new CustomEvent("navigate-to-section", { detail: "branding" }))}>Open setup</button>
-          <button className="iconbtn iconbtn--sm iconbtn--ghost" onClick={() => setBannerDismissed(true)}><X style={{ width: 12, height: 12 }} /></button>
+          <button className="iconbtn iconbtn--sm iconbtn--ghost" aria-label="Dismiss" title="Dismiss" onClick={() => setBannerDismissed(true)}><X style={{ width: 12, height: 12 }} /></button>
         </div>
       ) : null}
 

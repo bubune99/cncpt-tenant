@@ -22,4 +22,5 @@ const overview = readFileSync(new URL("../../app/dashboard/canvas/canvas-overvie
 const shellDash = readFileSync(new URL("../../app/dashboard/canvas/canvas-shell.tsx", import.meta.url), "utf8")
 assert.match(overview, /data-ui="overview.open_site"[\s\S]{0,300}new CustomEvent\("open-site"/, "Overview site rows open the site")
 assert.match(shellDash, /addEventListener\("open-site"/, "the dashboard shell opens the site page")
-console.log("ok - a site's CMS links back to the workspace; Overview rows open their site\n\n2 checks passed")
+assert.match(overview, /aria-label="Dismiss"[^>]*onClick=\{\(\) => setBannerDismissed\(true\)\}/, "the setup banner's close button has a name")
+console.log("ok - a site's CMS links back to the workspace; Overview rows open their site; the banner close is named\n\n3 checks passed")
