@@ -129,7 +129,7 @@ const faqs = [
   },
   {
     q: "Is there a free trial?",
-    a: "Yes! All plans include a 7-14 day free trial. No credit card required to start."
+    a: "Yes! All plans include a 7-14 day free trial."
   },
 ]
 
@@ -444,7 +444,7 @@ export default function PricingPage() {
               <Zap className="w-12 h-12 text-orange-500 dark:text-orange-400 mx-auto mb-6" />
               <h2 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">Ready to get started?</h2>
               <p className="text-gray-600 dark:text-white/50 mb-8 max-w-md mx-auto">
-                Start your free trial today. No credit card required.
+                Start your free trial today.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
