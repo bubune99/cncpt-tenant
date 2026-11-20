@@ -43,7 +43,7 @@ export function CanvasTour({ stops, open, onClose }: { stops: TourStop[]; open: 
   useEffect(() => {
     if (!open) return
     returnTo.current = document.activeElement as HTMLElement | null
-    setRect(null)
+    // (rect is measured by the layout effect, which runs before this one; it is cleared on close)
     const first = visible(0, 1)
     if (first < 0) { close(); return }
     setI(first)

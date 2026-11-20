@@ -101,8 +101,8 @@ export function CanvasOverview({ user, subdomains, newSiteRequest = 0, onNewSite
 
   const startTour = () => {
     if (guideHidden) { setGuideHidden(false); writeHidden(false) }
-    // let the guide render before the tour measures it
-    requestAnimationFrame(() => setTourOpen(true))
+    // Same commit: the guide is in the DOM before the tour's layout effect measures it.
+    setTourOpen(true)
   }
 
   const subline = guide
