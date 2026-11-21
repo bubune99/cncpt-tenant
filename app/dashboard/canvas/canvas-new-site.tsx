@@ -118,7 +118,16 @@ export function CanvasNewSite({
             <p className="text-sm">{atLimit}</p>
             <div className="flex gap-2 justify-end">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
-              <Button asChild><a href="/dashboard/create-subdomain">See plans</a></Button>
+              <Button
+                type="button"
+                data-ui="new_site.upgrade"
+                onClick={() => {
+                  onOpenChange(false)
+                  window.dispatchEvent(new CustomEvent("navigate-to-section", { detail: "billing" }))
+                }}
+              >
+                Upgrade plan
+              </Button>
             </div>
           </div>
         ) : (
