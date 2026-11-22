@@ -129,6 +129,7 @@ export default function PricingPage() {
           >
             <button
               onClick={() => setAnnual(false)}
+              aria-pressed={!annual}
               data-tour-id="pricing-monthly-toggle"
               className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
                 !annual ? "bg-blue-800 dark:bg-white text-white dark:text-gray-900" : "text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white"
@@ -138,6 +139,7 @@ export default function PricingPage() {
             </button>
             <button
               onClick={() => setAnnual(true)}
+              aria-pressed={annual}
               data-tour-id="pricing-annual-toggle"
               className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
                 annual ? "bg-blue-800 dark:bg-white text-white dark:text-gray-900" : "text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white"
@@ -330,16 +332,18 @@ export default function PricingPage() {
               >
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  aria-expanded={openFaq === i}
+                  aria-controls={`pricing-faq-${i + 1}-answer`}
                   data-tour-id={`pricing-faq-${i + 1}`}
                   className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
                 >
                   <span className="font-medium text-gray-900 dark:text-white">{faq.q}</span>
-                  <span className={`text-gray-400 dark:text-white/65 transition-transform ${openFaq === i ? "rotate-45" : ""}`}>
+                  <span aria-hidden="true" className={`text-gray-400 dark:text-white/65 transition-transform ${openFaq === i ? "rotate-45" : ""}`}>
                     +
                   </span>
                 </button>
                 {openFaq === i && (
-                  <div className="px-6 pb-4 text-sm text-gray-600 dark:text-white/60 leading-relaxed">
+                  <div id={`pricing-faq-${i + 1}-answer`} className="px-6 pb-4 text-sm text-gray-600 dark:text-white/60 leading-relaxed">
                     {faq.a}
                   </div>
                 )}
