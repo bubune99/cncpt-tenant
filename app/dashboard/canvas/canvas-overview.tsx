@@ -20,6 +20,7 @@ import { accountGuide, siteSetup, type SiteFacts, type StepId } from "@/lib/dash
 import { firstName } from "@/lib/dashboard/greeting"
 import { CanvasTour, type TourStop } from "./canvas-tour"
 import { CanvasNewSite } from "./canvas-new-site"
+import { CanvasGlance } from "./canvas-glance"
 
 interface CanvasOverviewProps {
   user: any
@@ -240,6 +241,8 @@ export function CanvasOverview({ user, subdomains, newSiteRequest = 0, onNewSite
           </div>
         )}
       </section>
+
+      <CanvasGlance />
 
       <CanvasNewSite
         open={newOpen}
