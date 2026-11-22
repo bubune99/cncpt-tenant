@@ -227,7 +227,7 @@ export default function PricingPage() {
               }`}
             >
               Annual
-              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-400">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-800 dark:text-emerald-400">
                 Save 17%
               </span>
             </button>

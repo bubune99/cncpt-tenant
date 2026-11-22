@@ -207,7 +207,7 @@
   /* Text — warm off-white → muted sand */
   --text:           #EEE6D5;
   --text-secondary: #B6AA91;
-  --text-muted:     #897D68;
+  --text-muted:     #A4977F;   /* 5.6:1 or better on every dark surface (was #897D68) */
   --text-on-clay:   #FBF4EE;
   --edge:           #9D8F73;
 

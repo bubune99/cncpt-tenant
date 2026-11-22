@@ -41,6 +41,12 @@ export function CanvasNewSite({
   const seq = useRef(0)
   // Closing gives focus back to what opened it (the opener can be any of four buttons, or the site switcher).
   const opener = useRef<HTMLElement | null>(null)
+  // Taken while rendering the open: the name field's autoFocus moves focus before any effect or Radix hook runs.
+  const wasOpen = useRef(false)
+  if (open && !wasOpen.current && typeof document !== "undefined") {
+    opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+  }
+  wasOpen.current = open
   const defaultEmailRef = useRef(defaultEmail)
   defaultEmailRef.current = defaultEmail
 
@@ -114,7 +120,6 @@ export function CanvasNewSite({
         className="sm:max-w-[460px]"
         data-ui="new_site.panel"
         style={{ fontFamily: "var(--font-geist-sans), system-ui, sans-serif" }}
-        onOpenAutoFocus={() => { opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null }}
         onCloseAutoFocus={(e) => { if (opener.current?.isConnected) { e.preventDefault(); opener.current.focus() } }}
       >
         <DialogHeader>
