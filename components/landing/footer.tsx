@@ -64,13 +64,14 @@ export function Footer({ mounted, resolvedTheme }: FooterProps) {
           {sections.map((section) => (
             <div key={section.title} data-tour-id={section.tourId}>
               <h3 className="text-sm font-medium text-foreground mb-4">{section.title}</h3>
-              <ul className="space-y-3">
+              <ul className="flex flex-col gap-1.5">
+                {/* Each link is at least 24px tall, so a finger or pointer can hit it (walk 2026-11-22). */}
                 {section.links.map((link) => (
                   <li key={link.name}>
                     <Link
                       href={link.href}
                       data-tour-id={link.tourId}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      className="inline-flex min-h-6 items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
                       {link.name}
                     </Link>
@@ -98,7 +99,7 @@ export function Footer({ mounted, resolvedTheme }: FooterProps) {
                 rel="noopener noreferrer"
                 aria-label={`Follow CNCPT Web on ${social.name}`}
                 data-tour-id={social.tourId}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="inline-flex min-h-6 items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 {social.name}
               </a>
