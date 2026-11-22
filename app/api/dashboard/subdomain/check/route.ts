@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
+import { stackServerApp } from "@/stack"
 import { sql } from "@/lib/neon"
 import { rateLimitCheck, RATE_LIMIT_PRESETS } from "@/lib/cms/rate-limit"
 import { RESERVED_ADDRESSES } from "@/lib/dashboard/site-address"
@@ -18,6 +19,9 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: NextRequest) {
   const limited = await rateLimitCheck(request, RATE_LIMIT_PRESETS.publicRead, { name: "publicRead" })
   if (limited) return limited
+  // Only the signed-in workspace asks (the New client site panel, Create site); nobody else needs to probe addresses.
+  const user = await stackServerApp.getUser()
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   const { searchParams } = new URL(request.url)
   const subdomain = searchParams.get("subdomain")?.toLowerCase().trim()
 
