@@ -87,25 +87,8 @@ export function Footer({ mounted, resolvedTheme }: FooterProps) {
           <p className="text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()} CNCPT Web. All rights reserved.
           </p>
-          <div className="flex items-center gap-4 mt-4 md:mt-0" data-tour-id="home-footer-socials">
-            {[
-              // GitHub removed 2026-11-22: github.com/cncptweb does not exist (404).
-              { name: "Twitter", href: "https://x.com/cncptweb", tourId: "home-footer-social-twitter" },
-              { name: "Discord", href: "https://discord.gg/cncptweb", tourId: "home-footer-social-discord" },
-            ].map((social) => (
-              <a
-                key={social.name}
-                href={social.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`Follow CNCPT Web on ${social.name}`}
-                data-tour-id={social.tourId}
-                className="inline-flex min-h-6 items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {social.name}
-              </a>
-            ))}
-          </div>
+          {/* Social links removed 2026-11-22 (owner: "Remove both links until the accounts exist"): github.com/cncptweb,
+              x.com/cncptweb and the discord.gg/cncptweb invite do not exist. Add them back once the accounts are made. */}
         </div>
       </div>
     </footer>
