@@ -652,7 +652,7 @@
 .tnt-canvas .tnt__guide-step.is-next .tnt__guide-num { border-color: var(--br-primary); color: #1d4ed8; } /* #3b82f6 read 4.0:1 on dark */
 .dark .tnt-canvas .tnt__guide-step.is-next .tnt__guide-num { color: #93c5fd; border-color: #60a5fa; }
 .tnt-canvas .tnt__guide-step.is-done .tnt__guide-num { background: #10b981; border-color: #10b981; color: #fff; }
-.tnt-canvas .tnt__guide-done { font-size: 11.5px; color: #059669; white-space: nowrap; }
+.tnt-canvas .tnt__guide-done { font-size: 11.5px; color: #047857; /* #059669 read 3.8:1 on white */ white-space: nowrap; }
 .dark .tnt-canvas .tnt__guide-done { color: #6ee7b7; }
 .tnt-canvas .tnt__guide-step .btn { white-space: nowrap; }
 
