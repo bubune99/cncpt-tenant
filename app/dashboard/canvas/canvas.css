@@ -108,12 +108,13 @@
   display: inline-flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
-.tnt-canvas .avatar--xs { width: 20px; height: 20px; font-size: 9.5px; }
+.tnt-canvas .avatar--xs { width: 20px; height: 20px; font-size: 10.5px; }
 .tnt-canvas .avatar--sm { width: 24px; height: 24px; font-size: 11px; }
 .tnt-canvas .avatar--lg { width: 56px; height: 56px; font-size: 18px; }
-.tnt-canvas .avatar--orange { background: linear-gradient(135deg, #ea580c, #dc2626); }
-.tnt-canvas .avatar--green { background: linear-gradient(135deg, #10b981, #059669); }
-.tnt-canvas .avatar--purple { background: linear-gradient(135deg, #a855f7, #ec4899); }
+/* White initials need 4.5:1 at both ends of each gradient (orange #ea580c read 3.6:1; walk 2026-11-22). */
+.tnt-canvas .avatar--orange { background: linear-gradient(135deg, #c2410c, #b91c1c); }
+.tnt-canvas .avatar--green { background: linear-gradient(135deg, #047857, #065f46); }
+.tnt-canvas .avatar--purple { background: linear-gradient(135deg, #7e22ce, #be185d); }
 .tnt-canvas .avatar--slate { background: linear-gradient(135deg, #475569, #1e293b); }
 
 .tnt-canvas .kbd {
@@ -237,9 +238,10 @@
   width: 22px; height: 22px; border-radius: 5px;
   background: var(--br-background); border: 1px solid var(--br-border);
   display: inline-flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 700; color: var(--br-primary);
+  font-size: 11px; font-weight: 700; color: #1d4ed8; /* #3b82f6 read 3.7:1 on white, 4.0:1 on dark */
   flex-shrink: 0;
 }
+.dark .tnt-canvas .tnt__site-mark { color: #93c5fd; }
 .tnt-canvas .tnt__site-name { font-size: 12.5px; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tnt-canvas .tnt__site-host { font-size: 11.5px; color: var(--br-text-secondary); font-family: var(--br-font-mono); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
@@ -647,7 +649,8 @@
   font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums;
   border: 1.5px solid var(--br-border); color: var(--br-text-secondary);
 }
-.tnt-canvas .tnt__guide-step.is-next .tnt__guide-num { border-color: var(--br-primary); color: var(--br-primary); }
+.tnt-canvas .tnt__guide-step.is-next .tnt__guide-num { border-color: var(--br-primary); color: #1d4ed8; } /* #3b82f6 read 4.0:1 on dark */
+.dark .tnt-canvas .tnt__guide-step.is-next .tnt__guide-num { color: #93c5fd; border-color: #60a5fa; }
 .tnt-canvas .tnt__guide-step.is-done .tnt__guide-num { background: #10b981; border-color: #10b981; color: #fff; }
 .tnt-canvas .tnt__guide-done { font-size: 11.5px; color: #059669; white-space: nowrap; }
 .dark .tnt-canvas .tnt__guide-done { color: #6ee7b7; }
