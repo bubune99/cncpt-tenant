@@ -28,7 +28,7 @@ export function CanvasGlance() {
   const [creditState, credits] = useFigure<CreditStats>("/api/credits/balance", parseCredits)
   return (
     <section className="tnt__glance" aria-label="At a glance" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12, marginTop: 16 }}>
-      <div className="card" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px" }}>
+      <div className="card" style={{ display: "flex", alignItems: "center", gap: 12, padding: 16 }}>
         <div className="tnt__act-icon" style={{ width: 32, height: 32 }} aria-hidden="true"><MessageSquare /></div>
         <div className="col" style={{ flex: 1, gap: 1, minWidth: 0 }}>
           <span style={{ fontSize: 12.5, fontWeight: 600 }}>Customer support</span>
@@ -36,7 +36,7 @@ export function CanvasGlance() {
         </div>
         <button type="button" className="btn btn--secondary btn--xs" onClick={() => go("comms")} data-ui="overview.glance.support">Open inbox</button>
       </div>
-      <div className="card" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px" }}>
+      <div className="card" style={{ display: "flex", alignItems: "center", gap: 12, padding: 16 }}>
         <div className="tnt__act-icon" style={{ width: 32, height: 32 }} aria-hidden="true"><Zap /></div>
         <div className="col" style={{ flex: 1, gap: 1, minWidth: 0 }}>
           <span style={{ fontSize: 12.5, fontWeight: 600 }}>AI credits</span>
