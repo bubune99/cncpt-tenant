@@ -89,8 +89,8 @@ export default function PricingPage() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
-            <Link href="/demo" data-tour-id="pricing-nav-demo" className="text-sm text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-colors">Demo</Link>
-            <Link href="/book" data-tour-id="pricing-nav-book" className="text-sm text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-colors">Book Call</Link>
+            <Link href="/demo" data-tour-id="pricing-nav-demo" className="inline-flex min-h-6 items-center text-sm text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-colors">Demo</Link>
+            <Link href="/book" data-tour-id="pricing-nav-book" className="inline-flex min-h-6 items-center text-sm text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-colors">Book Call</Link>
             <ThemeToggle />
             <Link href="/register" data-tour-id="pricing-nav-register" className="px-5 py-2.5 text-sm font-medium bg-blue-800 dark:bg-white text-white dark:text-gray-900 rounded-xl hover:bg-blue-700 dark:hover:bg-white/90 transition-colors">
               Get Started
@@ -197,6 +197,7 @@ export default function PricingPage() {
                 <Link
                   href={plan.href}
                   data-tour-id={`pricing-tier-${plan.slug}-cta`}
+                  aria-label={`${plan.cta}: ${plan.name} plan`}
                   className={`block w-full py-3 rounded-xl text-center text-sm font-medium transition-all mb-6 ${
                     plan.popular
                       ? "bg-gradient-to-r from-blue-800 to-orange-500 text-white hover:opacity-90"
@@ -285,16 +286,17 @@ export default function PricingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className={`p-5 rounded-xl border ${
+                className={`relative p-5 rounded-xl border ${
                   pack.popular
                     ? "border-orange-500/50 bg-orange-500/5"
                     : "border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.02]"
                 }`}
               >
                 {pack.popular && (
-                  <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">Best Value</span>
+                  // In the corner, so the popular pack lines up with the others (walk 2026-11-22: it sat 24px lower).
+                  <span className="absolute top-5 right-5 text-xs text-orange-600 dark:text-orange-400 font-medium">Best Value</span>
                 )}
-                <h3 className="font-medium mb-1 text-gray-900 dark:text-white">{pack.name}</h3>
+                <h3 className={`font-medium mb-1 text-gray-900 dark:text-white ${pack.popular ? "pr-20" : ""}`}>{pack.name}</h3>
                 <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{pack.credits}</p>
                 <p className="text-sm text-gray-500 dark:text-white/65 mb-3">credits</p>
                 <p className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">{pack.price}</p>
