@@ -115,6 +115,12 @@ export function CanvasOverview({ user, subdomains, newSiteRequest = 0, onNewSite
           <div className="sub">{subline}</div>
         </div>
         <div className="row" style={{ gap: 8 }}>
+          {/* Hiding the guide was one way: nothing visible brought it back (walk 2026-11-22). */}
+          {guideHidden && guide !== null && !guide.complete ? (
+            <button type="button" className="btn btn--ghost btn--sm" onClick={() => { setGuideHidden(false); writeHidden(false) }} data-ui="overview.guide_show">
+              Show setup guide
+            </button>
+          ) : null}
           <button type="button" className="btn btn--secondary btn--sm" onClick={startTour} data-ui="overview.tour">
             <Compass style={{ width: 13, height: 13 }} /> Take the tour
           </button>
