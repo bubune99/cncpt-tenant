@@ -25,7 +25,7 @@ import {
   HelpCircle, Compass, Moon, Sun, Search, Plus, PanelLeft,
   LayoutDashboard, FileText, ShoppingBag, Package, Users, BookOpen,
   BarChart3, Settings, Layers, Image as ImageIcon, Megaphone, Workflow,
-  Tag, MessageSquare, Calendar, Boxes, Circle, ExternalLink, LogOut, Sparkles, LayoutGrid,
+  Tag, MessageSquare, Calendar, Boxes, Circle, ExternalLink, LogOut, Sparkles, LayoutGrid, Inbox,
 } from 'lucide-react';
 import { workspaceHref } from '@/lib/landing/workspace-href';
 
@@ -485,7 +485,7 @@ export function AdminShell({
                     data-tour-id="nav-inbox"
                     title={collapsed ? 'Inbox' : undefined}
                   >
-                    <span className="n">✦</span>
+                    <Inbox className="n nav-ico" size={17} strokeWidth={1.8} aria-hidden="true" />
                     <span className="label">Inbox</span>
                     {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
                   </Link>
