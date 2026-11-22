@@ -160,7 +160,7 @@ export function CanvasSites({ subdomains, onManage }: CanvasSitesProps) {
           })}
         </div>
       </div>
-      <div className="muted" style={{ fontSize: 10.5 }}>
+      <div className="muted" style={{ fontSize: 11.5 }}>
         Per-site traffic figures arrive with the Analytics redesign (Phase 2).
       </div>
     </div>
