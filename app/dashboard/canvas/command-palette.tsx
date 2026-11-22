@@ -22,6 +22,8 @@ export function CommandPalette({ open, onClose, setActiveSection }: CommandPalet
   const [q, setQ] = useState("")
   const [idx, setIdx] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
+  // Closing gives focus back to what opened it (the search button, or wherever Ctrl+K was pressed).
+  const opener = useRef<HTMLElement | null>(null)
 
   const items = useMemo(() => NAV.filter((e): e is NavItem => !isHeading(e)), [])
   const filtered = useMemo(() => {
@@ -32,9 +34,14 @@ export function CommandPalette({ open, onClose, setActiveSection }: CommandPalet
 
   useEffect(() => {
     if (open) {
+      opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
       setQ("")
       setIdx(0)
       setTimeout(() => inputRef.current?.focus(), 10)
+      return () => {
+        const back = opener.current
+        if (back?.isConnected) setTimeout(() => back.focus(), 0)
+      }
     }
   }, [open])
 

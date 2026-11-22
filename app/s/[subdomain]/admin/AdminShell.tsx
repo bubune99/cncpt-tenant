@@ -173,6 +173,21 @@ export function AdminShell({
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  // At phone width the sidebar is a menu that slides in (atlas.css), opened from the top bar's sidebar button.
+  const [isPhone, setIsPhone] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const sync = () => { setIsPhone(mq.matches); if (!mq.matches) setMobileOpen(false); };
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMobileOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mobileOpen]);
   // Collapsed sidebar (MergedShell). Persisted so the choice survives reloads.
   const [collapsed, setCollapsed] = useState(false);
   useEffect(() => {
@@ -325,16 +340,6 @@ export function AdminShell({
               />
             )}
 
-            {/* Mobile toggle (small screens only) */}
-            <button
-              className="btn"
-              onClick={() => setMobileOpen(o => !o)}
-              style={{ position: 'fixed', top: 8, left: 8, zIndex: 50, display: 'none' }}
-              aria-label="Toggle menu"
-              data-tour-id="admin-mobile-toggle"
-            >
-              ☰
-            </button>
 
             {/* ── Outer page-frame ── */}
             <div
@@ -347,10 +352,10 @@ export function AdminShell({
                 {/* Collapse toggle — sinks the sidebar to an icon rail */}
                 <button
                   className="collapse-btn"
-                  onClick={toggleCollapsed}
-                  title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-                  aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-                  aria-pressed={collapsed}
+                  onClick={isPhone ? () => setMobileOpen(o => !o) : toggleCollapsed}
+                  title={isPhone ? (mobileOpen ? 'Close menu' : 'Open menu') : collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                  aria-label={isPhone ? (mobileOpen ? 'Close menu' : 'Open menu') : collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                  aria-pressed={isPhone ? mobileOpen : collapsed}
                   data-tour-id="admin-collapse-toggle"
                 >
                   <PanelLeft size={17} strokeWidth={1.8} />
@@ -412,6 +417,7 @@ export function AdminShell({
                   <Link
                     href={sectionHref(newHrefFor(activeSection))}
                     className="btn btn-accent btn-new"
+                    aria-label="New"
                     data-tour-id="header-new"
                   >
                     <Plus size={15} strokeWidth={2} />
@@ -462,8 +468,9 @@ export function AdminShell({
 
                 {/* ── Sidebar (MergedShell — icon + label + count, collapsible) ── */}
                 <aside
-                  className={'sidebar' + (collapsed ? ' collapsed' : '')}
+                  className={'sidebar' + (collapsed && !isPhone ? ' collapsed' : '')}
                   data-tour-id="admin-sidebar"
+                  data-open={mobileOpen ? 'true' : undefined}
                   style={{
                     transform: mobileOpen ? 'none' : undefined,
                   }}

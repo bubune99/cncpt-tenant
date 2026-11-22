@@ -37,7 +37,7 @@
   --ink-900: #2A2419;   /* primary text */
   --ink-700: #4A4133;   /* strong secondary */
   --ink-500: #6B6051;   /* secondary text */
-  --ink-300: #938672;   /* muted / captions */
+  --ink-300: #70624D;   /* muted / captions (4.7:1 on the page background; was #938672, 3.2:1) */
 
   /* ── Earth accents — muted, matte (node categories & UI accents) ──────── */
   /* Clay / terracotta — PRIMARY brand + Process */
@@ -215,7 +215,7 @@
   --ink-900: #EFE7D6;
   --ink-700: #D2C7AF;
   --ink-500: #B6AA91;
-  --ink-300: #897D68;
+  --ink-300: #A4977F;   /* 5.6:1 or better on every dark surface; was #897D68, 3.5–4.4:1 */
 
   /* Accents stay legible: nudge the mid tone a touch brighter for dark fields */
   --primary:       var(--clay-500);

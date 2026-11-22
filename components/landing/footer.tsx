@@ -82,7 +82,7 @@ export function Footer({ mounted, resolvedTheme }: FooterProps) {
         </div>
 
         <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-border">
-          <p className="text-sm text-muted-foreground/60">
+          <p className="text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()} CNCPT Web. All rights reserved.
           </p>
           <div className="flex items-center gap-4 mt-4 md:mt-0" data-tour-id="home-footer-socials">
@@ -98,7 +98,7 @@ export function Footer({ mounted, resolvedTheme }: FooterProps) {
                 rel="noopener noreferrer"
                 aria-label={`Follow CNCPT Web on ${social.name}`}
                 data-tour-id={social.tourId}
-                className="text-sm text-muted-foreground/60 hover:text-foreground transition-colors"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 {social.name}
               </a>

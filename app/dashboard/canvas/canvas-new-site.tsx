@@ -39,6 +39,8 @@ export function CanvasNewSite({
   const [error, setError] = useState<string | null>(null)
   const [atLimit, setAtLimit] = useState<string | null>(null)
   const seq = useRef(0)
+  // Closing gives focus back to what opened it (the opener can be any of four buttons, or the site switcher).
+  const opener = useRef<HTMLElement | null>(null)
   const defaultEmailRef = useRef(defaultEmail)
   defaultEmailRef.current = defaultEmail
 
@@ -108,7 +110,13 @@ export function CanvasNewSite({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[460px]" data-ui="new_site.panel" style={{ fontFamily: "var(--font-geist-sans), system-ui, sans-serif" }}>
+      <DialogContent
+        className="sm:max-w-[460px]"
+        data-ui="new_site.panel"
+        style={{ fontFamily: "var(--font-geist-sans), system-ui, sans-serif" }}
+        onOpenAutoFocus={() => { opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null }}
+        onCloseAutoFocus={(e) => { if (opener.current?.isConnected) { e.preventDefault(); opener.current.focus() } }}
+      >
         <DialogHeader>
           <DialogTitle>New client site</DialogTitle>
           <DialogDescription>Name the site and pick its address. Branding, domain and access come next, from the guide.</DialogDescription>

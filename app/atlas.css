@@ -119,6 +119,26 @@
   height: 100%;
 }
 .atlas .sidebar .meta { padding: 0 18px 14px; }
+/* Phone width: the sidebar is a menu that slides in over the page, opened from
+   the top bar's sidebar button (AdminShell sets transform: none while open).
+   The top bar keeps its buttons in view: the site address chip, the search box
+   and the button words step aside (each button keeps its name). */
+@media (max-width: 767px) {
+  .atlas .sidebar,
+  .atlas .sidebar.collapsed {
+    position: fixed; top: 0; bottom: 0; left: 0; z-index: 45; width: 260px;
+    background: var(--paper); transform: translateX(-100%); transition: transform .2s ease;
+  }
+  /* Closed: out of the tab order and away from screen readers, after the slide. */
+  .atlas .sidebar:not([data-open]) { visibility: hidden; transition: transform .2s ease, visibility 0s linear .2s; }
+  .atlas .topbar { padding: 0 10px; gap: 6px; }
+  .atlas .topbar .store-chip,
+  .atlas .topbar .topsearch,
+  .atlas .topbar .btn-new-label { display: none; }
+  .atlas .topbar .store { min-width: 0; font-size: 15px; }
+  .atlas .topbar .store > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .atlas .topbar .right { gap: 4px; flex-shrink: 0; margin-left: auto; }
+}
 .atlas .sidebar .meta .date { font-family: var(--font-sans); font-style: italic; font-size: 13px; color: var(--ink-soft); }
 .atlas .sidebar .nav { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 0; }
 .atlas .sidebar .nav-h { padding: 0 24px 6px; }

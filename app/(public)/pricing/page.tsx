@@ -227,7 +227,7 @@ export default function PricingPage() {
               }`}
             >
               Annual
-              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-400">
                 Save 17%
               </span>
             </button>
@@ -260,7 +260,7 @@ export default function PricingPage() {
 
                 <div className="mb-6">
                   <h3 className="text-xl font-semibold mb-1 text-gray-900 dark:text-white">{plan.name}</h3>
-                  <p className="text-sm text-gray-500 dark:text-white/40">{plan.description}</p>
+                  <p className="text-sm text-gray-500 dark:text-white/65">{plan.description}</p>
                 </div>
 
                 <div className="mb-6">
@@ -268,10 +268,10 @@ export default function PricingPage() {
                     <span className="text-4xl font-bold text-gray-900 dark:text-white">
                       ${annual ? Math.round(plan.yearlyPrice / 12) : plan.price}
                     </span>
-                    <span className="text-gray-500 dark:text-white/40">/mo</span>
+                    <span className="text-gray-500 dark:text-white/65">/mo</span>
                   </div>
                   {annual && (
-                    <p className="text-sm text-gray-500 dark:text-white/40 mt-1">
+                    <p className="text-sm text-gray-500 dark:text-white/65 mt-1">
                       ${plan.yearlyPrice}/year billed annually
                     </p>
                   )}
@@ -336,7 +336,7 @@ export default function PricingPage() {
               >
                 <h3 className="font-medium mb-1 text-gray-900 dark:text-white">{addon.name}</h3>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{addon.price}</p>
-                <p className="text-xs text-gray-500 dark:text-white/40">{addon.note}</p>
+                <p className="text-xs text-gray-500 dark:text-white/65">{addon.note}</p>
               </motion.div>
             ))}
           </div>
@@ -379,7 +379,7 @@ export default function PricingPage() {
                 )}
                 <h3 className="font-medium mb-1 text-gray-900 dark:text-white">{pack.name}</h3>
                 <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{pack.credits}</p>
-                <p className="text-sm text-gray-500 dark:text-white/40 mb-3">credits</p>
+                <p className="text-sm text-gray-500 dark:text-white/65 mb-3">credits</p>
                 <p className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">{pack.price}</p>
               </motion.div>
             ))}
@@ -415,7 +415,7 @@ export default function PricingPage() {
                   className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
                 >
                   <span className="font-medium text-gray-900 dark:text-white">{faq.q}</span>
-                  <span className={`text-gray-400 dark:text-white/40 transition-transform ${openFaq === i ? "rotate-45" : ""}`}>
+                  <span className={`text-gray-400 dark:text-white/65 transition-transform ${openFaq === i ? "rotate-45" : ""}`}>
                     +
                   </span>
                 </button>
@@ -484,7 +484,7 @@ export default function PricingPage() {
               <div className="h-7 w-[100px] bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
             )}
           </Link>
-          <p className="text-sm text-gray-400 dark:text-white/30">
+          <p className="text-sm text-gray-500 dark:text-white/65">
             &copy; {new Date().getFullYear()} CNCPT Web. All rights reserved.
           </p>
         </div>

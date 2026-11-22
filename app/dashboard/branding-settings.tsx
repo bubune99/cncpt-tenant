@@ -365,11 +365,13 @@ export function BrandingSettings({ selectedSubdomain }: BrandingSettingsProps) {
               <div className="flex gap-2">
                 <input
                   type="color"
+                  aria-label="Primary color"
                   value={branding.primaryColor}
                   onChange={(e) => updateField("primaryColor", e.target.value)}
                   className="h-10 w-14 rounded border cursor-pointer"
                 />
                 <Input
+                  aria-label="Primary color (hex)"
                   value={branding.primaryColor}
                   onChange={(e) => updateField("primaryColor", e.target.value)}
                   placeholder="#0066cc"
@@ -382,11 +384,13 @@ export function BrandingSettings({ selectedSubdomain }: BrandingSettingsProps) {
               <div className="flex gap-2">
                 <input
                   type="color"
+                  aria-label="Accent color"
                   value={branding.accentColor}
                   onChange={(e) => updateField("accentColor", e.target.value)}
                   className="h-10 w-14 rounded border cursor-pointer"
                 />
                 <Input
+                  aria-label="Accent color (hex)"
                   value={branding.accentColor}
                   onChange={(e) => updateField("accentColor", e.target.value)}
                   placeholder="#6366f1"
@@ -399,11 +403,13 @@ export function BrandingSettings({ selectedSubdomain }: BrandingSettingsProps) {
               <div className="flex gap-2">
                 <input
                   type="color"
+                  aria-label="Theme color"
                   value={branding.themeColor}
                   onChange={(e) => updateField("themeColor", e.target.value)}
                   className="h-10 w-14 rounded border cursor-pointer"
                 />
                 <Input
+                  aria-label="Theme color (hex)"
                   value={branding.themeColor}
                   onChange={(e) => updateField("themeColor", e.target.value)}
                   placeholder="#0891b2"

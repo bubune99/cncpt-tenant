@@ -204,7 +204,7 @@ export default function CustomersPage(): React.ReactElement {
   return (
     <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }} data-tour-id="customers-page">
       <div style={{ padding: '18px 26px 0', flex: 'none' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20 }} data-tour-id="customers-heading">
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px 20px', flexWrap: 'wrap' }} data-tour-id="customers-heading">
           <div>
             <Eyebrow>People</Eyebrow>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 3 }}>
@@ -254,7 +254,7 @@ export default function CustomersPage(): React.ReactElement {
               Clear all
             </button>
           )}
-          <div style={{ marginLeft: 'auto' }}>
+          <div style={{ marginLeft: 'auto', maxWidth: '100%' }}>
             <LiveSearch value={q} onChange={setQ} placeholder="Search name, email, ID…" width={240} />
           </div>
         </div>

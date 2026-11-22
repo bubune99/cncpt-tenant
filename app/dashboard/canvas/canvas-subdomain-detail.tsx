@@ -63,7 +63,7 @@ export function CanvasSubdomainDetail({ subdomain, subdomains, initialTab, onBac
           <span className="dirH__crumb-active">{title}</span>
         </div>
         <div style={{ flex: 1 }} />
-        <span className="pill pill--green" style={{ fontSize: 11 }}><span className="dot" /> Active</span>
+        <span className="pill pill--green" style={{ fontSize: 11.5 }}><span className="dot" /> Active</span>
         <a className="btn btn--secondary btn--xs" href={siteUrl} target="_blank" rel="noreferrer"><ExternalLink style={{ width: 12, height: 12 }} /> Visit</a>
         <a className="btn btn--primary btn--xs" href={`${siteUrl}/admin`}>Manage content</a>
       </div>
@@ -72,8 +72,8 @@ export function CanvasSubdomainDetail({ subdomain, subdomains, initialTab, onBac
         {TABS.map((t) => {
           const Icon = t.icon
           return (
-            <button key={t.id} className={"tnt__tab" + (t.id === tab ? " is-on" : "")} onClick={() => setTab(t.id)}>
-              <Icon /> {t.l}
+            <button type="button" key={t.id} className={"tnt__tab" + (t.id === tab ? " is-on" : "")} onClick={() => setTab(t.id)} aria-pressed={t.id === tab}>
+              <Icon aria-hidden /> {t.l}
             </button>
           )
         })}

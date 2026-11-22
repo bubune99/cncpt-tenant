@@ -39,7 +39,7 @@ export function LogoMarquee() {
         {logos.map((logo) => (
           <div
             key={logo.name}
-            className="flex items-center gap-2 mx-8 text-muted-foreground/60 hover:text-foreground transition-colors"
+            className="flex items-center gap-2 mx-8 text-muted-foreground hover:text-foreground transition-colors"
           >
             {logo.svg}
             <span className="text-sm font-medium">{logo.name}</span>
