@@ -96,7 +96,7 @@
   --accent-foreground: #ffffff;
   --destructive: #be123c;
   --border: #e5e7eb;
-  --input: #f9fafb;
+  --input: #878d98; /* field outlines read 3:1 on white cards (were #f9fafb, 1:1) */
   --ring: #1e3a5f;
   --chart-1: #1e3a5f;
   --chart-2: #c2410c;
@@ -134,7 +134,7 @@
   --accent-foreground: #111827;
   --destructive: #dc2626;
   --border: #374151;
-  --input: #1f2937;
+  --input: #737b88; /* field outlines read 3.4:1 on dark cards (were #1f2937, the card colour) */
   --ring: #60a5fa;
   --chart-1: #60a5fa;
   --chart-2: #fb923c;

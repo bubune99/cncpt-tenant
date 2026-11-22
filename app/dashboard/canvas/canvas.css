@@ -471,13 +471,15 @@
 .tnt-canvas .tnt__tabs {
   display: flex; gap: 0; border-bottom: 1px solid var(--br-border);
   padding: 0 18px; background: var(--br-background); flex-shrink: 0;
+  /* Six tabs do not fit a phone: the row scrolls sideways instead of hiding Hosting and Danger zone. */
+  overflow-x: auto; scrollbar-width: thin;
 }
 .tnt-canvas .tnt__tab {
   border: 0; background: transparent;
   font-size: 12.5px; font-weight: 500; color: var(--br-text-secondary);
   padding: 11px 14px; cursor: pointer; font-family: inherit;
   border-bottom: 2px solid transparent; margin-bottom: -1px;
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; gap: 6px; flex: none; white-space: nowrap;
 }
 .tnt-canvas .tnt__tab svg { width: 13px; height: 13px; }
 .tnt-canvas .tnt__tab.is-on { color: var(--br-primary); border-color: var(--br-primary); font-weight: 600; }
@@ -712,7 +714,16 @@
   }
   .tnt-canvas.is-nav-open .dirH__rail { transform: translateX(0); }
   .tnt-canvas.is-nav-open .dirH__nav-backdrop { display: block; position: fixed; inset: 0; z-index: 59; background: rgb(2 6 23 / 0.45); }
-  .tnt-canvas .dirH__page { padding: 16px !important; }
+  /* Room at the end so the floating Ask CNCPT button never covers the last row (walk 2026-11-22, 440 wide). */
+  .tnt-canvas .dirH__page { padding: 16px 16px 88px !important; }
+  /* No keyboard on a phone: shortcut hints step aside. */
+  .tnt-canvas .kbd, .tnt-ai-dock-pill .kbd { display: none; }
+  /* A site's page header at 440: the "Subdomains" crumb steps aside and a long site name shortens, so Visit and
+     Manage content stay on screen; the embedded settings drop their extra padding (the page already has 16px). */
+  .tnt-canvas .dirH__crumbs { min-width: 0; }
+  .tnt-canvas .dirH__crumbs .muted { display: none; }
+  .tnt-canvas .dirH__crumb-active { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tnt-canvas .tnt__embed > div { padding: 0 !important; }
   .tnt-canvas .tnt__site-grid { grid-template-columns: 1fr; padding: 12px; }
   .tnt-canvas .tnt__ov-head > .row { width: 100%; }
   .tnt-canvas .tnt__ov-head > .row .btn { flex: 1; justify-content: center; }

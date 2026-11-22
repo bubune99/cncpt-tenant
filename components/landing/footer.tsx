@@ -87,8 +87,8 @@ export function Footer({ mounted, resolvedTheme }: FooterProps) {
           </p>
           <div className="flex items-center gap-4 mt-4 md:mt-0" data-tour-id="home-footer-socials">
             {[
+              // GitHub removed 2026-11-22: github.com/cncptweb does not exist (404).
               { name: "Twitter", href: "https://x.com/cncptweb", tourId: "home-footer-social-twitter" },
-              { name: "GitHub", href: "https://github.com/cncptweb", tourId: "home-footer-social-github" },
               { name: "Discord", href: "https://discord.gg/cncptweb", tourId: "home-footer-social-discord" },
             ].map((social) => (
               <a

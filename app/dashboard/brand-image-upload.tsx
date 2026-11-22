@@ -63,7 +63,7 @@ export function BrandImageUpload({
         type="button"
         variant="outline"
         size="sm"
-        className="w-fit"
+        className="w-fit gap-2"
         disabled={busy}
         onClick={() => input.current?.click()}
         aria-label={`Upload ${label}`}
