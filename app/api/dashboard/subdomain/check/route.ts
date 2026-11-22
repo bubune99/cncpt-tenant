@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { stackServerApp } from "@/stack"
 import { sql } from "@/lib/neon"
 import { rateLimitCheck, RATE_LIMIT_PRESETS } from "@/lib/cms/rate-limit"
-import { RESERVED_ADDRESSES } from "@/lib/dashboard/site-address"
+import { RESERVED_ADDRESSES, checkAddress } from "@/lib/dashboard/site-address"
 
 export const dynamic = 'force-dynamic'
 
@@ -29,10 +29,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Subdomain is required" }, { status: 400 })
   }
 
-  // Check reserved list
+  // Reserved stays a plain "taken" answer (the screens show it that way).
   if (RESERVED_ADDRESSES.includes(subdomain)) {
     return NextResponse.json({ available: false, taken: true, reason: "reserved" })
   }
+  // The same rule creation applies (lib/dashboard/site-address): an address it would refuse is never "available".
+  const rule = checkAddress(subdomain)
+  if (!rule.valid) return NextResponse.json({ available: false, taken: false, reason: "invalid", error: rule.error }, { status: 400 })
 
   try {
     // Check database

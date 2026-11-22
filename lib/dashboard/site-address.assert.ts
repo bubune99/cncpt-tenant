@@ -4,6 +4,7 @@
  * from the site's name. Run: tsx lib/dashboard/site-address.assert.ts
  */
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 import { checkAddress, addressFromName } from "./site-address"
 
 let n = 0
@@ -34,5 +35,11 @@ ok("an address is suggested from the name", () => {
 ok("a suggestion never ends in a hyphen after trimming to length", () => {
   const s = addressFromName("a".repeat(62) + " b")
   assert.ok(!s.endsWith("-"), s)
+})
+ok("the availability check refuses an address creation would refuse (walk 2026-11-22: 'Bad_Name!', '-lead', 'a' came back available)", () => {
+  const route = readFileSync("app/api/dashboard/subdomain/check/route.ts", "utf8") // run from the repo root
+  assert.match(route, /checkAddress\(subdomain\)/, "the check route uses checkAddress")
+  assert.match(route, /status: 400/)
+  for (const bad of ["bad_name!", "-lead", "a", "x".repeat(70)]) assert.equal(checkAddress(bad).valid, false, bad)
 })
 console.log(`\n${n} checks passed`)
