@@ -130,7 +130,7 @@ export function CanvasSites({ subdomains, onManage }: CanvasSitesProps) {
                 style={{ padding: "16px 18px", borderBottom: "1px solid var(--br-border)", display: "grid", gridTemplateColumns: "1.6fr 1fr 1fr auto", gap: 18, alignItems: "center" }}
               >
                 <div className="row" style={{ gap: 12 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 10, background: "linear-gradient(135deg,#0F172A,#3B82F6)", color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 17, flexShrink: 0 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 10, background: "linear-gradient(135deg,#0F172A,#1D4ED8)", color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 17, flexShrink: 0 }}>
                     {(s.subdomain[0] || "S").toUpperCase()}
                   </div>
                   <div className="col" style={{ gap: 2, minWidth: 0 }}>

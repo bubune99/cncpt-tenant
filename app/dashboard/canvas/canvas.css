@@ -663,7 +663,7 @@
 .tnt-canvas .tnt__site-card-open:hover strong { text-decoration: underline; }
 .tnt-canvas .tnt__site-card-open:focus-visible { outline: 2px solid var(--br-primary); outline-offset: 3px; }
 .tnt-canvas .tnt__site-card-open strong { font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tnt-canvas .tnt__site-card-mark { width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #fff; background: linear-gradient(135deg, #0F172A, #3B82F6); }
+.tnt-canvas .tnt__site-card-mark { width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #fff; background: linear-gradient(135deg, #0F172A, #1D4ED8) /* white letters: #3B82F6 end read 3.7:1 */; }
 .tnt-canvas .tnt__site-card-host { font-size: 11.5px; color: var(--br-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tnt-canvas .tnt__site-card--add { align-items: center; justify-content: center; flex-direction: row; gap: 6px; border-style: dashed; color: var(--br-text-secondary); cursor: pointer; font: inherit; font-size: 12.5px; min-height: 150px; }
 .tnt-canvas .tnt__site-card--add:hover { color: var(--br-text); border-color: var(--br-text-secondary); }
