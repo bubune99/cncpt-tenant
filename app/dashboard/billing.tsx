@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ExternalLink, CheckCircle, Info, Sparkles, Loader2 } from "lucide-react"
+import { PLANS, planFor } from "@/lib/billing/plans"
 
 /** What /api/dashboard/subscription/current returns (the parts this page shows). */
 interface CurrentSubscription {
@@ -40,33 +41,15 @@ export function Billing() {
     status: sub ? (sub.subscriptionStatus === "none" ? "no plan" : sub.subscriptionStatus) : "—",
   }
 
-  const plans = [
-    {
-      name: "Free",
-      price: 0,
-      features: ["3 Subdomains", "1 Custom Domain", "Community Support"],
-      current: currentPlan.name === "Free",
-    },
-    {
-      name: "Pro",
-      price: 29,
-      features: ["10 Subdomains", "5 Custom Domains", "Priority Support", "Custom Branding"],
-      current: currentPlan.name === "Pro",
-      popular: true,
-    },
-    {
-      name: "Enterprise",
-      price: 99,
-      features: [
-        "Unlimited Subdomains",
-        "Unlimited Custom Domains",
-        "24/7 Support",
-        "White-label",
-        "SLA Guarantee",
-      ],
-      current: currentPlan.name === "Enterprise",
-    },
-  ]
+  // The plans Pricing sells (lib/billing/plans); "Current" only when the stored plan is one of them.
+  const currentSlug = planFor(sub?.tierDisplayName)?.slug
+  const plans = PLANS.map((p) => ({
+    name: p.name,
+    price: p.price,
+    features: p.features.map((f) => f.text),
+    current: p.slug === currentSlug,
+    popular: p.popular,
+  }))
 
   // Both buttons open the Stripe customer portal (owner, 2026-11-22).
   const handleManageSubscription = async () => {
@@ -176,7 +159,7 @@ export function Billing() {
           <CardDescription>Compare plans and features</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             {plans.map((plan) => (
               <div
                 key={plan.name}
