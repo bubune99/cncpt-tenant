@@ -132,7 +132,7 @@
   border: 1px solid var(--br-border);
 }
 .tnt-canvas .pill .dot { width: 6px; height: 6px; border-radius: 9999px; background: currentColor; opacity: 0.8; }
-.tnt-canvas .pill--blue { background: #dbeafe; color: var(--br-primary-600); border-color: transparent; }
+.tnt-canvas .pill--blue { background: #dbeafe; color: #1d4ed8; border-color: transparent; } /* 600 on #dbeafe read 4.2:1 */
 .tnt-canvas .pill--green { background: #d1fae5; color: #047857; border-color: transparent; }
 .tnt-canvas .pill--amber { background: #fef3c7; color: #92400e; border-color: transparent; }
 .tnt-canvas .pill--rose { background: #ffe4e6; color: #be123c; border-color: transparent; }

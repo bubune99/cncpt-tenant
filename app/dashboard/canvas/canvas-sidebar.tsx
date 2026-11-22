@@ -66,7 +66,7 @@ export function CanvasSidebar({
         <div className="dirH__brand-mark"><Boxes /></div>
         <div className="col" style={{ gap: 0 }}>
           <div className="dirH__brand-name">CNCPT</div>
-          <div className="muted" style={{ fontSize: 10, lineHeight: 1 }}>Workspace</div>
+          <div className="muted" style={{ fontSize: 11.5, lineHeight: 1.1 }}>Workspace</div>
         </div>
         <ChevronsUpDown className="dirH__brand-chev" style={{ width: 12, height: 12 }} />
       </div>
@@ -149,7 +149,7 @@ export function CanvasSidebar({
           <div style={{ fontSize: 12, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 130 }}>
             {displayName}
           </div>
-          <div className="muted" style={{ fontSize: 10.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 130 }}>
+          <div className="muted" style={{ fontSize: 11.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 130 }}>
             {email}
           </div>
         </div>

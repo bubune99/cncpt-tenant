@@ -101,7 +101,7 @@ export function CanvasActivityRail({ subdomains }: CanvasActivityRailProps) {
       </div>
       <div className="dirH__rrail-body">
         <div style={{ padding: "8px 14px 4px" }}>
-          <span className="pill pill--blue" style={{ fontSize: 10 }}>
+          <span className="pill pill--blue" style={{ fontSize: 11.5 }}>
             {siteCount} site{siteCount === 1 ? "" : "s"}
           </span>
         </div>

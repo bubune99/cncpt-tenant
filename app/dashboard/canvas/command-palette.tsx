@@ -63,6 +63,10 @@ export function CommandPalette({ open, onClose, setActiveSection }: CommandPalet
       style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(15,23,42,0.35)", backdropFilter: "blur(2px)", display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: "12vh" }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Search workspace"
+        data-ui="palette"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={onKeyDown}
         style={{ width: 540, maxWidth: "90%", background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.12)", overflow: "hidden", fontFamily: "var(--font-geist-sans), Geist, sans-serif" }}
@@ -74,9 +78,10 @@ export function CommandPalette({ open, onClose, setActiveSection }: CommandPalet
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search workspace…"
+            aria-label="Search workspace"
             style={{ flex: 1, border: 0, outline: "none", fontSize: 14, color: "#1f2937", background: "transparent" }}
           />
-          <span style={{ fontFamily: "var(--font-geist-mono), monospace", fontSize: 10.5, background: "#f8fafc", border: "1px solid #e5e7eb", borderBottomWidth: 2, padding: "1px 5px", borderRadius: 4, color: "#6b7280" }}>esc</span>
+          <span style={{ fontFamily: "var(--font-geist-mono), monospace", fontSize: 11.5, background: "#f8fafc", border: "1px solid #e5e7eb", borderBottomWidth: 2, padding: "1px 5px", borderRadius: 4, color: "#6b7280" }}>esc</span>
         </div>
         <div style={{ maxHeight: 360, overflow: "auto", padding: 6 }}>
           {filtered.length === 0 ? (
@@ -94,7 +99,7 @@ export function CommandPalette({ open, onClose, setActiveSection }: CommandPalet
                 >
                   <Icon style={{ width: 15, height: 15, color: isOn ? "#2563eb" : "#6b7280" }} />
                   <span style={{ flex: 1 }}>{item.label}</span>
-                  {item.phase2 ? <span style={{ fontSize: 10, color: "#94a3b8" }}>soon</span> : null}
+                  {item.phase2 ? <span style={{ fontSize: 11.5, color: "#64748b" }}>soon</span> : null}
                   {isOn ? <CornerDownLeft style={{ width: 13, height: 13, color: "#94a3b8" }} /> : null}
                 </button>
               )
