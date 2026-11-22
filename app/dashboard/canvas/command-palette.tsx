@@ -69,23 +69,23 @@ export function CommandPalette({ open, onClose, setActiveSection }: CommandPalet
         data-ui="palette"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={onKeyDown}
-        style={{ width: 540, maxWidth: "90%", background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.12)", overflow: "hidden", fontFamily: "var(--font-geist-sans), Geist, sans-serif" }}
+        style={{ width: 540, maxWidth: "90%", background: "var(--br-background)", borderRadius: 12, border: "1px solid var(--br-border)", boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.12)", overflow: "hidden", fontFamily: "var(--font-geist-sans), Geist, sans-serif" }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 14px", borderBottom: "1px solid #e5e7eb" }}>
-          <Search style={{ width: 15, height: 15, color: "#6b7280" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 14px", borderBottom: "1px solid var(--br-border)" }}>
+          <Search style={{ width: 15, height: 15, color: "var(--br-text-secondary)" }} />
           <input
             ref={inputRef}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search workspace…"
             aria-label="Search workspace"
-            style={{ flex: 1, border: 0, outline: "none", fontSize: 14, color: "#1f2937", background: "transparent" }}
+            style={{ flex: 1, border: 0, outline: "none", fontSize: 14, color: "var(--br-text)", background: "transparent" }}
           />
-          <span style={{ fontFamily: "var(--font-geist-mono), monospace", fontSize: 11.5, background: "#f8fafc", border: "1px solid #e5e7eb", borderBottomWidth: 2, padding: "1px 5px", borderRadius: 4, color: "#6b7280" }}>esc</span>
+          <span style={{ fontSize: 11.5, background: "var(--br-surface)", border: "1px solid var(--br-border)", borderBottomWidth: 2, padding: "1px 5px", borderRadius: 4, color: "var(--br-text-secondary)" }}>esc</span>
         </div>
         <div style={{ maxHeight: 360, overflow: "auto", padding: 6 }}>
           {filtered.length === 0 ? (
-            <div style={{ padding: "20px 12px", fontSize: 13, color: "#6b7280", textAlign: "center" }}>No matches</div>
+            <div style={{ padding: "20px 12px", fontSize: 13, color: "var(--br-text-secondary)", textAlign: "center" }}>No matches</div>
           ) : (
             filtered.map((item, i) => {
               const Icon = item.icon
@@ -95,12 +95,12 @@ export function CommandPalette({ open, onClose, setActiveSection }: CommandPalet
                   key={item.id + i}
                   onMouseEnter={() => setIdx(i)}
                   onClick={() => go(item)}
-                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 10px", borderRadius: 8, border: 0, background: isOn ? "#eff6ff" : "transparent", color: isOn ? "#1d4ed8" : "#1f2937", fontSize: 13, cursor: "pointer", textAlign: "left", fontFamily: "inherit" }}
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 10px", borderRadius: 8, border: 0, background: isOn ? "var(--br-surface)" : "transparent", color: "var(--br-text)", fontSize: 13, cursor: "pointer", textAlign: "left", fontFamily: "inherit" }}
                 >
-                  <Icon style={{ width: 15, height: 15, color: isOn ? "#2563eb" : "#6b7280" }} />
+                  <Icon style={{ width: 15, height: 15, color: isOn ? "var(--br-primary-600, #2563eb)" : "var(--br-text-secondary)" }} />
                   <span style={{ flex: 1 }}>{item.label}</span>
-                  {item.phase2 ? <span style={{ fontSize: 11.5, color: "#64748b" }}>soon</span> : null}
-                  {isOn ? <CornerDownLeft style={{ width: 13, height: 13, color: "#94a3b8" }} /> : null}
+                  {item.phase2 ? <span style={{ fontSize: 11.5, color: "var(--br-text-secondary)" }}>soon</span> : null}
+                  {isOn ? <CornerDownLeft style={{ width: 13, height: 13, color: "var(--br-text-secondary)" }} /> : null}
                 </button>
               )
             })

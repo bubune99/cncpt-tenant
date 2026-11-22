@@ -81,7 +81,7 @@ export function CanvasNotifications() {
           ) : null}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 p-0">
+      <DropdownMenuContent align="end" className="w-80 p-0" style={{ fontFamily: "var(--font-geist-sans), system-ui, sans-serif" }}>
         <DropdownMenuLabel className="flex items-center justify-between px-3 py-2">
           <span>Notifications</span>
           {items.length > 0 ? (

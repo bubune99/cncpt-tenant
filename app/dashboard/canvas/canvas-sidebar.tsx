@@ -83,7 +83,7 @@ export function CanvasSidebar({
             <ChevronsUpDown style={{ width: 12, height: 12, color: "var(--br-text-secondary)" }} />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56" align="start">
+        <DropdownMenuContent className="w-56" align="start" style={{ fontFamily: "var(--font-geist-sans), system-ui, sans-serif" }}>
           {subdomains.map((s) => (
             <DropdownMenuItem key={s.subdomain} onClick={() => setSelectedSubdomain(s.subdomain)}>
               <span className="font-medium">{s.site_title || s.subdomain}</span>

@@ -108,7 +108,7 @@ export function CanvasNewSite({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[460px]" data-ui="new_site.panel">
+      <DialogContent className="sm:max-w-[460px]" data-ui="new_site.panel" style={{ fontFamily: "var(--font-geist-sans), system-ui, sans-serif" }}>
         <DialogHeader>
           <DialogTitle>New client site</DialogTitle>
           <DialogDescription>Name the site and pick its address. Branding, domain and access come next, from the guide.</DialogDescription>
