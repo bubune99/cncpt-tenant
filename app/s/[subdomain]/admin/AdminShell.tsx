@@ -40,6 +40,7 @@ import { AdminChat } from '@/components/cms/admin-chat';
 import { SpotlightHostClient } from '@/components/cms/spotlight/SpotlightHostClient';
 import { AgentNavRail } from '@/components/cms/admin/agent-nav-rail';
 import { NotifDrawerAdmin } from '@/components/cms/admin/NotifDrawerAdmin';
+import { Shortcut } from '@/components/ui/shortcut';
 
 // ─────────────────────────────────────────────
 // Types
@@ -410,7 +411,7 @@ export function AdminShell({
                     aria-label="Search"
                     readOnly
                   />
-                  <span className="kbd">⌘K</span>
+                  <Shortcut k="K" className="kbd" />
                 </div>
                 <div className="right" data-tour-id="header-actions">
                   {/* Context-aware create */}

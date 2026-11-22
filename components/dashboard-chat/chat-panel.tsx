@@ -53,6 +53,7 @@ import {
 import { ConversationHistory } from "./conversation-history"
 import ReactMarkdown from "react-markdown"
 import { WizardMessage } from "./wizard-message"
+import { Shortcut } from "@/components/ui/shortcut"
 
 // Generate unique IDs
 function generateUUID(): string {
@@ -354,7 +355,7 @@ export function ChatPanel({ className }: ChatPanelProps) {
         >
           <span className="mark"><Sparkles /></span>
           <span className="title">Ask CNCPT</span>
-          <span className="kbd">⌘J</span>
+          <Shortcut k="J" className="kbd" />
         </button>
       </motion.div>
     )

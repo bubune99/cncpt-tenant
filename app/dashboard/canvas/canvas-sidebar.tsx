@@ -20,6 +20,7 @@ import {
 import { GROUP_ICONS } from "./nav-config"
 import { NAV_GROUPS, groupOfSection, firstSection } from "@/lib/dashboard/nav-groups"
 import { rootDomain } from "@/lib/utils"
+import { Shortcut } from "@/components/ui/shortcut"
 
 interface CanvasSidebarProps {
   user: any
@@ -100,7 +101,7 @@ export function CanvasSidebar({
       <button className="dirH__search" onClick={onOpenSearch}>
         <Search />
         <span className="dirH__search-q">Search workspace…</span>
-        <span className="kbd">⌘K</span>
+        <Shortcut k="K" className="kbd" />
       </button>
 
       {/* Seven places; the open place lists its pages under it (walk dce2661a: 22 items at once). */}
