@@ -20,7 +20,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
-  UserPlus, Filter, Mail, MoreHorizontal, ShieldCheck, History,
+  UserPlus, Filter, Mail, ShieldCheck, History,
   Users, Crown, Plus, Loader2,
 } from "lucide-react"
 import { getRoleLabel, type TeamRole } from "@/lib/team-utils"
@@ -200,7 +200,7 @@ function MembersPanel({ onInvite }: { onInvite: (teamId: string) => void }) {
               ) : (
                 <table className="tnt__matrix" style={{ fontSize: 12.5 }}>
                   <thead>
-                    <tr><th>Member</th><th style={{ width: 120 }}>Role</th><th style={{ width: 140 }}>Joined</th><th style={{ width: 50 }}></th></tr>
+                    <tr><th>Member</th><th style={{ width: 120 }}>Role</th><th style={{ width: 140 }}>Joined</th><th style={{ width: 80 }}><span className="sr-only">Actions</span></th></tr>
                   </thead>
                   <tbody>
                     {members.map((m) => (
@@ -221,7 +221,7 @@ function MembersPanel({ onInvite }: { onInvite: (teamId: string) => void }) {
                           </span>
                         </td>
                         <td className="muted" style={{ fontSize: 11 }}>{m.joinedAt ? new Date(m.joinedAt).toLocaleDateString() : "—"}</td>
-                        <td><button className="iconbtn iconbtn--sm iconbtn--ghost"><MoreHorizontal style={{ width: 13, height: 13 }} /></button></td>
+                        <td>{/* The "…" here had no handler; changing a role or removing someone is done on the team's page. */}<a className="btn btn--ghost btn--xs" href={`/dashboard/teams/${team.id}`} aria-label={`Manage ${m.name || m.email || "member"} on the ${team.name} team page`} data-ui="team.member.manage">Manage</a></td>
                       </tr>
                     ))}
                   </tbody>
