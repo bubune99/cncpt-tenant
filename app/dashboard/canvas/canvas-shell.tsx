@@ -220,7 +220,9 @@ export function CanvasShell({
         user={user}
         subdomains={subdomains}
         activeSection={activeSection}
-        setActiveSection={(sec: string) => { setActiveSection(sec); setNavOpen(false) }}
+        // Choosing a place also leaves an open site's page: from a site, Client sites and All sites did nothing
+        // (activeSection was already "sites", so the effect that clears the detail never ran; walk 2026-11-22).
+        setActiveSection={(sec: string) => { setDetailSubdomain(null); setDetailTab(undefined); setActiveSection(sec); setNavOpen(false) }}
         selectedSubdomain={selectedSubdomain}
         setSelectedSubdomain={(sub: string | null) => { setSelectedSubdomain(sub); setNavOpen(false) }}
         onOpenSearch={() => setPaletteOpen(true)}
