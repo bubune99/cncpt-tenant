@@ -1,32 +1,44 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ExternalLink, CheckCircle, Info, Sparkles } from "lucide-react"
+import { ExternalLink, CheckCircle, Info, Sparkles, Loader2 } from "lucide-react"
 
-interface BillingProps {
-  // These will come from Stripe via API later
-  stripeCustomerPortalUrl?: string
+/** What /api/dashboard/subscription/current returns (the parts this page shows). */
+interface CurrentSubscription {
+  tierDisplayName: string
+  priceMonthly: number
+  subscriptionStatus: string
+  limits: { custom_domains?: number }
+  usage: { subdomains: { used: number; limit: number } }
 }
 
-export function Billing({ stripeCustomerPortalUrl }: BillingProps) {
-  // TODO: Fetch from Stripe API based on user's subscription
-  const [currentPlan] = useState({
-    name: "Free",
-    price: 0,
-    billing: "monthly",
-    status: "active",
-  })
+export function Billing() {
+  // The plan and usage come from the account's stored subscription; nothing is shown until it arrives.
+  const [sub, setSub] = useState<CurrentSubscription | null>(null)
+  const [subError, setSubError] = useState(false)
+  const [opening, setOpening] = useState(false)
+  const [portalError, setPortalError] = useState<{ text: string; choosePlan: boolean } | null>(null)
 
-  // TODO: Fetch actual usage from database
-  const [usage] = useState({
-    subdomains: { used: 0, limit: 3 },
-    customDomains: { used: 0, limit: 1 },
-  })
+  useEffect(() => {
+    let live = true
+    fetch("/api/dashboard/subscription/current", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((d: CurrentSubscription) => { if (live) setSub(d) })
+      .catch(() => { if (live) setSubError(true) })
+    return () => { live = false }
+  }, [])
+
+  const currentPlan = {
+    name: sub ? sub.tierDisplayName : "—",
+    price: sub ? sub.priceMonthly : 0,
+    status: sub ? (sub.subscriptionStatus === "none" ? "no plan" : sub.subscriptionStatus) : "—",
+  }
 
   const plans = [
     {
@@ -56,14 +68,28 @@ export function Billing({ stripeCustomerPortalUrl }: BillingProps) {
     },
   ]
 
-  const handleManageSubscription = () => {
-    if (stripeCustomerPortalUrl) {
-      window.open(stripeCustomerPortalUrl, "_blank")
-    } else {
-      // Stripe portal not configured yet
-      alert("Stripe billing portal will be available soon.")
+  // Both buttons open the Stripe customer portal (owner, 2026-11-22).
+  const handleManageSubscription = async () => {
+    setOpening(true)
+    setPortalError(null)
+    try {
+      const r = await fetch("/api/dashboard/subscription/portal", { method: "POST" })
+      const d = await r.json().catch(() => ({}))
+      if (r.ok && d.url) { window.location.href = d.url; return }
+      if (d.code === "NO_BILLING_ACCOUNT") setPortalError({ text: "You haven't chosen a paid plan yet, so there is no billing account to manage.", choosePlan: true })
+      else setPortalError({ text: "The billing portal couldn't be opened just now. Please try again in a minute.", choosePlan: false })
+    } catch {
+      setPortalError({ text: "The billing portal couldn't be opened just now. Please try again in a minute.", choosePlan: false })
     }
+    setOpening(false)
   }
+
+  const portalMessage = portalError ? (
+    <p role="alert" className="text-sm text-destructive mt-3" data-ui="billing.portal_error">
+      {portalError.text}{" "}
+      {portalError.choosePlan ? <Link href="/pricing" className="underline font-medium">See plans</Link> : null}
+    </p>
+  ) : null
 
   return (
     <div className="space-y-6" data-tour-id="billing-page">
@@ -84,7 +110,7 @@ export function Billing({ stripeCustomerPortalUrl }: BillingProps) {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Your Plan</span>
-            <Badge variant={currentPlan.status === "active" ? "default" : "destructive"}>
+            <Badge variant={currentPlan.status === "active" || currentPlan.status === "trialing" ? "default" : "secondary"}>
               {currentPlan.status}
             </Badge>
           </CardTitle>
@@ -94,14 +120,16 @@ export function Billing({ stripeCustomerPortalUrl }: BillingProps) {
             <div>
               <h3 className="text-2xl font-bold">{currentPlan.name}</h3>
               <p className="text-muted-foreground">
-                {currentPlan.price === 0 ? "Free forever" : `$${currentPlan.price}/${currentPlan.billing}`}
+                {!sub ? (subError ? "Your plan couldn't be loaded." : "Loading your plan…") : currentPlan.price === 0 ? "No paid plan" : `$${currentPlan.price}/month`}
               </p>
             </div>
-            <Button onClick={handleManageSubscription} className="gap-2" data-help-key="dashboard.billing.manage" data-tour-id="billing-manage-subscription">
+            <Button onClick={handleManageSubscription} disabled={opening} className="gap-2" data-help-key="dashboard.billing.manage" data-tour-id="billing-manage-subscription">
+              {opening ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : null}
               Manage Subscription
-              <ExternalLink className="w-4 h-4" />
+              <ExternalLink className="w-4 h-4" aria-hidden />
             </Button>
           </div>
+          {portalMessage}
           <p className="text-sm text-muted-foreground">
             Upgrade, downgrade, update payment methods, and view invoices through the Stripe customer portal.
           </p>
@@ -119,20 +147,23 @@ export function Billing({ stripeCustomerPortalUrl }: BillingProps) {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium">Subdomains</span>
-                <span className="text-sm text-muted-foreground">
-                  {usage.subdomains.used} / {usage.subdomains.limit}
+                <span className="text-sm text-muted-foreground tabular-nums">
+                  {sub ? `${sub.usage.subdomains.used} / ${sub.usage.subdomains.limit < 0 ? "unlimited" : sub.usage.subdomains.limit}` : "—"}
                 </span>
               </div>
-              <Progress value={(usage.subdomains.used / usage.subdomains.limit) * 100} className="h-2" />
+              <Progress
+                value={sub && sub.usage.subdomains.limit > 0 ? Math.min(100, (sub.usage.subdomains.used / sub.usage.subdomains.limit) * 100) : 0}
+                className="h-2"
+                aria-label="Subdomains used"
+              />
             </div>
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium">Custom Domains</span>
-                <span className="text-sm text-muted-foreground">
-                  {usage.customDomains.used} / {usage.customDomains.limit}
+                <span className="text-sm text-muted-foreground tabular-nums">
+                  {sub && typeof sub.limits.custom_domains === "number" ? `Up to ${sub.limits.custom_domains < 0 ? "unlimited" : sub.limits.custom_domains}` : "—"}
                 </span>
               </div>
-              <Progress value={(usage.customDomains.used / usage.customDomains.limit) * 100} className="h-2" />
             </div>
           </div>
         </CardContent>
@@ -186,10 +217,12 @@ export function Billing({ stripeCustomerPortalUrl }: BillingProps) {
             ))}
           </div>
           <div className="mt-6 text-center">
-            <Button onClick={handleManageSubscription} variant="outline" className="gap-2" data-tour-id="billing-upgrade-button">
+            <Button onClick={handleManageSubscription} disabled={opening} variant="outline" className="gap-2" data-tour-id="billing-upgrade-button">
+              {opening ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : null}
               Upgrade or Change Plan
-              <ExternalLink className="w-4 h-4" />
+              <ExternalLink className="w-4 h-4" aria-hidden />
             </Button>
+            {portalMessage}
           </div>
         </CardContent>
       </Card>

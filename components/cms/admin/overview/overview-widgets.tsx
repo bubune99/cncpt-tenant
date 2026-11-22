@@ -98,7 +98,7 @@ function WRow({ onClick, children }: { onClick?: () => void; children: ReactNode
 function FootLink({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <div style={{ marginTop: 10 }}>
-      <span className="gr-link" style={{ fontSize: 12 }} onClick={onClick}>{label}</span>
+      <button type="button" className="gr-link" style={{ font: 'inherit', fontSize: 12, border: 0, background: 'transparent', padding: 0 }} onClick={onClick}>{label}</button>
     </div>
   );
 }

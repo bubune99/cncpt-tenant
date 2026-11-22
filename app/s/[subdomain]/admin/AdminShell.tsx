@@ -396,7 +396,7 @@ export function AdminShell({
                   )}
                   <span>{siteName ?? displayUser?.primaryEmail?.split('@')[0] ?? 'Studio'}</span>
                   {siteUrl && siteUrl !== '/' && (
-                    <span className="store-chip mono">
+                    <span className="store-chip">
                       {siteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}
                     </span>
                   )}
