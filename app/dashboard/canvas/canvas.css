@@ -49,9 +49,8 @@
   /* Map to the self-hosted geist variables loaded in app/layout.tsx */
   --br-font-sans: var(--font-geist-sans), "Geist", -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  /* No monospace anywhere (owner rule): "mono" spots use the sans face with
+  /* No monospace anywhere (owner rule): spots that once used a mono face use the sans with
      tabular figures so numbers still line up. */
-  --br-font-mono: var(--br-font-sans);
 
   font-family: var(--br-font-sans);
   color: var(--br-text);
@@ -98,7 +97,7 @@
 .tnt-canvas .row { display: flex; align-items: center; gap: 8px; }
 .tnt-canvas .col { display: flex; flex-direction: column; }
 .tnt-canvas .between { justify-content: space-between; }
-.tnt-canvas .mono { font-family: var(--br-font-mono); font-variant-numeric: tabular-nums; }
+.tnt-canvas .mono { font-family: var(--br-font-sans); font-variant-numeric: tabular-nums; }
 .tnt-canvas .muted { color: var(--br-text-secondary); }
 
 .tnt-canvas .avatar {
@@ -118,7 +117,7 @@
 .tnt-canvas .avatar--slate { background: linear-gradient(135deg, #475569, #1e293b); }
 
 .tnt-canvas .kbd {
-  font-family: var(--br-font-mono); font-size: 11.5px;
+  font-family: var(--br-font-sans); font-size: 11.5px;
   background: var(--br-background); border: 1px solid var(--br-border);
   border-bottom-width: 2px;
   padding: 1px 5px; border-radius: 4px; color: var(--br-text-secondary);
@@ -243,7 +242,7 @@
 }
 .dark .tnt-canvas .tnt__site-mark { color: #93c5fd; }
 .tnt-canvas .tnt__site-name { font-size: 12.5px; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tnt-canvas .tnt__site-host { font-size: 11.5px; color: var(--br-text-secondary); font-family: var(--br-font-mono); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tnt-canvas .tnt__site-host { font-size: 11.5px; color: var(--br-text-secondary); font-family: var(--br-font-sans); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .tnt-canvas .dirH__search {
   margin: 8px 10px 4px;
@@ -457,7 +456,7 @@
 .tnt-ai-dock-pill .mark svg { width: 13px; height: 13px; }
 .tnt-ai-dock-pill .title { font-size: 12px; font-weight: 600; color: var(--br-text); }
 .tnt-ai-dock-pill .kbd {
-  font-family: var(--font-geist-mono), monospace; font-size: 11.5px;
+  font-family: var(--br-font-sans); font-variant-numeric: tabular-nums; font-size: 11.5px;
   background: var(--br-surface); border: 1px solid var(--br-border); border-bottom-width: 2px;
   padding: 1px 5px; border-radius: 4px; color: var(--br-text-secondary); line-height: 1;
 }
@@ -493,13 +492,13 @@
 }
 .tnt-canvas .tnt__dns tbody td {
   padding: 9px 12px; border-bottom: 1px solid var(--br-border); vertical-align: middle;
-  font-family: var(--br-font-mono); font-size: 11.5px; color: var(--br-text);
+  font-family: var(--br-font-sans); font-size: 11.5px; color: var(--br-text);
 }
 .tnt-canvas .tnt__dns tbody td.is-label { font-family: var(--br-font-sans); font-weight: 500; }
 .tnt-canvas .tnt__dns tbody tr:last-child td { border-bottom: 0; }
 .tnt-canvas .tnt__dns-type {
   display: inline-flex; align-items: center; gap: 4px;
-  font-family: var(--br-font-mono); font-size: 11.5px; font-weight: 600;
+  font-family: var(--br-font-sans); font-size: 11.5px; font-weight: 600;
   padding: 2px 7px; border-radius: 4px; background: var(--br-primary-50); color: var(--br-primary-600); letter-spacing: 0.04em;
 }
 
@@ -525,7 +524,7 @@
   background: var(--br-background); padding: 7px 10px; font-size: 12.5px; color: var(--br-text); width: 100%;
 }
 .tnt-canvas .tnt__input--placeholder { color: var(--br-text-secondary); }
-.tnt-canvas .tnt__input-suffix { font-family: var(--br-font-mono); font-size: 11.5px; color: var(--br-text-secondary); margin-left: auto; }
+.tnt-canvas .tnt__input-suffix { font-family: var(--br-font-sans); font-size: 11.5px; color: var(--br-text-secondary); margin-left: auto; }
 
 /* Color swatch */
 .tnt-canvas .tnt__swatch { width: 28px; height: 28px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.08); flex-shrink: 0; }
@@ -586,11 +585,11 @@
 /* Channel / comms list */
 .tnt-canvas .tnt__chan-row {
   display: flex; align-items: center; gap: 12px; padding: 11px 14px;
-  border-bottom: 1px solid var(--br-border); cursor: pointer; width: 100%; border-left: 3px solid transparent;
+  border-bottom: 1px solid var(--br-border); cursor: pointer; width: 100%;
   background: transparent; text-align: left; font-family: inherit;
 }
 .tnt-canvas .tnt__chan-row:hover { background: var(--br-surface); }
-.tnt-canvas .tnt__chan-row.is-on { background: var(--br-primary-50); border-left-color: var(--br-primary); }
+.tnt-canvas .tnt__chan-row.is-on { background: var(--br-primary-50); } /* the tint marks the open channel; no side stripe */
 .tnt-canvas .tnt__chan-icon {
   width: 32px; height: 32px; border-radius: 8px; background: var(--br-background); border: 1px solid var(--br-border);
   display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;

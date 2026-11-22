@@ -509,7 +509,7 @@ export function BrandingSettings({ selectedSubdomain }: BrandingSettingsProps) {
               onChange={(e) => updateField("customCss", e.target.value)}
               placeholder={`.my-class { color: var(--primary); }\n\n/* Override any storefront styles */`}
               rows={6}
-              className="font-mono text-sm"
+              className="font-mono text-sm" /* gates-allow: literal CSS the client types (owner 2026-11-22: monospace only for literal code) */
             />
             <div className="flex items-start gap-2 text-xs text-muted-foreground">
               <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
