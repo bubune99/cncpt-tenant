@@ -28,6 +28,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { getStorageSettings } from '../settings';
 import type { StorageSettings } from '../settings/types';
+import { isLibraryKey, isLibraryCategory } from './library-keys';
 
 // ---------------------------------------------------------------------------
 // S3 Client Factory (DB-driven, cached with invalidation)
@@ -318,6 +319,8 @@ export async function listTenantMedia(
  * Images are organized by prefix/folder (e.g., "heroes/", "features/", "team/")
  */
 export async function listImages(prefix?: string): Promise<R2Image[]> {
+  // The shared library only: a site's own uploads (tenants/...) are never listed here.
+  if (prefix && !isLibraryCategory(prefix)) return [];
   const config = await getStorageConfig();
   if (!config.isConfigured) {
     console.warn("Storage is not configured. Configure via Admin > Settings > Storage or set env vars.");
@@ -337,7 +340,7 @@ export async function listImages(prefix?: string): Promise<R2Image[]> {
     const images: R2Image[] = [];
 
     for (const obj of response.Contents || []) {
-      if (!obj.Key) continue;
+      if (!obj.Key || !isLibraryKey(obj.Key)) continue;
 
       // Skip if not an image
       const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(obj.Key);
@@ -584,7 +587,7 @@ export async function getCategories(): Promise<string[]> {
     const categories: string[] = [];
 
     for (const prefix of response.CommonPrefixes || []) {
-      if (prefix.Prefix) {
+      if (prefix.Prefix && isLibraryCategory(prefix.Prefix)) {
         categories.push(prefix.Prefix.replace("/", ""));
       }
     }

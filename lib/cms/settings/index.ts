@@ -5,6 +5,8 @@
  */
 
 import { prisma } from '../db'
+import { getCurrentTenant } from '../db/tenant-context'
+import { settingsCacheKey, keysForGroup } from './cache-key'
 import { encrypt, safeDecrypt, isEncrypted } from '../encryption'
 import type {
   SettingGroup,
@@ -48,7 +50,8 @@ const SENSITIVE_KEYS: Record<SettingGroup, string[]> = {
 }
 
 // Cache for settings
-const settingsCache: Map<SettingGroup, { data: any; timestamp: number }> = new Map()
+// Keyed per site and group (cache-key.ts): a group read for one site is never served to another.
+const settingsCache: Map<string, { data: any; timestamp: number }> = new Map()
 const CACHE_TTL = 60 * 1000 // 1 minute
 
 /**
@@ -59,7 +62,8 @@ export async function getSettings<T>(
   defaults: T
 ): Promise<T> {
   // Check cache
-  const cached = settingsCache.get(group)
+  const cacheKey = settingsCacheKey(getCurrentTenant(), group)
+  const cached = settingsCache.get(cacheKey)
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
     return cached.data as T
   }
@@ -90,7 +94,7 @@ export async function getSettings<T>(
   }
 
   // Update cache
-  settingsCache.set(group, { data: settings, timestamp: Date.now() })
+  settingsCache.set(cacheKey, { data: settings, timestamp: Date.now() })
 
   return settings as T
 }
@@ -143,8 +147,8 @@ export async function updateSettings(
     }
   }
 
-  // Clear cache for this group
-  settingsCache.delete(group)
+  // Clear cache for this group, for every site
+  for (const k of keysForGroup(settingsCache.keys(), group)) settingsCache.delete(k)
 }
 
 /**
@@ -152,7 +156,7 @@ export async function updateSettings(
  */
 export function clearSettingsCache(group?: SettingGroup): void {
   if (group) {
-    settingsCache.delete(group)
+    for (const k of keysForGroup(settingsCache.keys(), group)) settingsCache.delete(k)
   } else {
     settingsCache.clear()
   }
