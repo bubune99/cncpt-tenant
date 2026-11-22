@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation"
 import { Plus, ExternalLink, Settings as SettingsIcon, Check, ArrowRight, Compass } from "lucide-react"
 import { rootDomain, protocol } from "@/lib/utils"
 import { accountGuide, siteSetup, type SiteFacts, type StepId } from "@/lib/dashboard/setup-guide"
+import { firstName } from "@/lib/dashboard/greeting"
 import { CanvasTour, type TourStop } from "./canvas-tour"
 import { CanvasNewSite } from "./canvas-new-site"
 
@@ -40,13 +41,6 @@ const TOUR: TourStop[] = [
   { target: ".dirH__rrail", title: "What changed", body: "Account activity shows here as it happens: team, roles and settings changes." },
 ]
 
-function firstName(user: any): string | null {
-  const name = user?.displayName ?? user?.name
-  if (typeof name === "string" && name.trim()) return name.trim().split(/\s+/)[0]
-  const email = user?.primaryEmail ?? user?.email
-  if (typeof email === "string" && email.includes("@")) return email.split("@")[0]
-  return null
-}
 
 function readHidden(): boolean {
   try { return window.localStorage.getItem(GUIDE_HIDDEN_KEY) === "1" } catch { return false }
