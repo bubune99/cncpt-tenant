@@ -10,6 +10,7 @@ import { canCreateSubdomain, getSubdomainUsage } from "@/lib/subscription"
 import { rootDomain, protocol } from "@/lib/utils"
 import { logPlatformActivity } from "@/lib/super-admin"
 import { checkAddress } from "@/lib/dashboard/site-address"
+import { featuresForTier } from "@/lib/dashboard/tier-features"
 
 export const dynamic = 'force-dynamic'
 
@@ -273,18 +274,9 @@ async function initializeSubdomainFeatures(subdomainId: string, userId: string):
       LIMIT 1
     `
 
-    const tierName = (userTier[0]?.tier_name as string) || "free"
-
-    // Get all features that should be enabled for this tier
-    const features = await sql`
-      SELECT id FROM cms_features
-      WHERE is_active = true
-      AND (
-        minimum_tier = 'free'
-        OR (minimum_tier = 'pro' AND ${tierName} IN ('pro', 'enterprise'))
-        OR (minimum_tier = 'enterprise' AND ${tierName} = 'enterprise')
-      )
-    `
+    // The features this plan starts with (lib/dashboard/tier-features; no plan reads as free).
+    const active = await sql`SELECT id, minimum_tier FROM cms_features WHERE is_active = true`
+    const features = featuresForTier(active as { id: unknown; minimum_tier: string | null }[], userTier[0]?.tier_name as string | undefined)
 
     // Enable each feature for this subdomain
     for (const feature of features) {
