@@ -1,3 +1,5 @@
+/* Text under 11.5px read as too small to read comfortably (scan of /dashboard, 2026-11-22): the 10 and 10.5 px
+   sizes were raised to 11.5, avatar initials to 11. */
 /* ============================================================================
  * Tenant Admin Canvas — scoped stylesheet
  *
@@ -107,7 +109,7 @@
   flex-shrink: 0;
 }
 .tnt-canvas .avatar--xs { width: 20px; height: 20px; font-size: 9.5px; }
-.tnt-canvas .avatar--sm { width: 24px; height: 24px; font-size: 10px; }
+.tnt-canvas .avatar--sm { width: 24px; height: 24px; font-size: 11px; }
 .tnt-canvas .avatar--lg { width: 56px; height: 56px; font-size: 18px; }
 .tnt-canvas .avatar--orange { background: linear-gradient(135deg, #ea580c, #dc2626); }
 .tnt-canvas .avatar--green { background: linear-gradient(135deg, #10b981, #059669); }
@@ -115,7 +117,7 @@
 .tnt-canvas .avatar--slate { background: linear-gradient(135deg, #475569, #1e293b); }
 
 .tnt-canvas .kbd {
-  font-family: var(--br-font-mono); font-size: 10.5px;
+  font-family: var(--br-font-mono); font-size: 11.5px;
   background: var(--br-background); border: 1px solid var(--br-border);
   border-bottom-width: 2px;
   padding: 1px 5px; border-radius: 4px; color: var(--br-text-secondary);
@@ -139,7 +141,7 @@
 
 .tnt-canvas .tag-sm {
   display: inline-flex; align-items: center; gap: 4px;
-  font-size: 10.5px; padding: 1px 6px; border-radius: 4px;
+  font-size: 11.5px; padding: 1px 6px; border-radius: 4px;
   background: var(--br-surface); color: var(--br-text-secondary);
   border: 1px solid var(--br-border);
 }
@@ -153,14 +155,15 @@
   white-space: nowrap;
 }
 .tnt-canvas .btn svg { width: 14px; height: 14px; }
-.tnt-canvas .btn--primary { background: var(--br-primary); color: #fff; border-color: var(--br-primary); }
-.tnt-canvas .btn--primary:hover { background: var(--br-primary-600); }
+/* White on --br-primary (#3b82f6) read 3.7:1; buttons take the 600 shade (5.17:1), hover goes darker (scan 2026-11-22). */
+.tnt-canvas .btn--primary { background: var(--br-primary-600); color: #fff; border-color: var(--br-primary-600); }
+.tnt-canvas .btn--primary:hover { background: #1d4ed8; border-color: #1d4ed8; }
 .tnt-canvas .btn--secondary { background: var(--br-background); border-color: var(--br-border); color: var(--br-text); }
 .tnt-canvas .btn--secondary:hover { background: var(--br-surface); }
 .tnt-canvas .btn--ghost { color: var(--br-text-secondary); }
 .tnt-canvas .btn--ghost:hover { background: var(--br-surface); color: var(--br-text); }
 .tnt-canvas .btn--danger { background: var(--br-background); border-color: #fecaca; color: #b91c1c; }
-.tnt-canvas .btn--xs { padding: 4px 8px; font-size: 11.5px; }
+.tnt-canvas .btn--xs { padding: 4px 8px; font-size: 11.5px; min-height: 24px; } /* was 21px tall: under the 24 a finger needs */
 .tnt-canvas .btn--lg { padding: 9px 14px; font-size: 13.5px; }
 
 .tnt-canvas .iconbtn {
@@ -230,7 +233,7 @@
   flex-shrink: 0;
 }
 .tnt-canvas .tnt__site-name { font-size: 12.5px; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tnt-canvas .tnt__site-host { font-size: 10.5px; color: var(--br-text-secondary); font-family: var(--br-font-mono); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tnt-canvas .tnt__site-host { font-size: 11.5px; color: var(--br-text-secondary); font-family: var(--br-font-mono); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .tnt-canvas .dirH__search {
   margin: 8px 10px 4px;
@@ -246,7 +249,7 @@
 .tnt-canvas .dirH__nav { padding: 4px 6px 8px; flex: 1; overflow: auto; }
 .tnt-canvas .dirH__nav-h {
   display: flex; align-items: center; gap: 4px;
-  font-size: 10.5px; font-weight: 500; color: var(--br-text-secondary);
+  font-size: 11.5px; font-weight: 500; color: var(--br-text-secondary);
   padding: 10px 8px 4px;
 }
 .tnt-canvas .dirH__nav-h svg { width: 11px; height: 11px; color: var(--br-text-faint, var(--br-text-secondary)); }
@@ -263,7 +266,7 @@
 .tnt-canvas .dirH__nav-item.is-active svg { color: var(--br-primary-600); }
 .tnt-canvas .dirH__nav-item .badge {
   margin-left: auto;
-  font-size: 10.5px; color: var(--br-text-secondary);
+  font-size: 11.5px; color: var(--br-text-secondary);
   font-variant-numeric: tabular-nums;
 }
 .tnt-canvas .dirH__nav-item .badge.is-hot { color: #dc2626; font-weight: 600; }
@@ -387,7 +390,7 @@
 }
 .tnt-canvas .tnt__act-icon svg { width: 12px; height: 12px; }
 .tnt-canvas .tnt__act-body { font-size: 11.5px; line-height: 1.45; color: var(--br-text); flex: 1; }
-.tnt-canvas .tnt__act-time { font-size: 10.5px; color: var(--br-text-secondary); }
+.tnt-canvas .tnt__act-time { font-size: 11.5px; color: var(--br-text-secondary); }
 
 /* Section header inside content pages */
 .tnt-canvas .tnt__page-h {
@@ -444,7 +447,7 @@
 .tnt-ai-dock-pill .mark svg { width: 13px; height: 13px; }
 .tnt-ai-dock-pill .title { font-size: 12px; font-weight: 600; color: var(--br-text); }
 .tnt-ai-dock-pill .kbd {
-  font-family: var(--font-geist-mono), monospace; font-size: 10.5px;
+  font-family: var(--font-geist-mono), monospace; font-size: 11.5px;
   background: var(--br-surface); border: 1px solid var(--br-border); border-bottom-width: 2px;
   padding: 1px 5px; border-radius: 4px; color: var(--br-text-secondary); line-height: 1;
 }
@@ -474,7 +477,7 @@
 .tnt-canvas .tnt__dns { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; }
 .tnt-canvas .tnt__dns thead th {
   text-align: left; padding: 8px 12px;
-  font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
   color: var(--br-text-secondary); background: var(--br-surface); border-bottom: 1px solid var(--br-border);
 }
 .tnt-canvas .tnt__dns tbody td {
@@ -485,7 +488,7 @@
 .tnt-canvas .tnt__dns tbody tr:last-child td { border-bottom: 0; }
 .tnt-canvas .tnt__dns-type {
   display: inline-flex; align-items: center; gap: 4px;
-  font-family: var(--br-font-mono); font-size: 10.5px; font-weight: 600;
+  font-family: var(--br-font-mono); font-size: 11.5px; font-weight: 600;
   padding: 2px 7px; border-radius: 4px; background: var(--br-primary-50); color: var(--br-primary-600); letter-spacing: 0.04em;
 }
 
@@ -524,7 +527,7 @@
 }
 .tnt-canvas .tnt__step-n {
   width: 18px; height: 18px; border-radius: 9999px; background: var(--br-background); border: 1px solid var(--br-border);
-  font-size: 10.5px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; color: var(--br-text-secondary);
+  font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; color: var(--br-text-secondary);
 }
 .tnt-canvas .tnt__step.is-done { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
 .tnt-canvas .tnt__step.is-done .tnt__step-n { background: #10b981; color: #fff; border-color: #10b981; }
@@ -539,7 +542,7 @@
 }
 .tnt-canvas .tnt__perm-row:last-child { border-bottom: 0; }
 .tnt-canvas .tnt__perm-row .head-cell {
-  font-size: 10px; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase;
+  font-size: 11.5px; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase;
   color: var(--br-text-secondary); text-align: center;
 }
 .tnt-canvas .tnt__perm-row .toggle-cell { display: flex; justify-content: center; }
@@ -554,12 +557,12 @@
 .tnt-canvas .tnt__matrix { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; }
 .tnt-canvas .tnt__matrix th, .tnt-canvas .tnt__matrix td { padding: 8px 10px; border-bottom: 1px solid var(--br-border); }
 .tnt-canvas .tnt__matrix thead th {
-  font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
   color: var(--br-text-secondary); background: var(--br-surface); text-align: left;
 }
 .tnt-canvas .tnt__matrix tbody td.center { text-align: center; }
 .tnt-canvas .tnt__matrix .role-chip {
-  display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 500;
   padding: 2px 7px; border-radius: 4px; background: var(--br-surface); color: var(--br-text); border: 1px solid transparent;
 }
 .tnt-canvas .tnt__matrix .role-chip--owner { background: #fef3c7; color: #92400e; }

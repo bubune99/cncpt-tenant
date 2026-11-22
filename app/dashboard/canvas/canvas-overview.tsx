@@ -162,11 +162,11 @@ export function CanvasOverview({ user, subdomains, newSiteRequest = 0, onNewSite
                   {s.done ? (
                     <span className="tnt__guide-done">{s.detail}</span>
                   ) : actionable ? (
-                    <button type="button" className={"btn btn--xs " + (guide.next?.id === s.id ? "btn--primary" : "btn--secondary")} onClick={() => doStep(s.id, s.site)} data-ui={`overview.step.${s.id}.do`}>
+                    <button type="button" className={"btn btn--xs " + (guide.next?.id === s.id ? "btn--primary" : "btn--secondary")} onClick={() => doStep(s.id, s.site)} data-ui={`overview.step.${s.id}.do`} aria-label={`${s.title}: ${s.id === "site" ? "New client site" : s.detail}`}>
                       {s.id === "site" ? "New client site" : s.detail} <ArrowRight style={{ width: 11, height: 11 }} />
                     </button>
                   ) : (
-                    <span className="muted" style={{ fontSize: 11 }}>{s.detail}</span>
+                    <span className="muted" style={{ fontSize: 11.5 }}>{s.detail}</span>
                   )}
                 </li>
               )
@@ -223,18 +223,18 @@ export function CanvasOverview({ user, subdomains, newSiteRequest = 0, onNewSite
                     </div>
                   </div>
                   <div className="row" style={{ gap: 6 }}>
-                    <a className="btn btn--primary btn--xs" href={`${siteUrl}/admin`} data-ui="overview.site.cms">Open CMS</a>
-                    <a className="btn btn--secondary btn--xs" href={siteUrl} target="_blank" rel="noreferrer" data-ui="overview.site.visit">
+                    <a className="btn btn--primary btn--xs" href={`${siteUrl}/admin`} data-ui="overview.site.cms" aria-label={`Open the CMS for ${title}`}>Open CMS</a>
+                    <a className="btn btn--secondary btn--xs" href={siteUrl} target="_blank" rel="noreferrer" data-ui="overview.site.visit" aria-label={`Visit ${title} (opens a new tab)`}>
                       <ExternalLink style={{ width: 11, height: 11 }} /> Visit
                     </a>
-                    <button type="button" className="btn btn--ghost btn--xs" onClick={() => openSite(s.subdomain)} data-ui="overview.site.settings">
+                    <button type="button" className="btn btn--ghost btn--xs" onClick={() => openSite(s.subdomain)} data-ui="overview.site.settings" aria-label={`Settings for ${title}`}>
                       <SettingsIcon style={{ width: 11, height: 11 }} /> Settings
                     </button>
                   </div>
                 </div>
               )
             })}
-            <button type="button" className="tnt__site-card tnt__site-card--add" onClick={() => setNewOpen(true)} data-ui="overview.site.add">
+            <button type="button" className="tnt__site-card tnt__site-card--add" onClick={() => setNewOpen(true)} data-ui="overview.site.add" aria-label="Add a new client site">
               <Plus style={{ width: 14, height: 14 }} /> New client site
             </button>
           </div>
