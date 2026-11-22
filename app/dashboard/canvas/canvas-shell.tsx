@@ -229,10 +229,10 @@ export function CanvasShell({
         onNewSite={() => { setActiveSection("overview"); setNewSiteRequest((n) => n + 1); setNavOpen(false) }}
       />
 
-      <div className="dirH__main">
+      <main className="dirH__main">
         {isSitesDetail ? null : <CanvasTopbar crumbs={crumbs} userInitials={userInitials(user)} />}
         {renderMain()}
-      </div>
+      </main>
 
       <CanvasActivityRail subdomains={subdomains} />
 
