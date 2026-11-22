@@ -14,6 +14,7 @@ import { getUserPermissions, checkPermission, type UserWithPermissions } from '.
 import { resolveCmsTenantContext } from '../tenant-context'
 import { canAccessSubdomain } from '@/lib/team-auth'
 import { isSuperAdmin as isPlatformSuperAdmin } from '@/lib/super-admin'
+import { noTenantVerdict } from './no-tenant'
 
 export interface AuthContext {
   user: {
@@ -168,6 +169,13 @@ export function handleAuthError(error: unknown): NextResponse {
   )
 }
 
+/** A site's admin API asked with no site: refused unless the caller is a platform super admin. */
+async function refuseUnscopedSiteAdmin(request: NextRequest, authContext: AuthContext): Promise<NextResponse | null> {
+  const superAdmin = await isPlatformSuperAdmin(authContext.user.stackAuthId)
+  if (noTenantVerdict(new URL(request.url).pathname, superAdmin) === 'allow') return null
+  return NextResponse.json({ error: 'Open this from the site it belongs to' }, { status: 403 })
+}
+
 /**
  * Higher-order function to wrap API route handlers with permission check
  * and automatic tenant context resolution.
@@ -236,8 +244,11 @@ export function withPermission<T extends unknown[]>(
         })
       }
 
-      // No tenant context (platform-level operation) - run without scoping
+      // No tenant context (platform-level operation) - run without scoping.
+      // A site's admin API without a site is for platform super admins only (no-tenant.ts).
       const authContext = await requirePermission(permission)
+      const refused = await refuseUnscopedSiteAdmin(request, authContext)
+      if (refused) return refused
       return await handler(request, authContext, ...args)
     } catch (error) {
       return handleAuthError(error)
@@ -285,6 +296,8 @@ export function withAnyPermission<T extends unknown[]>(
       }
 
       const authContext = await requireAnyPermission(permissions)
+      const refused = await refuseUnscopedSiteAdmin(request, authContext)
+      if (refused) return refused
       return await handler(request, authContext, ...args)
     } catch (error) {
       return handleAuthError(error)
@@ -331,6 +344,8 @@ export function withAuth<T extends unknown[]>(
       }
 
       const authContext = await requireAuth()
+      const refused = await refuseUnscopedSiteAdmin(request, authContext)
+      if (refused) return refused
       return await handler(request, authContext, ...args)
     } catch (error) {
       return handleAuthError(error)
