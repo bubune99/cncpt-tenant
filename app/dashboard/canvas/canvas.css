@@ -193,7 +193,10 @@
 /* ============================================================
  * dirH chrome — rail / nav / topbar / activity rail
  * ============================================================ */
-.tnt-canvas.dirH { background: var(--br-surface); }
+/* The window is the frame: the middle column (dirH__page) scrolls and the sidebar, top bar and activity rail
+   stay. Without a height the canvas grew with its content, the document scrolled and both rails went with it
+   (owner note on the dashboard 2026-06-16: "This should be sticky on scroll"; seen again 2026-11-22). */
+.tnt-canvas.dirH { background: var(--br-surface); height: 100vh; }
 
 .tnt-canvas .dirH__rail {
   width: 224px; background: var(--br-background);
