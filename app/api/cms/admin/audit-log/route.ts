@@ -12,10 +12,16 @@ import {
 } from '@/lib/cms/permissions/middleware'
 import { PERMISSIONS } from '@/lib/cms/permissions'
 import type { Prisma } from '@prisma/client'
+import { isSuperAdmin as isPlatformSuperAdmin } from '@/lib/super-admin'
 
 export const GET = withPermission(
   PERMISSIONS.AUDIT_VIEW,
-  async (request: NextRequest, _context: AuthContext) => {
+  async (request: NextRequest, context: AuthContext) => {
+    // AuditLog has no site column yet, so its rows span every site: platform super admins only
+    // until it does (card 6b361b6a). A site admin would otherwise read other sites' entries.
+    if (!(await isPlatformSuperAdmin(context.user.stackAuthId))) {
+      return NextResponse.json({ error: 'The audit log is not available for a single site yet' }, { status: 403 })
+    }
     try {
       const { searchParams } = new URL(request.url)
 
