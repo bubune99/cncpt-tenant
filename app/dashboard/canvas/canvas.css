@@ -472,6 +472,7 @@
 }
 .tnt-canvas .tnt__tab svg { width: 13px; height: 13px; }
 .tnt-canvas .tnt__tab.is-on { color: var(--br-primary); border-color: var(--br-primary); font-weight: 600; }
+.dark .tnt-canvas .tnt__tab.is-on { color: #60a5fa; border-color: #60a5fa; } /* #3b82f6 on the dark surface read 4.0:1; #60a5fa reads 5.77:1 */
 
 /* DNS table */
 .tnt-canvas .tnt__dns { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; }
