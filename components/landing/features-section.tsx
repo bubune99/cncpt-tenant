@@ -106,7 +106,8 @@ export function FeaturesSection() {
         </div>
 
         {/* An even 3 by 2 grid (walk 2026-11-22: the two-row builder card was 60% empty, Analytics sat alone in a full row). */}
-        <BentoGrid className="lg:grid-rows-2 auto-rows-[18rem]">
+        {/* Below lg the cards stack, so each is as tall as its content; a fixed 18rem left the top third of every card empty on a phone (walk 2026-11-22). */}
+        <BentoGrid className="auto-rows-auto lg:grid-rows-2 lg:auto-rows-[18rem]">
           {features.map((feature) => (
             <BentoCard key={feature.name} {...feature} />
           ))}
