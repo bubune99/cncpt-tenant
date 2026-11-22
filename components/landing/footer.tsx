@@ -23,7 +23,8 @@ const sections = [
     tourId: "home-footer-company",
     links: [
       { name: "Book Call", href: "/book", tourId: "home-footer-book" },
-      { name: "About", href: "/docs", tourId: "home-footer-docs" },
+      // Named for what it opens: there is no About page (walk 2026-11-22: "About" led to the Quick Start Guide).
+      { name: "Docs", href: "/docs", tourId: "home-footer-docs" },
       { name: "Contact", href: "/book", tourId: "home-footer-contact" },
     ],
   },
