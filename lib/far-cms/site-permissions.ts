@@ -13,6 +13,9 @@ export const SITE_ADMIN_PERMISSIONS: readonly string[] = [
   "privacy.customers.see", "privacy.submissions.see", "privacy.orders.see",
   // Reading help tours: every screen's help loads them (403 on all seven mounted screens without it). Not editing them.
   "tours.view",
+  // Owner, inbox 6eba10b5 (2026-11-23): "Yes, site owners edit their own partials" (header, footer, shared sections;
+  // the Partial table is site-scoped, so only their own site's).
+  "partial.*",
 ]
 
 export interface SiteAccess {

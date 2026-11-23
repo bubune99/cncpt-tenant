@@ -21,7 +21,7 @@ ok("a platform super admin gets the same site set here, not more", () => {
   assert.deepEqual(sitePermissions({ hasAccess: false, accessType: null }, true), SITE_ADMIN_PERMISSIONS)
 })
 ok("the set is the owner's 'Run their own site': every area he named, nothing platform-wide, never the wildcard", () => {
-  for (const area of ["pages", "blog", "media", "forms", "email", "products", "categories", "inventory", "orders", "customers", "analytics"]) {
+  for (const area of ["pages", "blog", "media", "forms", "email", "products", "categories", "inventory", "orders", "customers", "analytics", "partial"]) {
     assert.ok(SITE_ADMIN_PERMISSIONS.includes(`${area}.*`), area)
   }
   assert.ok(SITE_ADMIN_PERMISSIONS.includes("settings.general"))
