@@ -142,6 +142,8 @@ enum CustomerLifecycleStage {
   VIP
   LAPSED
   CHURNED
+
+  @@map("customer_lifecycle_stage")
 }
 
 model CustomerAddress {
@@ -4934,6 +4936,8 @@ model ProductPricingTier {
 enum PricingTierType {
   QTY    // B2B quantity break
   MEMBER // Member/loyalty tier pricing
+
+  @@map("pricing_tier_type")
 }
 
 // G06 — Product sale schedule (timed sale price windows)
@@ -5106,6 +5110,8 @@ enum DistributionChannel {
   TWITTER_X
   MASTODON
   INSTAGRAM
+
+  @@map("distribution_channel")
 }
 
 enum ChannelPublishStatus {
@@ -5113,6 +5119,8 @@ enum ChannelPublishStatus {
   SCHEDULED
   PUBLISHED
   FAILED
+
+  @@map("channel_publish_status")
 }
 
 // ============================================================
@@ -5147,4 +5155,6 @@ enum LoyaltyActivityType {
   REDEEMED
   ADJUSTED
   EXPIRED
+
+  @@map("loyalty_activity_type")
 }
