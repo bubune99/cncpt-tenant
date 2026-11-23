@@ -235,6 +235,7 @@ export const WIDGETS: Readonly<Record<WidgetId, WidgetDef>> = {
                 <span style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{o.customerName}</span>
                 <span className="gr-num" style={{ fontSize: 12 }}>{fmtMoney(o.total)}</span>
                 <span className={`badge badge-${tone}`} style={{ fontSize: 9 }}>{label}</span>
+                <span className="gr-num" style={{ fontSize: 10.5, color: 'var(--text-muted)', flex: 'none' }}>{timeAgo(o.createdAt)}</span>
               </WRow>
             );
           })}

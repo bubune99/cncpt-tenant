@@ -56,6 +56,22 @@ export function openOrdersOf(orders: Loaded<readonly OverviewOrder[]>): Loaded<r
   return typeof orders === "string" ? orders : orders.filter((o) => OPEN_STATUSES.has(o.status))
 }
 
+/**
+ * Open orders are asked for by status. Picking them from the newest dozen missed any older order still
+ * waiting, and then said "No orders waiting" (walk 2026-11-22).
+ */
+export const OPEN_ORDER_QUERIES = ["status=pending", "status=processing"] as const
+
+/** The answers to OPEN_ORDER_QUERIES as one list, newest first; loading or failed if any of them is. */
+export function mergeOpenOrders(parts: readonly Loaded<readonly OverviewOrder[]>[]): Loaded<readonly OverviewOrder[]> {
+  if (parts.some((p) => p === "failed")) return "failed"
+  if (parts.some((p) => p === "loading")) return "loading"
+  return (parts as readonly (readonly OverviewOrder[])[])
+    .flat()
+    .slice()
+    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
+}
+
 /** Tracked products at or below their reorder point. */
 export function lowStockOf(products: readonly RawProduct[]): OverviewProduct[] {
   return products

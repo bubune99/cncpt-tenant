@@ -18,7 +18,7 @@ import { Users, Activity, Sparkles, ShoppingBag, Download, Plus, Mail, Tag, X } 
 import { useWizard } from '@/contexts/WizardContext';
 import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { Btn, Eyebrow, LiveSearch } from '@/components/cms/admin/grainy-ui';
-import { FilterSelect, SortSelect, SegTabs, type SegTab } from '@/components/cms/admin/customers/customers-ui';
+import { FilterSelect, SortSelect, type SegTab } from '@/components/cms/admin/customers/customers-ui';
 import { CustomersListTable } from '@/components/cms/admin/customers/customers-list-table';
 import { CustomerCreateDialog } from '@/components/cms/admin/customers/customer-create-dialog';
 import {
@@ -146,7 +146,8 @@ export default function CustomersPage(): React.ReactElement {
   const openCustomer = (id: string) => router.push(buildPath(`/admin/customers/${id}`));
 
   const showTenant = businessOwners.length > 1;
-  const narrowed = tier !== 'Any' || (ownerId !== 'all') || q.trim().length > 0;
+  const narrowed = seg !== 'all' || tier !== 'Any' || (ownerId !== 'all') || q.trim().length > 0;
+  const segOption = (key: SegKey) => { const t = segTabs.find((x) => x.key === key); return t ? `${t.label} · ${t.count}` : 'All'; };
 
   // ── Export ──
   const exportAll = useCallback(async () => {
@@ -216,13 +217,16 @@ export default function CustomersPage(): React.ReactElement {
           })}
         </div>
 
-        {/* Segment tabs */}
-        <div style={{ margin: '14px 0 4px' }}>
-          <SegTabs tabs={segTabs} value={seg} onChange={setSeg} />
-        </div>
-
         {/* Filter row */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '10px 0 12px', flexWrap: 'wrap' }}>
+          {/* The segments are one dropdown, each with its count: a row of four chips broke the filter rule (2026-11-22). */}
+          <FilterSelect
+            label="status"
+            value={segOption(seg)}
+            options={segTabs.map((t) => `${t.label} · ${t.count}`)}
+            anyLabel={segOption('all')}
+            onChange={(chosen) => setSeg(segTabs.find((t) => `${t.label} · ${t.count}` === chosen)?.key ?? 'all')}
+          />
           <FilterSelect label="tier" value={tier} options={TIER_OPTIONS} onChange={setTier} />
           {showTenant && (
             <FilterSelect
@@ -234,7 +238,7 @@ export default function CustomersPage(): React.ReactElement {
           )}
           <SortSelect value={sort} options={SORT_OPTIONS} onChange={setSort} />
           {narrowed && (
-            <button type="button" className="gr-link" onClick={() => { setTier('Any'); setOwnerId('all'); setQ(''); }} style={{ border: 'none', background: 'transparent', fontSize: 12, cursor: 'pointer' }}>
+            <button type="button" className="gr-link" onClick={() => { setSeg('all'); setTier('Any'); setOwnerId('all'); setQ(''); }} style={{ border: 'none', background: 'transparent', fontSize: 12, cursor: 'pointer' }}>
               Clear all
             </button>
           )}

@@ -9,7 +9,7 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import {
-  orderName, toOverviewOrder, openOrdersOf, lowStockOf, analyticsFrom, view, countMeta, salesCells,
+  orderName, toOverviewOrder, openOrdersOf, mergeOpenOrders, OPEN_ORDER_QUERIES, lowStockOf, analyticsFrom, view, countMeta, salesCells,
 } from "./overview-rules"
 
 let n = 0
@@ -37,6 +37,15 @@ ok("open orders are the pending and processing ones; loading and failed pass thr
   assert.deepEqual((open as readonly { id: string }[]).map((o) => o.id), ["0", "1"])
   assert.equal(openOrdersOf("loading"), "loading")
   assert.equal(openOrdersOf("failed"), "failed")
+})
+ok("open orders are asked for by status, not picked from the newest few (walk 2026-11-22)", () => {
+  assert.deepEqual([...OPEN_ORDER_QUERIES], ["status=pending", "status=processing"])
+  const older = toOverviewOrder(raw({ id: "old", status: "processing", createdAt: "2026-10-01T10:00:00Z" }))
+  const newer = toOverviewOrder(raw({ id: "new", status: "pending", createdAt: "2026-11-21T10:00:00Z" }))
+  assert.deepEqual((mergeOpenOrders([[older], [newer]]) as readonly { id: string }[]).map((o) => o.id), ["new", "old"])
+  assert.deepEqual(mergeOpenOrders([[], []]), [])
+  assert.equal(mergeOpenOrders([[older], "failed"]), "failed")
+  assert.equal(mergeOpenOrders(["loading", [newer]]), "loading")
 })
 ok("low stock is a tracked product at or below its reorder point", () => {
   const p = (id: string, stock: number, lowStockThreshold: number, trackInventory = true) => ({ id, title: `SAMPLE ${id}`, stock, lowStockThreshold, trackInventory, status: "ACTIVE" })
@@ -76,6 +85,8 @@ ok("the Overview page uses these rules and keeps none of its own", () => {
   assert.doesNotMatch(src, /OPEN_STATUSES =/)
   assert.doesNotMatch(src, /lowStockThreshold\)/)
   assert.doesNotMatch(src, /\?\? 0,/)
+  assert.match(src, /OPEN_ORDER_QUERIES/)
+  assert.doesNotMatch(src, /openOrdersOf\(orders\)/)
 })
 ok("the widgets show loading and failed, never the empty message, for a list not known yet", () => {
   const src = readFileSync("components/cms/admin/overview/overview-widgets.tsx", "utf8")

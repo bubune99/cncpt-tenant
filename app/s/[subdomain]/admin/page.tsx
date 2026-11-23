@@ -26,7 +26,7 @@ import type {
   OverviewData, OverviewStats, OverviewAnalytics, OverviewOrder, OverviewProduct, NavHandlers, Loaded,
 } from '@/components/cms/admin/overview/overview-types';
 import {
-  toOverviewOrder, openOrdersOf, lowStockOf, analyticsFrom, type RawOrder, type RawProduct,
+  toOverviewOrder, mergeOpenOrders, OPEN_ORDER_QUERIES, lowStockOf, analyticsFrom, type RawOrder, type RawProduct,
 } from '@/lib/cms/admin/overview-rules';
 
 // The Overview's rules (open orders, low stock, naming a customer, reading analytics) live in lib with a check.
@@ -49,6 +49,7 @@ export default function AdminOverviewPage() {
   // Each says whether it is still loading or failed, so a widget never shows 'none' before it knows.
   const [analytics, setAnalytics] = useState<Loaded<OverviewAnalytics>>('loading');
   const [orders, setOrders] = useState<Loaded<readonly OverviewOrder[]>>('loading');
+  const [openOrders, setOpenOrders] = useState<Loaded<readonly OverviewOrder[]>>('loading');
   const [lowStock, setLowStock] = useState<Loaded<readonly OverviewProduct[]>>('loading');
   const [loading, setLoading] = useState(true);
 
@@ -75,6 +76,14 @@ export default function AdminOverviewPage() {
       .then((d) => setOrders(d && Array.isArray(d.orders) ? d.orders.map(toOverviewOrder) : 'failed'))
       .catch(() => setOrders('failed'));
 
+    // Open orders by status, so an older order still waiting is never missed.
+    Promise.all(OPEN_ORDER_QUERIES.map((q) =>
+      fetch(`/api/cms/orders?${q}&limit=6`)
+        .then((res) => (res.ok ? (res.json() as Promise<{ orders?: readonly RawOrder[] }>) : null))
+        .then((d): Loaded<readonly OverviewOrder[]> => (d && Array.isArray(d.orders) ? d.orders.map(toOverviewOrder) : 'failed'))
+        .catch((): Loaded<readonly OverviewOrder[]> => 'failed'),
+    )).then((parts) => setOpenOrders(mergeOpenOrders(parts)));
+
     fetch('/api/cms/products?limit=50&sortBy=stock&sortOrder=asc')
       .then((res) => (res.ok ? (res.json() as Promise<{ products?: readonly RawProduct[] }>) : null))
       .then((d) => setLowStock(d && Array.isArray(d.products) ? lowStockOf(d.products) : 'failed'))
@@ -100,10 +109,10 @@ export default function AdminOverviewPage() {
   const data: OverviewData = useMemo(() => ({
     stats,
     analytics,
-    openOrders: openOrdersOf(orders),
+    openOrders,
     recentOrders: orders,
     lowStock,
-  }), [stats, analytics, orders, lowStock]);
+  }), [stats, analytics, openOrders, orders, lowStock]);
 
   // Gate only on access resolution — the dashboard itself shows a light loading
   // hint and renders empty-safe widgets while data streams in.

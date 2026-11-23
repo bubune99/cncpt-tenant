@@ -68,6 +68,10 @@ ok("the Customers page uses these rules and keeps no copy of its own", () => {
   assert.doesNotMatch(src, /\?\? 0,/)
   // The segment tabs too: their counts are a dash until the list has arrived (staging 90b40786 showed 'All 0' while loading).
   assert.match(src, /count: figure\(loading \? undefined : n\.all\)/)
+
+  // The four segments are one 'status' dropdown, not a row of four chips (rule: at most three filter chips in a row).
+  assert.doesNotMatch(src, /<SegTabs/)
+  assert.match(src, /label="status"/)
 })
 
 console.log(`${n} checks passed`)
