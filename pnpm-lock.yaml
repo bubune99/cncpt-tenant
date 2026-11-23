@@ -1607,7 +1607,7 @@ packages:
         optional: true
 
   '@far-cms/cms@file:vendor/far-cms/far-cms-cms-0.1.0.tgz':
-    resolution: {integrity: sha512-NdJL2KkhdSUCuHMyvKRPw6NRChth0a0JTjTYC4V03cSRb78Hb+hHSZU4WgbiF7P/4PlYtrDjWReeTLqzUwVJsg==, tarball: file:vendor/far-cms/far-cms-cms-0.1.0.tgz}
+    resolution: {integrity: sha512-ONW1HJwEcqT7r575RVHlfceCFoTSNt3FQZtk0etUNqRvncLLhfu7VWsaPgGysgsJbGWp1UUmSNzz3yuR1UWzag==, tarball: file:vendor/far-cms/far-cms-cms-0.1.0.tgz}
     version: 0.1.0
     peerDependencies:
       '@ai-sdk/anthropic': ^3.0.1
@@ -1743,7 +1743,7 @@ packages:
       zustand: ^5.0.9
 
   '@far-cms/contracts@file:vendor/far-cms/far-cms-contracts-0.1.0.tgz':
-    resolution: {integrity: sha512-z1rf75e5xzWNjjI6Ev0L0Vo/61ar1gSNPONkdjVCSXnpP9a5LKefP2YTeDSX86ybpSs0rAiGQu+nS6a5+Uy1+w==, tarball: file:vendor/far-cms/far-cms-contracts-0.1.0.tgz}
+    resolution: {integrity: sha512-pu+Bj6PJ88P6nqMotVJDhEfjkgwS0nCplOzJb8dIZT+6IcSDyWDJyMcll8A6/C+ud9EhmDh2WkucCKlxwTN0LQ==, tarball: file:vendor/far-cms/far-cms-contracts-0.1.0.tgz}
     version: 0.1.0
 
   '@far-cms/core@file:vendor/far-cms/far-cms-core-0.1.0.tgz':
@@ -1765,7 +1765,7 @@ packages:
     version: 0.1.0
 
   '@far-cms/skin-grainy@file:vendor/far-cms/far-cms-skin-grainy-0.1.0.tgz':
-    resolution: {integrity: sha512-gepQ6ogRDVCOb0jnID2J85Ta/ZYvSu59U1bBkLxpinxqr06eNj7UAVF71g8u7KLq4xs6M4h/mP2YUG9kF/0z5A==, tarball: file:vendor/far-cms/far-cms-skin-grainy-0.1.0.tgz}
+    resolution: {integrity: sha512-nbUY/NTr9VjrTGVtq5O0ix9Al8m9PBQLKvd5Aw2BCOoKuyOAvdoZbPut9a4u9xNo4KhdWhTBIaCHKA6jawGOzw==, tarball: file:vendor/far-cms/far-cms-skin-grainy-0.1.0.tgz}
     version: 0.1.0
 
   '@floating-ui/core@1.7.3':
