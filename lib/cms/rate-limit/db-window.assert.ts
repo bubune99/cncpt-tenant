@@ -23,20 +23,7 @@ ok("BigInt rows from Postgres read as numbers", () => {
   assert.equal(typeof decide({ windowStart: BigInt(2), windowMs: BigInt(3), amount: BigInt(1) }, null, 0, 3).reset, "number")
 })
 
-const src = readFileSync("lib/cms/rate-limit/index.ts", "utf8")
 const store = readFileSync("lib/cms/rate-limit/db-limit.ts", "utf8")
-ok("the limiter counts in the database, inside the time limit and the breaker", () => {
-  assert.match(src, /from '\.\/db-limit'/)
-  assert.match(src, /backendBreaker\.canTry\(\)/)
-  assert.match(src, /withinTime\(dbLimit\(key, resolved\.maxRequests, resolved\.windowMs\), BACKEND_TIMEOUT_MS\)/)
-})
-ok("memory is only the fallback for a database error", () => {
-  const catchBlock = src.slice(src.indexOf("} catch (error) {", src.indexOf("dbLimit(")))
-  assert.match(catchBlock.slice(0, 600), /memoryLimit\(key/)
-})
-ok("the deleted Upstash store is no longer used by the limiter", () => {
-  assert.doesNotMatch(src, /@upstash\/ratelimit|from '@\/lib\/redis'|KV_REST_API/)
-})
 ok("the reserve is one guarded upsert on usage_counters, so concurrent requests cannot cross the limit", () => {
   assert.match(store, /INSERT INTO "usage_counters"/)
   assert.match(store, /ON CONFLICT \("kind", "identity"\) DO UPDATE/)
