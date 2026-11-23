@@ -1,11 +1,3 @@
-'use client';
-
-import { useParams } from 'next/navigation';
-import { ProductEditor } from '@/components/cms/products/ProductEditor';
-
-export default function ConfigureProductPage() {
-  const params = useParams();
-  const productId = params.id as string;
-
-  return <ProductEditor mode="edit" productId={productId} />;
-}
+"use client"
+// Mounted from @far-cms/cms (far-cms packages/cms/src/app/admin/products/[id]/configure/page.tsx).
+export { default } from '@far-cms/cms/src/app/admin/products/[id]/configure/page'

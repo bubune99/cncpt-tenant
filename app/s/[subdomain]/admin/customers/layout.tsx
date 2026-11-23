@@ -1,9 +1,6 @@
-// The shared far-cms Customers screens expect the CMS's admin context (wizard, help, config); CNCPT's own admin
-// layout around this provides the chrome. Card 10 (c645e053) step 3.
 import type { ReactNode } from 'react'
-import { CmsProviders } from '@far-cms/cms/src/components/admin/cms-providers'
+import { FarCmsLayout } from '@/lib/far-cms/cms-layout'
 
-export default function FarCmsCustomersLayout({ children }: { children: ReactNode }) {
-  // No Stripe sync card: CNCPT's sites have no Stripe account of their own yet, and its sync route is not mounted.
-  return <CmsProviders config={{ basePath: '' }} features={{ commerceEnabled: true, stripeCustomerSync: false }}>{children}</CmsProviders>
+export default function Layout({ children }: { children: ReactNode }) {
+  return <FarCmsLayout>{children}</FarCmsLayout>
 }

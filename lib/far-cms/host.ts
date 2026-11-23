@@ -18,7 +18,7 @@ import { setHostPermissions, permissionSet } from "@far-cms/cms/src/lib/permissi
 import { stackServerApp } from "@/lib/cms/stack"
 import { canAccessSubdomain } from "@/lib/team-auth"
 import { isSuperAdmin } from "@/lib/super-admin"
-import { OWNED_MODELS, SITE_UNIQUES } from "./owned-models"
+import { OWNED_MODELS, SITE_RELATIONS, SITE_UNIQUES } from "./owned-models"
 import { sitePermissions } from "./site-permissions"
 
 const g = globalThis as unknown as { __cncptFarCms?: { base: PrismaClient } }
@@ -51,7 +51,7 @@ async function siteId(): Promise<number | null | typeof NO_SITE> {
   return row?.id ?? NO_SITE
 }
 
-setHostClient(scopedRequest(baseClient(), { site: siteId, owned: OWNED_MODELS, uniques: SITE_UNIQUES }))
+setHostClient(scopedRequest(baseClient(), { site: siteId, owned: OWNED_MODELS, uniques: SITE_UNIQUES, relations: SITE_RELATIONS }))
 
 setHostPermissions(async (userId) => {
   const key = await siteKey()

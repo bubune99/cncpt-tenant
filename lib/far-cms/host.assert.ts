@@ -18,7 +18,7 @@ async function main() {
   const mw = readFileSync("middleware.ts", "utf8")
   await ok("the package gets a site-scoped client built from the far-cms schema's own client", () => {
     assert.match(host, /from "@\/lib\/generated\/far-cms-client"/)
-    assert.match(host, /setHostClient\(scopedRequest\(baseClient\(\), \{ site: siteId, owned: OWNED_MODELS, uniques: SITE_UNIQUES \}\)\)/)
+    assert.match(host, /setHostClient\(scopedRequest\(baseClient\(\), \{ site: siteId, owned: OWNED_MODELS, uniques: SITE_UNIQUES, relations: SITE_RELATIONS \}\)\)/)
   })
   await ok("a request on a site host with no known site is refused (NO_SITE), never read across sites", () => {
     assert.match(host, /h\.get\("x-subdomain"\) \?\? NO_SITE/)
@@ -43,11 +43,11 @@ async function main() {
   const { PrismaPg } = await import("@prisma/adapter-pg")
   const { PrismaClient } = await import("../generated/far-cms-client")
   const { scopedRequest, NO_SITE } = await import("@far-cms/db")
-  const { OWNED_MODELS, SITE_UNIQUES } = await import("./owned-models")
+  const { OWNED_MODELS, SITE_UNIQUES, SITE_RELATIONS } = await import("./owned-models")
   const pool = new Pool({ connectionString: url, max: 2 })
   const base: any = new PrismaClient({ adapter: new PrismaPg(pool) })
   let current: number | null | typeof NO_SITE = null
-  const db: any = scopedRequest(base, { site: async () => current, owned: OWNED_MODELS, uniques: SITE_UNIQUES })
+  const db: any = scopedRequest(base, { site: async () => current, owned: OWNED_MODELS, uniques: SITE_UNIQUES, relations: SITE_RELATIONS })
   const tag = `sample-${Date.now()}`
   const sites: number[] = []
   try {
@@ -83,6 +83,14 @@ async function main() {
       const seen = await (packagePrisma as any).customer.findMany({ where: { email: { startsWith: tag } }, select: { tenantId: true } })
       assert.ok(seen.length > 0 && seen.every((r: any) => r.tenantId === sites[0]))
       assert.equal((await (packagePrisma as any).customer.findUnique({ where: { email: `${tag}-a@example.org` } }))?.tenantId, sites[0])
+    })
+    await ok("a customer created with an address inside the same write: both carry the site", async () => {
+      current = sites[0]
+      const c = await db.customer.create({ data: { email: `${tag}-n@example.org`, firstName: "SAMPLE", addresses: { create: { street1: "1 SAMPLE St", city: "Sampleton", postalCode: "00000" } } }, select: { id: true, tenantId: true } })
+      const addr = await base.customerAddress.findMany({ where: { customerId: c.id }, select: { tenantId: true } })
+      assert.equal(c.tenantId, sites[0])
+      assert.deepEqual(addr.map((a: any) => a.tenantId), [sites[0]])
+      await base.customerAddress.deleteMany({ where: { customerId: c.id } })
     })
     await ok("a request with no site is refused for site data", async () => {
       current = NO_SITE
