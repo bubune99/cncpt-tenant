@@ -24,6 +24,9 @@ async function main() {
     assert.match(host, /h\.get\("x-subdomain"\) \?\? NO_SITE/)
     assert.match(host, /return row\?\.id \?\? NO_SITE/)
   })
+  await ok("CNCPT declares it serves several sites, so no site setting is cached server-wide", () => {
+    assert.match(host, /setHostMultiSite\(\)/)
+  })
   await ok("access comes from CNCPT's own rule, mapped by site-permissions", () => {
     assert.match(host, /canAccessSubdomain\(stackUser\.id, key, "edit"\)/)
     assert.match(host, /sitePermissions\(access, superAdmin\)/)

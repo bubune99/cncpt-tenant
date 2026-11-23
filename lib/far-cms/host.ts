@@ -13,7 +13,7 @@ import { Pool } from "pg"
 import { PrismaPg } from "@prisma/adapter-pg"
 import { PrismaClient } from "@/lib/generated/far-cms-client"
 import { scopedRequest, NO_SITE } from "@far-cms/db"
-import { setHostClient } from "@far-cms/cms/src/lib/db/host-client"
+import { setHostClient, setHostMultiSite } from "@far-cms/cms/src/lib/db/host-client"
 import { setHostPermissions, permissionSet } from "@far-cms/cms/src/lib/permissions/host-permissions"
 import { stackServerApp } from "@/lib/cms/stack"
 import { canAccessSubdomain } from "@/lib/team-auth"
@@ -51,6 +51,8 @@ async function siteId(): Promise<number | null | typeof NO_SITE> {
   return row?.id ?? NO_SITE
 }
 
+// Many sites share this server: the package must not answer site settings from a server-wide cache.
+setHostMultiSite()
 setHostClient(scopedRequest(baseClient(), { site: siteId, owned: OWNED_MODELS, uniques: SITE_UNIQUES, relations: SITE_RELATIONS }))
 
 setHostPermissions(async (userId) => {
