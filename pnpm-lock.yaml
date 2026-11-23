@@ -10,6 +10,7 @@ overrides:
   lucide-react: ^0.508.0
   '@types/react': ^18
   '@types/react-dom': ^18
+  '@far-cms/contracts': file:vendor/far-cms/far-cms-contracts-0.1.0.tgz
 
 importers:
 
@@ -69,6 +70,9 @@ importers:
       '@far-cms/db':
         specifier: file:vendor/far-cms/far-cms-db-0.1.0.tgz
         version: file:vendor/far-cms/far-cms-db-0.1.0.tgz
+      '@far-cms/plugin-catalog':
+        specifier: file:vendor/far-cms/far-cms-plugin-catalog-0.1.0.tgz
+        version: file:vendor/far-cms/far-cms-plugin-catalog-0.1.0.tgz
       '@far-cms/skin-grainy':
         specifier: file:vendor/far-cms/far-cms-skin-grainy-0.1.0.tgz
         version: file:vendor/far-cms/far-cms-skin-grainy-0.1.0.tgz
@@ -1755,6 +1759,10 @@ packages:
     resolution: {integrity: sha512-vw+fUiENveVoV5M+wOR1rjx6dcvUE5xVJZtLmgTkmhBPizDaK3nqJ6YJN0jmS9Wljy7BNoMnkQbDAWcPoc+PIQ==, tarball: file:vendor/far-cms/far-cms-db-0.1.0.tgz}
     version: 0.1.0
     hasBin: true
+
+  '@far-cms/plugin-catalog@file:vendor/far-cms/far-cms-plugin-catalog-0.1.0.tgz':
+    resolution: {integrity: sha512-IDuEp2rKo6ELvEUQIhN/TcjwCxMygxxIKSEOw/04HpHZmxE2FgTre8UUScdyYQBTUPhSTKouZnWMr7XS8GeOaA==, tarball: file:vendor/far-cms/far-cms-plugin-catalog-0.1.0.tgz}
+    version: 0.1.0
 
   '@far-cms/skin-grainy@file:vendor/far-cms/far-cms-skin-grainy-0.1.0.tgz':
     resolution: {integrity: sha512-gepQ6ogRDVCOb0jnID2J85Ta/ZYvSu59U1bBkLxpinxqr06eNj7UAVF71g8u7KLq4xs6M4h/mP2YUG9kF/0z5A==, tarball: file:vendor/far-cms/far-cms-skin-grainy-0.1.0.tgz}
@@ -10187,6 +10195,10 @@ snapshots:
       ai: 6.0.6(zod@3.25.67)
 
   '@far-cms/db@file:vendor/far-cms/far-cms-db-0.1.0.tgz': {}
+
+  '@far-cms/plugin-catalog@file:vendor/far-cms/far-cms-plugin-catalog-0.1.0.tgz':
+    dependencies:
+      '@far-cms/contracts': file:vendor/far-cms/far-cms-contracts-0.1.0.tgz
 
   '@far-cms/skin-grainy@file:vendor/far-cms/far-cms-skin-grainy-0.1.0.tgz': {}
 
