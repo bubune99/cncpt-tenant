@@ -60,6 +60,13 @@ const RULES: ReadonlyArray<Rule> = [
   { test: /^\/api\/cms\/vote$/, methods: ['GET', 'PATCH'] },
   { test: /^\/api\/cms\/email\/subscribe$/, methods: ['POST'] },
   { test: /^\/api\/cms\/email\/(unsubscribe|preferences)$/, methods: ['GET', 'POST'] },
+  // The shared far-cms visitor routes (owner, inbox 2fcd4cdd, 2026-11-23: "Yes, open all three"): sending a form,
+  // the newsletter sign-up, the cart. Exact paths and methods; checked in public-api-visitors.assert.ts.
+  { test: /^\/api\/forms\/[^/]+\/token$/, methods: ['GET'] },
+  { test: /^\/api\/forms\/[^/]+\/submit$/, methods: ['POST'] },
+  { test: /^\/api\/captcha\/config$/, methods: ['GET'] },
+  { test: /^\/api\/email\/subscribe$/, methods: ['POST'] },
+  { test: /^\/api\/cart(\/|$)/ },
 ]
 
 export function isPublicApi(pathname: string, method: string): boolean {

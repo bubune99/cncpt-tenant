@@ -27,6 +27,7 @@ import {
   Sparkles, Send, Megaphone, MessagesSquare, Lightbulb, AlarmClock, Loader2,
 } from "lucide-react"
 import { CampaignsPanel, type CommsSite } from "./canvas-comms-campaigns"
+import { CHANNELS, ticketsIn, channelCount, type ChannelId } from "@/lib/dashboard/inbox-filter"
 
 type Tab = "tickets" | "announce" | "campaigns" | "team-chat" | "feedback"
 
@@ -73,6 +74,7 @@ function SupportInbox() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
   const [selId, setSelId] = useState<string | null>(null)
+  const [channel, setChannel] = useState<ChannelId>("all")
   const [messages, setMessages] = useState<any[]>([])
   const [msgLoading, setMsgLoading] = useState(false)
   const [aiDraft, setAiDraft] = useState("")
@@ -125,43 +127,45 @@ function SupportInbox() {
   }, [selId])
 
   const sel = tickets.find((t) => t.id === selId)
-  const channels = [
-    { l: "All inboxes", icon: Inbox, n: stats?.total ?? 0 },
-    { l: "Open", icon: UserX, n: stats?.open ?? 0 },
-    { l: "In progress", icon: Hourglass, n: stats?.inProgress ?? 0 },
-    { l: "Resolved", icon: CheckCircle, n: stats?.resolved ?? 0 },
-    { l: "Closed", icon: User, n: stats?.closed ?? 0 },
-  ]
+  // The channel rows looked selectable but did nothing, and showed 0 while loading (walk 2026-11-22).
+  const CHANNEL_ICON: Record<ChannelId, any> = { all: Inbox, open: UserX, in_progress: Hourglass, resolved: CheckCircle, closed: User }
+  const listed = ticketsIn(tickets, channel)
+  const channelLabel = CHANNELS.find((c) => c.id === channel)?.label ?? "All tickets"
 
   return (
     <div className="dirH__page" style={{ display: "grid", gridTemplateColumns: "220px 1.1fr 1.3fr", padding: 0, minHeight: 0, overflow: "hidden" }}>
       {/* Channels rail */}
-      <div style={{ background: "#fff", borderRight: "1px solid var(--br-border)", overflow: "auto" }}>
-        <div className="eyebrow" style={{ padding: "12px 14px 6px", fontSize: 10.5, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--br-text-secondary)" }}>Channels</div>
-        {channels.map((c, i) => {
-          const Icon = c.icon
+      <div style={{ background: "var(--br-background)", borderRight: "1px solid var(--br-border)", overflow: "auto" }}>
+        <div className="eyebrow" style={{ padding: "12px 14px 6px", fontSize: 11.5, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--br-text-secondary)" }}>Channels</div>
+        {CHANNELS.map((c) => {
+          const Icon = CHANNEL_ICON[c.id]
+          const on = c.id === channel
+          const count = channelCount(stats, c.id)
           return (
-            <div key={c.l} className={"tnt__chan-row" + (i === 0 ? " is-on" : "")}>
+            <button type="button" key={c.id} className={"tnt__chan-row" + (on ? " is-on" : "")} onClick={() => setChannel(c.id)} aria-pressed={on} data-ui={`inbox.channel.${c.id}`} style={{ width: "100%", border: 0, background: on ? undefined : "transparent", textAlign: "left", font: "inherit", color: "inherit", cursor: "pointer" }}>
               <div className="tnt__chan-icon"><Icon /></div>
-              <span style={{ flex: 1, fontSize: 12.5, fontWeight: i === 0 ? 600 : 500 }}>{c.l}</span>
-              <span className="muted mono" style={{ fontSize: 11 }}>{c.n}</span>
-            </div>
+              <span style={{ flex: 1, fontSize: 12.5, fontWeight: on ? 600 : 500 }}>{c.label}</span>
+              <span className="muted" style={{ fontSize: 11.5, fontVariantNumeric: "tabular-nums" }}>{count === null ? "" : count}</span>
+            </button>
           )
         })}
       </div>
 
       {/* Ticket list */}
-      <div style={{ borderRight: "1px solid var(--br-border)", background: "#fff", display: "flex", flexDirection: "column", minHeight: 0 }}>
+      <div style={{ borderRight: "1px solid var(--br-border)", background: "var(--br-background)", display: "flex", flexDirection: "column", minHeight: 0 }}>
         <div className="row between" style={{ padding: "10px 14px", borderBottom: "1px solid var(--br-border)", background: "var(--br-surface)" }}>
           <div className="row" style={{ gap: 6 }}>
-            <span style={{ fontSize: 12.5, fontWeight: 600 }}>All tickets</span>
-            <span className="muted mono" style={{ fontSize: 11 }}>{tickets.length}</span>
+            <span style={{ fontSize: 12.5, fontWeight: 600 }}>{channelLabel}</span>
+            <span className="muted" style={{ fontSize: 11.5, fontVariantNumeric: "tabular-nums" }}>{loading ? "" : listed.length}</span>
           </div>
-          <button className="btn btn--primary btn--xs"><Plus style={{ width: 12, height: 12 }} /> New</button>
+          {/* New had no handler; the Support area's form creates tickets (POST /api/dashboard/support). */}
+          <a className="btn btn--primary btn--xs" href="/dashboard/support?new=1" data-ui="inbox.new" aria-label="New ticket"><Plus style={{ width: 12, height: 12 }} /> New</a>
         </div>
         <div style={{ overflow: "auto", flex: 1 }}>
           {loading ? (
             <div className="row" style={{ gap: 8, padding: 20 }}><Loader2 className="tnt-spin" style={{ width: 15, height: 15 }} /> <span className="muted" style={{ fontSize: 12 }}>Loading tickets…</span></div>
+          ) : tickets.length > 0 && listed.length === 0 ? (
+            <div className="muted" role="status" style={{ padding: 20, fontSize: 12.5 }}>No {channelLabel.toLowerCase()} tickets.</div>
           ) : tickets.length === 0 ? (
             <div className="tnt__empty" style={{ padding: "40px 20px" }}>
               <div className="tnt__empty-glyph"><MessageSquare /></div>
@@ -169,7 +173,7 @@ function SupportInbox() {
               <p className="tnt__empty-p">Customer support tickets will appear here once they come in.</p>
             </div>
           ) : (
-            tickets.map((t) => {
+            listed.map((t) => {
               const isSel = t.id === selId
               const tone = t.priority === "high" || t.priority === "urgent" ? "#dc2626" : t.priority === "medium" ? "#a16207" : "#475569"
               return (
@@ -182,8 +186,8 @@ function SupportInbox() {
                     <div style={{ width: 4, alignSelf: "stretch", borderRadius: 2, background: tone, minHeight: 28 }} />
                     <div className="col" style={{ gap: 3, flex: 1, minWidth: 0 }}>
                       <div className="row" style={{ gap: 6 }}>
-                        <span className={"pill " + (t.status === "open" ? "pill--blue" : t.status === "resolved" || t.status === "closed" ? "pill--green" : "pill--amber")} style={{ fontSize: 9.5 }}>{t.status}</span>
-                        {(t.priority === "high" || t.priority === "urgent") ? <span className="pill pill--rose" style={{ fontSize: 9.5 }}>{t.priority}</span> : null}
+                        <span className={"pill " + (t.status === "open" ? "pill--blue" : t.status === "resolved" || t.status === "closed" ? "pill--green" : "pill--amber")} style={{ fontSize: 11.5 }}>{t.status}</span>
+                        {(t.priority === "high" || t.priority === "urgent") ? <span className="pill pill--rose" style={{ fontSize: 11.5 }}>{t.priority}</span> : null}
                       </div>
                       <div style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.3 }}>{t.title}</div>
                       <div className="muted" style={{ fontSize: 11, lineHeight: 1.4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -208,12 +212,12 @@ function SupportInbox() {
           </div>
         ) : (
           <>
-            <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--br-border)", background: "#fff" }}>
+            <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--br-border)", background: "var(--br-background)" }}>
               <div className="row" style={{ gap: 6, marginBottom: 4 }}>
-                <span className={"pill " + (sel.priority === "high" || sel.priority === "urgent" ? "pill--rose" : "pill--slate")} style={{ fontSize: 10.5 }}>
+                <span className={"pill " + (sel.priority === "high" || sel.priority === "urgent" ? "pill--rose" : "pill--slate")} style={{ fontSize: 11.5 }}>
                   {(sel.priority === "high" || sel.priority === "urgent") ? <AlarmClock style={{ width: 11, height: 11 }} /> : null} {sel.priority}
                 </span>
-                <span className="pill" style={{ fontSize: 10.5 }}>{sel.status}</span>
+                <span className="pill" style={{ fontSize: 11.5 }}>{sel.status}</span>
               </div>
               <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, letterSpacing: "-0.01em" }}>{sel.title}</h2>
               <div className="muted" style={{ fontSize: 11.5, marginTop: 5 }}>
@@ -272,9 +276,9 @@ function SupportInbox() {
             <div style={{ padding: "12px 18px 18px", borderTop: "1px solid var(--br-border)", background: "var(--br-background)" }}>
               <div className="tnt__input" style={{ padding: "10px 12px", alignItems: "center" }}>
                 <span style={{ flex: 1, color: "var(--br-text-secondary)", fontSize: 12.5 }}>{aiDraft ? "Edit the suggested reply above" : `Reply to ${sel.customerName}…`}</span>
-                <button className="btn btn--primary btn--xs" disabled>Send reply <Send style={{ width: 11, height: 11 }} /></button>
+                <a className="btn btn--primary btn--xs" href="/dashboard/support" data-ui="inbox.reply">Reply in Support <Send style={{ width: 11, height: 11 }} /></a>
               </div>
-              <span className="muted" style={{ fontSize: 10.5, marginTop: 6, display: "block" }}>Sending replies from here is handled by the existing Support area; this inbox drafts and reads.</span>
+              <span className="muted" style={{ fontSize: 11.5, marginTop: 6, display: "block" }}>Sending replies from here is handled by the existing Support area; this inbox drafts and reads.</span>
             </div>
           </>
         )}
@@ -334,9 +338,9 @@ function FeedbackPanel() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: 10 }}>
                   {colItems.map((it) => (
                     <div key={it.id} className="card" style={{ padding: 12 }}>
-                      <span className="pill pill--slate" style={{ fontSize: 9.5 }}>{it.type.toLowerCase()}</span>
+                      <span className="pill pill--slate" style={{ fontSize: 11.5 }}>{it.type.toLowerCase()}</span>
                       <div style={{ fontSize: 12.5, fontWeight: 500, lineHeight: 1.4, marginTop: 6 }}>{it.subject || it.message.slice(0, 80)}</div>
-                      {it.site ? <div className="muted mono" style={{ fontSize: 10, marginTop: 4 }}>{it.site}</div> : null}
+                      {it.site ? <div className="muted mono" style={{ fontSize: 11.5, marginTop: 4 }}>{it.site}</div> : null}
                     </div>
                   ))}
                   {colItems.length === 0 ? <div className="muted" style={{ fontSize: 11, padding: "4px 2px" }}>—</div> : null}
@@ -431,7 +435,7 @@ function AnnouncementsPanel() {
             <div className="tnt__tabs" style={{ marginBottom: 12 }}>
               {sites.map((s) => (
                 <button key={s.subdomain} className={"tnt__tab" + (s.subdomain === active ? " is-on" : "")} onClick={() => selectSite(s.subdomain)}>
-                  {s.subdomain}{s.enabled ? <span className="pill pill--green" style={{ fontSize: 9, marginLeft: 6 }}>live</span> : null}
+                  {s.subdomain}{s.enabled ? <span className="pill pill--green" style={{ fontSize: 11.5, marginLeft: 6 }}>live</span> : null}
                 </button>
               ))}
             </div>
@@ -579,7 +583,7 @@ function TeamChatPanel() {
                 <div className="col" style={{ gap: 2, maxWidth: "70%", alignItems: m.user_id === me ? "flex-end" : "flex-start" }}>
                   <div className="row" style={{ gap: 6 }}>
                     <strong style={{ fontSize: 11.5 }}>{m.user_id === me ? "You" : (m.user_name || "Member")}</strong>
-                    <span className="muted" style={{ fontSize: 10 }}>{chatRelTime(m.created_at)}</span>
+                    <span className="muted" style={{ fontSize: 11.5 }}>{chatRelTime(m.created_at)}</span>
                   </div>
                   <div style={{ fontSize: 13, lineHeight: 1.5, background: m.user_id === me ? "var(--br-primary)" : "var(--br-surface)", color: m.user_id === me ? "#fff" : "var(--br-text)", padding: "7px 11px", borderRadius: 10, border: m.user_id === me ? "none" : "1px solid var(--br-border)", whiteSpace: "pre-wrap" }}>{m.body}</div>
                 </div>

@@ -1,7 +1,11 @@
 @import "tailwindcss";
+/* The shared far-cms screens use Tailwind classes too (card 10). */
+@source "../node_modules/@far-cms/cms/src";
 @import "tw-animate-css";
 @import "./grainy.css";
 @import "./atlas.css";
+/* Admin surfaces, text, lines and status colors: the shared Grainy skin (brand colors stay per site). */
+@import "@far-cms/skin-grainy/skin.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -9,6 +13,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
+  /* gates-allow: this token is for literal code only, which keeps monospace (owner 2026-11-22) */
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -96,7 +101,7 @@
   --accent-foreground: #ffffff;
   --destructive: #be123c;
   --border: #e5e7eb;
-  --input: #f9fafb;
+  --input: #878d98; /* field outlines read 3:1 on white cards (were #f9fafb, 1:1) */
   --ring: #1e3a5f;
   --chart-1: #1e3a5f;
   --chart-2: #c2410c;
@@ -134,7 +139,7 @@
   --accent-foreground: #111827;
   --destructive: #dc2626;
   --border: #374151;
-  --input: #1f2937;
+  --input: #737b88; /* field outlines read 3.4:1 on dark cards (were #1f2937, the card colour) */
   --ring: #60a5fa;
   --chart-1: #60a5fa;
   --chart-2: #fb923c;
@@ -210,7 +215,8 @@
   --wl-radius-lg: 12px;
 }
 
-[data-brand="marigold"] {
+[data-brand="marigold"],
+body:has([data-brand="marigold"]) {
   --wl-canvas: #d9d3c2;  --wl-bg: #faf7ef;  --wl-surface: #ffffff;
   --wl-surface-2: #f5f1e6;  --wl-surface-3: #ebe5d4;
   --wl-text: #1a1410;  --wl-text-soft: rgba(26, 20, 16, 0.62);  --wl-text-faint: rgba(26, 20, 16, 0.40);
@@ -218,7 +224,8 @@
   --wl-accent: #8b2c1f;  --wl-accent-fg: #ffffff;  --wl-accent-soft: rgba(139, 44, 31, 0.10);
   --wl-success: #4f5e3a;  --wl-warning: #b58730;  --wl-error: #b53d2f;
 }
-[data-brand="boreal"] {
+[data-brand="boreal"],
+body:has([data-brand="boreal"]) {
   --wl-canvas: #e8e8e6;  --wl-bg: #ffffff;  --wl-surface: #ffffff;
   --wl-surface-2: #f6f6f4;  --wl-surface-3: #eceae6;
   --wl-text: #0d1f1c;  --wl-text-soft: rgba(13, 31, 28, 0.62);  --wl-text-faint: rgba(13, 31, 28, 0.40);
@@ -226,7 +233,8 @@
   --wl-accent: #1a4d3a;  --wl-accent-fg: #ffffff;  --wl-accent-soft: rgba(26, 77, 58, 0.10);
   --wl-success: #1a4d3a;  --wl-warning: #b89031;  --wl-error: #b53d2f;
 }
-[data-brand="obsidian"] {
+[data-brand="obsidian"],
+body:has([data-brand="obsidian"]) {
   --wl-canvas: #1a1a1d;  --wl-bg: #0f0f12;  --wl-surface: #16161a;
   --wl-surface-2: #1c1c20;  --wl-surface-3: #22222a;
   --wl-text: #f0ede5;  --wl-text-soft: rgba(240, 237, 229, 0.68);  --wl-text-faint: rgba(240, 237, 229, 0.42);
@@ -234,7 +242,8 @@
   --wl-accent: #d4a84b;  --wl-accent-fg: #0f0f12;  --wl-accent-soft: rgba(212, 168, 75, 0.14);
   --wl-success: #7faa55;  --wl-warning: #d4a84b;  --wl-error: #b53d2f;
 }
-[data-brand="meadow"] {
+[data-brand="meadow"],
+body:has([data-brand="meadow"]) {
   --wl-canvas: #e6dfd1;  --wl-bg: #f7f3e9;  --wl-surface: #fffdf6;
   --wl-surface-2: #f0ead7;  --wl-surface-3: #e2dabd;
   --wl-text: #2d2918;  --wl-text-soft: rgba(45, 41, 24, 0.66);  --wl-text-faint: rgba(45, 41, 24, 0.42);
@@ -243,6 +252,16 @@
   --wl-success: #5c7548;  --wl-warning: #c08a2e;  --wl-error: #b53d2f;
 }
 
+/* Dialogs, menus and popovers render at the end of <body>, outside the [data-brand] wrapper, and took the root
+ * accent (#0066cc on bubune, 2026-11-23) while the screen behind them used the site's preset. <body> carries the same
+ * accent as the wrapper, so a dialog's buttons match the screen it opened from. Surfaces are not moved here. */
+body:has([data-brand]) {
+  --primary: var(--wl-accent);
+  --primary-foreground: var(--wl-accent-fg);
+  --accent: var(--wl-accent);
+  --accent-foreground: var(--wl-accent-fg);
+  --ring: var(--wl-accent);
+}
 /* Density modes */
 [data-density="compact"]  { --wl-pad: 12px; --wl-gap: 12px; --wl-card-pad: 14px; --wl-row-h: 36px; }
 [data-density="spacious"] { --wl-pad: 22px; --wl-gap: 22px; --wl-card-pad: 24px; --wl-row-h: 52px; }
@@ -292,20 +311,14 @@
  * preset surfaces. The brand ACCENT (--primary/--accent/--ring) still follows
  * the tenant from [data-brand], so per-brand color is preserved. This block is
  * after [data-brand] in source + .atlas nests inside it, so it wins for editors.
+ *
+ * Dialogs, menus and popovers render in a portal at the end of <body>, outside .atlas, and fell back to the root
+ * navy palette (#111827). While an admin screen is open (body contains .atlas) <body> carries the same surfaces, so
+ * they match. The storefront never contains .atlas, so it is untouched. (2026-11-23, mounted far-cms dialogs.)
  */
-.atlas {
-  --background: var(--surface-raised);
-  --foreground: var(--text);
-  --card: var(--surface-raised);
-  --card-foreground: var(--text);
-  --popover: var(--surface-raised);
-  --popover-foreground: var(--text);
-  --secondary: var(--surface);
-  --secondary-foreground: var(--text);
-  --muted: var(--surface);
-  --muted-foreground: var(--text-secondary);
-  --border: var(--line-strong);
-  --input: var(--line-strong);
+.atlas,
+body:has(.atlas) {
+  /* Surfaces, text, lines and status colors come from @far-cms/skin-grainy (imported at the top). */
   --sidebar: var(--surface);
   --sidebar-foreground: var(--text);
   --sidebar-accent: var(--surface-sunken);

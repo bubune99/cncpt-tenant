@@ -7,90 +7,7 @@ import { useState, useEffect } from "react"
 import { Check, Sparkles, Zap, HelpCircle } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useTheme } from "next-themes"
-
-const plans = [
-  {
-    name: "Starter",
-    slug: "starter",
-    description: "Perfect for small sites and blogs",
-    price: 25,
-    yearlyPrice: 250,
-    popular: false,
-    features: [
-      { text: "2 team seats", tooltip: "Additional seats $15/mo each" },
-      { text: "Custom domain included" },
-      { text: "25GB bandwidth/mo", tooltip: "Overage: $15 per 25GB" },
-      { text: "1GB site storage", tooltip: "Overage: $3/GB/mo" },
-      { text: "3GB media storage", tooltip: "Overage: $1/GB/mo" },
-      { text: "300 AI credits/mo", tooltip: "Purchase more anytime" },
-      { text: "Email support" },
-      { text: "Basic analytics" },
-    ],
-    cta: "Start free trial",
-    href: "/register?plan=starter",
-  },
-  {
-    name: "Growth",
-    slug: "growth",
-    description: "For growing sites and small teams",
-    price: 49,
-    yearlyPrice: 490,
-    popular: true,
-    features: [
-      { text: "3 team seats", tooltip: "Additional seats $15/mo each" },
-      { text: "Custom domain included" },
-      { text: "100GB bandwidth/mo", tooltip: "Overage: $15 per 25GB" },
-      { text: "5GB site storage", tooltip: "Overage: $3/GB/mo" },
-      { text: "15GB media storage", tooltip: "Overage: $1/GB/mo" },
-      { text: "1,500 AI credits/mo", tooltip: "Purchase more anytime" },
-      { text: "Email support" },
-      { text: "Standard analytics" },
-    ],
-    cta: "Start free trial",
-    href: "/register?plan=growth",
-  },
-  {
-    name: "Pro",
-    slug: "pro",
-    description: "For professionals and agencies",
-    price: 99,
-    yearlyPrice: 990,
-    popular: false,
-    features: [
-      { text: "6 team seats", tooltip: "Additional seats $15/mo each" },
-      { text: "Custom domain included" },
-      { text: "300GB bandwidth/mo", tooltip: "Overage: $15 per 25GB" },
-      { text: "30GB site storage", tooltip: "Overage: $3/GB/mo" },
-      { text: "75GB media storage", tooltip: "Overage: $1/GB/mo" },
-      { text: "7,500 AI credits/mo", tooltip: "Purchase more anytime" },
-      { text: "Priority support" },
-      { text: "Advanced analytics" },
-    ],
-    cta: "Start free trial",
-    href: "/register?plan=pro",
-  },
-  {
-    name: "Business",
-    slug: "business",
-    description: "For high-traffic sites and enterprises",
-    price: 349,
-    yearlyPrice: 3490,
-    popular: false,
-    features: [
-      { text: "25 team seats", tooltip: "Additional seats $12/mo each" },
-      { text: "Custom domain included" },
-      { text: "1TB bandwidth/mo", tooltip: "Overage: $15 per 25GB" },
-      { text: "300GB site storage", tooltip: "Overage: $3/GB/mo" },
-      { text: "750GB media storage", tooltip: "Overage: $1/GB/mo" },
-      { text: "75,000 AI credits/mo", tooltip: "Purchase more anytime" },
-      { text: "Dedicated support" },
-      { text: "Advanced analytics" },
-      { text: "Priority feature requests" },
-    ],
-    cta: "Contact sales",
-    href: "/book",
-  },
-]
+import { PLANS as plans, monthlyShown } from "@/lib/billing/plans"
 
 const addOns = [
   { name: "Extra Team Seat", price: "$15/mo", note: "$12/mo on Business" },
@@ -172,8 +89,8 @@ export default function PricingPage() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
-            <Link href="/demo" data-tour-id="pricing-nav-demo" className="text-sm text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-colors">Demo</Link>
-            <Link href="/book" data-tour-id="pricing-nav-book" className="text-sm text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-colors">Book Call</Link>
+            <Link href="/demo" data-tour-id="pricing-nav-demo" className="inline-flex min-h-6 items-center text-sm text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-colors">Demo</Link>
+            <Link href="/book" data-tour-id="pricing-nav-book" className="inline-flex min-h-6 items-center text-sm text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-colors">Book Call</Link>
             <ThemeToggle />
             <Link href="/register" data-tour-id="pricing-nav-register" className="px-5 py-2.5 text-sm font-medium bg-blue-800 dark:bg-white text-white dark:text-gray-900 rounded-xl hover:bg-blue-700 dark:hover:bg-white/90 transition-colors">
               Get Started
@@ -212,6 +129,7 @@ export default function PricingPage() {
           >
             <button
               onClick={() => setAnnual(false)}
+              aria-pressed={!annual}
               data-tour-id="pricing-monthly-toggle"
               className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
                 !annual ? "bg-blue-800 dark:bg-white text-white dark:text-gray-900" : "text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white"
@@ -221,13 +139,14 @@ export default function PricingPage() {
             </button>
             <button
               onClick={() => setAnnual(true)}
+              aria-pressed={annual}
               data-tour-id="pricing-annual-toggle"
               className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
                 annual ? "bg-blue-800 dark:bg-white text-white dark:text-gray-900" : "text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white"
               }`}
             >
               Annual
-              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-800 dark:text-emerald-400">
                 Save 17%
               </span>
             </button>
@@ -260,18 +179,18 @@ export default function PricingPage() {
 
                 <div className="mb-6">
                   <h3 className="text-xl font-semibold mb-1 text-gray-900 dark:text-white">{plan.name}</h3>
-                  <p className="text-sm text-gray-500 dark:text-white/40">{plan.description}</p>
+                  <p className="text-sm text-gray-500 dark:text-white/65">{plan.description}</p>
                 </div>
 
                 <div className="mb-6">
                   <div className="flex items-baseline gap-1">
                     <span className="text-4xl font-bold text-gray-900 dark:text-white">
-                      ${annual ? Math.round(plan.yearlyPrice / 12) : plan.price}
+                      ${monthlyShown(plan, annual)}
                     </span>
-                    <span className="text-gray-500 dark:text-white/40">/mo</span>
+                    <span className="text-gray-500 dark:text-white/65">/mo</span>
                   </div>
                   {annual && (
-                    <p className="text-sm text-gray-500 dark:text-white/40 mt-1">
+                    <p className="text-sm text-gray-500 dark:text-white/65 mt-1">
                       ${plan.yearlyPrice}/year billed annually
                     </p>
                   )}
@@ -280,6 +199,7 @@ export default function PricingPage() {
                 <Link
                   href={plan.href}
                   data-tour-id={`pricing-tier-${plan.slug}-cta`}
+                  aria-label={`${plan.cta}: ${plan.name} plan`}
                   className={`block w-full py-3 rounded-xl text-center text-sm font-medium transition-all mb-6 ${
                     plan.popular
                       ? "bg-gradient-to-r from-blue-800 to-orange-500 text-white hover:opacity-90"
@@ -336,7 +256,7 @@ export default function PricingPage() {
               >
                 <h3 className="font-medium mb-1 text-gray-900 dark:text-white">{addon.name}</h3>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{addon.price}</p>
-                <p className="text-xs text-gray-500 dark:text-white/40">{addon.note}</p>
+                <p className="text-xs text-gray-500 dark:text-white/65">{addon.note}</p>
               </motion.div>
             ))}
           </div>
@@ -368,18 +288,19 @@ export default function PricingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className={`p-5 rounded-xl border ${
+                className={`relative p-5 rounded-xl border ${
                   pack.popular
                     ? "border-orange-500/50 bg-orange-500/5"
                     : "border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.02]"
                 }`}
               >
                 {pack.popular && (
-                  <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">Best Value</span>
+                  // In the corner, so the popular pack lines up with the others (walk 2026-11-22: it sat 24px lower).
+                  <span className="absolute top-5 right-5 text-xs text-orange-600 dark:text-orange-400 font-medium">Best Value</span>
                 )}
-                <h3 className="font-medium mb-1 text-gray-900 dark:text-white">{pack.name}</h3>
+                <h3 className={`font-medium mb-1 text-gray-900 dark:text-white ${pack.popular ? "pr-20" : ""}`}>{pack.name}</h3>
                 <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{pack.credits}</p>
-                <p className="text-sm text-gray-500 dark:text-white/40 mb-3">credits</p>
+                <p className="text-sm text-gray-500 dark:text-white/65 mb-3">credits</p>
                 <p className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">{pack.price}</p>
               </motion.div>
             ))}
@@ -411,16 +332,18 @@ export default function PricingPage() {
               >
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  aria-expanded={openFaq === i}
+                  aria-controls={`pricing-faq-${i + 1}-answer`}
                   data-tour-id={`pricing-faq-${i + 1}`}
                   className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
                 >
                   <span className="font-medium text-gray-900 dark:text-white">{faq.q}</span>
-                  <span className={`text-gray-400 dark:text-white/40 transition-transform ${openFaq === i ? "rotate-45" : ""}`}>
+                  <span aria-hidden="true" className={`text-gray-400 dark:text-white/65 transition-transform ${openFaq === i ? "rotate-45" : ""}`}>
                     +
                   </span>
                 </button>
                 {openFaq === i && (
-                  <div className="px-6 pb-4 text-sm text-gray-600 dark:text-white/60 leading-relaxed">
+                  <div id={`pricing-faq-${i + 1}-answer`} className="px-6 pb-4 text-sm text-gray-600 dark:text-white/60 leading-relaxed">
                     {faq.a}
                   </div>
                 )}
@@ -484,7 +407,7 @@ export default function PricingPage() {
               <div className="h-7 w-[100px] bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
             )}
           </Link>
-          <p className="text-sm text-gray-400 dark:text-white/30">
+          <p className="text-sm text-gray-500 dark:text-white/65">
             &copy; {new Date().getFullYear()} CNCPT Web. All rights reserved.
           </p>
         </div>

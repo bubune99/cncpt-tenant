@@ -50,7 +50,7 @@ function Field({ icon: Icon, label, value }: { readonly icon: typeof Mail; reado
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--line-faint, var(--line))' }}>
       <Icon size={15} style={{ color: 'var(--clay-600)', flex: 'none' }} />
-      <span className="gr-eyebrow" style={{ fontSize: 9.5 }}>{label}</span>
+      <span className="gr-eyebrow">{label}</span>
       <span style={{ marginLeft: 'auto', fontSize: 13, fontWeight: 500, textAlign: 'right', wordBreak: 'break-word' }}>{value}</span>
     </div>
   );
@@ -167,7 +167,7 @@ export function CustomerDetailSidebar({
               <div key={addr.id} style={{ display: 'flex', gap: 10 }}>
                 <MapPin size={15} style={{ color: 'var(--clay-600)', flex: 'none', marginTop: 2 }} />
                 <div>
-                  <div className="gr-eyebrow" style={{ fontSize: 9, marginBottom: 2 }}>
+                  <div className="gr-eyebrow" style={{ marginBottom: 2 }}>
                     {addr.isDefault ? `Default · ${addr.label ?? 'Shipping'}` : (addr.label ?? 'Address')}
                   </div>
                   <div style={{ fontSize: 13, fontWeight: 500 }}>{[addr.firstName, addr.lastName].filter(Boolean).join(' ') || '—'}</div>

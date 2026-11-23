@@ -119,4 +119,15 @@ export function activeNavId(section: string): string {
   return sectionToNav[section] ?? "overview"
 }
 
+/** Icons for the sidebar's seven places (lib/dashboard/nav-groups.ts). */
+export const GROUP_ICONS: Record<string, LucideIcon> = {
+  overview: LayoutDashboard,
+  sites: Globe,
+  analytics: BarChart3,
+  team: Users,
+  inbox: MessageSquare,
+  billing: CreditCard,
+  settings: Settings,
+}
+
 export { Bell, History, MessagesSquare }

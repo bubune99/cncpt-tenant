@@ -25,7 +25,7 @@ import {
   HelpCircle, Compass, Moon, Sun, Search, Plus, PanelLeft,
   LayoutDashboard, FileText, ShoppingBag, Package, Users, BookOpen,
   BarChart3, Settings, Layers, Image as ImageIcon, Megaphone, Workflow,
-  Tag, MessageSquare, Calendar, Boxes, Circle, ExternalLink, LogOut, Sparkles, LayoutGrid,
+  Tag, MessageSquare, Calendar, Boxes, Circle, ExternalLink, LogOut, Sparkles, LayoutGrid, Inbox,
 } from 'lucide-react';
 import { workspaceHref } from '@/lib/landing/workspace-href';
 
@@ -40,6 +40,7 @@ import { AdminChat } from '@/components/cms/admin-chat';
 import { SpotlightHostClient } from '@/components/cms/spotlight/SpotlightHostClient';
 import { AgentNavRail } from '@/components/cms/admin/agent-nav-rail';
 import { NotifDrawerAdmin } from '@/components/cms/admin/NotifDrawerAdmin';
+import { Shortcut } from '@/components/ui/shortcut';
 
 // ─────────────────────────────────────────────
 // Types
@@ -173,6 +174,21 @@ export function AdminShell({
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  // At phone width the sidebar is a menu that slides in (atlas.css), opened from the top bar's sidebar button.
+  const [isPhone, setIsPhone] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const sync = () => { setIsPhone(mq.matches); if (!mq.matches) setMobileOpen(false); };
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMobileOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mobileOpen]);
   // Collapsed sidebar (MergedShell). Persisted so the choice survives reloads.
   const [collapsed, setCollapsed] = useState(false);
   useEffect(() => {
@@ -325,16 +341,6 @@ export function AdminShell({
               />
             )}
 
-            {/* Mobile toggle (small screens only) */}
-            <button
-              className="btn"
-              onClick={() => setMobileOpen(o => !o)}
-              style={{ position: 'fixed', top: 8, left: 8, zIndex: 50, display: 'none' }}
-              aria-label="Toggle menu"
-              data-tour-id="admin-mobile-toggle"
-            >
-              ☰
-            </button>
 
             {/* ── Outer page-frame ── */}
             <div
@@ -347,10 +353,10 @@ export function AdminShell({
                 {/* Collapse toggle — sinks the sidebar to an icon rail */}
                 <button
                   className="collapse-btn"
-                  onClick={toggleCollapsed}
-                  title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-                  aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-                  aria-pressed={collapsed}
+                  onClick={isPhone ? () => setMobileOpen(o => !o) : toggleCollapsed}
+                  title={isPhone ? (mobileOpen ? 'Close menu' : 'Open menu') : collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                  aria-label={isPhone ? (mobileOpen ? 'Close menu' : 'Open menu') : collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                  aria-pressed={isPhone ? mobileOpen : collapsed}
                   data-tour-id="admin-collapse-toggle"
                 >
                   <PanelLeft size={17} strokeWidth={1.8} />
@@ -391,7 +397,7 @@ export function AdminShell({
                   )}
                   <span>{siteName ?? displayUser?.primaryEmail?.split('@')[0] ?? 'Studio'}</span>
                   {siteUrl && siteUrl !== '/' && (
-                    <span className="store-chip mono">
+                    <span className="store-chip">
                       {siteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}
                     </span>
                   )}
@@ -405,13 +411,14 @@ export function AdminShell({
                     aria-label="Search"
                     readOnly
                   />
-                  <span className="kbd">⌘K</span>
+                  <Shortcut k="K" className="kbd" />
                 </div>
                 <div className="right" data-tour-id="header-actions">
                   {/* Context-aware create */}
                   <Link
                     href={sectionHref(newHrefFor(activeSection))}
                     className="btn btn-accent btn-new"
+                    aria-label="New"
                     data-tour-id="header-new"
                   >
                     <Plus size={15} strokeWidth={2} />
@@ -462,8 +469,9 @@ export function AdminShell({
 
                 {/* ── Sidebar (MergedShell — icon + label + count, collapsible) ── */}
                 <aside
-                  className={'sidebar' + (collapsed ? ' collapsed' : '')}
+                  className={'sidebar' + (collapsed && !isPhone ? ' collapsed' : '')}
                   data-tour-id="admin-sidebar"
+                  data-open={mobileOpen ? 'true' : undefined}
                   style={{
                     transform: mobileOpen ? 'none' : undefined,
                   }}
@@ -477,7 +485,7 @@ export function AdminShell({
                     data-tour-id="nav-inbox"
                     title={collapsed ? 'Inbox' : undefined}
                   >
-                    <span className="n">✦</span>
+                    <Inbox className="n nav-ico" size={17} strokeWidth={1.8} aria-hidden="true" />
                     <span className="label">Inbox</span>
                     {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
                   </Link>

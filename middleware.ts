@@ -86,6 +86,13 @@ function sanitizeSubdomain(raw: string): string | null {
   return sanitized.length > 0 ? sanitized : null
 }
 
+/** Site pages carry the site key too (the incoming header was stripped above), for the shared far-cms code. */
+function siteHeaders(h: Headers, subdomain: string): Headers {
+  const out = new Headers(h)
+  out.set("x-subdomain", subdomain)
+  return out
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const host = request.headers.get("host") || ""
@@ -182,18 +189,18 @@ h1{font-size:2rem;margin-bottom:1rem}p{color:#94a3b8}
     }
 
     if (pathname === "/") {
-      return NextResponse.rewrite(new URL(`/s/${subdomain}`, request.url))
+      return NextResponse.rewrite(new URL(`/s/${subdomain}`, request.url), { request: { headers: siteHeaders(requestHeaders, subdomain) } })
     }
 
     // Rewrite tenant-scoped asset routes (favicon, icons, manifest)
     const tenantAssetPaths = ['/favicon.ico', '/icon', '/manifest.json']
     if (tenantAssetPaths.some(p => pathname === p || pathname.startsWith(p + '/'))) {
-      return NextResponse.rewrite(new URL(`/s/${subdomain}${pathname}`, request.url))
+      return NextResponse.rewrite(new URL(`/s/${subdomain}${pathname}`, request.url), { request: { headers: siteHeaders(requestHeaders, subdomain) } })
     }
 
     // Rewrite all non-API paths to the subdomain namespace
     if (!pathname.startsWith("/_next")) {
-      return NextResponse.rewrite(new URL(`/s/${subdomain}${pathname}`, request.url))
+      return NextResponse.rewrite(new URL(`/s/${subdomain}${pathname}`, request.url), { request: { headers: siteHeaders(requestHeaders, subdomain) } })
     }
   }
 

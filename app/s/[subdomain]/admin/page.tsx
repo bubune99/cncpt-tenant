@@ -23,52 +23,13 @@ import { useCMSConfig } from '@/contexts/CMSConfigContext';
 import { isDemoSubdomain } from '@/lib/demo';
 import { OverviewDashboard } from '@/components/cms/admin/overview/overview-dashboard';
 import type {
-  OverviewData, OverviewStats, OverviewAnalytics, OverviewOrder, OverviewProduct, NavHandlers,
+  OverviewData, OverviewStats, OverviewAnalytics, OverviewOrder, OverviewProduct, NavHandlers, Loaded,
 } from '@/components/cms/admin/overview/overview-types';
+import {
+  toOverviewOrder, mergeOpenOrders, OPEN_ORDER_QUERIES, lowStockOf, analyticsFrom, type RawOrder, type RawProduct,
+} from '@/lib/cms/admin/overview-rules';
 
-// ─────────────────────────────────────────────
-// Raw API response shapes (only the fields we read)
-// ─────────────────────────────────────────────
-
-interface RawOrder {
-  readonly id: string;
-  readonly orderNumber: string;
-  readonly email: string | null;
-  readonly total: number;
-  readonly status: string;
-  readonly createdAt: string;
-  readonly customer: { readonly firstName: string | null; readonly lastName: string | null; readonly email: string | null } | null;
-  readonly currentStage: { readonly displayName: string | null; readonly color: string | null } | null;
-}
-
-interface RawProduct {
-  readonly id: string;
-  readonly title: string;
-  readonly stock: number;
-  readonly lowStockThreshold: number;
-  readonly trackInventory: boolean;
-  readonly status: string;
-}
-
-const OPEN_STATUSES = new Set(['PENDING', 'PROCESSING']);
-
-function orderName(o: RawOrder): string {
-  const full = [o.customer?.firstName, o.customer?.lastName].filter(Boolean).join(' ').trim();
-  return full || o.customer?.email || o.email || 'Guest';
-}
-
-function toOverviewOrder(o: RawOrder): OverviewOrder {
-  return {
-    id: o.id,
-    orderNumber: o.orderNumber,
-    total: o.total ?? 0,
-    createdAt: o.createdAt,
-    status: (o.status ?? '').toUpperCase(),
-    customerName: orderName(o),
-    stageLabel: o.currentStage?.displayName ?? null,
-    stageColor: o.currentStage?.color ?? null,
-  };
-}
+// The Overview's rules (open orders, low stock, naming a customer, reading analytics) live in lib with a check.
 
 // ─────────────────────────────────────────────
 // Component
@@ -85,9 +46,11 @@ export default function AdminOverviewPage() {
   const { hasAccess, isLoading: accessLoading, error: accessError, isDemo: isDemoAccess } = useSubdomainAccess('admin');
 
   const [stats, setStats] = useState<OverviewStats | null>(null);
-  const [analytics, setAnalytics] = useState<OverviewAnalytics | null>(null);
-  const [orders, setOrders] = useState<readonly OverviewOrder[]>([]);
-  const [lowStock, setLowStock] = useState<readonly OverviewProduct[]>([]);
+  // Each says whether it is still loading or failed, so a widget never shows 'none' before it knows.
+  const [analytics, setAnalytics] = useState<Loaded<OverviewAnalytics>>('loading');
+  const [orders, setOrders] = useState<Loaded<readonly OverviewOrder[]>>('loading');
+  const [openOrders, setOpenOrders] = useState<Loaded<readonly OverviewOrder[]>>('loading');
+  const [lowStock, setLowStock] = useState<Loaded<readonly OverviewProduct[]>>('loading');
   const [loading, setLoading] = useState(true);
 
   const isLoading = isDemo ? accessLoading : authLoading || accessLoading;
@@ -105,35 +68,26 @@ export default function AdminOverviewPage() {
 
     fetch('/api/cms/analytics?range=30d')
       .then((res) => (res.ok ? (res.json() as Promise<Partial<OverviewAnalytics> & { error?: string }>) : null))
-      .then((d) => {
-        if (d && !d.error) {
-          setAnalytics({
-            revenue: d.revenue ?? 0,
-            purchases: d.purchases ?? 0,
-            uniqueVisitors: d.uniqueVisitors ?? 0,
-            pageViews: d.pageViews ?? 0,
-            timeSeries: d.timeSeries ?? [],
-          });
-        }
-      })
-      .catch(() => {});
+      .then((d) => setAnalytics(analyticsFrom(d)))
+      .catch(() => setAnalytics('failed'));
 
     fetch('/api/cms/orders?limit=12')
       .then((res) => (res.ok ? (res.json() as Promise<{ orders?: readonly RawOrder[] }>) : null))
-      .then((d) => setOrders((d?.orders ?? []).map(toOverviewOrder)))
-      .catch(() => {});
+      .then((d) => setOrders(d && Array.isArray(d.orders) ? d.orders.map(toOverviewOrder) : 'failed'))
+      .catch(() => setOrders('failed'));
+
+    // Open orders by status, so an older order still waiting is never missed.
+    Promise.all(OPEN_ORDER_QUERIES.map((q) =>
+      fetch(`/api/cms/orders?${q}&limit=6`)
+        .then((res) => (res.ok ? (res.json() as Promise<{ orders?: readonly RawOrder[] }>) : null))
+        .then((d): Loaded<readonly OverviewOrder[]> => (d && Array.isArray(d.orders) ? d.orders.map(toOverviewOrder) : 'failed'))
+        .catch((): Loaded<readonly OverviewOrder[]> => 'failed'),
+    )).then((parts) => setOpenOrders(mergeOpenOrders(parts)));
 
     fetch('/api/cms/products?limit=50&sortBy=stock&sortOrder=asc')
       .then((res) => (res.ok ? (res.json() as Promise<{ products?: readonly RawProduct[] }>) : null))
-      .then((d) => {
-        const low = (d?.products ?? [])
-          .filter((p) => p.trackInventory && p.stock <= p.lowStockThreshold)
-          .map<OverviewProduct>((p) => ({
-            id: p.id, title: p.title, stock: p.stock, lowStockThreshold: p.lowStockThreshold, status: p.status,
-          }));
-        setLowStock(low);
-      })
-      .catch(() => {});
+      .then((d) => setLowStock(d && Array.isArray(d.products) ? lowStockOf(d.products) : 'failed'))
+      .catch(() => setLowStock('failed'));
   }, []);
 
   useEffect(() => {
@@ -155,10 +109,10 @@ export default function AdminOverviewPage() {
   const data: OverviewData = useMemo(() => ({
     stats,
     analytics,
-    openOrders: orders.filter((o) => OPEN_STATUSES.has(o.status)),
+    openOrders,
     recentOrders: orders,
     lowStock,
-  }), [stats, analytics, orders, lowStock]);
+  }), [stats, analytics, openOrders, orders, lowStock]);
 
   // Gate only on access resolution — the dashboard itself shows a light loading
   // hint and renders empty-safe widgets while data streams in.

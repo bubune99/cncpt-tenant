@@ -80,8 +80,8 @@ export function SubdomainInput({
       const response = await fetch(`/api/dashboard/subdomain/check?subdomain=${encodeURIComponent(subdomain)}`)
       const data = await response.json()
 
-      // Simple check - if we get a 409 or the response says it's taken
-      const available = response.status !== 409 && !data.taken
+      // A failed check (500) is unknown, not available.
+      const available = response.ok ? data.available === true && !data.taken : null
       setIsAvailable(available)
       onAvailabilityChange?.(available)
     } catch (error) {

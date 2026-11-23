@@ -1,355 +1,260 @@
 "use client"
 
 /**
- * Canvas Overview screen — recreates tenant-overview-subdomains.jsx (Tnt_Overview):
- * KPI strip, "Your sites" list, team activity, customer-support + AI-credits
- * widgets.
+ * Workspace Overview (redesign of 2026-11-20; owner: "cncptweb.com/dashboard needs a better walkthrough and
+ * re-do to be better designed and to flow better"; mock-up approved with "finish the build").
  *
- * DATA WIRING:
- *  - Sites list           → REAL  (getUserSubdomains, passed in)
- *  - AI credits widget    → REAL  (/api/credits/balance)
- *  - Onboarding banner    → REAL  (links into the existing create/setup flow)
- *  - KPI strip (revenue/orders/visitors/conversion) → PLACEHOLDER. There is no
- *    per-tenant analytics source wired into the dashboard yet (the Analytics
- *    section is itself a Phase 2 redesign target), so these are clearly marked
- *    "demo" rather than presented as live figures.
- *  - Support / activity widgets → PLACEHOLDER, marked as such.
+ * - One primary action, "New client site" (an in-frame panel), and "Take the tour".
+ * - "Get your agency running": five steps worked out from stored facts (/api/dashboard/setup-status,
+ *   rules in lib/dashboard/setup-guide.ts); each step opens the place to do it. Hide is remembered per browser.
+ * - Client site cards: setup progress, Open CMS, Visit, Settings (the site's page).
+ * Moved off this screen: activity (the right-hand rail), support (Inbox), AI credits (Billing & credits).
+ * Dropped: the "All systems normal" pill, which was fixed text and not a status.
  */
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import {
-  Plus, ExternalLink, ArrowRight, ChevronRight, Sparkles, Zap,
-  Info, X, MessageSquare, Globe, Link2, FileEdit,
-} from "lucide-react"
+import { Plus, ExternalLink, Settings as SettingsIcon, Check, ArrowRight, Compass } from "lucide-react"
 import { rootDomain, protocol } from "@/lib/utils"
+import { accountGuide, siteSetup, type SiteFacts, type StepId } from "@/lib/dashboard/setup-guide"
+import { firstName } from "@/lib/dashboard/greeting"
+import { CanvasTour, type TourStop } from "./canvas-tour"
+import { CanvasNewSite } from "./canvas-new-site"
+import { CanvasGlance } from "./canvas-glance"
 
 interface CanvasOverviewProps {
   user: any
   subdomains: any[]
   selectedSubdomain: string | null
+  /** goes up by one each time something outside (the site switcher) asks for the New client site panel */
+  newSiteRequest?: number
+  /** tells the shell the request was handled, so coming back to the Overview later does not reopen it */
+  onNewSiteHandled?: () => void
 }
 
-interface CreditBalance {
-  total: number
-  monthly: number
-  purchased: number
-  monthlyAllocation: number
-  lifetimeUsed: number
+const GUIDE_HIDDEN_KEY = "cncpt:dashboard:guide-hidden"
+
+const TOUR: TourStop[] = [
+  { target: "[data-ui='overview.new_site']", title: "Start here", body: "Make a site for each client: name it, pick its address, and it is live at that address right away." },
+  { target: "[data-ui='overview.guide']", title: "Your setup, step by step", body: "Each step opens the place to do it and ticks itself off when it is done. Hide it whenever you like; Take the tour shows it again." },
+  { target: "[data-ui='overview.sites']", title: "Every client in one place", body: "Open a client's CMS to edit their content, visit the live site, or open Settings for its brand, domain and visibility." },
+  { target: ".dirH__nav", title: "Seven places", body: "Client sites, analytics, team, inbox, billing and settings each have one home here. Search (Ctrl K) reaches anything." },
+  { target: ".dirH__rrail", title: "What changed", body: "Account activity shows here as it happens: team, roles and settings changes." },
+]
+
+
+function readHidden(): boolean {
+  try { return window.localStorage.getItem(GUIDE_HIDDEN_KEY) === "1" } catch { return false }
+}
+function writeHidden(v: boolean) {
+  try { v ? window.localStorage.setItem(GUIDE_HIDDEN_KEY, "1") : window.localStorage.removeItem(GUIDE_HIDDEN_KEY) } catch { /* private mode */ }
 }
 
-interface AccountMetrics {
-  sites: number
-  revenue: number
-  orders: number
-  products: number
-  customers: number
-}
-
-function relTime(iso: string): string {
-  const diff = Math.max(0, Date.now() - new Date(iso).getTime())
-  const s = Math.floor(diff / 1000)
-  if (s < 60) return "just now"
-  const m = Math.floor(s / 60)
-  if (m < 60) return `${m}m ago`
-  const h = Math.floor(m / 60)
-  if (h < 24) return `${h}h ago`
-  const d = Math.floor(h / 24)
-  if (d < 7) return `${d}d ago`
-  return new Date(iso).toLocaleDateString()
-}
-
-function actionPhrase(action: string, targetType: string | null, targetId: string | null): string {
-  const verb = action.replace(/[._]/g, " ").trim()
-  return targetId ? `${verb} · ${targetType ?? "item"}` : verb
-}
-
-function firstName(user: any): string | null {
-  const name = user?.displayName ?? user?.name
-  if (typeof name === "string" && name.trim()) return name.trim().split(/\s+/)[0]
-  const email = user?.primaryEmail ?? user?.email
-  if (typeof email === "string" && email.includes("@")) return email.split("@")[0]
-  return null
-}
-
-export function CanvasOverview({ user, subdomains, selectedSubdomain }: CanvasOverviewProps) {
+export function CanvasOverview({ user, subdomains, newSiteRequest = 0, onNewSiteHandled }: CanvasOverviewProps) {
   const router = useRouter()
-  const [balance, setBalance] = useState<CreditBalance | null>(null)
-  const [supportStats, setSupportStats] = useState<{ open: number; total: number } | null>(null)
-  const [supportReady, setSupportReady] = useState(false)
-  const [bannerDismissed, setBannerDismissed] = useState(false)
-  const [metrics, setMetrics] = useState<AccountMetrics | null>(null)
-  const [activity, setActivity] = useState<{ id: string; action: string; targetType: string | null; targetId: string | null; userEmail: string | null; createdAt: string }[] | null>(null)
+  const [facts, setFacts] = useState<SiteFacts[] | null>(null)
+  const [failed, setFailed] = useState(false)
+  const [guideHidden, setGuideHidden] = useState(false)
+  const [tourOpen, setTourOpen] = useState(false)
+  const [newOpen, setNewOpen] = useState(false)
 
-  useEffect(() => {
-    fetch("/api/dashboard/activity")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => setActivity(Array.isArray(d?.logs) ? d.logs : []))
-      .catch(() => setActivity([]))
-
-    fetch("/api/dashboard/metrics")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data && typeof data.orders === "number") {
-          setMetrics({
-            sites: Number(data.sites) || 0,
-            revenue: Number(data.revenue) || 0,
-            orders: Number(data.orders) || 0,
-            products: Number(data.products) || 0,
-            customers: Number(data.customers) || 0,
-          })
-        }
-      })
-      .catch(() => {})
-
-    fetch("/api/credits/balance")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data?.balance) {
-          // coerce numerics defensively (pg numeric-as-string gotcha)
-          const b = data.balance
-          setBalance({
-            total: Number(b.total) || 0,
-            monthly: Number(b.monthly) || 0,
-            purchased: Number(b.purchased) || 0,
-            monthlyAllocation: Number(b.monthlyAllocation) || 0,
-            lifetimeUsed: Number(b.lifetimeUsed) || 0,
-          })
-        }
-      })
-      .catch(() => {})
-
-    // Real support stats for the support widget. Marked ready in finally so the
-    // widget can leave its loading state even when the endpoint is unavailable
-    // (e.g. support tables not provisioned in this environment → 500).
-    fetch("/api/dashboard/support")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data?.stats) setSupportStats({ open: Number(data.stats.open) || 0, total: Number(data.stats.total) || 0 })
-      })
-      .catch(() => {})
-      .finally(() => setSupportReady(true))
+  // Only the newest request may set the facts (a site created, then the list refreshed, overlaps two loads).
+  const loadSeq = useRef(0)
+  const load = useCallback(() => {
+    const my = ++loadSeq.current
+    setFailed(false)
+    fetch("/api/dashboard/setup-status")
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((d) => { if (my === loadSeq.current) setFacts(Array.isArray(d?.sites) ? d.sites : []) })
+      .catch(() => { if (my === loadSeq.current) setFailed(true) })
   }, [])
+  useEffect(() => () => { loadSeq.current++ }, [])
 
+  useEffect(() => { setGuideHidden(readHidden()) }, [])
+  // The site switcher's "New client site" opens the same panel (the request is held by the shell).
+  useEffect(() => {
+    if (newSiteRequest > 0) { setNewOpen(true); onNewSiteHandled?.() }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [newSiteRequest])
+  const closeTour = useCallback(() => setTourOpen(false), [])
+  useEffect(() => { load() }, [subdomains.length, load])
+
+  const guide = facts ? accountGuide(facts) : null
   const name = firstName(user)
-  const used = balance ? balance.total : 0
-  const allocation = balance ? Math.max(balance.monthlyAllocation, balance.total) : 0
-  const pct = allocation > 0 ? Math.min(100, Math.round((used / allocation) * 100)) : 0
+  const email = user?.primaryEmail ?? user?.email ?? ""
+  const showGuide = !guideHidden && guide !== null && !guide.complete
+
+  const openSite = (subdomain: string, tab?: string) =>
+    window.dispatchEvent(new CustomEvent("open-site", { detail: tab ? { subdomain, tab } : subdomain }))
+
+  const doStep = (id: StepId, site: string | null) => {
+    if (id === "site") return setNewOpen(true)
+    if (id === "invite") return window.dispatchEvent(new CustomEvent("navigate-to-section", { detail: "team" }))
+    if (!site) return
+    openSite(site, id === "brand" ? "branding" : id === "domain" ? "dns" : "visibility")
+  }
+
+  const startTour = () => {
+    if (guideHidden) { setGuideHidden(false); writeHidden(false) }
+    // Same commit: the guide is in the DOM before the tour's layout effect measures it.
+    setTourOpen(true)
+  }
+
+  const subline = guide
+    ? guide.complete
+      ? `${subdomains.length} client site${subdomains.length === 1 ? "" : "s"}. Everything is set up.`
+      : subdomains.length === 0
+      ? "Add your first client site to get started."
+      : `${subdomains.length} client site${subdomains.length === 1 ? "" : "s"}. ${guide.total - guide.done} setup step${guide.total - guide.done === 1 ? "" : "s"} left.`
+    : `${subdomains.length} client site${subdomains.length === 1 ? "" : "s"}.`
 
   return (
     <div className="dirH__page" style={{ padding: "20px 24px", overflow: "auto" }}>
-      {/* Page header */}
-      <div className="tnt__page-h">
+      <div className="tnt__page-h tnt__ov-head">
         <div>
           <h1>{name ? `Good day, ${name}` : "Overview"}</h1>
-          <div className="sub">
-            {subdomains.length > 0
-              ? `Here's what's happening across your ${subdomains.length} site${subdomains.length === 1 ? "" : "s"}.`
-              : "Spin up your first site to get started."}
-          </div>
+          <div className="sub">{subline}</div>
         </div>
         <div className="row" style={{ gap: 8 }}>
-          <span className="pill pill--green"><span className="dot" /> All systems normal</span>
-          {balance ? (
-            <span className="pill pill--blue"><Sparkles style={{ width: 11, height: 11 }} /> {used.toLocaleString()} credits</span>
+          {/* Hiding the guide was one way: nothing visible brought it back (walk 2026-11-22). */}
+          {guideHidden && guide !== null && !guide.complete ? (
+            <button type="button" className="btn btn--ghost btn--sm" onClick={() => { setGuideHidden(false); writeHidden(false) }} data-ui="overview.guide_show">
+              Show setup guide
+            </button>
           ) : null}
+          <button type="button" className="btn btn--secondary btn--sm" onClick={startTour} data-ui="overview.tour">
+            <Compass style={{ width: 13, height: 13 }} /> Take the tour
+          </button>
+          <button type="button" className="btn btn--primary btn--sm" onClick={() => setNewOpen(true)} data-ui="overview.new_site">
+            <Plus style={{ width: 13, height: 13 }} /> New client site
+          </button>
         </div>
       </div>
 
-      {/* Onboarding banner (real link into setup) */}
-      {!bannerDismissed && subdomains.length > 0 ? (
-        <div className="tnt__banner tnt__banner--info" style={{ marginBottom: 16 }}>
-          <Info />
-          <div className="tnt__banner-row">
-            <span>
-              <b>Finish setting up {selectedSubdomain || subdomains[0]?.subdomain}</b>
-              <span className="sub"> — add branding, connect a custom domain, and choose a launch date.</span>
-            </span>
-          </div>
-          <button className="btn btn--secondary btn--xs" onClick={() => window.dispatchEvent(new CustomEvent("navigate-to-section", { detail: "branding" }))}>Open setup</button>
-          <button className="iconbtn iconbtn--sm iconbtn--ghost" aria-label="Dismiss" title="Dismiss" onClick={() => setBannerDismissed(true)}><X style={{ width: 12, height: 12 }} /></button>
+      {failed ? (
+        <div className="tnt__banner tnt__banner--warn" style={{ marginBottom: 16 }} role="status">
+          <div className="tnt__banner-row"><span><b>Setup status could not be loaded.</b><span className="sub"> The guide and progress are hidden until it loads.</span></span></div>
+          <button type="button" className="btn btn--secondary btn--xs" onClick={load}>Try again</button>
         </div>
       ) : null}
 
-      {/* KPI strip — SITE MANAGEMENT (not store commerce; this is the platform
-          overview). Derived from the account's sites. */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 16 }}>
-        {([
-          { l: "Sites", icon: Globe, v: (metrics?.sites ?? subdomains.length).toLocaleString(), sub: "in your account" },
-          { l: "Custom domains", icon: Link2, v: subdomains.filter((s: any) => Boolean(s.custom_domain ?? s.customDomain ?? s.domain)).length.toLocaleString(), sub: "connected" },
-          { l: "Drafts", icon: FileEdit, v: subdomains.filter((s: any) => s.is_public === false || s.isPublic === false || s.published === false || s.status === "draft").length.toLocaleString(), sub: "not yet public" },
-        ] as const).map((k) => {
-          const Icon = k.icon
-          return (
-            <div className="tnt__stat" key={k.l}>
-              <div className="tnt__stat-label"><Icon /> {k.l}</div>
-              <div className="tnt__stat-value">{k.v ?? "—"}</div>
-              <div className="muted" style={{ fontSize: 10.5, marginTop: 2 }}>{k.sub}</div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Sites + activity */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 16 }}>
-        {/* Your sites — REAL */}
-        <div className="card">
+      {showGuide && guide ? (
+        <section className="card tnt__guide" data-ui="overview.guide" aria-labelledby="ov-guide-h">
           <div className="card__head">
-            <h3 className="card__title">Your sites</h3>
-            <button className="btn btn--ghost btn--xs" onClick={() => window.dispatchEvent(new CustomEvent("navigate-to-section", { detail: "sites" }))}>
-              Manage all <ArrowRight style={{ width: 11, height: 11 }} />
+            <h3 className="card__title" id="ov-guide-h">Get your agency running</h3>
+            <div className="row" style={{ gap: 10 }}>
+              <span className="muted" style={{ fontSize: 11.5 }}>{guide.done} of {guide.total} done</span>
+              <button type="button" className="btn btn--ghost btn--xs" onClick={() => { setGuideHidden(true); writeHidden(true) }} data-ui="overview.guide_hide">Hide</button>
+            </div>
+          </div>
+          <div className="tnt__guide-bar" role="progressbar" aria-valuemin={0} aria-valuemax={guide.total} aria-valuenow={guide.done} aria-label="Setup progress">
+            <i style={{ width: `${Math.round((guide.done / guide.total) * 100)}%` }} />
+          </div>
+          <ol className="tnt__guide-steps">
+            {guide.steps.map((s, i) => {
+              const actionable = !s.done && (s.id === "site" || s.id === "invite" || s.site !== null)
+              return (
+                <li key={s.id} className={"tnt__guide-step" + (s.done ? " is-done" : "") + (guide.next?.id === s.id ? " is-next" : "")} data-ui={`overview.step.${s.id}`}>
+                  <div className="tnt__guide-num" aria-hidden="true">{s.done ? <Check style={{ width: 12, height: 12 }} /> : i + 1}</div>
+                  <div className="col" style={{ gap: 2, flex: 1, minWidth: 0 }}>
+                    <b>{s.title}{s.done ? <span className="sr-only"> (done)</span> : null}</b>
+                    <span className="muted" style={{ fontSize: 11.5 }}>{s.what}</span>
+                  </div>
+                  {s.done ? (
+                    <span className="tnt__guide-done">{s.detail}</span>
+                  ) : actionable ? (
+                    <button type="button" className={"btn btn--xs " + (guide.next?.id === s.id ? "btn--primary" : "btn--secondary")} onClick={() => doStep(s.id, s.site)} data-ui={`overview.step.${s.id}.do`} aria-label={`${s.title}: ${s.id === "site" ? "New client site" : s.detail}`}>
+                      {s.id === "site" ? "New client site" : s.detail} <ArrowRight style={{ width: 11, height: 11 }} />
+                    </button>
+                  ) : (
+                    <span className="muted" style={{ fontSize: 11.5 }}>{s.detail}</span>
+                  )}
+                </li>
+              )
+            })}
+          </ol>
+        </section>
+      ) : null}
+
+      <section className="card" data-ui="overview.sites" aria-labelledby="ov-sites-h">
+        <div className="card__head">
+          <h3 className="card__title" id="ov-sites-h">Your client sites</h3>
+          <button type="button" className="btn btn--ghost btn--xs" onClick={() => window.dispatchEvent(new CustomEvent("navigate-to-section", { detail: "sites" }))}>
+            All sites <ArrowRight style={{ width: 11, height: 11 }} />
+          </button>
+        </div>
+        {subdomains.length === 0 ? (
+          <div className="tnt__empty">
+            <div className="tnt__empty-glyph"><Plus /></div>
+            <h2 className="tnt__empty-h">Add your first client site</h2>
+            <p className="tnt__empty-p">Each client gets their own site, address, brand and access.</p>
+            <button type="button" className="btn btn--primary" onClick={() => setNewOpen(true)}>
+              <Plus style={{ width: 13, height: 13 }} /> New client site
             </button>
           </div>
-          <div>
-            {subdomains.length === 0 ? (
-              <div className="tnt__empty">
-                <div className="tnt__empty-glyph"><Plus /></div>
-                <h2 className="tnt__empty-h">Spin up your first site</h2>
-                <p className="tnt__empty-p">Each site gets its own DNS, branding, and access controls.</p>
-                <button className="btn btn--primary" onClick={() => router.push("/dashboard/create-subdomain")}>
-                  <Plus style={{ width: 13, height: 13 }} /> Create subdomain
-                </button>
-              </div>
-            ) : (
-              <>
-                {subdomains.map((s) => {
-                  const siteUrl = `${protocol}://${s.subdomain}.${rootDomain}`
-                  return (
-                    <div key={s.subdomain} className="row" style={{ gap: 12, padding: "12px 16px", borderBottom: "1px solid var(--br-border)", alignItems: "center" }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 8, background: "linear-gradient(135deg,#0F172A,#3B82F6)", color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
-                        {(s.subdomain[0] || "S").toUpperCase()}
-                      </div>
-                      {/* The whole name block opens the site's page here (walk 2026-11-20: the row did nothing). */}
-                      <button
-                        type="button"
-                        className="col"
-                        data-ui="overview.open_site"
-                        aria-label={`Open ${s.site_title || s.subdomain}`}
-                        onClick={() => window.dispatchEvent(new CustomEvent("open-site", { detail: s.subdomain }))}
-                        style={{ gap: 1, flex: 1, minWidth: 0, minHeight: 36, textAlign: "left", background: "none", border: 0, padding: 0, cursor: "pointer", color: "inherit", font: "inherit" }}
-                      >
-                        <div className="row" style={{ gap: 6 }}>
-                          <strong style={{ fontSize: 13 }}>{s.site_title || s.subdomain}</strong>
-                          <span className="pill pill--green" style={{ fontSize: 10 }}><span className="dot" /> Active</span>
-                        </div>
-                        <div className="mono" style={{ fontSize: 11, color: "var(--br-text-secondary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {s.subdomain}.{rootDomain}
-                        </div>
-                      </button>
-                      <a className="iconbtn" href={siteUrl} target="_blank" rel="noreferrer" aria-label="Visit site" title="Visit site">
-                        <ExternalLink style={{ width: 12, height: 12 }} />
-                      </a>
-                      <a className="iconbtn iconbtn--ghost" href={`${siteUrl}/admin`} aria-label="Manage content" title="Manage content">
-                        <ChevronRight style={{ width: 13, height: 13 }} />
-                      </a>
-                    </div>
-                  )
-                })}
-                <div className="row" style={{ padding: "10px 16px", gap: 6 }}>
-                  <button className="btn btn--ghost btn--xs" onClick={() => router.push("/dashboard/create-subdomain")}>
-                    <Plus style={{ width: 12, height: 12 }} /> Add subdomain
+        ) : (
+          <div className="tnt__site-grid">
+            {subdomains.map((s) => {
+              const siteUrl = `${protocol}://${s.subdomain}.${rootDomain}`
+              const f = facts?.find((x) => x.subdomain === s.subdomain) ?? null
+              const setup = f ? siteSetup(f) : null
+              const title = f?.title || s.site_title || s.subdomain
+              return (
+                <div key={s.subdomain} className="tnt__site-card">
+                  {/* The name block opens the site's page (walk 2026-11-20: the row did nothing). */}
+                  <button
+                    type="button"
+                    className="tnt__site-card-open"
+                    data-ui="overview.open_site"
+                    aria-label={`Open ${title}`}
+                    onClick={() => window.dispatchEvent(new CustomEvent("open-site", { detail: s.subdomain }))}
+                  >
+                    <span className="tnt__site-card-mark" aria-hidden="true">{(s.subdomain[0] || "S").toUpperCase()}</span>
+                    <span className="col" style={{ gap: 1, minWidth: 0 }}>
+                      <strong>{title}</strong>
+                      <span className="tnt__site-card-host">{s.subdomain}.{rootDomain}</span>
+                    </span>
                   </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Account activity — REAL (user's recent audit entries) */}
-        <div className="card">
-          <div className="card__head">
-            <h3 className="card__title">Account activity</h3>
-          </div>
-          <div>
-            {activity === null ? (
-              <div style={{ padding: "12px 16px" }} className="muted"><span style={{ fontSize: 11.5 }}>Loading…</span></div>
-            ) : activity.length === 0 ? (
-              <div style={{ padding: "12px 16px" }} className="muted">
-                <span style={{ fontSize: 11.5 }}>No recent activity yet — team, role, and account changes will show here.</span>
-              </div>
-            ) : (
-              activity.slice(0, 5).map((a) => (
-                <div className="tnt__act-row" key={a.id}>
-                  <div className="avatar avatar--xs avatar--orange">{((a.userEmail || firstName(user) || "U")[0]).toUpperCase()}</div>
-                  <div className="tnt__act-body">
-                    <strong>{a.userEmail || firstName(user) || "You"}</strong> {actionPhrase(a.action, a.targetType, a.targetId)}
-                    <div className="tnt__act-time">{relTime(a.createdAt)}</div>
+                  <div className="col" style={{ gap: 5 }}>
+                    <span className="muted" style={{ fontSize: 11.5 }}>
+                      {setup ? (setup.complete ? "Set up" : `Setup ${setup.done} of ${setup.total}`) : failed ? "Setup —" : "Setup …"}
+                    </span>
+                    <div className="tnt__guide-bar tnt__guide-bar--sm" aria-hidden="true">
+                      <i style={{ width: setup ? `${Math.round((setup.done / setup.total) * 100)}%` : "0%" }} />
+                    </div>
+                  </div>
+                  <div className="row" style={{ gap: 6 }}>
+                    <a className="btn btn--primary btn--xs" href={`${siteUrl}/admin`} data-ui="overview.site.cms" aria-label={`Open the CMS for ${title}`}>Open CMS</a>
+                    <a className="btn btn--secondary btn--xs" href={siteUrl} target="_blank" rel="noreferrer" data-ui="overview.site.visit" aria-label={`Visit ${title} (opens a new tab)`}>
+                      <ExternalLink style={{ width: 11, height: 11 }} /> Visit
+                    </a>
+                    <button type="button" className="btn btn--ghost btn--xs" onClick={() => openSite(s.subdomain)} data-ui="overview.site.settings" aria-label={`Settings for ${title}`}>
+                      <SettingsIcon style={{ width: 11, height: 11 }} /> Settings
+                    </button>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Support + credits */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 16, marginTop: 16 }}>
-        {/* Customer support — REAL open/total ticket counts */}
-        <div className="card">
-          <div className="card__head">
-            <h3 className="card__title">Customer support</h3>
-            <button className="btn btn--ghost btn--xs" onClick={() => window.dispatchEvent(new CustomEvent("navigate-to-section", { detail: "comms" }))}>
-              Open inbox <ArrowRight style={{ width: 11, height: 11 }} />
+              )
+            })}
+            <button type="button" className="tnt__site-card tnt__site-card--add" onClick={() => setNewOpen(true)} data-ui="overview.site.add" aria-label="Add a new client site">
+              <Plus style={{ width: 14, height: 14 }} /> New client site
             </button>
           </div>
-          <div className="card__body" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div className="tnt__act-icon" style={{ width: 32, height: 32 }}><MessageSquare /></div>
-            <div className="col" style={{ flex: 1, gap: 1 }}>
-              {supportStats ? (
-                <>
-                  <span style={{ fontSize: 12.5, fontWeight: 500 }}>
-                    {supportStats.open} open · {supportStats.total} total ticket{supportStats.total === 1 ? "" : "s"}
-                  </span>
-                  <span className="muted" style={{ fontSize: 11 }}>Manage customer tickets in the Communications inbox.</span>
-                </>
-              ) : (
-                <>
-                  <span style={{ fontSize: 12.5, fontWeight: 500 }}>Support inbox</span>
-                  <span className="muted" style={{ fontSize: 11 }}>
-                    {supportReady ? "Open the Communications inbox to manage tickets." : "Loading ticket counts…"}
-                  </span>
-                </>
-              )}
-            </div>
-            <button className="btn btn--secondary btn--xs" onClick={() => window.dispatchEvent(new CustomEvent("navigate-to-section", { detail: "comms" }))}>Go</button>
-          </div>
-        </div>
+        )}
+      </section>
 
-        {/* AI credits — REAL */}
-        <div className="card">
-          <div className="card__head">
-            <h3 className="card__title">AI credits</h3>
-            <button className="btn btn--ghost btn--xs" onClick={() => window.dispatchEvent(new CustomEvent("navigate-to-section", { detail: "credits" }))}>Details</button>
-          </div>
-          <div className="card__body">
-            {balance ? (
-              <>
-                <div className="row" style={{ justifyContent: "space-between", marginBottom: 8 }}>
-                  <span className="tnt__stat-value" style={{ fontSize: 28 }}>{used.toLocaleString()}</span>
-                  <span className="muted" style={{ fontSize: 11.5 }}>
-                    {allocation > 0 ? `of ${allocation.toLocaleString()} allotted` : "available"}
-                  </span>
-                </div>
-                <div style={{ height: 8, background: "var(--br-surface)", borderRadius: 4, overflow: "hidden", marginBottom: 12 }}>
-                  <div style={{ width: pct + "%", height: "100%", background: "linear-gradient(90deg, #3b82f6, #06b6d4)" }} />
-                </div>
-                <div className="row" style={{ gap: 14, fontSize: 11 }}>
-                  <span><strong>{balance.monthly.toLocaleString()}</strong> <span className="muted">monthly</span></span>
-                  <span><strong>{balance.purchased.toLocaleString()}</strong> <span className="muted">purchased</span></span>
-                </div>
-                <div className="row" style={{ gap: 6, marginTop: 12 }}>
-                  <button className="btn btn--primary btn--xs" onClick={() => window.dispatchEvent(new CustomEvent("navigate-to-section", { detail: "credits" }))}>
-                    <Zap style={{ width: 12, height: 12 }} /> Top up
-                  </button>
-                  <button className="btn btn--ghost btn--xs" onClick={() => window.dispatchEvent(new CustomEvent("navigate-to-section", { detail: "credits" }))}>Usage details</button>
-                </div>
-              </>
-            ) : (
-              <div className="muted" style={{ fontSize: 12 }}>Loading credit balance…</div>
-            )}
-          </div>
-        </div>
-      </div>
+      <CanvasGlance />
+
+      <CanvasNewSite
+        open={newOpen}
+        onOpenChange={setNewOpen}
+        defaultEmail={email}
+        onCreated={(sub) => {
+          window.dispatchEvent(new CustomEvent("sites-changed", { detail: sub }))
+          load()
+          router.refresh()
+        }}
+      />
+      <CanvasTour stops={TOUR} open={tourOpen} onClose={closeTour} />
     </div>
   )
 }

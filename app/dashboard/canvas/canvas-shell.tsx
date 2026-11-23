@@ -15,6 +15,7 @@
  */
 
 import { useEffect, useState } from "react"
+import { Menu, X } from "lucide-react"
 import { DashboardContent } from "../dashboard-content"
 import { CanvasSidebar } from "./canvas-sidebar"
 import { CanvasTopbar } from "./canvas-topbar"
@@ -88,6 +89,17 @@ export function CanvasShell({
   const [paletteOpen, setPaletteOpen] = useState(false)
   // When viewing a single subdomain's detail (Sites section).
   const [detailSubdomain, setDetailSubdomain] = useState<string | null>(null)
+  const [detailTab, setDetailTab] = useState<string | undefined>(undefined)
+  const [newSiteRequest, setNewSiteRequest] = useState(0)
+  // Phone width: the sidebar is a drawer (walk 2026-11-20 at 440px: both rails left the page 0px wide).
+  const [navOpen, setNavOpen] = useState(false)
+  useEffect(() => { setNavOpen(false) }, [activeSection, detailSubdomain])
+  useEffect(() => {
+    if (!navOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setNavOpen(false) }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [navOpen])
 
   // Leave detail view whenever the section changes away from Sites.
   useEffect(() => {
@@ -96,11 +108,14 @@ export function CanvasShell({
 
   // "open-site" (Overview's site rows): go to Sites and open that site's page.
   useEffect(() => {
+    // detail: "<subdomain>" or { subdomain, tab } (the setup guide opens the tab for its step).
     const onOpen = (e: Event) => {
-      const sub = (e as CustomEvent<string>).detail
+      const d = (e as CustomEvent<string | { subdomain: string; tab?: string }>).detail
+      const sub = typeof d === "string" ? d : d?.subdomain
       if (typeof sub !== "string" || !subdomains.some((s) => s.subdomain === sub)) return
       window.dispatchEvent(new CustomEvent("navigate-to-section", { detail: "sites" }))
       setSelectedSubdomain(sub)
+      setDetailTab(typeof d === "string" ? undefined : d.tab)
       setDetailSubdomain(sub)
     }
     window.addEventListener("open-site", onOpen)
@@ -130,15 +145,17 @@ export function CanvasShell({
   // the default CanvasTopbar.
   const renderMain = () => {
     if (activeSection === "overview") {
-      return <CanvasOverview user={user} subdomains={subdomains} selectedSubdomain={selectedSubdomain} />
+      return <CanvasOverview user={user} subdomains={subdomains} selectedSubdomain={selectedSubdomain} newSiteRequest={newSiteRequest} onNewSiteHandled={() => setNewSiteRequest(0)} />
     }
     if (activeSection === "sites") {
       if (detailSubdomain) {
         return (
           <CanvasSubdomainDetail
+            key={detailSubdomain + ":" + (detailTab ?? "")}
             subdomain={detailSubdomain}
             subdomains={subdomains}
-            onBack={() => setDetailSubdomain(null)}
+            initialTab={detailTab}
+            onBack={() => { setDetailSubdomain(null); setDetailTab(undefined) }}
           />
         )
       }
@@ -187,21 +204,35 @@ export function CanvasShell({
   }
 
   return (
-    <div className="tnt-canvas dirH br-theme">
+    <div className={"tnt-canvas dirH br-theme" + (navOpen ? " is-nav-open" : "")}>
+      <button
+        type="button"
+        className="dirH__menu-btn iconbtn iconbtn--ghost"
+        aria-label={navOpen ? "Close menu" : "Open menu"}
+        aria-expanded={navOpen}
+        onClick={() => setNavOpen((v) => !v)}
+        data-ui="shell.menu"
+      >
+        {navOpen ? <X style={{ width: 16, height: 16 }} /> : <Menu style={{ width: 16, height: 16 }} />}
+      </button>
+      {navOpen ? <div className="dirH__nav-backdrop" aria-hidden="true" onPointerDown={() => setNavOpen(false)} /> : null}
       <CanvasSidebar
         user={user}
         subdomains={subdomains}
         activeSection={activeSection}
-        setActiveSection={setActiveSection}
+        // Choosing a place also leaves an open site's page: from a site, Client sites and All sites did nothing
+        // (activeSection was already "sites", so the effect that clears the detail never ran; walk 2026-11-22).
+        setActiveSection={(sec: string) => { setDetailSubdomain(null); setDetailTab(undefined); setActiveSection(sec); setNavOpen(false) }}
         selectedSubdomain={selectedSubdomain}
-        setSelectedSubdomain={setSelectedSubdomain}
+        setSelectedSubdomain={(sub: string | null) => { setSelectedSubdomain(sub); setNavOpen(false) }}
         onOpenSearch={() => setPaletteOpen(true)}
+        onNewSite={() => { setActiveSection("overview"); setNewSiteRequest((n) => n + 1); setNavOpen(false) }}
       />
 
-      <div className="dirH__main">
+      <main className="dirH__main">
         {isSitesDetail ? null : <CanvasTopbar crumbs={crumbs} userInitials={userInitials(user)} />}
         {renderMain()}
-      </div>
+      </main>
 
       <CanvasActivityRail subdomains={subdomains} />
 

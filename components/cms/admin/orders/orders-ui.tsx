@@ -170,15 +170,23 @@ export function LiveSearch({
   readonly width?: number;
 }): React.ReactElement {
   return (
-    <div className="search" style={{ width }}>
-      <Search size={15} />
-      <input value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+    <div className="search" style={{ width, maxWidth: '100%' }}>
+      <Search size={15} aria-hidden />
+      <input
+        value={value}
+        placeholder={placeholder}
+        aria-label={placeholder.replace(/[.…]+$/, '')}
+        onChange={(e) => onChange(e.target.value)}
+      />
       {value && (
-        <X
-          size={14}
-          style={{ cursor: 'pointer', flex: 'none' }}
+        <button
+          type="button"
+          aria-label="Clear search"
           onClick={() => onChange('')}
-        />
+          style={{ display: 'inline-flex', border: 0, background: 'transparent', padding: 0, cursor: 'pointer', flex: 'none', color: 'inherit' }}
+        >
+          <X size={14} aria-hidden />
+        </button>
       )}
     </div>
   );

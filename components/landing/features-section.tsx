@@ -17,7 +17,7 @@ const features = [
     cta: "Try the editor",
     tourId: "home-feature-page-builder",
     ctaTourId: "home-feature-page-builder-cta",
-    className: "lg:row-start-1 lg:row-end-3 lg:col-start-1 lg:col-end-2",
+    className: "lg:row-start-1 lg:col-start-1 lg:col-end-2",
     background: (
       <div className="absolute inset-0 bg-gradient-to-br from-[#1e3a5f]/10 to-transparent" />
     ),
@@ -82,7 +82,7 @@ const features = [
     cta: "Get started",
     tourId: "home-feature-analytics",
     ctaTourId: "home-feature-analytics-cta",
-    className: "lg:row-start-3 lg:col-start-1 lg:col-end-4",
+    className: "lg:row-start-2 lg:col-start-1 lg:col-end-2",
     background: (
       <div className="absolute inset-0 bg-gradient-to-r from-[#1e3a5f]/5 via-transparent to-[#c2410c]/5" />
     ),
@@ -105,7 +105,9 @@ export function FeaturesSection() {
           </p>
         </div>
 
-        <BentoGrid className="lg:grid-rows-3 auto-rows-[18rem]">
+        {/* An even 3 by 2 grid (walk 2026-11-22: the two-row builder card was 60% empty, Analytics sat alone in a full row). */}
+        {/* Below lg the cards stack, so each is as tall as its content; a fixed 18rem left the top third of every card empty on a phone (walk 2026-11-22). */}
+        <BentoGrid className="auto-rows-auto lg:grid-rows-2 lg:auto-rows-[18rem]">
           {features.map((feature) => (
             <BentoCard key={feature.name} {...feature} />
           ))}

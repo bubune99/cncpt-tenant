@@ -229,8 +229,9 @@ export function DomainManagement({ subdomains, selectedSubdomain }: DomainManage
               variant="ghost"
               size="sm"
               onClick={() => window.open(`${protocol}://${selectedSubdomain}.${rootDomain}`, "_blank")}
+              aria-label={`Open ${selectedSubdomain}.${rootDomain} in a new tab`}
             >
-              <ExternalLink className="h-4 w-4" />
+              <ExternalLink className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
         </CardContent>
@@ -250,6 +251,7 @@ export function DomainManagement({ subdomains, selectedSubdomain }: DomainManage
             <div className="flex-1">
               <Input
                 placeholder="yourdomain.com or sub.yourdomain.com"
+                aria-label="Custom domain to connect"
                 value={newDomain}
                 onChange={(e) => setNewDomain(e.target.value.toLowerCase())}
                 disabled={isAdding}
@@ -465,24 +467,25 @@ function DomainCard({
               variant="ghost"
               size="sm"
               onClick={() => window.open(`https://${domain.domain}`, "_blank")}
+              aria-label={`Open ${domain.domain} in a new tab`}
             >
-              <ExternalLink className="h-4 w-4" />
+              <ExternalLink className="h-4 w-4" aria-hidden="true" />
             </Button>
           )}
           {!domain.is_primary && isVerified && (
-            <Button variant="ghost" size="sm" onClick={onSetPrimary}>
-              <Star className="h-4 w-4" />
+            <Button variant="ghost" size="sm" onClick={onSetPrimary} aria-label={`Make ${domain.domain} the primary domain`}>
+              <Star className="h-4 w-4" aria-hidden="true" />
             </Button>
           )}
-          <Button variant="ghost" size="sm" onClick={onVerify} disabled={isVerifying}>
+          <Button variant="ghost" size="sm" onClick={onVerify} disabled={isVerifying} aria-label={isVerifying ? `Checking ${domain.domain}…` : `Check ${domain.domain} again`}>
             {isVerifying ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <RefreshCw className="h-4 w-4" />
             )}
           </Button>
-          <Button variant="ghost" size="sm" onClick={onRemove} className="text-red-500 hover:text-red-600">
-            <Trash2 className="h-4 w-4" />
+          <Button variant="ghost" size="sm" onClick={onRemove} className="text-red-500 hover:text-red-600" aria-label={`Remove ${domain.domain}`}>
+            <Trash2 className="h-4 w-4" aria-hidden="true" />
           </Button>
         </div>
       </div>
@@ -503,8 +506,8 @@ function DomainCard({
                   <span className="text-muted-foreground">→</span>
                   <span className="font-medium">{record.value}</span>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => onCopy(record.value)}>
-                  <Copy className="h-3 w-3" />
+                <Button variant="ghost" size="sm" onClick={() => onCopy(record.value)} aria-label={`Copy the ${record.type} record value`}>
+                  <Copy className="h-3 w-3" aria-hidden="true" />
                 </Button>
               </div>
             ))}
@@ -519,8 +522,8 @@ function DomainCard({
                   <span className="text-muted-foreground">→</span>
                   <span className="font-medium truncate max-w-[200px]">{record.value}</span>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => onCopy(record.value)}>
-                  <Copy className="h-3 w-3" />
+                <Button variant="ghost" size="sm" onClick={() => onCopy(record.value)} aria-label={`Copy the ${record.type} record value`}>
+                  <Copy className="h-3 w-3" aria-hidden="true" />
                 </Button>
               </div>
             ))}

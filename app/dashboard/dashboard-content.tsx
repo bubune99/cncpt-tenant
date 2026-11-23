@@ -145,7 +145,8 @@ export function DashboardContent({
 
   return (
     <div className="flex-1 overflow-auto">
-      <main className="container mx-auto px-6 py-8">{renderContent()}</main>
+      {/* The shell's middle column is the page's <main>; a second one here hid it (walk 2026-11-22). */}
+      <div className="container mx-auto px-6 py-8">{renderContent()}</div>
     </div>
   )
 }

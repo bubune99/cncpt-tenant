@@ -28,7 +28,7 @@ function SectionHead({ title, meta, right }: { readonly title: string; readonly 
 function DField({ label, children }: { readonly label: string; readonly children: React.ReactNode }): React.ReactElement {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '74px 1fr', gap: 10, alignItems: 'baseline', padding: '6px 0', borderBottom: '1px solid var(--line-faint)' }}>
-      <span className="gr-eyebrow" style={{ fontSize: 9.5 }}>{label}</span>
+      <span className="gr-eyebrow">{label}</span>
       <span style={{ fontSize: 13, color: 'var(--text)' }}>{children}</span>
     </div>
   );

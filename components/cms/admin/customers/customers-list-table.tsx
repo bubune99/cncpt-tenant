@@ -42,7 +42,8 @@ export function CustomersListTable({
   const colCount = showTenant ? 8 : 7;
 
   return (
-    <div className="table-wrap gr-scroll" style={{ flex: 1, minHeight: 0 }}>
+    // Rows fill the height and scroll inside it; with none it fits its one line instead of an empty slab (2026-11-23).
+    <div className="table-wrap gr-scroll" style={{ flex: rows.length > 0 ? 1 : '0 1 auto', minHeight: 0 }}>
       <table className="table">
         <thead>
           <tr>

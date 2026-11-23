@@ -23,7 +23,8 @@ const sections = [
     tourId: "home-footer-company",
     links: [
       { name: "Book Call", href: "/book", tourId: "home-footer-book" },
-      { name: "About", href: "/docs", tourId: "home-footer-docs" },
+      // Named for what it opens: there is no About page (walk 2026-11-22: "About" led to the Quick Start Guide).
+      { name: "Docs", href: "/docs", tourId: "home-footer-docs" },
       { name: "Contact", href: "/book", tourId: "home-footer-contact" },
     ],
   },
@@ -64,13 +65,14 @@ export function Footer({ mounted, resolvedTheme }: FooterProps) {
           {sections.map((section) => (
             <div key={section.title} data-tour-id={section.tourId}>
               <h3 className="text-sm font-medium text-foreground mb-4">{section.title}</h3>
-              <ul className="space-y-3">
+              <ul className="flex flex-col gap-1.5">
+                {/* Each link is at least 24px tall, so a finger or pointer can hit it (walk 2026-11-22). */}
                 {section.links.map((link) => (
                   <li key={link.name}>
                     <Link
                       href={link.href}
                       data-tour-id={link.tourId}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      className="inline-flex min-h-6 items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
                       {link.name}
                     </Link>
@@ -82,28 +84,11 @@ export function Footer({ mounted, resolvedTheme }: FooterProps) {
         </div>
 
         <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-border">
-          <p className="text-sm text-muted-foreground/60">
+          <p className="text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()} CNCPT Web. All rights reserved.
           </p>
-          <div className="flex items-center gap-4 mt-4 md:mt-0" data-tour-id="home-footer-socials">
-            {[
-              { name: "Twitter", href: "https://x.com/cncptweb", tourId: "home-footer-social-twitter" },
-              { name: "GitHub", href: "https://github.com/cncptweb", tourId: "home-footer-social-github" },
-              { name: "Discord", href: "https://discord.gg/cncptweb", tourId: "home-footer-social-discord" },
-            ].map((social) => (
-              <a
-                key={social.name}
-                href={social.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`Follow CNCPT Web on ${social.name}`}
-                data-tour-id={social.tourId}
-                className="text-sm text-muted-foreground/60 hover:text-foreground transition-colors"
-              >
-                {social.name}
-              </a>
-            ))}
-          </div>
+          {/* Social links removed 2026-11-22 (owner: "Remove both links until the accounts exist"): github.com/cncptweb,
+              x.com/cncptweb and the discord.gg/cncptweb invite do not exist. Add them back once the accounts are made. */}
         </div>
       </div>
     </footer>

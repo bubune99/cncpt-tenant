@@ -9,6 +9,7 @@
  */
 
 import { type ReactNode } from 'react';
+import { view, countMeta, salesCells } from '@/lib/cms/admin/overview-rules';
 import {
   DollarSign, Activity, TrendingUp, LayoutGrid, ShoppingBag, AlertTriangle, Clock,
   ChevronRight, type LucideIcon,
@@ -98,13 +99,20 @@ function WRow({ onClick, children }: { onClick?: () => void; children: ReactNode
 function FootLink({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <div style={{ marginTop: 10 }}>
-      <span className="gr-link" style={{ fontSize: 12 }} onClick={onClick}>{label}</span>
+      <button type="button" className="gr-link" style={{ font: 'inherit', fontSize: 12, border: 0, background: 'transparent', padding: 0 }} onClick={onClick}>{label}</button>
     </div>
   );
 }
 
 function EmptyNote({ children }: { children: ReactNode }) {
   return <div style={{ color: 'var(--text-muted)', fontSize: 12.5, padding: '6px 0' }}>{children}</div>;
+}
+
+/** Shown in place of a widget's empty message while its data is loading, or after its request failed. */
+function PendingNote({ kind, what }: { kind: 'loading' | 'failed'; what: string }) {
+  return kind === 'loading'
+    ? <EmptyNote>Loading {what}…</EmptyNote>
+    : <EmptyNote>Couldn't load {what}. Reload the page to try again.</EmptyNote>;
 }
 
 const stageTone: Readonly<Record<string, string>> = {
@@ -121,22 +129,13 @@ export const WIDGETS: Readonly<Record<WidgetId, WidgetDef>> = {
     title: 'Sales summary', icon: DollarSign, defSize: 6,
     blurb: 'Revenue, orders, and customers for the last 30 days.',
     render: (data) => {
-      const a = data.analytics;
-      const revenue = a?.revenue ?? 0;
-      const orders = a?.purchases ?? 0;
-      const avg = orders > 0 ? revenue / orders : 0;
-      const customers = data.stats ? (data.stats.totalCustomers ?? data.stats.totalUsers) : null;
-      const cells: ReadonlyArray<readonly [string, string]> = [
-        ['Revenue · 30d', revenue > 0 ? fmtUSD(revenue) : '—'],
-        ['Orders · 30d', orders > 0 ? orders.toLocaleString('en-US') : '—'],
-        ['Avg order', avg > 0 ? fmtMoney(avg) : '—'],
-        ['Customers', customers === null ? '—' : customers.toLocaleString('en-US')],
-      ];
+      // A dash until known; a known 0 shows as 0 (rules in lib/cms/admin/overview-rules).
+      const cells = salesCells(data.analytics, data.stats, { usd: fmtUSD, money: fmtMoney });
       return (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 14 }}>
           {cells.map(([label, value]) => (
             <div key={label}>
-              <div className="gr-eyebrow" style={{ fontSize: 9 }}>{label}</div>
+              <div className="gr-eyebrow">{label}</div>
               <div className="gr-num" style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.02em', marginTop: 4 }}>{value}</div>
             </div>
           ))}
@@ -148,9 +147,10 @@ export const WIDGETS: Readonly<Record<WidgetId, WidgetDef>> = {
   revenue: {
     title: 'Revenue · 30 days', icon: Activity, defSize: 4,
     blurb: 'Daily revenue bars for the last month.',
-    meta: (data) => (data.analytics && data.analytics.revenue > 0 ? fmtUSD(data.analytics.revenue) + ' total' : null),
+    meta: (data) => (typeof data.analytics !== 'string' && data.analytics.revenue > 0 ? fmtUSD(data.analytics.revenue) + ' total' : null),
     render: (data) => {
-      const series = data.analytics?.timeSeries ?? [];
+      if (typeof data.analytics === 'string') return <PendingNote kind={data.analytics} what="revenue" />;
+      const series = data.analytics.timeSeries;
       if (series.length === 0) return <EmptyNote>No revenue recorded in the last 30 days yet.</EmptyNote>;
       const values = series.map((p) => p.revenue);
       const lastVal = values[values.length - 1] ?? 0;
@@ -170,11 +170,12 @@ export const WIDGETS: Readonly<Record<WidgetId, WidgetDef>> = {
     title: 'Orders · 30 days', icon: TrendingUp, defSize: 4,
     blurb: 'Daily order counts for the last month.',
     meta: (data) => {
-      const total = (data.analytics?.timeSeries ?? []).reduce((sum, p) => sum + p.orders, 0);
+      const total = typeof data.analytics === 'string' ? 0 : data.analytics.timeSeries.reduce((sum, p) => sum + p.orders, 0);
       return total > 0 ? `${total.toLocaleString('en-US')} orders` : null;
     },
     render: (data) => {
-      const series = data.analytics?.timeSeries ?? [];
+      if (typeof data.analytics === 'string') return <PendingNote kind={data.analytics} what="orders" />;
+      const series = data.analytics.timeSeries;
       if (series.length === 0) return <EmptyNote>No orders in the last 30 days yet.</EmptyNote>;
       const values = series.map((p) => p.orders);
       const lastVal = values[values.length - 1] ?? 0;
@@ -218,12 +219,14 @@ export const WIDGETS: Readonly<Record<WidgetId, WidgetDef>> = {
   queue: {
     title: 'Open orders', icon: ShoppingBag, defSize: 3,
     blurb: 'Orders that are pending or in progress and need fulfillment.',
-    meta: (data) => (data.openOrders.length > 0 ? data.openOrders.length + ' open' : null),
+    meta: (data) => countMeta(data.openOrders, 'open'),
     render: (data, nav) => {
-      if (data.openOrders.length === 0) return <EmptyNote>No orders waiting on fulfillment. Nice.</EmptyNote>;
+      const v = view(data.openOrders);
+      if (v.kind === 'loading' || v.kind === 'failed') return <PendingNote kind={v.kind} what="open orders" />;
+      if (v.kind === 'empty') return <EmptyNote>No orders waiting on fulfillment. Nice.</EmptyNote>;
       return (
         <div>
-          {data.openOrders.slice(0, 6).map((o) => {
+          {v.items.slice(0, 6).map((o) => {
             const tone = stageTone[o.status] ?? 'neutral';
             const label = o.stageLabel ?? humanizeStatus(o.status);
             return (
@@ -231,7 +234,8 @@ export const WIDGETS: Readonly<Record<WidgetId, WidgetDef>> = {
                 <span className="gr-num" style={{ color: 'var(--clay-700)', fontWeight: 600, fontSize: 12 }}>#{o.orderNumber}</span>
                 <span style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{o.customerName}</span>
                 <span className="gr-num" style={{ fontSize: 12 }}>{fmtMoney(o.total)}</span>
-                <span className={`badge badge-${tone}`} style={{ fontSize: 9 }}>{label}</span>
+                <span className={`badge badge-${tone}`} style={{ fontSize: 11 }}>{label}</span>
+                <span className="gr-num" style={{ fontSize: 11, color: 'var(--text-muted)', flex: 'none' }}>{timeAgo(o.createdAt)}</span>
               </WRow>
             );
           })}
@@ -244,12 +248,14 @@ export const WIDGETS: Readonly<Record<WidgetId, WidgetDef>> = {
   lowstock: {
     title: 'Low stock', icon: AlertTriangle, defSize: 3,
     blurb: 'Tracked products at or below their reorder point.',
-    meta: (data) => (data.lowStock.length > 0 ? data.lowStock.length + ' items' : null),
+    meta: (data) => countMeta(data.lowStock, 'items'),
     render: (data, nav) => {
-      if (data.lowStock.length === 0) return <EmptyNote>Every tracked product is above its reorder point.</EmptyNote>;
+      const v = view(data.lowStock);
+      if (v.kind === 'loading' || v.kind === 'failed') return <PendingNote kind={v.kind} what="stock levels" />;
+      if (v.kind === 'empty') return <EmptyNote>Every tracked product is above its reorder point.</EmptyNote>;
       return (
         <div>
-          {data.lowStock.slice(0, 6).map((p) => {
+          {v.items.slice(0, 6).map((p) => {
             const out = p.stock <= 0;
             return (
               <WRow key={p.id} onClick={() => nav.onOpenProduct(p.id)}>
@@ -274,10 +280,12 @@ export const WIDGETS: Readonly<Record<WidgetId, WidgetDef>> = {
     title: 'Recent activity', icon: Clock, defSize: 6,
     blurb: 'The latest orders as they come in.',
     render: (data, nav) => {
-      if (data.recentOrders.length === 0) return <EmptyNote>No orders yet — activity will appear here.</EmptyNote>;
+      const v = view(data.recentOrders);
+      if (v.kind === 'loading' || v.kind === 'failed') return <PendingNote kind={v.kind} what="recent orders" />;
+      if (v.kind === 'empty') return <EmptyNote>No orders yet — activity will appear here.</EmptyNote>;
       return (
         <div>
-          {data.recentOrders.slice(0, 6).map((o) => (
+          {v.items.slice(0, 6).map((o) => (
             <WRow key={o.id} onClick={() => nav.onOpenOrder(o.id)}>
               <span style={{ width: 26, height: 26, borderRadius: 7, flex: 'none', background: 'var(--surface-sunken)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--clay-600)' }}>
                 <ShoppingBag size={13} aria-hidden="true" />
@@ -286,7 +294,7 @@ export const WIDGETS: Readonly<Record<WidgetId, WidgetDef>> = {
                 <span style={{ fontWeight: 500, display: 'block', fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Order #{o.orderNumber} placed</span>
                 <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{o.customerName} · {fmtMoney(o.total)}</span>
               </span>
-              <span className="gr-num" style={{ fontSize: 10.5, color: 'var(--text-muted)', flex: 'none' }}>{timeAgo(o.createdAt)}</span>
+              <span className="gr-num" style={{ fontSize: 11, color: 'var(--text-muted)', flex: 'none' }}>{timeAgo(o.createdAt)}</span>
             </WRow>
           ))}
         </div>

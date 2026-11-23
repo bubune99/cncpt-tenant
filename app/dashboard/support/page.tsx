@@ -128,6 +128,10 @@ export default function SupportPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [newMessage, setNewMessage] = useState("")
   const [isNewTicketOpen, setIsNewTicketOpen] = useState(false)
+  // Arriving from the dashboard inbox's New (?new=1) opens the new-ticket form at once.
+  useEffect(() => {
+    try { if (new URLSearchParams(window.location.search).get("new") === "1") setIsNewTicketOpen(true) } catch { /* no window */ }
+  }, [])
   const [isCustomerSheetOpen, setIsCustomerSheetOpen] = useState(false)
   const [customerHistory, setCustomerHistory] = useState<CustomerHistory | null>(null)
   const [newTicket, setNewTicket] = useState({

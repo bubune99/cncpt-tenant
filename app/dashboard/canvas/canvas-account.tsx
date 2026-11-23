@@ -170,7 +170,7 @@ function CreditsPanel() {
                       <td className="muted" style={{ fontSize: 11.5 }}>{r.createdAt ? new Date(r.createdAt).toLocaleString() : "—"}</td>
                       <td style={{ fontSize: 12 }}>{r.description || r.type}</td>
                       <td>{r.feature ? <span className="tag-sm">{r.feature}</span> : <span className="muted">—</span>}</td>
-                      <td style={{ textAlign: "right", fontFamily: "var(--br-font-mono)", color: r.amount > 0 ? "#047857" : "var(--br-text)" }}>{r.amount > 0 ? "+" : ""}{Number(r.amount).toLocaleString()}</td>
+                      <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", color: r.amount > 0 ? "#047857" : "var(--br-text)" }}>{r.amount > 0 ? "+" : ""}{Number(r.amount).toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>

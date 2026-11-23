@@ -9,58 +9,13 @@ import { stackServerApp } from "@/stack"
 import { canCreateSubdomain, getSubdomainUsage } from "@/lib/subscription"
 import { rootDomain, protocol } from "@/lib/utils"
 import { logPlatformActivity } from "@/lib/super-admin"
+import { checkAddress } from "@/lib/dashboard/site-address"
+import { featuresForTier } from "@/lib/dashboard/tier-features"
 
 export const dynamic = 'force-dynamic'
 
-// Validation helpers
-const SUBDOMAIN_REGEX = /^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/
-const RESERVED_SUBDOMAINS = [
-  "www",
-  "app",
-  "api",
-  "admin",
-  "dashboard",
-  "mail",
-  "email",
-  "ftp",
-  "blog",
-  "shop",
-  "store",
-  "help",
-  "support",
-  "docs",
-  "dev",
-  "staging",
-  "test",
-  "demo",
-]
-
-function isValidSubdomain(subdomain: string): { valid: boolean; error?: string } {
-  if (!subdomain) {
-    return { valid: false, error: "Subdomain is required" }
-  }
-
-  if (subdomain.length < 3) {
-    return { valid: false, error: "Subdomain must be at least 3 characters" }
-  }
-
-  if (subdomain.length > 63) {
-    return { valid: false, error: "Subdomain must be at most 63 characters" }
-  }
-
-  if (!SUBDOMAIN_REGEX.test(subdomain)) {
-    return {
-      valid: false,
-      error: "Subdomain can only contain lowercase letters, numbers, and hyphens (cannot start or end with hyphen)",
-    }
-  }
-
-  if (RESERVED_SUBDOMAINS.includes(subdomain)) {
-    return { valid: false, error: "This subdomain is reserved" }
-  }
-
-  return { valid: true }
-}
+// Address rules are shared with the New client site panel (lib/dashboard/site-address.ts).
+const isValidSubdomain = checkAddress
 
 /**
  * GET /api/dashboard/subdomain
@@ -319,18 +274,9 @@ async function initializeSubdomainFeatures(subdomainId: string, userId: string):
       LIMIT 1
     `
 
-    const tierName = (userTier[0]?.tier_name as string) || "free"
-
-    // Get all features that should be enabled for this tier
-    const features = await sql`
-      SELECT id FROM cms_features
-      WHERE is_active = true
-      AND (
-        minimum_tier = 'free'
-        OR (minimum_tier = 'pro' AND ${tierName} IN ('pro', 'enterprise'))
-        OR (minimum_tier = 'enterprise' AND ${tierName} = 'enterprise')
-      )
-    `
+    // The features this plan starts with (lib/dashboard/tier-features; no plan reads as free).
+    const active = await sql`SELECT id, minimum_tier FROM cms_features WHERE is_active = true`
+    const features = featuresForTier(active as { id: unknown; minimum_tier: string | null }[], userTier[0]?.tier_name as string | undefined)
 
     // Enable each feature for this subdomain
     for (const feature of features) {

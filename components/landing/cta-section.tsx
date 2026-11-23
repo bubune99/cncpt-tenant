@@ -10,9 +10,10 @@ export function CTASection() {
           borderWidth={2}
           duration={10}
           color={["#1e3a5f", "#c2410c", "#1e3a5f"]}
-          className="w-full min-w-0 bg-card dark:bg-card p-12 md:p-16"
+          className="w-full min-w-0 bg-card dark:bg-card p-6 sm:p-12 md:p-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6 text-foreground">
+          {/* Phone: the design system makes text-4xl 62px, so "extraordinary?" ran 20px past both sides of the panel at 440 wide (walk 2026-11-22). */}
+          <h2 className="text-[2.25rem] leading-tight sm:text-4xl md:text-5xl font-bold tracking-tight mb-6 text-foreground">
             Ready to build something
             <br />
             <span className="bg-gradient-to-r from-[#1e3a5f] via-[#1e3a5f] to-[#c2410c] dark:from-blue-400 dark:via-blue-300 dark:to-orange-400 bg-clip-text text-transparent">
