@@ -134,11 +134,16 @@ export function Billing() {
                   {sub ? `${sub.usage.subdomains.used} / ${sub.usage.subdomains.limit < 0 ? "unlimited" : sub.usage.subdomains.limit}` : "—"}
                 </span>
               </div>
-              <Progress
-                value={sub ? usagePercent(sub.usage.subdomains.used, sub.usage.subdomains.limit) : 0}
-                className="h-2"
-                aria-label="Subdomains used"
-              />
+              {/* No bar until the plan is known: an empty bar would read as 0% used (2026-11-22). The track holds the space. */}
+              {sub ? (
+                <Progress
+                  value={usagePercent(sub.usage.subdomains.used, sub.usage.subdomains.limit)}
+                  className="h-2"
+                  aria-label="Subdomains used"
+                />
+              ) : (
+                <div className="h-2 rounded-full bg-muted animate-pulse" aria-hidden="true" />
+              )}
             </div>
             <div>
               <div className="flex items-center justify-between mb-2">
