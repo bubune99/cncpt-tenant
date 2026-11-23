@@ -215,7 +215,8 @@
   --wl-radius-lg: 12px;
 }
 
-[data-brand="marigold"] {
+[data-brand="marigold"],
+body:has([data-brand="marigold"]) {
   --wl-canvas: #d9d3c2;  --wl-bg: #faf7ef;  --wl-surface: #ffffff;
   --wl-surface-2: #f5f1e6;  --wl-surface-3: #ebe5d4;
   --wl-text: #1a1410;  --wl-text-soft: rgba(26, 20, 16, 0.62);  --wl-text-faint: rgba(26, 20, 16, 0.40);
@@ -223,7 +224,8 @@
   --wl-accent: #8b2c1f;  --wl-accent-fg: #ffffff;  --wl-accent-soft: rgba(139, 44, 31, 0.10);
   --wl-success: #4f5e3a;  --wl-warning: #b58730;  --wl-error: #b53d2f;
 }
-[data-brand="boreal"] {
+[data-brand="boreal"],
+body:has([data-brand="boreal"]) {
   --wl-canvas: #e8e8e6;  --wl-bg: #ffffff;  --wl-surface: #ffffff;
   --wl-surface-2: #f6f6f4;  --wl-surface-3: #eceae6;
   --wl-text: #0d1f1c;  --wl-text-soft: rgba(13, 31, 28, 0.62);  --wl-text-faint: rgba(13, 31, 28, 0.40);
@@ -231,7 +233,8 @@
   --wl-accent: #1a4d3a;  --wl-accent-fg: #ffffff;  --wl-accent-soft: rgba(26, 77, 58, 0.10);
   --wl-success: #1a4d3a;  --wl-warning: #b89031;  --wl-error: #b53d2f;
 }
-[data-brand="obsidian"] {
+[data-brand="obsidian"],
+body:has([data-brand="obsidian"]) {
   --wl-canvas: #1a1a1d;  --wl-bg: #0f0f12;  --wl-surface: #16161a;
   --wl-surface-2: #1c1c20;  --wl-surface-3: #22222a;
   --wl-text: #f0ede5;  --wl-text-soft: rgba(240, 237, 229, 0.68);  --wl-text-faint: rgba(240, 237, 229, 0.42);
@@ -239,7 +242,8 @@
   --wl-accent: #d4a84b;  --wl-accent-fg: #0f0f12;  --wl-accent-soft: rgba(212, 168, 75, 0.14);
   --wl-success: #7faa55;  --wl-warning: #d4a84b;  --wl-error: #b53d2f;
 }
-[data-brand="meadow"] {
+[data-brand="meadow"],
+body:has([data-brand="meadow"]) {
   --wl-canvas: #e6dfd1;  --wl-bg: #f7f3e9;  --wl-surface: #fffdf6;
   --wl-surface-2: #f0ead7;  --wl-surface-3: #e2dabd;
   --wl-text: #2d2918;  --wl-text-soft: rgba(45, 41, 24, 0.66);  --wl-text-faint: rgba(45, 41, 24, 0.42);
@@ -248,6 +252,16 @@
   --wl-success: #5c7548;  --wl-warning: #c08a2e;  --wl-error: #b53d2f;
 }
 
+/* Dialogs, menus and popovers render at the end of <body>, outside the [data-brand] wrapper, and took the root
+ * accent (#0066cc on bubune, 2026-11-23) while the screen behind them used the site's preset. <body> carries the same
+ * accent as the wrapper, so a dialog's buttons match the screen it opened from. Surfaces are not moved here. */
+body:has([data-brand]) {
+  --primary: var(--wl-accent);
+  --primary-foreground: var(--wl-accent-fg);
+  --accent: var(--wl-accent);
+  --accent-foreground: var(--wl-accent-fg);
+  --ring: var(--wl-accent);
+}
 /* Density modes */
 [data-density="compact"]  { --wl-pad: 12px; --wl-gap: 12px; --wl-card-pad: 14px; --wl-row-h: 36px; }
 [data-density="spacious"] { --wl-pad: 22px; --wl-gap: 22px; --wl-card-pad: 24px; --wl-row-h: 52px; }
