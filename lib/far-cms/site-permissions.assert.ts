@@ -1,6 +1,5 @@
 /**
- * What a person may do in the shared far-cms admin on a CNCPT site. Until the owner answers inbox 43e92144, only what
- * CNCPT's own site admin already allows there: customers. Card 10 (c645e053) step 3.
+ * What a person may do in the shared far-cms admin on a CNCPT site. The set is the owner's answer to inbox 43e92144: "Run their own site". Card 10 (c645e053) step 3.
  * Run from the repo root: node_modules/.bin/tsx lib/far-cms/site-permissions.assert.ts
  */
 import assert from "node:assert/strict"
@@ -21,8 +20,13 @@ ok("someone without access to this site gets nothing", () => {
 ok("a platform super admin gets the same site set here, not more", () => {
   assert.deepEqual(sitePermissions({ hasAccess: false, accessType: null }, true), SITE_ADMIN_PERMISSIONS)
 })
-ok("the set is customers only until the owner widens it, and never the wildcard", () => {
-  assert.ok(SITE_ADMIN_PERMISSIONS.every((p) => p.startsWith("customers.")))
-  assert.ok(!SITE_ADMIN_PERMISSIONS.includes("*"))
+ok("the set is the owner's 'Run their own site': every area he named, nothing platform-wide, never the wildcard", () => {
+  for (const area of ["pages", "blog", "media", "forms", "email", "products", "categories", "inventory", "orders", "customers", "analytics"]) {
+    assert.ok(SITE_ADMIN_PERMISSIONS.includes(`${area}.*`), area)
+  }
+  assert.ok(SITE_ADMIN_PERMISSIONS.includes("settings.general"))
+  for (const p of SITE_ADMIN_PERMISSIONS) assert.ok(!/^(users|roles|plugins|routes|workflows|audit|puck_templates|agent|tours)\b/.test(p), p)
+  for (const p of ["settings.*", "settings.payments", "settings.storage", "settings.ai", "*"]) assert.ok(!SITE_ADMIN_PERMISSIONS.includes(p), p)
+  assert.ok(!SITE_ADMIN_PERMISSIONS.some((p) => p.endsWith(".agent")))
 })
 console.log(`${n} checks passed`)

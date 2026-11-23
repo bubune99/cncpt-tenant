@@ -1,15 +1,16 @@
 /**
  * What a person may do in the shared far-cms admin on a CNCPT site, from CNCPT's own access rule
- * (canAccessSubdomain: the site's owner, or a team with access). Until the owner answers inbox 43e92144 it is only
- * what CNCPT's current site admin already allows: customers. Pure. Checked in site-permissions.assert.ts.
+ * (canAccessSubdomain: the site's owner, or a team with access). The set is the owner's answer to inbox 43e92144. Pure. Checked in site-permissions.assert.ts.
  */
 
+/** Owner, inbox 43e92144 (2026-11-23): "Run their own site". Platform-only areas stay out: users, roles, plugins,
+ * routes, workflows, audit, templates, the assistant's data access, and the payments, storage and AI settings (they
+ * hold platform keys). */
 export const SITE_ADMIN_PERMISSIONS: readonly string[] = [
-  "customers.view",
-  "customers.create",
-  "customers.edit",
-  "customers.delete",
-  "customers.export",
+  "pages.*", "blog.*", "media.*", "forms.*", "email.*",
+  "products.*", "variants.*", "categories.*", "inventory.*", "orders.*", "customers.*", "analytics.*",
+  "settings.view", "settings.general", "settings.shipping", "settings.taxes", "settings.email",
+  "privacy.customers.see", "privacy.submissions.see", "privacy.orders.see",
 ]
 
 export interface SiteAccess {
