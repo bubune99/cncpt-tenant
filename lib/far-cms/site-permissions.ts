@@ -16,6 +16,9 @@ export const SITE_ADMIN_PERMISSIONS: readonly string[] = [
   // Owner, inbox 6eba10b5 (2026-11-23): "Yes, site owners edit their own partials" (header, footer, shared sections;
   // the Partial table is site-scoped, so only their own site's).
   "partial.*",
+  // Owner, inbox 90d020dd (2026-11-23): "Yes, site owners manage their own discount codes" (DiscountCode is
+  // site-scoped; Stripe sync stays super-admin).
+  "discounts.*",
 ]
 
 export interface SiteAccess {
