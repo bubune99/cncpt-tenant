@@ -36,6 +36,9 @@ async function main() {
   const url = process.env.DATABASE_URL ?? ""
   if (!url) { console.log(`${n} checks passed (live part skipped: no DATABASE_URL)`); return }
   assert.ok(!url.includes("ep-soft-lab-adomu3yn"), "refusing to run against CNCPT production")
+  // The package's db module loads BEFORE the host registers its client, as happened on staging 2026-11-23.
+  const { prisma: packagePrisma } = await import("@far-cms/cms/src/lib/db")
+  const { setHostClient } = await import("@far-cms/cms/src/lib/db/host-client")
   const { Pool } = await import("pg")
   const { PrismaPg } = await import("@prisma/adapter-pg")
   const { PrismaClient } = await import("../generated/far-cms-client")
@@ -73,6 +76,13 @@ async function main() {
     await ok("the same email may be a customer on two sites", async () => {
       current = sites[1]; await db.customer.create({ data: { email: `${tag}-a@example.org`, firstName: "SAMPLE" } })
       assert.equal((await db.customer.findUnique({ where: { email: `${tag}-a@example.org` } }))?.tenantId, sites[1])
+    })
+    await ok("the package's own prisma, loaded before the host registered, still goes through the site scope", async () => {
+      setHostClient(db)
+      current = sites[0]
+      const seen = await (packagePrisma as any).customer.findMany({ where: { email: { startsWith: tag } }, select: { tenantId: true } })
+      assert.ok(seen.length > 0 && seen.every((r: any) => r.tenantId === sites[0]))
+      assert.equal((await (packagePrisma as any).customer.findUnique({ where: { email: `${tag}-a@example.org` } }))?.tenantId, sites[0])
     })
     await ok("a request with no site is refused for site data", async () => {
       current = NO_SITE
