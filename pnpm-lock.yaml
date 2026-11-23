@@ -1600,7 +1600,7 @@ packages:
         optional: true
 
   '@far-cms/cms@file:vendor/far-cms/far-cms-cms-0.1.0.tgz':
-    resolution: {integrity: sha512-An1NfqU/95kp83EGg2F++pzdZJmdWQ56m0POoYAAC12iIp6T++D4WKO1+SmCpdsG6PkUO7xmqcSKgNbkcLZ/YQ==, tarball: file:vendor/far-cms/far-cms-cms-0.1.0.tgz}
+    resolution: {integrity: sha512-bkCUbhsaxrXgMyFc4nZ1Ni7g1uXcJuOf/lUgbUmAw5MleLdaJLgCxL3BJFq2uuwHaqnaxgWg3yZPb6D/zVeOBQ==, tarball: file:vendor/far-cms/far-cms-cms-0.1.0.tgz}
     version: 0.1.0
     peerDependencies:
       '@ai-sdk/anthropic': ^3.0.1

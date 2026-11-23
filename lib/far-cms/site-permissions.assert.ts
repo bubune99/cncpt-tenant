@@ -25,7 +25,10 @@ ok("the set is the owner's 'Run their own site': every area he named, nothing pl
     assert.ok(SITE_ADMIN_PERMISSIONS.includes(`${area}.*`), area)
   }
   assert.ok(SITE_ADMIN_PERMISSIONS.includes("settings.general"))
-  for (const p of SITE_ADMIN_PERMISSIONS) assert.ok(!/^(users|roles|plugins|routes|workflows|audit|puck_templates|agent|tours)\b/.test(p), p)
+  for (const p of SITE_ADMIN_PERMISSIONS) assert.ok(!/^(users|roles|plugins|routes|workflows|audit|puck_templates|agent)\b/.test(p), p)
+  // Help tours can be read (every screen's help loads them), never edited: tour content is shared by every site.
+  assert.ok(SITE_ADMIN_PERMISSIONS.includes("tours.view"))
+  assert.ok(!SITE_ADMIN_PERMISSIONS.some((p) => p === "tours.*" || p === "tours.manage"))
   for (const p of ["settings.*", "settings.payments", "settings.storage", "settings.ai", "*"]) assert.ok(!SITE_ADMIN_PERMISSIONS.includes(p), p)
   assert.ok(!SITE_ADMIN_PERMISSIONS.some((p) => p.endsWith(".agent")))
 })

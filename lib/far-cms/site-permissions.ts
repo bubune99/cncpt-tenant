@@ -11,6 +11,8 @@ export const SITE_ADMIN_PERMISSIONS: readonly string[] = [
   "products.*", "variants.*", "categories.*", "inventory.*", "orders.*", "customers.*", "analytics.*",
   "settings.view", "settings.general", "settings.shipping", "settings.taxes", "settings.email",
   "privacy.customers.see", "privacy.submissions.see", "privacy.orders.see",
+  // Reading help tours: every screen's help loads them (403 on all seven mounted screens without it). Not editing them.
+  "tours.view",
 ]
 
 export interface SiteAccess {
