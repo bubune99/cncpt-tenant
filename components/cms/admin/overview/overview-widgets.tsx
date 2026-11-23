@@ -135,7 +135,7 @@ export const WIDGETS: Readonly<Record<WidgetId, WidgetDef>> = {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 14 }}>
           {cells.map(([label, value]) => (
             <div key={label}>
-              <div className="gr-eyebrow" style={{ fontSize: 9 }}>{label}</div>
+              <div className="gr-eyebrow">{label}</div>
               <div className="gr-num" style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.02em', marginTop: 4 }}>{value}</div>
             </div>
           ))}
@@ -234,8 +234,8 @@ export const WIDGETS: Readonly<Record<WidgetId, WidgetDef>> = {
                 <span className="gr-num" style={{ color: 'var(--clay-700)', fontWeight: 600, fontSize: 12 }}>#{o.orderNumber}</span>
                 <span style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{o.customerName}</span>
                 <span className="gr-num" style={{ fontSize: 12 }}>{fmtMoney(o.total)}</span>
-                <span className={`badge badge-${tone}`} style={{ fontSize: 9 }}>{label}</span>
-                <span className="gr-num" style={{ fontSize: 10.5, color: 'var(--text-muted)', flex: 'none' }}>{timeAgo(o.createdAt)}</span>
+                <span className={`badge badge-${tone}`} style={{ fontSize: 11 }}>{label}</span>
+                <span className="gr-num" style={{ fontSize: 11, color: 'var(--text-muted)', flex: 'none' }}>{timeAgo(o.createdAt)}</span>
               </WRow>
             );
           })}
@@ -294,7 +294,7 @@ export const WIDGETS: Readonly<Record<WidgetId, WidgetDef>> = {
                 <span style={{ fontWeight: 500, display: 'block', fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Order #{o.orderNumber} placed</span>
                 <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{o.customerName} · {fmtMoney(o.total)}</span>
               </span>
-              <span className="gr-num" style={{ fontSize: 10.5, color: 'var(--text-muted)', flex: 'none' }}>{timeAgo(o.createdAt)}</span>
+              <span className="gr-num" style={{ fontSize: 11, color: 'var(--text-muted)', flex: 'none' }}>{timeAgo(o.createdAt)}</span>
             </WRow>
           ))}
         </div>

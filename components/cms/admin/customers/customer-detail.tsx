@@ -41,7 +41,7 @@ function isActiveCustomer(c: ApiCustomerDetail): boolean {
 function StatCell({ label, value, tone }: { readonly label: string; readonly value: React.ReactNode; readonly tone?: string }): React.ReactElement {
   return (
     <div className="gr-card" style={{ padding: '13px 16px', flex: 1, minWidth: 120 }}>
-      <div className="gr-eyebrow" style={{ fontSize: 9 }}>{label}</div>
+      <div className="gr-eyebrow">{label}</div>
       <div className="gr-num" style={{ fontSize: 23, fontWeight: 700, marginTop: 4, color: tone ?? 'var(--text)' }}>{value}</div>
     </div>
   );
@@ -212,7 +212,7 @@ export function CustomerDetail({
           <StatCell label="Avg order" value={customer.totalOrders > 0 ? money(customer.averageOrder) : '—'} />
           <StatCell label="Last order" value={relativeTime(customer.lastOrderAt)} />
           <div className="gr-card" style={{ padding: '13px 16px', flex: 1, minWidth: 120 }}>
-            <div className="gr-eyebrow" style={{ fontSize: 9 }}>Lifecycle</div>
+            <div className="gr-eyebrow">Lifecycle</div>
             <div style={{ marginTop: 9 }}><Badge tone={lifecycle.tone}>{lifecycle.label}</Badge></div>
           </div>
         </div>

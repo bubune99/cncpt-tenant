@@ -121,7 +121,7 @@ function LineItem({
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px 18px', marginTop: 6 }}>
             {item.configOptions.map((o) => (
               <div key={o.key} style={{ display: 'flex', gap: 8, fontSize: 12.5, padding: '2px 0' }}>
-                <span className="gr-eyebrow" style={{ fontSize: 9, width: 78, flex: 'none' }}>{o.key}</span>
+                <span className="gr-eyebrow" style={{ width: 78, flex: 'none' }}>{o.key}</span>
                 <span>{o.value}</span>
               </div>
             ))}

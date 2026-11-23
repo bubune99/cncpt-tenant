@@ -438,12 +438,14 @@
   background: var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: var(--r-pill);
-  padding: 8px 14px;
+  padding: 4px 14px;
   box-shadow: var(--inset-soft);
   color: var(--text-muted);
 }
 .search:focus-within { border-color: var(--primary); }
+/* The field fills the pill's height, so a press anywhere on it lands in the field (2026-11-23: it was 20px tall). */
 .search input {
+  min-height: 28px;
   border: none; background: transparent; outline: none;
   font-family: var(--font-sans); font-size: var(--text-sm);
   color: var(--text); width: 100%;
@@ -841,6 +843,8 @@
   box-shadow: var(--inset-soft);
   transition: background .14s ease, border-color .14s ease, box-shadow .14s ease;
 }
+/* An 18px box with a 24px press area: the 3px around it counts as the box (2026-11-23). */
+.checkbox::before { content: ''; position: absolute; inset: -3px; }
 .checkbox:hover { border-color: var(--primary); }
 .checkbox:checked, .checkbox:indeterminate {
   background: var(--primary); border-color: var(--primary);
@@ -868,7 +872,7 @@
 .table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
 .table thead th {
   text-align: left; white-space: nowrap;
-  font-family: var(--font-sans); font-variant-numeric: tabular-nums; font-size: 10px; font-weight: 600;
+  font-family: var(--font-sans); font-variant-numeric: tabular-nums; font-size: 11.5px; font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.09em; color: var(--text-muted);
   padding: 11px 16px;
   background: var(--surface);
@@ -1231,7 +1235,7 @@ details.think[open] .th-chev { transform: rotate(90deg); }
 .gr-app[data-density="comfortable"] { --d-pad: 22px; --d-rowy: 15px; --d-gap: 22px; --d-fs: 14.5px; }
 .gr-app * { box-sizing: border-box; }
 .gr-app .grain::after { z-index: 0; }
-.gr-eyebrow { font-family: var(--font-sans); font-variant-numeric: tabular-nums; font-size: 10.5px; font-weight: 500;
+.gr-eyebrow { font-family: var(--font-sans); font-variant-numeric: tabular-nums; font-size: 11.5px; font-weight: 500;
   text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); }
 .gr-num { font-family: var(--font-sans); font-variant-numeric: tabular-nums; }
 .gr-scroll { overflow: auto; }

@@ -70,7 +70,7 @@ export function ProductsLanding({
                 </div>
                 <p style={{ margin: '14px 0 0', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.45, minHeight: 38 }}>{f.blurb}</p>
                 <div style={{ marginTop: 14, paddingTop: 13, borderTop: '1px solid var(--line-faint)' }}>
-                  <span className="gr-eyebrow" style={{ fontSize: 9, textTransform: 'none', letterSpacing: 0, color: 'var(--text-muted)' }}>{f.facets}</span>
+                  <span className="gr-eyebrow" style={{ textTransform: 'none', letterSpacing: 0, color: 'var(--text-muted)' }}>{f.facets}</span>
                 </div>
               </div>
             </button>
