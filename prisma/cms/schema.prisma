@@ -5158,3 +5158,19 @@ enum LoyaltyActivityType {
 
   @@map("loyalty_activity_type")
 }
+
+/// Rate-limit counts shared by every server instance (lib/cms/rate-limit/db-limit.ts). One row per (kind, identity);
+/// each row carries its own window (windowStart + windowMs, epoch ms) and rolls over on its own. Same table as
+/// Dzidzor's usage_counters (owner, inbox 67cd4334).
+model UsageCounter {
+  kind        String   // 'rate-limit'
+  identity    String   // '<prefix>:<ip>'
+  windowStart BigInt
+  windowMs    BigInt
+  amount      BigInt   @default(0)
+  updatedAt   DateTime @default(now())
+
+  @@id([kind, identity])
+  @@index([kind, windowStart])
+  @@map("usage_counters")
+}
