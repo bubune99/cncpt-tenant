@@ -18,7 +18,7 @@ async function main() {
   const mw = readFileSync("middleware.ts", "utf8")
   await ok("the package gets a site-scoped client built from the far-cms schema's own client", () => {
     assert.match(host, /from "@\/lib\/generated\/far-cms-client"/)
-    assert.match(host, /setHostClient\(scopedRequest\(baseClient\(\), \{ site: siteId, owned: OWNED_MODELS \}\)\)/)
+    assert.match(host, /setHostClient\(scopedRequest\(baseClient\(\), \{ site: siteId, owned: OWNED_MODELS, uniques: SITE_UNIQUES \}\)\)/)
   })
   await ok("a request on a site host with no known site is refused (NO_SITE), never read across sites", () => {
     assert.match(host, /h\.get\("x-subdomain"\) \?\? NO_SITE/)
@@ -40,11 +40,11 @@ async function main() {
   const { PrismaPg } = await import("@prisma/adapter-pg")
   const { PrismaClient } = await import("../generated/far-cms-client")
   const { scopedRequest, NO_SITE } = await import("@far-cms/db")
-  const { OWNED_MODELS } = await import("./owned-models")
+  const { OWNED_MODELS, SITE_UNIQUES } = await import("./owned-models")
   const pool = new Pool({ connectionString: url, max: 2 })
   const base: any = new PrismaClient({ adapter: new PrismaPg(pool) })
   let current: number | null | typeof NO_SITE = null
-  const db: any = scopedRequest(base, { site: async () => current, owned: OWNED_MODELS })
+  const db: any = scopedRequest(base, { site: async () => current, owned: OWNED_MODELS, uniques: SITE_UNIQUES })
   const tag = `sample-${Date.now()}`
   const sites: number[] = []
   try {
@@ -64,6 +64,15 @@ async function main() {
       current = sites[0]
       const r = await db.customer.updateMany({ where: { email: `${tag}-b@example.org` }, data: { firstName: "CHANGED" } })
       assert.equal(r.count, 0)
+    })
+    await ok("a lookup by email (unique per site) finds this site's customer only, as the Customers API does", async () => {
+      current = sites[0]
+      assert.equal((await db.customer.findUnique({ where: { email: `${tag}-a@example.org` } }))?.tenantId, sites[0])
+      assert.equal(await db.customer.findUnique({ where: { email: `${tag}-b@example.org` } }), null)
+    })
+    await ok("the same email may be a customer on two sites", async () => {
+      current = sites[1]; await db.customer.create({ data: { email: `${tag}-a@example.org`, firstName: "SAMPLE" } })
+      assert.equal((await db.customer.findUnique({ where: { email: `${tag}-a@example.org` } }))?.tenantId, sites[1])
     })
     await ok("a request with no site is refused for site data", async () => {
       current = NO_SITE

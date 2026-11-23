@@ -4,5 +4,6 @@ import type { ReactNode } from 'react'
 import { CmsProviders } from '@far-cms/cms/src/components/admin/cms-providers'
 
 export default function FarCmsCustomersLayout({ children }: { children: ReactNode }) {
-  return <CmsProviders config={{ basePath: '' }}>{children}</CmsProviders>
+  // No Stripe sync card: CNCPT's sites have no Stripe account of their own yet, and its sync route is not mounted.
+  return <CmsProviders config={{ basePath: '' }} features={{ commerceEnabled: true, stripeCustomerSync: false }}>{children}</CmsProviders>
 }

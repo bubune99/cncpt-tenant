@@ -1600,7 +1600,7 @@ packages:
         optional: true
 
   '@far-cms/cms@file:vendor/far-cms/far-cms-cms-0.1.0.tgz':
-    resolution: {integrity: sha512-tG2u0/h90O+J6TQRt+7eYkIbA4iaw3KckHXVriMeHAT4v/pTqgGBQ/gAvDm3iLTNzjzG4Ar7RANMJ+G6CTJT3Q==, tarball: file:vendor/far-cms/far-cms-cms-0.1.0.tgz}
+    resolution: {integrity: sha512-KGxEJRbLly30IviO6rwfANYNtMhqCGtMKdN4FmnmJzHvcwzDM7vqp2hoZKvwjquGO10/7/Pd50Mb7QoP9ruc0Q==, tarball: file:vendor/far-cms/far-cms-cms-0.1.0.tgz}
     version: 0.1.0
     peerDependencies:
       '@ai-sdk/anthropic': ^3.0.1
@@ -1749,7 +1749,7 @@ packages:
         optional: true
 
   '@far-cms/db@file:vendor/far-cms/far-cms-db-0.1.0.tgz':
-    resolution: {integrity: sha512-YlmZCinMulYNBbtYwX//gSHjqrQmoZg0nQ6wcYDTbrF5sDnOT4cSujPXAw3u4iaaf8rURn0+Hg0LMNAJwziW/Q==, tarball: file:vendor/far-cms/far-cms-db-0.1.0.tgz}
+    resolution: {integrity: sha512-wlnmZG4kFKuxbobo0GZFoiaooWzZl3tdP2w+J2gXe9igbAw/6bU7MvrXtuCbY+smKAWQeDHqvAf0dykV/4NRww==, tarball: file:vendor/far-cms/far-cms-db-0.1.0.tgz}
     version: 0.1.0
     hasBin: true
 
