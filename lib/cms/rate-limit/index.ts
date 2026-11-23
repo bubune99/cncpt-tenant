@@ -1,14 +1,14 @@
 /**
  * API Rate Limiter
  *
- * Redis-backed sliding window rate limiter using @upstash/ratelimit.
- * Works across serverless instances and survives deploys.
+ * Counts in the app's own database (usage_counters, ./db-limit), so every server instance shares one count and it
+ * survives deploys (owner, inbox 67cd4334: "Add the table to the CNCPT database (as Dzidzor does)"). The Upstash
+ * store it used before was deleted. On a database error or timeout it uses the per-instance memory limiter.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { Ratelimit } from '@upstash/ratelimit';
 import { createBreaker, withinTime, BACKEND_TIMEOUT_MS, BACKEND_COOLDOWN_MS } from './backend-breaker';
-import { redis } from '@/lib/redis';
+import { dbLimit } from './db-limit';
 import { resolveRateLimit } from './resolve';
 
 // ---------------------------------------------------------------------------
@@ -65,7 +65,7 @@ export const RATE_LIMIT_PRESETS = {
 } as const;
 
 // ---------------------------------------------------------------------------
-// In-memory fallback — used when the Redis backend is unset or unreachable.
+// In-memory fallback — used when the database count fails or times out.
 // Per function instance only (a stopgap, not DDoS protection), but it keeps
 // brute-force and spam limits meaningful instead of failing open.
 // ---------------------------------------------------------------------------
@@ -92,30 +92,8 @@ function memoryLimit(key: string, maxRequests: number, windowMs: number): { succ
   return { success: true, reset: now + windowMs };
 }
 
-const hasRedisBackend = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
-// After a backend failure, skip it for a while and use the in-memory limiter (see ./backend-breaker).
+// After a database failure, skip it for a while and use the in-memory limiter (see ./backend-breaker).
 const backendBreaker = createBreaker({ cooldownMs: BACKEND_COOLDOWN_MS, now: Date.now });
-
-// ---------------------------------------------------------------------------
-// Limiter cache — one Ratelimit instance per unique config
-// ---------------------------------------------------------------------------
-
-const limiterCache = new Map<string, Ratelimit>();
-
-function getLimiter(config: RateLimitConfig): Ratelimit {
-  const cacheKey = `${config.maxRequests}:${config.windowMs}`;
-  let limiter = limiterCache.get(cacheKey);
-  if (!limiter) {
-    const windowSec = Math.max(1, Math.ceil(config.windowMs / 1000));
-    limiter = new Ratelimit({
-      redis,
-      limiter: Ratelimit.slidingWindow(config.maxRequests, `${windowSec} s`),
-      prefix: '@upstash/ratelimit',
-    });
-    limiterCache.set(cacheKey, limiter);
-  }
-  return limiter;
-}
 
 // ---------------------------------------------------------------------------
 // Main helper — call at the top of any route handler
@@ -193,18 +171,17 @@ export async function rateLimitCheck(
 
   let success: boolean;
   let reset: number;
-  if (hasRedisBackend && backendBreaker.canTry()) {
+  if (backendBreaker.canTry()) {
     try {
-      const limiter = getLimiter({ maxRequests: resolved.maxRequests, windowMs: resolved.windowMs });
       // Bounded: a dead backend used to hold every request ~5 s (staging 2026-11-22).
-      ({ success, reset } = await withinTime(limiter.limit(key), BACKEND_TIMEOUT_MS));
+      ({ success, reset } = await withinTime(dbLimit(key, resolved.maxRequests, resolved.windowMs), BACKEND_TIMEOUT_MS));
       backendBreaker.succeeded();
     } catch (error) {
       backendBreaker.failed();
-      // Rate limiting must never take a route down with it — if the Redis
-      // backend is unreachable (e.g. a deleted Upstash instance), degrade to
-      // the per-instance in-memory limiter instead of failing open.
-      console.error('[rate-limit] backend unavailable, using in-memory fallback:', error);
+      // Rate limiting must never take a route down with it: if the database
+      // count fails or is slow, degrade to the per-instance in-memory limiter
+      // instead of failing open.
+      console.error('[rate-limit] database count unavailable, using in-memory fallback:', error);
       ({ success, reset } = memoryLimit(key, resolved.maxRequests, resolved.windowMs));
     }
   } else {

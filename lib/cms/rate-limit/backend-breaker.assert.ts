@@ -48,11 +48,11 @@ async function main() {
     assert.ok(BACKEND_TIMEOUT_MS <= 800)
     assert.ok(BACKEND_COOLDOWN_MS >= 60_000)
   })
-  await ok("the rate limiter uses the breaker and the time limit around its Redis call", () => {
+  await ok("the rate limiter uses the breaker and the time limit around its database count", () => {
     const src = readFileSync("lib/cms/rate-limit/index.ts", "utf8")
     assert.match(src, /from '\.\/backend-breaker'/)
     assert.match(src, /backendBreaker\.canTry\(\)/)
-    assert.match(src, /withinTime\(limiter\.limit\(key\), BACKEND_TIMEOUT_MS\)/)
+    assert.match(src, /withinTime\(dbLimit\(key, resolved\.maxRequests, resolved\.windowMs\), BACKEND_TIMEOUT_MS\)/)
   })
   console.log(`${n} checks passed`)
 }
