@@ -29,8 +29,8 @@ import {
   type CustomerStats,
 } from '@/components/cms/admin/customers/customers-model';
 
-type SegKey = 'all' | 'active' | 'inactive' | 'new';
-const NEW_WINDOW_MS = 7 * 86_400_000;
+// The list's rules (segments, counts, search and sort, a dash for a figure not known yet) live in lib with a check.
+import { inSegment, segmentCounts, searchAndSort, withOrdersCount, figure, type SegKey } from '@/lib/cms/admin/customer-list';
 
 const TIER_OPTIONS = ['Any', 'Premium', 'Standard', 'Basic'] as const;
 const SORT_OPTIONS = ['Last order', 'Orders', 'Name A–Z'] as const;
@@ -114,44 +114,28 @@ export default function CustomersPage(): React.ReactElement {
   useEffect(() => { void fetchCustomers(); }, [fetchCustomers]);
 
   // ── Derived rows ──
-  const segFiltered = useMemo(() => customers.filter((c) => {
-    switch (seg) {
-      case 'active': return c.isActive;
-      case 'inactive': return !c.isActive;
-      case 'new': return Date.now() - new Date(c.createdAt).getTime() < NEW_WINDOW_MS;
-      default: return true;
-    }
-  }), [customers, seg]);
-
   const rows = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    const searched = !term ? segFiltered : segFiltered.filter((c) =>
-      c.name.toLowerCase().includes(term) || c.email.toLowerCase().includes(term) || c.id.toLowerCase().includes(term));
-    const sorted = [...searched];
-    sorted.sort((a, b) => {
-      if (sort === 'Orders') return b.designCount - a.designCount;
-      if (sort === 'Name A–Z') return a.name.localeCompare(b.name);
-      // Last order — most recent first, nulls last
-      const at = a.lastActivityAt ? new Date(a.lastActivityAt).getTime() : 0;
-      const bt = b.lastActivityAt ? new Date(b.lastActivityAt).getTime() : 0;
-      return bt - at;
-    });
-    return sorted;
-  }, [segFiltered, q, sort]);
+    const now = Date.now();
+    return searchAndSort(customers.filter((c) => inSegment(c, seg, now)), q, sort);
+  }, [customers, seg, q, sort]);
 
-  const segTabs = useMemo<SegTab<SegKey>[]>(() => [
-    { key: 'all', label: 'All', count: customers.length },
-    { key: 'active', label: 'Active', count: customers.filter((c) => c.isActive).length },
-    { key: 'inactive', label: 'Dormant', count: customers.filter((c) => !c.isActive).length },
-    { key: 'new', label: 'New · 7d', count: customers.filter((c) => Date.now() - new Date(c.createdAt).getTime() < NEW_WINDOW_MS).length },
-  ], [customers]);
+  const segTabs = useMemo<SegTab<SegKey>[]>(() => {
+    const n = segmentCounts(customers, Date.now());
+    return [
+      { key: 'all', label: 'All', count: n.all },
+      { key: 'active', label: 'Active', count: n.active },
+      { key: 'inactive', label: 'Dormant', count: n.inactive },
+      { key: 'new', label: 'New · 7d', count: n.new },
+    ];
+  }, [customers]);
 
-  const withOrders = useMemo(() => customers.filter((c) => c.designCount > 0).length, [customers]);
+  // A figure still loading (or whose request failed) shows a dash, never 0.
+  const withOrders = loading ? undefined : withOrdersCount(customers);
   const chips = [
-    { icon: Users, value: stats?.totalCustomers ?? customers.length, label: 'customers', tone: 'var(--text)' },
-    { icon: Activity, value: stats?.activeToday ?? 0, label: 'active today', tone: 'var(--sage-700)' },
-    { icon: Sparkles, value: stats?.newThisMonth ?? 0, label: 'new this month', tone: 'var(--clay-700)' },
-    { icon: ShoppingBag, value: withOrders, label: 'with orders', tone: 'var(--text)' },
+    { icon: Users, value: figure(stats?.totalCustomers ?? (loading ? undefined : customers.length)), label: 'customers', tone: 'var(--text)' },
+    { icon: Activity, value: figure(stats?.activeToday), label: 'active today', tone: 'var(--sage-700)' },
+    { icon: Sparkles, value: figure(stats?.newThisMonth), label: 'new this month', tone: 'var(--clay-700)' },
+    { icon: ShoppingBag, value: figure(withOrders), label: 'with orders', tone: 'var(--text)' },
   ] as const;
 
   // ── Selection ──

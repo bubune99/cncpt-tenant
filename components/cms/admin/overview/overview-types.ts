@@ -58,13 +58,20 @@ export interface OverviewProduct {
   readonly status: string;
 }
 
-/** Everything the widgets render from. All fields are null/empty-safe. */
+/** A value that is still loading, whose request failed, or has arrived. */
+export type Loaded<T> = T | 'loading' | 'failed';
+
+/**
+ * Everything the widgets render from. Stats are null until known (shown as a dash). The analytics and the lists
+ * say whether they are still loading or failed, so a widget never shows its empty message before it knows
+ * (walk 2026-11-22: 'No orders waiting on fulfillment. Nice.' showed while the orders were still loading).
+ */
 export interface OverviewData {
   readonly stats: OverviewStats | null;
-  readonly analytics: OverviewAnalytics | null;
-  readonly openOrders: readonly OverviewOrder[];
-  readonly recentOrders: readonly OverviewOrder[];
-  readonly lowStock: readonly OverviewProduct[];
+  readonly analytics: Loaded<OverviewAnalytics>;
+  readonly openOrders: Loaded<readonly OverviewOrder[]>;
+  readonly recentOrders: Loaded<readonly OverviewOrder[]>;
+  readonly lowStock: Loaded<readonly OverviewProduct[]>;
 }
 
 /** Navigation callbacks — wired to the real admin routes by the screen. */

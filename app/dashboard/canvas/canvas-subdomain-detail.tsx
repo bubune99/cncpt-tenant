@@ -177,12 +177,14 @@ function OverviewPanel({ title, subdomain, siteUrl, onTab }: { title: string; su
 function DNSPanel({ subdomain }: { subdomain: string }) {
   const [domains, setDomains] = useState<DomainInfo[]>([])
   const [loading, setLoading] = useState(true)
+  // A failed lookup says so; it is not shown as "0 connected" / "No custom domain yet" (2026-11-22).
+  const [failed, setFailed] = useState(false)
 
   useEffect(() => {
     let active = true
     getDomainsForSubdomain(subdomain)
-      .then((d) => { if (active) setDomains(Array.isArray(d) ? d : []) })
-      .catch(() => { if (active) setDomains([]) })
+      .then((d) => { if (!active) return; if (Array.isArray(d)) setDomains(d); else setFailed(true) })
+      .catch(() => { if (active) setFailed(true) })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [subdomain])
@@ -223,10 +225,12 @@ function DNSPanel({ subdomain }: { subdomain: string }) {
       <div className="card">
         <div className="card__head">
           <h3 className="card__title">Your custom domains</h3>
-          <span className="muted" style={{ fontSize: 11 }}>{loading ? "Loading…" : `${domains.length} connected`}</span>
+          <span className="muted" style={{ fontSize: 11 }}>{loading ? "Loading…" : failed ? "Could not load" : `${domains.length} connected`}</span>
         </div>
         {loading ? (
           <div className="card__body muted" style={{ fontSize: 12 }}>Loading domains…</div>
+        ) : failed ? (
+          <div className="card__body muted" style={{ fontSize: 12 }} role="status">Couldn&apos;t load this site&apos;s domains. Reload the page to try again.</div>
         ) : domains.length === 0 ? (
           <div className="tnt__empty" style={{ padding: "36px 24px" }}>
             <div className="tnt__empty-glyph"><Globe /></div>

@@ -106,3 +106,13 @@ export function planFor(name: string | null | undefined): Plan | undefined {
   const n = (name ?? "").trim().toLowerCase()
   return n ? PLANS.find((p) => p.slug === n || p.name.toLowerCase() === n) : undefined
 }
+
+/** The monthly figure a plan shows: billed yearly, its yearly price over 12, rounded to the dollar. */
+export function monthlyShown(plan: Pick<Plan, "price" | "yearlyPrice">, annual: boolean): number {
+  return annual ? Math.round(plan.yearlyPrice / 12) : plan.price
+}
+
+/** How much of a limit is used, 0 to 100; 0 when there is no limit to measure against (0 or unlimited, -1). */
+export function usagePercent(used: number, limit: number): number {
+  return limit > 0 ? Math.min(100, (used / limit) * 100) : 0
+}

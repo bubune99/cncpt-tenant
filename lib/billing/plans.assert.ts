@@ -5,7 +5,7 @@
  */
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
-import { PLANS, planFor } from "./plans"
+import { PLANS, planFor, monthlyShown, usagePercent } from "./plans"
 
 let n = 0
 const ok = (name: string, fn: () => void) => { fn(); n++; console.log(`ok ${n} - ${name}`) }
@@ -29,5 +29,25 @@ ok("both pages read the shared list and keep no list of their own", () => {
   for (const [name, src] of [["pricing", pricing], ["billing", billing]] as const) assert.match(src, /from "@\/lib\/billing\/plans"/, name)
   assert.doesNotMatch(pricing, /^const plans = \[/m)
   assert.doesNotMatch(billing, /price: 29,/)
+})
+ok("billed yearly, a plan shows its yearly price as a monthly figure, rounded to the dollar", () => {
+  const [starter, growth, pro, business] = PLANS
+  assert.deepEqual([starter, growth, pro, business].map((p) => monthlyShown(p, true)), [21, 41, 83, 291])
+  assert.deepEqual([starter, growth, pro, business].map((p) => monthlyShown(p, false)), [25, 49, 99, 349])
+})
+ok("usage as a share of the limit: 0 to 100, and 0 when there is no limit to measure against", () => {
+  assert.equal(usagePercent(1, 4), 25)
+  assert.equal(usagePercent(5, 4), 100)
+  assert.equal(usagePercent(0, 3), 0)
+  assert.equal(usagePercent(2, 0), 0)
+  assert.equal(usagePercent(2, -1), 0)
+})
+ok("the pages call these and work out neither figure themselves", () => {
+  const pricing = readFileSync("app/(public)/pricing/page.tsx", "utf8")
+  const billing = readFileSync("app/dashboard/billing.tsx", "utf8")
+  assert.doesNotMatch(pricing, /yearlyPrice \/ 12/)
+  assert.match(pricing, /monthlyShown\(/)
+  assert.doesNotMatch(billing, /used \/ sub\.usage\.subdomains\.limit/)
+  assert.match(billing, /usagePercent\(/)
 })
 console.log(`\n${n} checks passed`)

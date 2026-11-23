@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ExternalLink, CheckCircle, Info, Sparkles, Loader2 } from "lucide-react"
-import { PLANS, planFor } from "@/lib/billing/plans"
+import { PLANS, planFor, usagePercent } from "@/lib/billing/plans"
 
 /** What /api/dashboard/subscription/current returns (the parts this page shows). */
 interface CurrentSubscription {
@@ -135,7 +135,7 @@ export function Billing() {
                 </span>
               </div>
               <Progress
-                value={sub && sub.usage.subdomains.limit > 0 ? Math.min(100, (sub.usage.subdomains.used / sub.usage.subdomains.limit) * 100) : 0}
+                value={sub ? usagePercent(sub.usage.subdomains.used, sub.usage.subdomains.limit) : 0}
                 className="h-2"
                 aria-label="Subdomains used"
               />

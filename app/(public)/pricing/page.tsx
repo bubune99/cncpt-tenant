@@ -7,7 +7,7 @@ import { useState, useEffect } from "react"
 import { Check, Sparkles, Zap, HelpCircle } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useTheme } from "next-themes"
-import { PLANS as plans } from "@/lib/billing/plans"
+import { PLANS as plans, monthlyShown } from "@/lib/billing/plans"
 
 const addOns = [
   { name: "Extra Team Seat", price: "$15/mo", note: "$12/mo on Business" },
@@ -185,7 +185,7 @@ export default function PricingPage() {
                 <div className="mb-6">
                   <div className="flex items-baseline gap-1">
                     <span className="text-4xl font-bold text-gray-900 dark:text-white">
-                      ${annual ? Math.round(plan.yearlyPrice / 12) : plan.price}
+                      ${monthlyShown(plan, annual)}
                     </span>
                     <span className="text-gray-500 dark:text-white/65">/mo</span>
                   </div>
