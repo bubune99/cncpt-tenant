@@ -66,6 +66,8 @@ ok("the Customers page uses these rules and keeps no copy of its own", () => {
   assert.match(src, /from '@\/lib\/cms\/admin\/customer-list'/)
   assert.doesNotMatch(src, /NEW_WINDOW_MS =/)
   assert.doesNotMatch(src, /\?\? 0,/)
+  // The segment tabs too: their counts are a dash until the list has arrived (staging 90b40786 showed 'All 0' while loading).
+  assert.match(src, /count: figure\(loading \? undefined : n\.all\)/)
 })
 
 console.log(`${n} checks passed`)

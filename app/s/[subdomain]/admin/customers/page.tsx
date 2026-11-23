@@ -122,12 +122,12 @@ export default function CustomersPage(): React.ReactElement {
   const segTabs = useMemo<SegTab<SegKey>[]>(() => {
     const n = segmentCounts(customers, Date.now());
     return [
-      { key: 'all', label: 'All', count: n.all },
-      { key: 'active', label: 'Active', count: n.active },
-      { key: 'inactive', label: 'Dormant', count: n.inactive },
-      { key: 'new', label: 'New · 7d', count: n.new },
+      { key: 'all', label: 'All', count: figure(loading ? undefined : n.all) },
+      { key: 'active', label: 'Active', count: figure(loading ? undefined : n.active) },
+      { key: 'inactive', label: 'Dormant', count: figure(loading ? undefined : n.inactive) },
+      { key: 'new', label: 'New · 7d', count: figure(loading ? undefined : n.new) },
     ];
-  }, [customers]);
+  }, [customers, loading]);
 
   // A figure still loading (or whose request failed) shows a dash, never 0.
   const withOrders = loading ? undefined : withOrdersCount(customers);

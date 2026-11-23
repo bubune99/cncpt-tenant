@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { Ratelimit } from '@upstash/ratelimit';
+import { createBreaker, withinTime, BACKEND_TIMEOUT_MS, BACKEND_COOLDOWN_MS } from './backend-breaker';
 import { redis } from '@/lib/redis';
 import { resolveRateLimit } from './resolve';
 
@@ -92,6 +93,8 @@ function memoryLimit(key: string, maxRequests: number, windowMs: number): { succ
 }
 
 const hasRedisBackend = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+// After a backend failure, skip it for a while and use the in-memory limiter (see ./backend-breaker).
+const backendBreaker = createBreaker({ cooldownMs: BACKEND_COOLDOWN_MS, now: Date.now });
 
 // ---------------------------------------------------------------------------
 // Limiter cache — one Ratelimit instance per unique config
@@ -190,11 +193,14 @@ export async function rateLimitCheck(
 
   let success: boolean;
   let reset: number;
-  if (hasRedisBackend) {
+  if (hasRedisBackend && backendBreaker.canTry()) {
     try {
       const limiter = getLimiter({ maxRequests: resolved.maxRequests, windowMs: resolved.windowMs });
-      ({ success, reset } = await limiter.limit(key));
+      // Bounded: a dead backend used to hold every request ~5 s (staging 2026-11-22).
+      ({ success, reset } = await withinTime(limiter.limit(key), BACKEND_TIMEOUT_MS));
+      backendBreaker.succeeded();
     } catch (error) {
+      backendBreaker.failed();
       // Rate limiting must never take a route down with it — if the Redis
       // backend is unreachable (e.g. a deleted Upstash instance), degrade to
       // the per-instance in-memory limiter instead of failing open.

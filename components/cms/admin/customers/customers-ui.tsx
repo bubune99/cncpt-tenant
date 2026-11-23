@@ -131,7 +131,8 @@ export function SortSelect({
 export interface SegTab<T extends string> {
   readonly key: T;
   readonly label: string;
-  readonly count: number;
+  /** A dash until the list has arrived, so a count still loading never reads 0. */
+  readonly count: number | '—';
 }
 
 export function SegTabs<T extends string>({
