@@ -49,6 +49,8 @@ const ContentSecurityPolicy = cspDirectives.join("; ");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // The shared far-cms code ships as TypeScript source; Next compiles it (card 10).
+  transpilePackages: ['@far-cms/cms', '@far-cms/core', '@far-cms/contracts', '@far-cms/db'],
   eslint: {
     ignoreDuringBuilds: true,
   },

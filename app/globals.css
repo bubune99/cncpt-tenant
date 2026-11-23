@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* The shared far-cms screens use Tailwind classes too (card 10). */
+@source "../node_modules/@far-cms/cms/src";
 @import "tw-animate-css";
 @import "./grainy.css";
 @import "./atlas.css";
