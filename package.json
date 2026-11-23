@@ -157,7 +157,8 @@
     "usehooks-ts": "^3.1.1",
     "uuid": "^13.0.0",
     "zod": "3.25.67",
-    "zustand": "^5.0.9"
+    "zustand": "^5.0.9",
+    "@far-cms/skin-grainy": "file:vendor/far-cms/far-cms-skin-grainy-0.1.0.tgz"
   },
   "devDependencies": {
     "@prisma/client": "^7.2.0",

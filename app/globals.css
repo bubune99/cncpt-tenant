@@ -4,6 +4,8 @@
 @import "tw-animate-css";
 @import "./grainy.css";
 @import "./atlas.css";
+/* Admin surfaces, text, lines and status colors: the shared Grainy skin (brand colors stay per site). */
+@import "@far-cms/skin-grainy/skin.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -302,18 +304,7 @@
  */
 .atlas,
 body:has(.atlas) {
-  --background: var(--surface-raised);
-  --foreground: var(--text);
-  --card: var(--surface-raised);
-  --card-foreground: var(--text);
-  --popover: var(--surface-raised);
-  --popover-foreground: var(--text);
-  --secondary: var(--surface);
-  --secondary-foreground: var(--text);
-  --muted: var(--surface);
-  --muted-foreground: var(--text-secondary);
-  --border: var(--line-strong);
-  --input: var(--line-strong);
+  /* Surfaces, text, lines and status colors come from @far-cms/skin-grainy (imported at the top). */
   --sidebar: var(--surface);
   --sidebar-foreground: var(--text);
   --sidebar-accent: var(--surface-sunken);
